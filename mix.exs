@@ -22,7 +22,10 @@ defmodule Bundler.Mixfile do
   end
 
   defp description do
-    "Build releases of your Mix projects with ease!"
+    """
+    Build releases of your Mix projects with ease!
+    WARNING: This package is an experimental replacement for exrm, use at your own risk!
+    """
   end
   defp package do
     [ files: ["lib", "priv", "mix.exs", "README.md", "LICENSE.md"],

@@ -7,6 +7,8 @@ This is a implementation of release building functionality for the Elixir standa
 as a pluggable dependency. I'm using this to prototype the native implementation of this functionality
 prior to merging into Elixir proper.
 
+**WARNING: This package is an experimental replacement for exrm, use at your own risk!**
+
 ## Installation
 
 ```elixir
