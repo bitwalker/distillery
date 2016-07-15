@@ -88,14 +88,10 @@ defmodule Mix.Tasks.Release.Clean do
   end
 
   defp confirm_implode? do
-    IO.puts IO.ANSI.yellow
-    msg = """
+    Bundler.IO.confirm """
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!
     Are you absolutely sure you want to proceed?
     """
-    answer = IO.gets(msg <> " [Yn]: ") |> String.rstrip(?\n)
-    IO.puts IO.ANSI.reset
-    answer =~ ~r/^(Y(es)?)?$/i
   end
 
 end
