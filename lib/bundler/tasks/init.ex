@@ -29,8 +29,7 @@ defmodule Mix.Tasks.Release.Init do
   """
   @shortdoc "initialize a new release configuration"
   use Mix.Task
-  alias Mix.Releases.Utils
-  alias Bundler.Utils.Logger
+  alias Mix.Releases.{Utils, Logger}
 
   def run(args) do
     Logger.configure(:debug)

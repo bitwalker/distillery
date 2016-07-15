@@ -1,7 +1,7 @@
-defmodule Bundler.Utils.Logger do
+defmodule Mix.Releases.Logger do
 
   def configure(verbosity) when is_atom(verbosity) do
-    Application.put_env(:bundler, :verbosity, verbosity)
+    Application.put_env(:mix, :release_logger_verbosity, verbosity)
   end
 
   @doc "Print an informational message in cyan"
@@ -18,7 +18,7 @@ defmodule Bundler.Utils.Logger do
   def error(message),   do: log(:error, "#{IO.ANSI.red}==> #{message}#{IO.ANSI.reset}")
 
   defp log(level, message),
-    do: log(level, Application.get_env(:bundler, :verbosity, :normal), message)
+    do: log(level, Application.get_env(:mix, :release_logger_verbosity, :normal), message)
 
   defp log(_, :verbose, message),         do: IO.puts message
   defp log(:error, :silent, message),     do: IO.puts message

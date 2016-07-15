@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Release.Clean do
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
-  alias Bundler.Utils.Logger
+  alias Mix.Releases.Logger
 
   def run(args) do
     Logger.configure(:debug)

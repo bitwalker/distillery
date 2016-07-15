@@ -29,8 +29,7 @@ defmodule Mix.Tasks.Release do
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
-  alias Mix.Releases.Config
-  alias Bundler.Utils.Logger
+  alias Mix.Releases.{Config, Logger}
 
   def run(args) do
     # Parse options
