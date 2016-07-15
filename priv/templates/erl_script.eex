@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+SCRIPT_DIR=`dirname $0`
+ROOTDIR=`cd $SCRIPT_DIR/../../ && pwd`
+BINDIR=$ROOTDIR/erts-<%= erts_vsn %>/bin
+EMU=beam
+PROGNAME=`echo $0 | sed 's/.*\\///'`
+export EMU
+export ROOTDIR
+export BINDIR
+export PROGNAME
+exec "$BINDIR/erlexec" ${1+"$@"}

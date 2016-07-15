@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+
+SCRIPT_DIR="$(cd $(dirname "$0") && pwd -P)"
+RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+RELEASES_DIR="$RELEASE_ROOT_DIR/releases"
+REL_NAME="<%= rel_name %>"
+REL_VSN=$(cat $RELEASES_DIR/start_erl.data | cut -d' ' -f2)
+ERTS_VSN=$(cat $RELEASES_DIR/start_erl.data | cut -d' ' -f1)
+
+
+_cleanup() {
+    echo "Shutting down node cleanly.."
+    exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" rpc init stop
+}
+
+case "$1" in
+    foreground)
+        trap '_cleanup' HUP INT TERM QUIT
+
+        "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" $@ &
+        __pid=$!
+
+        wait $__pid
+        __exit_status=$?
+
+        exit $__exit_status
+        ;;
+    *)
+        exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@"
+        ;;
+esac
