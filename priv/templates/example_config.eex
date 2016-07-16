@@ -70,5 +70,8 @@ end
 <%= for release <- releases do %>
 release :<%= Keyword.get(release, :release_name) %> do
   set version: current_version(:<%= Keyword.get(release, :release_name)%>)
+  set applications: [<%= Enum.map(Keyword.get(release, :release_applications), fn {app, start_type} ->
+    "#{app}: :#{start_type}"
+end) |> Enum.join(",\n   ") %>]
 end
 <% end %>
