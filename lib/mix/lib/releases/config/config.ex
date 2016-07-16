@@ -118,6 +118,7 @@ defmodule Mix.Releases.Config do
           rel = get_in(config, [:releases, current_rel])
           rel = Enum.reduce(unquote(opts), rel, fn
             {:version, v}, acc -> %{acc | :version => v}
+            {:applications, v}, acc -> %{acc | :applications => acc.applications ++ v}
             {k, v}, acc ->
               case Map.has_key?(acc.profile, k) do
                 false ->

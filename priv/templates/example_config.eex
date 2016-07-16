@@ -1,6 +1,6 @@
 use Mix.Releases.Config,
     # This sets the default release built by `mix release`
-    default_release: :<%= Keyword.get(release, :release_name) %>,
+    default_release: :default,
     # This sets the default environment used by `mix release`
     default_environment: :default
 <%= unless no_docs do %>
@@ -56,19 +56,19 @@ use Mix.Releases.Config,
 # You may define one or more environments in this file,
 # an environment's settings will override those of a release
 # when building in that environment, this combination of release
-# and environment configuration is called a profile<%= end %>
+# and environment configuration is called a profile
+<% end %>
 environment :default do
-  dev_mode: false,
-  include_erts: true
+  set dev_mode: false
+  set include_erts: true
 end
 <%= unless no_docs do %>
 # You may define one or more releases in this file.
 # If you have not set a default release, or selected one
 # when running `mix release`, the first release in the file
-# will be used by default
+# will be used by default<% end %>
 <%= for release <- releases do %>
-release :<%= Keyword.get(release, :release_name) %>, current_version(:<%= Keyword.get(release, :release_name)%>),
-  [<%= Enum.map(Keyword.get(release, :release_applications), fn {app, start_type} ->
-      "#{app}: :#{start_type}"
-    end) |> Enum.join(",\n   ") %>]
+release :<%= Keyword.get(release, :release_name) %> do
+  set version: current_version(:<%= Keyword.get(release, :release_name)%>)
+end
 <% end %>

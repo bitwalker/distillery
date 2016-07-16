@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Release do
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
-  alias Mix.Releases.{Config, Logger}
+  alias Mix.Releases.{Release, Logger}
 
   def run(args) do
     # Parse options
@@ -58,13 +58,13 @@ defmodule Mix.Tasks.Release do
     # build release
     Logger.info "Assembling release.."
     case {Mix.Releases.Assembler.assemble(config), no_tar?} do
-      {{:ok, %Config{:selected_release => release}}, true} ->
-        print_success(release.name)
-      {{:ok, %Config{:selected_release => release} = config}, false} ->
+      {{:ok, %Release{:name => name}}, true} ->
+        print_success(name)
+      {{:ok, %Release{:name => name} = release}, false} ->
         Logger.info "Packaging release.."
-        case Mix.Releases.Archiver.archive(config) do
+        case Mix.Releases.Archiver.archive(release) do
           :ok ->
-            print_success(release.name)
+            print_success(name)
           other ->
             Logger.error "Problem generating release tarball:\n    " <>
               "#{inspect other}"

@@ -31,17 +31,17 @@ defmodule Mix.Releases.Assembler do
     selected_release = case config.selected_release do
                          :default ->
                            case config.default_release do
-                             :default -> List.first(Map.values(config.releases))
+                             :default -> {:ok, List.first(Map.values(config.releases))}
                              name -> Map.fetch(config.releases, name)
                            end
                          name -> Map.fetch(config.releases, name)
                        end
     selected_environment = case selected_environment do
-                             :error       -> {:error, :no_environments}
+                             :error -> {:error, :no_environments}
                              {:ok, _} = e -> e
                            end
     selected_release = case selected_release do
-                         :error       -> {:error, :no_releases}
+                         :error -> {:error, :no_releases}
                          {:ok, _} = r -> r
                        end
     with {:ok, environment} <- selected_environment,
@@ -56,13 +56,14 @@ defmodule Mix.Releases.Assembler do
 
   defp apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
     Logger.info "Building release #{r.name}:#{r.version} using environment #{e.name}"
+    env_profile = Map.from_struct(env_profile)
     profile = Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
       case v do
         nil -> acc
         _   -> Map.put(acc, k, v)
       end
     end)
-    %{r | :profile => profile}
+    {:ok, %{r | :profile => profile}}
   end
 
   defp create_output_dir(%Release{name: name}) do
