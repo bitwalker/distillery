@@ -14,18 +14,35 @@ defmodule Mix.Releases.Utils do
   @doc """
   Writes an Elixir/Erlang term to the provided path
   """
+  @spec write_term(String.t, term) :: :ok | {:error, term}
   def write_term(path, term) do
-    :file.write_file('#{path}', :io_lib.fwrite('~p.\n', [term]))
+    :file.write_file('#{path}', :io_lib.fwrite('~p.\n', [term]), [encoding: :utf8])
   end
 
   @doc """
   Writes a collection of Elixir/Erlang terms to the provided path
   """
+  @spec write_terms(String.t, [term]) :: :ok | {:error, term}
   def write_terms(path, terms) when is_list(terms) do
     contents = String.duplicate("~p.\n\n", Enum.count(terms))
        |> String.to_char_list
        |> :io_lib.fwrite(Enum.reverse(terms))
     :file.write_file('#{path}', contents, [encoding: :utf8])
+  end
+
+  @doc """
+  Reads a file as Erlang terms
+  """
+  @spec read_terms(String.t) :: {:ok, [term]} :: {:error, String.t}
+  def read_terms(path) do
+    case :file.consult(String.to_charlist(path)) do
+      {:ok, _} = result ->
+        result
+      {:error, {line, type, msg}} ->
+        {:error, "Parse failed - #{path}@#{line} (#{type}): #{msg}"}
+      {:error, reason} ->
+        {:error, "Unable to access #{path} (#{reason})"}
+    end
   end
 
   @doc """
@@ -53,6 +70,110 @@ defmodule Mix.Releases.Utils do
                   end
     File.mkdir_p!(tmpdir_path)
     tmpdir_path
+  end
+
+
+  @doc """
+  Given a path to a release output directory, return a list
+  of release versions that are present.
+
+  ## Example
+
+      iex> app_dir = Path.join([File.cwd!, "test", "fixtures", "mock_app"])
+      ...> output_dir = Path.join([app_dir, "rel", "mock_app"])
+      ...> #{__MODULE__}.get_release_versions(output_dir)
+      ["0.1.0", "0.2.0", "0.2.1", "0.2.1-1-d3adb3f", "0.2.2"]
+  """
+  @spec get_release_versions(String.t) :: list(String.t)
+  def get_release_versions(output_dir) do
+    releases_path = Path.join([output_dir, "releases"])
+    case File.exists?(releases_path) do
+      false -> []
+      true  ->
+        releases_path
+        |> File.ls!
+        |> Enum.reject(fn entry -> entry in ["RELEASES", "start_erl.data"] end)
+    end
+  end
+
+  @doc """
+  Given a path to a release output directory, return the most recent version
+  prior to the current one.
+
+  ## Example
+
+      iex> app_dir = Path.join([File.cwd!, "test", "fixtures", "mock_app"])
+      ...> output_dir = Path.join([app_dir, "rel", "mock_app"])
+      ...> #{__MODULE__}.get_last_release(output_dir)
+      "0.2.2"
+  """
+  @spec get_last_release(String.t) :: nil | String.t
+  def get_last_release(output_dir) do
+    versions = output_dir
+      |> get_release_versions
+      |> sort_versions
+    case versions do
+      []    -> nil
+      [v|_] -> v
+    end
+  end
+
+  @git_describe_pattern ~r/(?<ver>\d+\.\d+\.\d+)-(?<commits>\d+)-(?<sha>[A-Ga-g0-9]+)/
+  @doc """
+  Sort a list of version strings, in reverse order (i.e. latest version comes first)
+  Tries to use semver version compare, but can fall back to regular string compare.
+  It also parses git-describe generated version strings and handles ordering them
+  correctly.
+
+  ## Example
+
+      iex> #{__MODULE__}.sort_versions(["1.0.2", "1.0.1", "1.0.9", "1.0.10"])
+      ["1.0.10", "1.0.9", "1.0.2", "1.0.1"]
+
+      iex> #{__MODULE__}.sort_versions(["0.0.1", "0.0.2", "0.0.1-2-a1d2g3f", "0.0.1-1-deadbeef"])
+      ["0.0.2", "0.0.1-2-a1d2g3f", "0.0.1-1-deadbeef", "0.0.1"]
+  """
+  @spec sort_versions(list(String.t)) :: list(String.t)
+  def sort_versions(versions) do
+    versions
+    |> Enum.map(fn ver ->
+        # Special handling for git-describe versions
+        compared = case Regex.named_captures(@git_describe_pattern, ver) do
+          nil ->
+            {:standard, ver, nil}
+          %{"ver" => version, "commits" => n, "sha" => sha} ->
+            {:describe, <<version::binary, ?+, n::binary, ?-, sha::binary>>, String.to_integer(n)}
+        end
+        {ver, compared}
+      end)
+    |> Enum.sort(
+      fn {_, {v1type, v1str, v1_commits_since}}, {_, {v2type, v2str, v2_commits_since}} ->
+        case { parse_version(v1str), parse_version(v2str) } do
+          {{:semantic, v1}, {:semantic, v2}} ->
+            case Version.compare(v1, v2) do
+              :gt -> true
+              :eq ->
+                case {v1type, v2type} do
+                  {:standard, :standard} -> v1 > v2 # probably always false
+                  {:standard, :describe} -> false   # v2 is an incremental version over v1
+                  {:describe, :standard} -> true    # v1 is an incremental version over v2
+                  {:describe, :describe} ->         # need to parse out the bits
+                    v1_commits_since > v2_commits_since
+                end
+              :lt -> false
+            end;
+          {{_, v1}, {_, v2}} ->
+            v1 >  v2
+        end
+      end)
+    |> Enum.map(fn {v, _} -> v end)
+  end
+
+  defp parse_version(ver) do
+    case Version.parse(ver) do
+      {:ok, semver} -> {:semantic, semver}
+      :error        -> {:unsemantic, ver}
+    end
   end
 
 end
