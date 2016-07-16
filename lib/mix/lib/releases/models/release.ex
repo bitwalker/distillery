@@ -13,6 +13,8 @@ defmodule Mix.Releases.Release do
       # can also use `app_name: type`, as in `some_dep: load`,
       # to only load the application, not start it
     ],
+    is_upgrade: false,
+    upgrade_from: :latest,
     profile: %Profile{
       code_paths: [], # additional code paths to search
       erl_opts: [],

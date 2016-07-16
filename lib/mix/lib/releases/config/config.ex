@@ -10,6 +10,7 @@ defmodule Mix.Releases.Config do
             default_environment: :default,
             selected_release: :default,
             selected_environment: :default,
+            is_upgrade: false,
             upgrade_from: :latest # the version to upgrade from (if applicable)
 
   defmacro __using__(opts) do
