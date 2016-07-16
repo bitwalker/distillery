@@ -61,9 +61,9 @@ defmodule Mix.Tasks.Release.Clean do
     releases = config.releases
     # build release
     paths = Path.wildcard(Path.join("rel", "*"))
-    for release <- releases, Path.join("rel", "#{release.name}") in paths do
-      Logger.notice "    Removing release #{release.name}:#{release.version}"
-      clean_release(release, Path.join("rel", "#{release.name}"))
+    for {name, release} <- releases, Path.join("rel", "#{name}") in paths do
+      Logger.notice "    Removing release #{name}:#{release.version}"
+      clean_release(release, Path.join("rel", "#{name}"))
     end
     Logger.success "Clean successful!"
   end
