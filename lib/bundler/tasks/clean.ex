@@ -36,6 +36,7 @@ defmodule Mix.Tasks.Release.Clean do
       :else ->
         clean!
     end
+    execute_after_hooks(args)
   end
 
   defp clean_all! do
@@ -92,6 +93,20 @@ defmodule Mix.Tasks.Release.Clean do
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!
     Are you absolutely sure you want to proceed?
     """
+  end
+
+  defp execute_after_hooks(args) do
+    plugins = Mix.Releases.Plugin.load_all
+    Enum.each plugins, fn plugin ->
+      try do
+        plugin.after_cleanup(args)
+      rescue
+        exception ->
+          stacktrace = System.stacktrace
+        Logger.error "Failed to execute after_cleanup hook for #{plugin}!"
+        reraise exception, stacktrace
+      end
+    end
   end
 
 end
