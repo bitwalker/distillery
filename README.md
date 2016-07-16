@@ -24,6 +24,7 @@ If you are new to releases, please review the [documentation](https://hexdocs.pm
 ## TODO
 
 - Upgrades/downgrades
+- Plugin system from exrm
 - Read-only filesystems
 - CLI tooling
 - Documentation

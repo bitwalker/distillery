@@ -41,7 +41,9 @@ defmodule Bundler.Mixfile do
        "docs/Configuration.md",
        "docs/Walkthrough.md",
        "docs/Upgrades and Downgrades.md",
-       "docs/Common Issues.md"
+       "docs/Common Issues.md",
+       "docs/Plugins.md",
+       "docs/Boot Hooks.md"
      ]]
   end
 end
