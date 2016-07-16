@@ -35,12 +35,12 @@ defmodule Mix.Releases.Appup do
       v1_path
       |> Path.join("/ebin/")
       |> Path.join(Atom.to_string(application) <> ".app")
-      |> String.to_char_list
+      |> String.to_charlist
     v2_dotapp =
       v2_path
       |> Path.join("/ebin/")
       |> Path.join(Atom.to_string(application) <> ".app")
-      |> String.to_char_list
+      |> String.to_charlist
 
     case :file.consult(v1_dotapp) do
       {:ok, [{:application, ^application, v1_props}]} ->
@@ -69,10 +69,10 @@ defmodule Mix.Releases.Appup do
   end
 
   defp make_appup(v1, v1_path, _v1_props, v2, v2_path, _v2_props) do
-    v1 = String.to_char_list(v1)
-    v2 = String.to_char_list(v2)
-    v1_path = String.to_char_list(Path.join(v1_path, "ebin"))
-    v2_path = String.to_char_list(Path.join(v2_path, "ebin"))
+    v1 = String.to_charlist(v1)
+    v2 = String.to_charlist(v2)
+    v1_path = String.to_charlist(Path.join(v1_path, "ebin"))
+    v2_path = String.to_charlist(Path.join(v2_path, "ebin"))
 
     {deleted, added, changed} = :beam_lib.cmp_dirs(v1_path, v2_path)
 
