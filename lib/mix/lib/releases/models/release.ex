@@ -15,6 +15,7 @@ defmodule Mix.Releases.Release do
     ],
     is_upgrade: false,
     upgrade_from: :latest,
+    output_dir: nil,
     profile: %Profile{
       code_paths: [], # additional code paths to search
       erl_opts: [],
@@ -37,7 +38,8 @@ defmodule Mix.Releases.Release do
     }
 
   def new(name, version, apps \\ []) do
-    definition = %__MODULE__{name: name, version: version}
+    output_dir = Path.relative_to_cwd(Path.join("rel", "#{name}"))
+    definition = %__MODULE__{name: name, version: version, output_dir: output_dir}
     %{definition | :applications => definition.applications ++ apps}
   end
 end
