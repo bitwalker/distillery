@@ -16,7 +16,7 @@ defmodule Mix.Releases.Overlays do
   relative to the project root, but overlay output paths are relative to the root directory for the current
   release, which is why the directory is created in `rel/my_release`, and not in the project root.
   """
-  alias Mix.Releases.Config.ReleaseDefinition
+  alias Mix.Releases.Release
 
   @typep overlay :: {:mkdir, String.t} |
                     {:copy, String.t, String.t} |
@@ -38,7 +38,7 @@ defmodule Mix.Releases.Overlays do
     - {:template_file, file, line, desc} - a template overlay failed
     - {:overlay_failed, term, overlay} - applying an overlay failed
   """
-  @spec apply(ReleaseDefinition.t, String.t, list(overlay), Keyword.t) :: {:ok, [String.t]} | error
+  @spec apply(Release.t, String.t, list(overlay), Keyword.t) :: {:ok, [String.t]} | error
   def apply(_release, _ouput_dir, [], _overlay_vars), do: {:ok, []}
   def apply(release, output_dir, overlays, overlay_vars) do
     do_apply(release, output_dir, overlays, overlay_vars, [])

@@ -2,35 +2,34 @@ defmodule Mix.Releases.Archiver do
   @moduledoc """
   This module is responsible for packaging a release into a tarball.
   """
-  alias Mix.Releases.{Config, Overlays, Utils}
+  alias Mix.Releases.{Release, Overlays, Utils}
 
-  def archive(%Config{} = config) do
-    release = config.selected_release
+  def archive(%Release{} = release) do
     name = "#{release.name}"
     output_dir = Path.relative_to_cwd(Path.join("rel", "#{release.name}"))
 
-    case make_tar(config, release, name, output_dir) do
+    case make_tar(release, name, output_dir) do
       {:error, _} = err ->
         err
       :ok ->
-        case apply_overlays(config, release, name, output_dir) do
+        case apply_overlays(release, name, output_dir) do
           {:ok, overlays} ->
-            update_tar(config, release, name, output_dir, overlays)
+            update_tar(release, name, output_dir, overlays)
           {:error, _} = err ->
             err
         end
     end
   end
 
-  defp make_tar(config, release, name, output_dir) do
+  defp make_tar(release, name, output_dir) do
     opts = [
       {:path, ['#{Path.join([output_dir, "lib", "*", "ebin"])}']},
-      {:dirs, [:include | case config.include_src do
+      {:dirs, [:include | case release.profile.include_src do
                           true  -> [:src, :c_src]
                           false -> []
                         end]},
       {:outdir, '#{Path.join([output_dir, "releases", release.version])}'} |
-      case config.include_erts do
+      case release.profile.include_erts do
         true ->
           path = Path.expand("#{:code.root_dir()}")
           [{:erts, '#{path}'}]
@@ -54,7 +53,7 @@ defmodule Mix.Releases.Archiver do
     end
   end
 
-  defp update_tar(config, release, name, output_dir, overlays) do
+  defp update_tar(release, name, output_dir, overlays) do
     tarfile = '#{Path.join([output_dir, "releases", release.version, name <> ".tar.gz"])}'
     tmpdir = Utils.insecure_mkdtemp!
     :erl_tar.extract(tarfile, [{:cwd, '#{tmpdir}'}, :compressed])
@@ -71,9 +70,9 @@ defmodule Mix.Releases.Archiver do
           {'#{Path.join(["releases", release.version, name <> ".sh"])}',
            '#{Path.join([output_dir, "releases", release.version, name <> ".sh"])}'},
           {'bin', '#{Path.join(output_dir, "bin")}'} |
-          case config.include_erts do
+          case release.profile.include_erts do
             false ->
-              case config.include_system_libs do
+              case release.profile.include_system_libs do
                 false ->
                   libs = Path.wildcard(Path.join([tmpdir, "lib", "*"]))
                   system_libs = Path.wildcard(Path.join("#{:code.lib_dir}", "*"))
@@ -92,16 +91,16 @@ defmodule Mix.Releases.Archiver do
     :ok
   end
 
-  defp apply_overlays(config, release, _name, output_dir) do
-    overlay_vars = config.overlay_vars ++ generate_overlay_vars(config, release)
+  defp apply_overlays(release, _name, output_dir) do
+    overlay_vars = release.profile.overlay_vars ++ generate_overlay_vars(release)
     hook_overlays = [
       {:mkdir, "releases/<%= release_version %>/hooks"},
-      {:copy, config.pre_start_hook, "releases/<%= release_version %>/hooks/pre_start"},
-      {:copy, config.post_start_hook, "releases/<%= release_version %>/hooks/post_start"},
-      {:copy, config.pre_stop_hook, "releases/<%= release_version %>/hooks/pre_stop"},
-      {:copy, config.post_stop_hook, "releases/<%= release_version %>/hooks/post_stop"}
+      {:copy, release.profile.pre_start_hook, "releases/<%= release_version %>/hooks/pre_start"},
+      {:copy, release.profile.post_start_hook, "releases/<%= release_version %>/hooks/post_start"},
+      {:copy, release.profile.pre_stop_hook, "releases/<%= release_version %>/hooks/pre_stop"},
+      {:copy, release.profile.post_stop_hook, "releases/<%= release_version %>/hooks/post_stop"}
     ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
-    overlays = hook_overlays ++ config.overlays
+    overlays = hook_overlays ++ release.profile.overlays
     case Overlays.apply(release, output_dir, overlays, overlay_vars) do
       {:ok, paths} ->
         {:ok, Enum.map(paths, fn path ->
@@ -112,7 +111,7 @@ defmodule Mix.Releases.Archiver do
     end
   end
 
-  defp generate_overlay_vars(_config, release) do
+  defp generate_overlay_vars(release) do
     [erts_vsn: Utils.erts_version(),
      release_name: release.name,
      release_version: release.version]

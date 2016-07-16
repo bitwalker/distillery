@@ -4,8 +4,7 @@ defmodule Mix.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by :systools and :release_handler.
   """
-  alias Mix.Releases.{Config, Utils}
-  alias Mix.Releases.Config.ReleaseDefinition
+  alias Mix.Releases.{Config, Release, Environment, Profile, Utils, Logger}
 
   require Record
   Record.defrecordp :file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl")
@@ -21,35 +20,65 @@ defmodule Mix.Releases.Assembler do
   """
   @spec assemble(Config.t) :: {:ok, Config.t} | {:error, term}
   def assemble(%Config{} = config) do
-    config = case config.selected_release do
-               :default ->
-                 %{config | :selected_release => List.first(config.releases)}
-               r ->
-                 release = Enum.find(config.releases, fn ^r -> true; _ -> false end)
-                 %{config | :selected_release => release}
-             end
-    with {:ok, output_dir} <- create_output_dir(config),
-         {:ok, apps}       <- copy_applications(config, output_dir),
-         :ok               <- create_release_info(config, output_dir, apps),
-         {:ok, config}     <- strip_release(config, output_dir),
-      do: {:ok, config}
+    selected_environment = case config.selected_environment do
+                             :default ->
+                               case config.default_environment do
+                                 :default -> Map.fetch(config.environments, :default)
+                                 name -> Map.fetch(config.environments, name)
+                               end
+                             name -> Map.fetch(config.environments, name)
+                           end
+    selected_release = case config.selected_release do
+                         :default ->
+                           case config.default_release do
+                             :default -> List.first(Map.values(config.releases))
+                             name -> Map.fetch(config.releases, name)
+                           end
+                         name -> Map.fetch(config.releases, name)
+                       end
+    selected_environment = case selected_environment do
+                             :error       -> {:error, :no_environments}
+                             {:ok, _} = e -> e
+                           end
+    selected_release = case selected_release do
+                         :error       -> {:error, :no_releases}
+                         {:ok, _} = r -> r
+                       end
+    with {:ok, environment} <- selected_environment,
+         {:ok, release}     <- selected_release,
+         {:ok, release}     <- apply_environment(release, environment),
+         {:ok, output_dir}  <- create_output_dir(release),
+         {:ok, apps}        <- copy_applications(release, output_dir),
+         :ok                <- create_release_info(release, output_dir, apps),
+         {:ok, release}     <- strip_release(release, output_dir),
+      do: {:ok, release}
   end
 
-  defp create_output_dir(%Config{:selected_release => selected_release}) do
-    output_dir = Path.relative_to_cwd(Path.join("rel", "#{selected_release.name}"))
+  defp apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
+    Logger.info "Building release #{r.name}:#{r.version} using environment #{e.name}"
+    profile = Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
+      case v do
+        nil -> acc
+        _   -> Map.put(acc, k, v)
+      end
+    end)
+    %{r | :profile => profile}
+  end
+
+  defp create_output_dir(%Release{name: name}) do
+    output_dir = Path.relative_to_cwd(Path.join("rel", "#{name}"))
     File.mkdir_p!(output_dir)
     {:ok, output_dir}
   end
 
-  defp copy_applications(%Config{} = config, output_dir) do
+  defp copy_applications(%Release{} = release, output_dir) do
     try do
       File.mkdir_p!(Path.join(output_dir, "lib"))
-      release = config.selected_release
       apps = release
         |> get_apps
         |> Enum.map(&get_app_metadata(&1, release.applications))
       for app <- apps do
-        copy_app(output_dir, app, config)
+        copy_app(output_dir, app, release)
       end
       {:ok, apps}
     rescue
@@ -58,7 +87,7 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp copy_app(output_dir, app, %Config{dev_mode: dev_mode?, include_src: include_src?, include_erts: include_erts?}) do
+  defp copy_app(output_dir, app, %Release{profile: %Profile{dev_mode: dev_mode?, include_src: include_src?, include_erts: include_erts?}}) do
     app_name    = app.name
     app_version = app.version
     app_dir     = app.path
@@ -125,7 +154,7 @@ defmodule Mix.Releases.Assembler do
     String.starts_with?(app_dir, "#{:code.lib_dir()}")
   end
 
-  defp get_apps(%ReleaseDefinition{name: name, applications: apps}) do
+  defp get_apps(%Release{name: name, applications: apps}) do
     Application.load(name)
     children = get_apps(Application.spec(name), [name])
     Enum.reduce(apps, children, fn
@@ -190,9 +219,7 @@ defmodule Mix.Releases.Assembler do
       included: Keyword.get(spec, :included_applications)}
   end
 
-  defp create_release_info(config, output_dir, apps) do
-    release = config.selected_release
-    relname = release.name
+  defp create_release_info(%Release{:name => relname} = release, output_dir, apps) do
     rel_dir = Path.join([output_dir, "releases", "#{release.version}"])
     case File.mkdir_p(rel_dir) do
       {:error, reason} ->
@@ -204,12 +231,12 @@ defmodule Mix.Releases.Assembler do
         write_relfile(release_file, release, apps)
         start_clean_apps = Enum.map(start_clean_release.applications, &get_app_metadata(&1, release.applications))
         write_relfile(start_clean_file, start_clean_release, start_clean_apps)
-        write_binfile(config, release, output_dir, rel_dir)
+        write_binfile(release, output_dir, rel_dir)
         :ok
     end
   end
 
-  defp write_relfile(path, %ReleaseDefinition{} = release, apps) do
+  defp write_relfile(path, %Release{} = release, apps) do
     relfile = {:release,
                  {'#{release.name}', '#{release.version}'},
                  {:erts, '#{Utils.erts_version}'},
@@ -228,7 +255,7 @@ defmodule Mix.Releases.Assembler do
     :file.write_file('#{path}', :io_lib.fwrite('~p.\n', [terms]), [encoding: :utf8])
   end
 
-  defp write_binfile(config, release, output_dir, rel_dir) do
+  defp write_binfile(release, output_dir, rel_dir) do
     name = "#{release.name}"
     version = release.version
     bin_dir = Path.join(output_dir, "bin")
@@ -239,7 +266,7 @@ defmodule Mix.Releases.Assembler do
     generate_nodetool!(bin_dir)
 
     template_params = [rel_name: name, rel_vsn: version,
-                       erts_vsn: Utils.erts_version(), erl_opts: config.erl_opts]
+                       erts_vsn: Utils.erts_version(), erl_opts: release.profile.erl_opts]
     bootloader_contents = Utils.template(:boot_loader, template_params)
     boot_contents = Utils.template(:boot, template_params)
     File.write!(bootloader_path, bootloader_contents)
@@ -248,9 +275,9 @@ defmodule Mix.Releases.Assembler do
     File.chmod!(boot_path, 0o777)
 
     generate_start_erl_data!(release, rel_dir)
-    generate_vm_args!(config, release, rel_dir)
-    generate_sys_config!(config, release, rel_dir)
-    include_erts!(config, release, output_dir, rel_dir)
+    generate_vm_args!(release, rel_dir)
+    generate_sys_config!(release, rel_dir)
+    include_erts!(release, output_dir, rel_dir)
   end
 
   defp generate_nodetool!(bin_dir) do
@@ -267,17 +294,17 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
-  defp generate_vm_args!(%Config{:vm_args => nil}, release, rel_dir) do
+  defp generate_vm_args!(%Release{profile: %Profile{vm_args: nil}} = release, rel_dir) do
     contents = Utils.template("vm.args", [rel_name: "#{release.name}"])
     File.write!(Path.join(rel_dir, "vm.args"), contents)
     :ok
   end
-  defp generate_vm_args!(%Config{:vm_args => path}, _release, rel_dir) do
+  defp generate_vm_args!(%Release{profile: %Profile{vm_args: path}}, rel_dir) do
     File.cp!(path, Path.join(rel_dir, "vm.args"))
     :ok
   end
 
-  defp generate_sys_config!(_config, _release, rel_dir) do
+  defp generate_sys_config!(_release, rel_dir) do
     config_path = Keyword.get(Mix.Project.config, :config_path)
     config = Mix.Config.read!(config_path)
     case Keyword.get(config, :sasl) do
@@ -292,8 +319,8 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
-  defp include_erts!(%Config{:include_erts => false}, _release, _output_dir, _rel_dir), do: :ok
-  defp include_erts!(%Config{:include_erts => include_erts} = config, release, output_dir, rel_dir) do
+  defp include_erts!(%Release{profile: %Profile{include_erts: false}}, _output_dir, _rel_dir), do: :ok
+  defp include_erts!(%Release{profile: %Profile{include_erts: include_erts}} = release, output_dir, rel_dir) do
     prefix = case include_erts do
                true -> "#{:code.root_dir}"
                p when is_binary(p) -> Path.absname(p)
@@ -320,11 +347,11 @@ defmodule Mix.Releases.Assembler do
     File.chmod!(nodetool_dest, 0o755)
     File.chmod!(install_upgrade_dest, 0o755)
 
-    make_boot_script!(config, release, output_dir, rel_dir)
+    make_boot_script!(release, output_dir, rel_dir)
   end
 
-  defp make_boot_script!(config, release, output_dir, rel_dir) do
-    options = [{:path, ['#{rel_dir}' | get_code_paths(config, release, output_dir)]},
+  defp make_boot_script!(release, output_dir, rel_dir) do
+    options = [{:path, ['#{rel_dir}' | get_code_paths(release, output_dir)]},
                {:outdir, '#{rel_dir}'},
                {:variables, [{'ERTS_LIB_DIR', :code.lib_dir()}]},
                :no_warn_sasl,
@@ -353,7 +380,7 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp get_code_paths(_config, release, output_dir) do
+  defp get_code_paths(release, output_dir) do
     get_apps(release)
     |> Enum.map(&get_app_metadata(&1, release.applications))
     |> Enum.map(fn %{name: name, version: version} ->
@@ -393,13 +420,13 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp strip_release(%Config{strip_debug_info?: true, dev_mode: true} = config, output_dir) do
+  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: true}} = release, output_dir) do
     case :beam_lib.strip_release(output_dir) do
       :ok ->
-        {:ok, config}
+        {:ok, release}
       {:error, _, reason} ->
         {:error, "failed to strip release: #{inspect reason}"}
     end
   end
-  defp strip_release(%Config{} = config, _), do: {:ok, config}
+  defp strip_release(%Release{} = release, _), do: {:ok, release}
 end
