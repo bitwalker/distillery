@@ -13,7 +13,7 @@ defmodule Bundler.IO do
   """
   @spec confirm(String.t) :: boolean
   def confirm(message) do
-    confirm("[Yn]: ", @default_answer_pattern)
+    confirm(message, "[Yn]: ", @default_answer_pattern)
   end
 
   @doc """
