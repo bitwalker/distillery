@@ -13,7 +13,7 @@ prior to merging into Elixir proper.
 
 ```elixir
 defp deps do
-  [{:bundler, "~> 0.1"}]
+  [{:bundler, "~> 0.4"}]
 end
 ```
 
@@ -23,12 +23,12 @@ If you are new to releases, please review the [documentation](https://hexdocs.pm
 
 ## TODO
 
-- Upgrades/downgrades
-- Plugin system from exrm
-- Read-only filesystems
-- CLI tooling
-- Documentation
-- Code cleanup
+- [x] Upgrades/downgrades
+- [x] Plugin system from exrm
+- [ ] Read-only filesystems
+- [ ] CLI tooling improvements
+- [ ] Documentation
+- [ ] Code cleanup
 
 ## License
 
