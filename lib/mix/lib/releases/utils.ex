@@ -155,4 +155,25 @@ defmodule Mix.Releases.Utils do
     end
   end
 
+  @doc """
+  Fetches a mix dep by name.
+  An optional key can be provided, which will be fetched from the Dep struct,
+  or a key path, i.e. list of atoms, which will be used via `get_in/2` to fetch
+  a value from the struct.
+  """
+  @spec get_mix_dep(atom) :: Mix.Dep.t | nil
+  @spec get_mix_dep(atom, atom | [atom]) :: term | nil
+  def get_mix_dep(name, key \\ nil) do
+    try do
+      [dep] = Mix.Dep.loaded_by_name([name], [])
+      case key do
+        nil -> dep
+        k when is_atom(k) -> get_in(Map.from_struct(dep), [k])
+        k when is_list(k) -> get_in(Map.from_struct(dep), k)
+      end
+    rescue
+      e -> IO.inspect(e); nil
+    end
+  end
+
 end
