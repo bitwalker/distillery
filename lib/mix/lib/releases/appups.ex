@@ -82,7 +82,7 @@ defmodule Mix.Releases.Appup do
         generate_instructions(:changed, changed) ++
         generate_instructions(:deleted, deleted)}],
       [{v1, # Downgrade instructions to version v1
-        generate_instructions(:deleted, deleted) ++
+        generate_instructions(:deleted, added) ++
         generate_instructions(:changed, changed) ++
         generate_instructions(:added, deleted)}]}
   end
