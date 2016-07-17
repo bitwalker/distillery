@@ -495,8 +495,13 @@ case "$1" in
         _nodetool "eval" $@
         ;;
     *)
-        echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|console_clean|console_boot <file>|attach|remote_console|upgrade|downgrade|install|escript|rpc|rpcterms|eval}"
-        exit 1
+        __command_path="$REL_DIR/commands/$1"
+        if [ -f "$__command_path" ]; then
+            . "$__command_path"
+        else
+            echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|console_clean|console_boot <file>|attach|remote_console|upgrade|downgrade|install|escript|rpc|rpcterms|eval}"
+            exit 1
+        fi
         ;;
 esac
 

@@ -8,7 +8,7 @@ defmodule Mix.Releases.Profile do
   defstruct vm_args: nil, # path to a custom vm.args
     sys_config: nil, # path to a custom sys.config
     code_paths: nil, # list of additional code paths to search
-    erl_opts: nil, # list
+    erl_opts: nil, # string to be passed to erl
     dev_mode: nil, # boolean
     include_erts: nil, # boolean | "path/to/erts"
     include_src: nil, # boolean
@@ -17,6 +17,7 @@ defmodule Mix.Releases.Profile do
     overlay_vars: nil, # keyword list
     overlays: nil, # overlay list
     overrides: nil, # override list [app: app_path]
+    commands: nil, # keyword list
     pre_start_hook: nil, # path or nil
     post_start_hook: nil, # path or nil
     pre_stop_hook: nil, # path or nil

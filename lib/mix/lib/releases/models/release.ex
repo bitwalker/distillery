@@ -17,15 +17,22 @@ defmodule Mix.Releases.Release do
     upgrade_from: :latest,
     output_dir: nil,
     profile: %Profile{
-      code_paths: [], # additional code paths to search
+      code_paths: [],
       erl_opts: [],
       dev_mode: false,
-      include_erts: true, # false | path: "path/to/erts"
-      include_src: false, # true
-      include_system_libs: true, # false | path: "path/to/libs"
-      strip_debug_info: true, # false
+      include_erts: true,
+      include_src: false,
+      include_system_libs: true,
+      strip_debug_info: true,
       overlay_vars: [],
       overlays: [],
+      commands: [
+        # A keyword list of name/path pairs
+        # Commands are extensions to the boot script which will run like any
+        # other boot script command, i.e. foreground, and are implemented
+        # as shell scripts, which will be copied into the release when it is built,
+        # just like boot hooks.
+      ],
       overrides: [
         # During development its often the case that you want to substitute the app
         # that you are working on for a 'production' version of an app. You can

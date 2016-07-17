@@ -43,7 +43,8 @@ defmodule Bundler.Mixfile do
        "docs/Upgrades and Downgrades.md",
        "docs/Common Issues.md",
        "docs/Plugins.md",
-       "docs/Boot Hooks.md"
+       "docs/Boot Hooks.md",
+       "docs/Custom Commands.md"
      ]]
   end
 end

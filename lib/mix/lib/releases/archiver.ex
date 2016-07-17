@@ -104,7 +104,11 @@ defmodule Mix.Releases.Archiver do
       {:copy, release.profile.pre_start_hook, "releases/<%= release_version %>/hooks/pre_start"},
       {:copy, release.profile.post_start_hook, "releases/<%= release_version %>/hooks/post_start"},
       {:copy, release.profile.pre_stop_hook, "releases/<%= release_version %>/hooks/pre_stop"},
-      {:copy, release.profile.post_stop_hook, "releases/<%= release_version %>/hooks/post_stop"}
+      {:copy, release.profile.post_stop_hook, "releases/<%= release_version %>/hooks/post_stop"},
+      {:mkdir, "releases/<%= release_version %>/commands"} |
+      Enum.map(release.profile.commands, fn {name, path} ->
+        {:copy, path, "releases/<%= release_version %>/commands/#{name}"}
+      end)
     ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
     overlays = hook_overlays ++ release.profile.overlays
     case Overlays.apply(release, output_dir, overlays, overlay_vars) do
