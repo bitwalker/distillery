@@ -18,7 +18,7 @@ defmodule Mix.Releases.Release do
     output_dir: nil,
     profile: %Profile{
       code_paths: [],
-      erl_opts: [],
+      erl_opts: "",
       dev_mode: false,
       include_erts: true,
       include_src: false,

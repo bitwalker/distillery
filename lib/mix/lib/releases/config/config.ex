@@ -241,9 +241,9 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.include_system_libs) and not is_boolean(profile.include_system_libs) and not is_binary(profile.include_system_libs) ->
           raise ArgumentError,
             "expected :include_system_libs to be boolean or a path string, but got: #{inspect profile.include_system_libs}"
-        not is_nil(profile.erl_opts) and not is_list(profile.erl_opts) ->
+        not is_nil(profile.erl_opts) and not is_binary(profile.erl_opts) ->
           raise ArgumentError,
-            "expected :erl_opts to be a list, but got: #{inspect profile.erl_opts}"
+            "expected :erl_opts to be a string, but got: #{inspect profile.erl_opts}"
         not is_nil(profile.strip_debug_info) and not is_boolean(profile.strip_debug_info) ->
           raise ArgumentError,
             "expected :strip_debug_info to be a boolean, but got: #{inspect profile.strip_debug_info}"
