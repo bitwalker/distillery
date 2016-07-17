@@ -19,6 +19,9 @@ defmodule Mix.Tasks.Release do
       # Build a release for a specific environment
       mix release --env=staging
 
+      # Build a specific profile
+      mix release --profile=myapp:staging
+
       # Pass args to erlexec when running the release
       mix release --erl="-env TZ UTC"
 
@@ -85,13 +88,16 @@ defmodule Mix.Tasks.Release do
           other ->
             Logger.error "Problem generating release tarball:\n    " <>
               "#{inspect other}"
+            exit({:shutdown, 1})
         end
       {{:error, reason},_} when is_binary(reason) ->
         Logger.error "Failed to build release:\n    " <>
           reason
+        exit({:shutdown, 1})
       {{:error, reason},_} ->
         Logger.error "Failed to build release:\n    " <>
           "#{inspect reason}"
+        exit({:shutdown, 1})
     end
   end
 
@@ -116,9 +122,22 @@ defmodule Mix.Tasks.Release do
       Keyword.get(overrides, :silent, false)  -> :silent
       :else -> verbosity
     end
+    {rel, env} = case Keyword.get(overrides, :profile) do
+      nil ->
+        rel = Keyword.get(overrides, :name, :default)
+        env = Keyword.get(overrides, :env, :default)
+        {rel, env}
+      profile ->
+        case String.split(profile, ":", trim: true, parts: 2) do
+          [rel, env] -> {rel, env}
+          other ->
+            Logger.error "invalid profile name `#{other}`, must be `name:env`"
+            exit({:shutdown, 1})
+        end
+    end
     [verbosity: verbosity,
-     selected_release: Keyword.get(overrides, :name, :default),
-     selected_environment: Keyword.get(overrides, :env, :default),
+     selected_release: rel,
+     selected_environment: env,
      dev_mode: Keyword.get(overrides, :dev),
      erl_opts: Keyword.get(overrides, :erl),
      no_tar:   Keyword.get(overrides, :no_tar, false),
