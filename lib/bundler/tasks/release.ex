@@ -7,6 +7,12 @@ defmodule Mix.Tasks.Release do
       # Build a release using defaults
       mix release
 
+      # Build an upgrade release
+      mix release --upgrade
+
+      # Build an upgrade release from a specific version
+      mix release --upgrade --upfrom=0.1.0
+
       # Pass args to erlexec when running the release
       mix release --erl="-env TZ UTC"
 
@@ -53,6 +59,9 @@ defmodule Mix.Tasks.Release do
                nil -> config
                o   -> %{config | :erl_opts => o}
              end
+    config = %{config |
+               :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
+               :upgrade_from => Keyword.fetch!(opts, :upgrade_from)}
     no_tar? = Keyword.get(opts, :no_tar)
 
     # build release
@@ -85,7 +94,8 @@ defmodule Mix.Tasks.Release do
 
   defp parse_args(argv) do
     switches = [silent: :boolean, quiet: :boolean, verbose: :boolean,
-                dev: :boolean, erl: :string, no_tar: :boolean]
+                dev: :boolean, erl: :string, no_tar: :boolean,
+                upgrade: :boolean, upfrom: :string]
     {overrides, _} = OptionParser.parse!(argv, switches)
     verbosity = :normal
     verbosity = cond do
@@ -97,6 +107,8 @@ defmodule Mix.Tasks.Release do
     [verbosity: verbosity,
      dev_mode: Keyword.get(overrides, :dev),
      erl_opts: Keyword.get(overrides, :erl),
-     no_tar:   Keyword.get(overrides, :no_tar, false)]
+     no_tar:   Keyword.get(overrides, :no_tar, false),
+     is_upgrade:   Keyword.get(overrides, :upgrade, false),
+     upgrade_from: Keyword.get(overrides, :upfrom, :latest)]
   end
 end
