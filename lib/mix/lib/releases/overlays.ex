@@ -16,7 +16,7 @@ defmodule Mix.Releases.Overlays do
   relative to the project root, but overlay output paths are relative to the root directory for the current
   release, which is why the directory is created in `rel/my_release`, and not in the project root.
   """
-  alias Mix.Releases.Release
+  alias Mix.Releases.{Logger, Release}
 
   @typep overlay :: {:mkdir, String.t} |
                     {:copy, String.t, String.t} |
@@ -62,6 +62,7 @@ defmodule Mix.Releases.Overlays do
 
   defp do_overlay(_release, output_dir, {:mkdir, path}, vars) when is_binary(path) do
     with {:ok, path} <- template_str(path, vars),
+         _           <- Logger.debug("Applying mkdir overlay for #{path}"),
          expanded    <- Path.join(output_dir, path),
          :ok         <- File.mkdir_p(expanded),
       do: {:ok, path}
@@ -69,6 +70,7 @@ defmodule Mix.Releases.Overlays do
   defp do_overlay(_release, output_dir, {:copy, from, to}, vars) when is_binary(from) and is_binary(to) do
     with {:ok, from} <- template_str(from, vars),
          {:ok, to}   <- template_str(to, vars),
+         _           <- Logger.debug("Applying copy overlay from #{from} to #{to}"),
          expanded_to <- Path.join(output_dir, to),
          {:ok, _}    <- File.cp_r(from, expanded_to),
       do: {:ok, to}
@@ -76,6 +78,7 @@ defmodule Mix.Releases.Overlays do
   defp do_overlay(_release, output_dir, {:link, from, to}, vars) when is_binary(from) and is_binary(to) do
     with {:ok, from} <- template_str(from, vars),
          {:ok, to}   <- template_str(to, vars),
+         _           <- Logger.debug("Applying link overlay from #{from} to #{to}"),
          expanded_to <- Path.join(output_dir, to),
          :ok         <- File.ln_s(from, expanded_to),
       do: {:ok, to}
@@ -84,6 +87,7 @@ defmodule Mix.Releases.Overlays do
     with true             <- File.exists?(tmpl_path),
          {:ok, templated} <- template_file(tmpl_path, vars),
          expanded_to      <- Path.join(output_dir, to),
+         _                <- Logger.debug("Applying template overlay with #{tmpl_path} to #{to}"),
          :ok              <- File.mkdir_p(Path.dirname(expanded_to)),
          :ok              <- File.write(expanded_to, templated),
       do: {:ok, to}
