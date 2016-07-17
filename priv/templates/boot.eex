@@ -23,10 +23,6 @@ POST_START_HOOK="$REL_DIR/hooks/post_start"
 PRE_STOP_HOOK="$REL_DIR/hooks/pre_stop"
 POST_STOP_HOOK="$REL_DIR/hooks/post_stop"
 
-run_async() {
-    exec "$@" -- ${1+$ARGS}
-}
-
 find_erts_dir() {
     __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
     if [ -d "$__erts_dir" ]; then
