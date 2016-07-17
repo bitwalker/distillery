@@ -76,7 +76,7 @@ _rem_sh() {
          -hidden -noshell \
          -boot start_clean -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
          -kernel net_ticktime $TICKTIME \
-         -user Elixir.IEx.CLI "$NAME_TYPE" "$id" -setookie "$COOKIE" \
+         -user Elixir.IEx.CLI "$NAME_TYPE" "$id" -setcookie "$COOKIE" \
          -extra --no-halt +iex -"$NAME_TYPE" "$id" --cookie "$COOKIE" --remsh "$NAME"
 }
 
