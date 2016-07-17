@@ -4,7 +4,7 @@ defmodule Mix.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by :systools and :release_handler.
   """
-  alias Mix.Releases.{Config, Release, Environment, Profile, Utils, Logger}
+  alias Mix.Releases.{Config, Release, Environment, Profile, Utils, Logger, Appup}
 
   require Record
   Record.defrecordp :file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl")
@@ -20,32 +20,8 @@ defmodule Mix.Releases.Assembler do
   """
   @spec assemble(Config.t) :: {:ok, Config.t} | {:error, term}
   def assemble(%Config{} = config) do
-    selected_environment = case config.selected_environment do
-                             :default ->
-                               case config.default_environment do
-                                 :default -> Map.fetch(config.environments, :default)
-                                 name -> Map.fetch(config.environments, name)
-                               end
-                             name -> Map.fetch(config.environments, name)
-                           end
-    selected_release = case config.selected_release do
-                         :default ->
-                           case config.default_release do
-                             :default -> {:ok, List.first(Map.values(config.releases))}
-                             name -> Map.fetch(config.releases, name)
-                           end
-                         name -> Map.fetch(config.releases, name)
-                       end
-    selected_environment = case selected_environment do
-                             :error -> {:error, :no_environments}
-                             {:ok, _} = e -> e
-                           end
-    selected_release = case selected_release do
-                         :error -> {:error, :no_releases}
-                         {:ok, _} = r -> r
-                       end
-    with {:ok, environment} <- selected_environment,
-         {:ok, release}     <- selected_release,
+    with {:ok, environment} <- select_environment(config),
+         {:ok, release}     <- select_release(config),
          {:ok, release}     <- apply_environment(release, environment),
          {:ok, output_dir}  <- create_output_dir(release),
          {:ok, apps}        <- copy_applications(release, output_dir),
@@ -53,6 +29,24 @@ defmodule Mix.Releases.Assembler do
          {:ok, release}     <- strip_release(release, output_dir),
       do: {:ok, release}
   end
+
+  defp select_environment(%Config{selected_environment: :default, default_environment: :default} = c),
+    do: select_environment(Map.fetch(c.environments, :default))
+  defp select_environment(%Config{selected_environment: :default, default_environment: name} = c),
+    do: select_environment(Map.fetch(c.environments, name))
+  defp select_environment(%Config{selected_environment: name} = c),
+    do: select_environment(Map.fetch(c.environments, name))
+  defp select_environment({:ok, _} = e), do: e
+  defp select_environment(_),            do: {:error, :no_environments}
+
+  defp select_release(%Config{selected_release: :default, default_release: :default} = c),
+    do: {:ok, List.first(Map.values(c.releases))}
+  defp select_release(%Config{selected_release: :default, default_release: name} = c),
+    do: select_release(Map.fetch(c.releases, name))
+  defp select_release(%Config{selected_release: name} = c),
+    do: select_release(Map.fetch(c.releases, name))
+  defp select_release({:ok, _} = r), do: r
+  defp select_release(_),            do: {:error, :no_releases}
 
   defp apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
     Logger.info "Building release #{r.name}:#{r.version} using environment #{e.name}"
