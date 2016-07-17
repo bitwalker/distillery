@@ -82,7 +82,7 @@ defmodule Mix.Releases.Utils do
       iex> app_dir = Path.join([File.cwd!, "test", "fixtures", "mock_app"])
       ...> output_dir = Path.join([app_dir, "rel", "mock_app"])
       ...> #{__MODULE__}.get_release_versions(output_dir)
-      ["0.1.0", "0.2.0", "0.2.1", "0.2.1-1-d3adb3f", "0.2.2"]
+      ["0.2.2", "0.2.1-1-d3adb3f", "0.2.1", "0.2.0", "0.1.0"]
   """
   @spec get_release_versions(String.t) :: list(String.t)
   def get_release_versions(output_dir) do
@@ -93,28 +93,7 @@ defmodule Mix.Releases.Utils do
         releases_path
         |> File.ls!
         |> Enum.reject(fn entry -> entry in ["RELEASES", "start_erl.data"] end)
-    end
-  end
-
-  @doc """
-  Given a path to a release output directory, return the most recent version
-  prior to the current one.
-
-  ## Example
-
-      iex> app_dir = Path.join([File.cwd!, "test", "fixtures", "mock_app"])
-      ...> output_dir = Path.join([app_dir, "rel", "mock_app"])
-      ...> #{__MODULE__}.get_last_release(output_dir)
-      "0.2.2"
-  """
-  @spec get_last_release(String.t) :: nil | String.t
-  def get_last_release(output_dir) do
-    versions = output_dir
-      |> get_release_versions
-      |> sort_versions
-    case versions do
-      []    -> nil
-      [v|_] -> v
+        |> sort_versions
     end
   end
 
