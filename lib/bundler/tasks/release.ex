@@ -78,6 +78,9 @@ defmodule Mix.Tasks.Release do
             Logger.error "Problem generating release tarball:\n    " <>
               "#{inspect other}"
         end
+      {{:error, reason},_} when is_binary(reason) ->
+        Logger.error "Failed to build release:\n    " <>
+          reason
       {{:error, reason},_} ->
         Logger.error "Failed to build release:\n    " <>
           "#{inspect reason}"
