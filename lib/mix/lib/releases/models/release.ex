@@ -26,22 +26,8 @@ defmodule Mix.Releases.Release do
       strip_debug_info: true,
       overlay_vars: [],
       overlays: [],
-      commands: [
-        # A keyword list of name/path pairs
-        # Commands are extensions to the boot script which will run like any
-        # other boot script command, i.e. foreground, and are implemented
-        # as shell scripts, which will be copied into the release when it is built,
-        # just like boot hooks.
-      ],
-      overrides: [
-        # During development its often the case that you want to substitute the app
-        # that you are working on for a 'production' version of an app. You can
-        # explicitly tell Mix to override all versions of an app that you specify
-        # with an app in an arbitrary directory. Mix will then symlink that app
-        # into the release in place of the specified app. be aware though that Mix
-        # will check your app for consistancy so it should be a normal OTP app and
-        # already be built.
-      ]
+      commands: [],
+      overrides: []
     }
 
   def new(name, version, apps \\ []) do

@@ -1,5 +1,7 @@
 defmodule Mix.Releases.Config do
-  @moduledoc false
+  @moduledoc """
+  Responsible for parsing the release configuration file.
+  """
 
   alias Mix.Releases.{Release, Environment}
   alias Mix.Releases.Config.LoadError

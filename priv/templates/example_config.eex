@@ -4,53 +4,8 @@ use Mix.Releases.Config,
     # This sets the default environment used by `mix release`
     default_environment: :default
 <%= unless no_docs do %>
-# A full list of config options for both releases
-# and environments is as follows:
-#
-# - dev_mode (boolean);
-#       symlink compiled files into the release,
-#       so that you can release once, but see changes when you recompile
-#       the project. This is only for development.
-# - code_paths (list of strings);
-#       a list of file paths, representing code paths
-#       to search for compiled BEAMs
-# - vm_args (string);
-#       a path to a custom vm.args file
-# - sys_config (string);
-#       a path to a custom sys.config file
-# - include_erts (boolean | string);
-#       whether to include the system ERTS or not,
-#       a path to an alternative ERTS can also be provided
-# - include_src (boolean);
-#       should source code be included in the release
-# - include_system_libs (boolean | string);
-#       should system libs be included in the release,
-#       a path to system libs to be included can also be provided
-# - strip_debug_info (boolean);
-#       should debugging info be stripped from BEAM files in the release
-# - erl_opts (list of strings);
-#       a list of Erlang VM options to be used
-# - overrides (keyword list);
-#       During development its often the case that you want to substitute the app
-#       that you are working on for a 'production' version of an app. You can
-#       explicitly tell Mix to override all versions of an app that you specify
-#       with an app in an arbitrary directory. Mix will then symlink that app
-#       into the release in place of the specified app. be aware though that Mix
-#       will check your app for consistancy so it should be a normal OTP app and
-#       already be built.
-# - overlay_vars (keyword list);
-#       A keyword list of bindings to use in overlays
-# - overlays (special keyword list);
-#       A list of overlay operations to perform against the release,
-#       such as copying files, symlinking files, etc.
-#       copy: {from_path, to_path}
-#       link: {from_path, to_path}
-#       mkdir: path
-#       template: {template_path, output_path}
-# - pre_start_hook: nil,
-# - post_start_hook: nil,
-# - pre_stop_hook: nil,
-# - post_stop_hook: nil
+# For a full list of config options for both releases
+# and environments, visit https://hexdocs.pm/bundler/configuration.html
 <% end %>
 <%= unless no_docs do %>
 # You may define one or more environments in this file,
