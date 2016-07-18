@@ -142,10 +142,10 @@ defmodule Mix.Tasks.Release do
       nil ->
         rel = Keyword.get(overrides, :name, :default)
         env = Keyword.get(overrides, :env, :default)
-        {rel, env}
+        {String.to_atom(rel), String.to_atom(env)}
       profile ->
         case String.split(profile, ":", trim: true, parts: 2) do
-          [rel, env] -> {rel, env}
+          [rel, env] -> {String.to_atom(rel), String.to_atom(env)}
           other ->
             Logger.error "invalid profile name `#{other}`, must be `name:env`"
             exit({:shutdown, 1})
