@@ -52,6 +52,8 @@ defmodule Mix.Tasks.Release do
     verbosity = Keyword.get(opts, :verbosity)
     Logger.configure(verbosity)
 
+    # make sure we've compiled latest
+    Mix.Task.run("compile", [])
     # make sure loadpaths are updated
     Mix.Task.run("loadpaths", [])
 
