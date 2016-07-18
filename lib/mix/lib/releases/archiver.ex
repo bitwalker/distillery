@@ -123,6 +123,7 @@ defmodule Mix.Releases.Archiver do
 
   defp generate_overlay_vars(release) do
     vars = [erts_vsn: Utils.erts_version(),
+            output_dir: release.output_dir,
             release_name: release.name,
             release_version: release.version]
     Logger.debug "Generated overlay vars:"
