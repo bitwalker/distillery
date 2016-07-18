@@ -32,26 +32,13 @@ main(Args) ->
             io:format("~p\n", [rpc:call(TargetNode, init, restart, [], 60000)]);
         ["reboot"] ->
             io:format("~p\n", [rpc:call(TargetNode, init, reboot, [], 60000)]);
+        ["rpc", Module, Function] ->
+            do_rpc(TargetNode, Module, Function, []);
         ["rpc", Module, Function | RpcArgs] ->
-            case rpc:call(TargetNode, list_to_atom(Module), list_to_atom(Function),
-                          [RpcArgs], 60000) of
-                ok ->
-                    ok;
-                {badrpc, Reason} ->
-                    io:format("RPC to ~p failed: ~p\n", [TargetNode, Reason]),
-                    halt(1);
-                _ ->
-                    halt(1)
-            end;
+            do_rpc(TargetNode, Module, Function, RpcArgs);
         ["rpcterms", Module, Function | ArgsAsString] ->
-            case rpc:call(TargetNode, list_to_atom(Module), list_to_atom(Function),
-                          consult(lists:flatten(ArgsAsString)), 60000) of
-                {badrpc, Reason} ->
-                    io:format("RPC to ~p failed: ~p\n", [TargetNode, Reason]),
-                    halt(1);
-                Other ->
-                    io:format("~p\n", [Other])
-            end;
+            do_rpc(TargetNode, Module, Function,
+              consult(lists:flatten(ArgsAsString)));
         ["eval" | ListOfArgs] ->
             % shells may process args into more than one, and end up stripping
             % spaces, so this converts all of that to a single string to parse
@@ -164,4 +151,14 @@ consult(Cont, Str, Acc) ->
             end;
         {more, Cont1} ->
             consult(Cont1, eof, Acc)
+    end.
+
+do_rpc(TargetNode, Module, Function, RpcArgs) ->
+    case rpc:call(TargetNode, list_to_atom(Module), list_to_atom(Function),
+                  RpcArgs, 60000) of
+      {badrpc, Reason} ->
+            io:format("RPC to ~p failed: ~p\n", [TargetNode, Reason]),
+            halt(1);
+       Result ->
+            io:format("~p\n", [Result])
     end.
