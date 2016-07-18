@@ -44,8 +44,6 @@ defmodule Mix.Releases.Overlays do
     do_apply(output_dir, overlays, overlay_vars, [])
   end
 
-  defp do_apply(_output_dir, _overlays, _vars, {:error, _} = err),
-    do: err
   defp do_apply(_output_dir, [], _vars, acc),
     do: {:ok, acc}
   defp do_apply(output_dir, [overlay|rest], overlay_vars, acc) when is_list(acc) do
@@ -60,6 +58,7 @@ defmodule Mix.Releases.Overlays do
     end
   end
 
+  @spec do_overlay(String.t, overlay, Keyword.t) :: {:ok, String.t} | {:error, term}
   defp do_overlay(output_dir, {:mkdir, path}, vars) when is_binary(path) do
     with {:ok, path} <- template_str(path, vars),
          _           <- Logger.debug("Applying mkdir overlay for #{path}"),
@@ -97,21 +96,27 @@ defmodule Mix.Releases.Overlays do
   end
   defp do_overlay(_output_dir, invalid, _), do: {:error, {:invalid_overlay, invalid}}
 
+  @spec template_str(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template_str, term}}
   defp template_str(str, overlay_vars) do
     try do
       {:ok, EEx.eval_string(str, overlay_vars)}
     rescue
       err in [CompileError] ->
         {:error, {:template_str, err.description}}
+      e ->
+        {:error, {:template_str, e.__struct__.message(e)}}
     end
   end
 
+  @spec template_file(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template_file, term}}
   defp template_file(path, overlay_vars) do
     try do
       {:ok, EEx.eval_file(path, overlay_vars)}
     rescue
       err in [CompileError] ->
         {:error, {:template_file, {err.file, err.line, err.description}}}
+      e ->
+        {:error, {:template_file, e.__struct__.message(e)}}
     end
   end
 end

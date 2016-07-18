@@ -5,10 +5,19 @@ defmodule Mix.Releases.Utils do
   Loads a template from :distillery's `priv/templates` directory based on the provided name.
   Any parameters provided are configured as bindings for the template
   """
-  @spec template(atom | String.t, Keyword.t) :: String.t
+  @spec template(atom | String.t, Keyword.t) :: {:ok, String.t} | {:error, String.t}
   def template(name, params \\ []) do
-    template_path = Path.join(["#{:code.priv_dir(:distillery)}", "templates", "#{name}.eex"])
-    EEx.eval_file(template_path, params)
+    try do
+      template_path = Path.join(["#{:code.priv_dir(:distillery)}", "templates", "#{name}.eex"])
+      {:ok, EEx.eval_file(template_path, params)}
+    rescue
+      e in [File.Error] ->
+        {:error, "could not read template #{name} (#{inspect e.reason})"}
+      e in [CompileError] ->
+        {:error, "error in template #{name}, line #{e.line}: #{e.description}"}
+      e ->
+        {:error, "error in template #{name}: #{e.__struct__.message(e)}"}
+    end
   end
 
   @doc """
@@ -63,7 +72,7 @@ defmodule Mix.Releases.Utils do
   def insecure_mkdir_temp() do
     unique_num = trunc(:random.uniform() * 1000000000000)
     tmpdir_path = case :erlang.system_info(:system_architecture) do
-                    "win32" ->
+                    'win32' ->
                       Path.join(["./tmp", ".tmp_dir#{unique_num}"])
                     _ ->
                       Path.join(["/tmp", ".tmp_dir#{unique_num}"])

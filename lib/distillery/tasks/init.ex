@@ -43,7 +43,7 @@ defmodule Mix.Tasks.Release.Init do
     # Create /rel
     File.mkdir_p!("rel")
     # Generate config.exs
-    config = Utils.template(:example_config, bindings)
+    {:ok, config} = Utils.template(:example_config, bindings)
     # Save config.exs to /rel
     File.write!(Path.join("rel", "config.exs"), config)
 

@@ -15,6 +15,17 @@ defmodule Mix.Releases.Config do
             is_upgrade: false,
             upgrade_from: :latest # the version to upgrade from (if applicable)
 
+  @type t :: %__MODULE__{
+    environments: Map.t,
+    releases: Map.t,
+    default_release: atom(),
+    default_environment: atom(),
+    selected_release: atom(),
+    selected_environment: atom(),
+    is_upgrade: boolean(),
+    upgrade_from: :latest | String.t
+  }
+
   defmacro __using__(opts) do
     quote do
       alias Mix.Releases.Config.LoadError
@@ -193,6 +204,7 @@ defmodule Mix.Releases.Config do
     end
   end
 
+  @spec validate!(__MODULE__.t) :: true | no_return
   def validate!(%__MODULE__{:releases => []}) do
     raise ArgumentError,
       "expected release config to have at least one release defined"
@@ -276,6 +288,7 @@ defmodule Mix.Releases.Config do
           true
       end
     end
+    true
   end
   def validate!(config) do
     raise ArgumentError,
@@ -290,7 +303,8 @@ defmodule Mix.Releases.Config do
 
   defp to_struct(config) when is_list(config) do
     case Keyword.keyword?(config) do
-      false -> to_struct(:default)
+      false ->
+        raise LoadError, message: "invalid config term, expected keyword list: #{inspect config}"
       true  ->
         default_env = Keyword.get(config, :default_environment)
         default_release = Keyword.get(config, :default_release)

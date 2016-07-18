@@ -46,6 +46,7 @@ defmodule Mix.Tasks.Release do
   use Mix.Task
   alias Mix.Releases.{Release, Logger}
 
+  @spec run(OptionParser.argv) :: no_return
   def run(args) do
     # Parse options
     opts = parse_args(args)
@@ -131,6 +132,7 @@ defmodule Mix.Tasks.Release do
       "Daemon: rel/#{app}/bin/#{app} start"
   end
 
+  @spec parse_args(OptionParser.argv) :: Keyword.t | no_return
   defp parse_args(argv) do
     switches = [silent: :boolean, quiet: :boolean, verbose: :boolean,
                 dev: :boolean, erl: :string, no_tar: :boolean,
