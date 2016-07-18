@@ -5,7 +5,7 @@ use Mix.Releases.Config,
     default_environment: :default
 <%= unless no_docs do %>
 # For a full list of config options for both releases
-# and environments, visit https://hexdocs.pm/bundler/configuration.html
+# and environments, visit https://hexdocs.pm/distillery/configuration.html
 <% end %>
 <%= unless no_docs do %>
 # You may define one or more environments in this file,

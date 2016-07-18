@@ -1,8 +1,8 @@
-defmodule Bundler.Mixfile do
+defmodule Distillery.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :bundler,
+    [app: :distillery,
      version: "0.6.0",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
@@ -31,8 +31,7 @@ defmodule Bundler.Mixfile do
     [ files: ["lib", "priv", "mix.exs", "README.md", "LICENSE.md"],
       maintainers: ["Paul Schoenfelder"],
       licenses: ["MIT"],
-      links: %{"Github": "https://github.com/bitwalker/bundler",
-               "Documentation": "https://hexdocs.pm/bundler"}]
+      links: %{"Github": "https://github.com/bitwalker/distillery"}]
   end
   defp docs do
     [main: "getting-started",

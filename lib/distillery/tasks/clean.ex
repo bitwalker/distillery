@@ -89,7 +89,7 @@ defmodule Mix.Tasks.Release.Clean do
   end
 
   defp confirm_implode? do
-    Bundler.IO.confirm """
+    Distillery.IO.confirm """
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!
     Are you absolutely sure you want to proceed?
     """

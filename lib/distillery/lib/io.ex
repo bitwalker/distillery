@@ -1,4 +1,4 @@
-defmodule Bundler.IO do
+defmodule Distillery.IO do
   @moduledoc false
 
   @default_answer_pattern ~r/^(Y(es)?)?$/i

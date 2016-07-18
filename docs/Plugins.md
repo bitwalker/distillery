@@ -1,6 +1,6 @@
 # Plugins
 
-Plugins are how you extend `bundler` itself during release generation. It is worth your time
+Plugins are how you extend `distillery` itself during release generation. It is worth your time
 to review the module documentation for `Mix.Releases.Plugin` for more detailed information,
 including an example plugin.
 

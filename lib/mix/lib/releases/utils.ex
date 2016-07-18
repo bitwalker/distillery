@@ -2,12 +2,12 @@ defmodule Mix.Releases.Utils do
   @moduledoc false
 
   @doc """
-  Loads a template from :bundler's `priv/templates` directory based on the provided name.
+  Loads a template from :distillery's `priv/templates` directory based on the provided name.
   Any parameters provided are configured as bindings for the template
   """
   @spec template(atom | String.t, Keyword.t) :: String.t
   def template(name, params \\ []) do
-    template_path = Path.join(["#{:code.priv_dir(:bundler)}", "templates", "#{name}.eex"])
+    template_path = Path.join(["#{:code.priv_dir(:distillery)}", "templates", "#{name}.eex"])
     EEx.eval_file(template_path, params)
   end
 

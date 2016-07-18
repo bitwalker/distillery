@@ -1,6 +1,6 @@
 # Terminology
 
-Below is a list of words and their definitions as used within bundler, as well as more broadly
+Below is a list of words and their definitions as used within distillery, as well as more broadly
 within the Elixir community, I will distinguish between them here.
 
 ## General Terms
@@ -35,7 +35,7 @@ between the current release and one or more older releases.
 A file containing Erlang terms which describes with low-level instructions how to upgrade and downgrade
 between the current release and one or more older releases.
 
-## Bundler Terms
+## Distillery Terms
 
 #### Release
 
@@ -77,7 +77,7 @@ things you can run from the boot script's environment to do things I haven't tho
 
 #### Plugin
 
-Plugins to `bundler` itself which execute at various points during the release build process, which allow you
+Plugins to `distillery` itself which execute at various points during the release build process, which allow you
 to do things that are not easily accomplished with overlays and are not intended for runtime, and thus hooks/commands
 are not a good fit. For example, one might write a plugin to convert a release into a Docker image, or an RPM package,
 etc. You can use plugins to both setup and cleanup these types of things.

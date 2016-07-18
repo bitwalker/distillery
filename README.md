@@ -1,11 +1,14 @@
-# Bundler
+# Distillery
 
-So called because building releases involves "bundling" up the application and it's resources into
-a single package for deployment.
+To distill something means to draw out the important components of something and recombine
+them into an improved form. That is what `distillery` does; it takes your Mix project and
+produces an Erlang/OTP release, a distilled form of your raw application, a single package
+which can be deployed anywhere, independently of a separate Erlang/Elixir installation.
 
-This is a implementation of release building functionality for the Elixir standard library/tooling,
-as a pluggable dependency. I'm using this to prototype the native implementation of this functionality
-prior to merging into Elixir proper.
+Plus, what can I say, I like the imagery of distillation/elixir/alchemy.
+
+This is a pure-Elixir, dependency-free implementation of release generation for Elixir projects.
+It is currently a standalone package, but may be integrated into Mix at some point in the future.
 
 **WARNING: This package is an experimental replacement for exrm, use at your own risk!**
 
@@ -13,13 +16,13 @@ prior to merging into Elixir proper.
 
 ```elixir
 defp deps do
-  [{:bundler, "~> 0.4"}]
+  [{:distillery, "~> 0.6"}]
 end
 ```
 
 Just add as a mix dependency and use `mix release`. This is a replacement for exrm, but is in beta at this time.
 
-If you are new to releases, please review the [documentation](https://hexdocs.pm/bundler).
+If you are new to releases, please review the [documentation](https://hexdocs.pm/distillery).
 
 ## TODO
 
