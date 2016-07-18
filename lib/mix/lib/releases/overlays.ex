@@ -80,6 +80,7 @@ defmodule Mix.Releases.Overlays do
          {:ok, to}   <- template_str(to, vars),
          _           <- Logger.debug("Applying link overlay from #{from} to #{to}"),
          expanded_to <- Path.join(output_dir, to),
+         _           <- File.rm(expanded_to),
          :ok         <- File.ln_s(from, expanded_to),
       do: {:ok, to}
   end
