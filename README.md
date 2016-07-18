@@ -14,6 +14,8 @@ It is currently a standalone package, but may be integrated into Mix at some poi
 
 ## Installation
 
+Distillery requires Elixir 1.3 or greater.
+
 ```elixir
 defp deps do
   [{:distillery, "~> 0.6"}]
