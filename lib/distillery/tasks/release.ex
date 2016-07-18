@@ -57,7 +57,23 @@ defmodule Mix.Tasks.Release do
 
     # load release configuration
     Logger.debug "Loading configuration.."
-    config = Mix.Releases.Config.read!("rel/config.exs")
+    config_path = Path.join([File.cwd!, "rel", "config.exs"])
+    config = case File.exists?(config_path) do
+               true ->
+                 try do
+                   Mix.Releases.Config.read!(config_path)
+                 rescue
+                   e in [Mix.Releases.Config.LoadError]->
+                     file = e.file
+                     message = e.error.message
+                     Logger.error "Failed to load config (#{file})\n" <>
+                       "    #{message}"
+                     exit({:shutdown, 1})
+                 end
+               false ->
+                 Logger.error "You are missing a release config file. Run the release.init task first"
+                 exit({:shutdown, 1})
+             end
 
     # Apply override options
     config = case Keyword.get(opts, :dev_mode) do
