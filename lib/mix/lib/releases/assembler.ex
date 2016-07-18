@@ -24,13 +24,14 @@ defmodule Mix.Releases.Assembler do
          {:ok, release}     <- select_release(config),
          {:ok, release}     <- apply_environment(release, environment),
          {:ok, release}     <- apply_configuration(release, config),
-         {:ok, output_dir}  <- create_output_dir(release),
-         {:ok, apps}        <- copy_applications(release, output_dir),
-         :ok                <- create_release_info(release, output_dir, apps),
-         {:ok, release}     <- strip_release(release, output_dir),
+         :ok                <- File.mkdir_p(release.output_dir),
+         {:ok, apps}        <- copy_applications(release),
+         :ok                <- create_release_info(release, apps),
+         {:ok, release}     <- strip_release(release),
       do: {:ok, release}
   end
 
+  # Determines the correct environment to assemble in
   defp select_environment(%Config{selected_environment: :default, default_environment: :default} = c),
     do: select_environment(Map.fetch(c.environments, :default))
   defp select_environment(%Config{selected_environment: :default, default_environment: name} = c),
@@ -40,6 +41,7 @@ defmodule Mix.Releases.Assembler do
   defp select_environment({:ok, _} = e), do: e
   defp select_environment(_),            do: {:error, :no_environments}
 
+  # Determines the correct release to assemble
   defp select_release(%Config{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
   defp select_release(%Config{selected_release: :default, default_release: name} = c),
@@ -49,6 +51,7 @@ defmodule Mix.Releases.Assembler do
   defp select_release({:ok, _} = r), do: r
   defp select_release(_),            do: {:error, :no_releases}
 
+  # Applies the environment profile to the release profile.
   defp apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
     Logger.info "Building release #{r.name}:#{r.version} using environment #{e.name}"
     env_profile = Map.from_struct(env_profile)
@@ -61,6 +64,7 @@ defmodule Mix.Releases.Assembler do
     {:ok, %{r | :profile => profile}}
   end
 
+  # Applies global configuration options to the release profile
   defp apply_configuration(%Release{version: current_version} = release, %Config{} = config) do
     case config.is_upgrade do
       true ->
@@ -100,12 +104,8 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp create_output_dir(%Release{output_dir: output_dir}) do
-    File.mkdir_p!(output_dir)
-    {:ok, output_dir}
-  end
-
-  defp copy_applications(%Release{} = release, output_dir) do
+  # Copies application beams to the output directory
+  defp copy_applications(%Release{output_dir: output_dir} = release) do
     Logger.debug "Copying applications to #{output_dir}"
     try do
       File.mkdir_p!(Path.join(output_dir, "lib"))
@@ -113,7 +113,7 @@ defmodule Mix.Releases.Assembler do
         |> get_apps
         |> Enum.map(&get_app_metadata(&1, release.applications))
       for app <- apps do
-        copy_app(output_dir, app, release)
+        copy_app(app, release)
       end
       # Copy consolidated .beams
       build_path = Mix.Project.build_path(Mix.Project.config)
@@ -127,7 +127,12 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp copy_app(output_dir, app, %Release{profile: %Profile{dev_mode: dev_mode?, include_src: include_src?, include_erts: include_erts?}}) do
+  # Copies a specific application to the output directory
+  defp copy_app(app, %Release{output_dir: output_dir,
+                              profile: %Profile{
+                                dev_mode: dev_mode?,
+                                include_src: include_src?,
+                                include_erts: include_erts?}}) do
     app_name    = app.name
     app_version = app.version
     app_dir     = app.path
@@ -190,10 +195,12 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
+  # Determines if the given application directory is part of the Erlang installation
   defp is_erts_lib?(app_dir) do
     String.starts_with?(app_dir, "#{:code.lib_dir()}")
   end
 
+  # Gets all applications which are part of the release application tree
   defp get_apps(release), do: get_apps(release, true)
   defp get_apps(%Release{name: name, applications: apps}, show_debug?) do
     Application.load(name)
@@ -270,10 +277,12 @@ defmodule Mix.Releases.Assembler do
         File.rm_rf!(path)
         :ok
       false ->
+        File.rm!(path)
         :ok
     end
   end
 
+  # Gets metadata about a given application
   defp get_app_metadata(app, configured_apps) do
     app = case app do
       {a, _} -> a
@@ -295,7 +304,8 @@ defmodule Mix.Releases.Assembler do
       included: Keyword.get(spec, :included_applications)}
   end
 
-  defp create_release_info(%Release{:name => relname} = release, output_dir, apps) do
+  # Creates release metadata files
+  defp create_release_info(%Release{name: relname, output_dir: output_dir} = release, apps) do
     rel_dir = Path.join([output_dir, "releases", "#{release.version}"])
     case File.mkdir_p(rel_dir) do
       {:error, reason} ->
@@ -307,11 +317,12 @@ defmodule Mix.Releases.Assembler do
         start_clean_apps = Enum.map(start_clean_rel.applications, &get_app_metadata(&1, release.applications))
         with :ok <- write_relfile(release_file, release, apps),
              :ok <- write_relfile(start_clean_file, start_clean_rel, start_clean_apps),
-             :ok <- write_binfile(release, output_dir, rel_dir),
-             :ok <- generate_relup(release, output_dir, rel_dir), do: :ok
+             :ok <- write_binfile(release, rel_dir),
+             :ok <- generate_relup(release, rel_dir), do: :ok
     end
   end
 
+  # Creates the .rel file for the release
   defp write_relfile(path, %Release{} = release, apps) do
     relfile = {:release,
                  {'#{release.name}', '#{release.version}'},
@@ -327,10 +338,12 @@ defmodule Mix.Releases.Assembler do
     Utils.write_term(path, relfile)
   end
 
-  defp write_binfile(release, output_dir, rel_dir) do
+  # Creates the .boot files, nodetool, vm.args, sys.config, start_erl.data, and includes ERTS into
+  # the release if so configured
+  defp write_binfile(release, rel_dir) do
     name = "#{release.name}"
     version = release.version
-    bin_dir = Path.join(output_dir, "bin")
+    bin_dir = Path.join(release.output_dir, "bin")
     File.mkdir_p!(bin_dir)
     bootloader_path = Path.join(bin_dir, name)
     boot_path = Path.join(rel_dir, "#{name}.sh")
@@ -349,11 +362,12 @@ defmodule Mix.Releases.Assembler do
     generate_start_erl_data!(release, rel_dir)
     generate_vm_args!(release, rel_dir)
     generate_sys_config!(release, rel_dir)
-    include_erts!(release, output_dir, rel_dir)
+    include_erts!(release, rel_dir)
   end
 
-  defp generate_relup(%Release{is_upgrade: false}, _output_dir, _rel_dir), do: :ok
-  defp generate_relup(%Release{name: name, upgrade_from: upfrom} = release, output_dir, rel_dir) do
+  # Generates a relup and .appup for all upgraded applications during upgrade releases
+  defp generate_relup(%Release{is_upgrade: false}, _rel_dir), do: :ok
+  defp generate_relup(%Release{name: name, upgrade_from: upfrom, output_dir: output_dir} = release, rel_dir) do
     Logger.debug "Generating relup for #{name}"
     v1_rel = Path.join([output_dir, "releases", upfrom, "#{name}.rel"])
     v2_rel = Path.join(rel_dir, "#{name}.rel")
@@ -427,6 +441,7 @@ defmodule Mix.Releases.Assembler do
     "\n#{error}"
   end
 
+  # Get a list of applications from the .rel file at the given path
   defp extract_relfile_apps(path) do
     case Utils.read_terms(path) do
       {:error, err} -> raise err
@@ -434,6 +449,7 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
+  # Determine the set of apps which have changed between two versions
   defp get_changed_apps(a, b) do
     as = Enum.map(a, fn app -> elem(app, 0) end) |> MapSet.new
     bs = Enum.map(b, fn app -> elem(app, 0) end) |> MapSet.new
@@ -448,6 +464,7 @@ defmodule Mix.Releases.Assembler do
     end)
   end
 
+  # Determine the set of apps which were added between two versions
   defp get_added_apps(v2_apps, changed) do
     changed_apps = Enum.map(changed, &elem(&1, 0))
     Enum.reject(v2_apps, fn a ->
@@ -455,6 +472,7 @@ defmodule Mix.Releases.Assembler do
     end)
   end
 
+  # Generate .appup files for a list of {app, v1, v2}
   defp generate_appups([], _output_dir), do: :ok
   defp generate_appups([{app, v1, v2}|apps], output_dir) do
     v1_path       = Path.join([output_dir, "lib", "#{app}-#{v1}"])
@@ -479,6 +497,8 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
+  # Get a list of code paths containing only those paths which have beams
+  # from the two versions in the release being upgraded
   defp get_relup_code_paths(added, changed, output_dir) do
     added_paths   = get_added_relup_code_paths(added, output_dir, [])
     changed_paths = get_changed_relup_code_paths(changed, output_dir, [], [])
@@ -504,6 +524,7 @@ defmodule Mix.Releases.Assembler do
     get_added_relup_code_paths(apps, output_dir, [v2_path_consolidated, v2_path|paths])
   end
 
+  # Generates the nodetool utility
   defp generate_nodetool!(bin_dir) do
     Logger.debug "Generating nodetool"
     node_tool_file = Utils.template(:nodetool)
@@ -513,6 +534,7 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
+  # Generates start_erl.data
   defp generate_start_erl_data!(release, rel_dir) do
     Logger.debug "Generating start_erl.data"
     contents = "#{Utils.erts_version} #{release.version}"
@@ -520,6 +542,7 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
+  # Generates vm.args
   defp generate_vm_args!(%Release{profile: %Profile{vm_args: nil}} = release, rel_dir) do
     Logger.debug "Generating vm.args"
     contents = Utils.template("vm.args", [rel_name: "#{release.name}"])
@@ -532,6 +555,7 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
+  # Generates sys.config
   defp generate_sys_config!(_release, rel_dir) do
     Logger.debug "Generating sys.config"
     config_path = Keyword.get(Mix.Project.config, :config_path)
@@ -548,8 +572,9 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
-  defp include_erts!(%Release{profile: %Profile{include_erts: false}}, _output_dir, _rel_dir), do: :ok
-  defp include_erts!(%Release{profile: %Profile{include_erts: include_erts}} = release, output_dir, rel_dir) do
+  # Adds ERTS to the release, if so configured
+  defp include_erts!(%Release{profile: %Profile{include_erts: false}}, _rel_dir), do: :ok
+  defp include_erts!(%Release{profile: %Profile{include_erts: include_erts}, output_dir: output_dir} = release, rel_dir) do
     prefix = case include_erts do
                true -> "#{:code.root_dir}"
                p when is_binary(p) -> Path.absname(p)
@@ -577,12 +602,13 @@ defmodule Mix.Releases.Assembler do
     File.chmod!(nodetool_dest, 0o755)
     File.chmod!(install_upgrade_dest, 0o755)
 
-    make_boot_script!(release, output_dir, rel_dir)
+    make_boot_script!(release, rel_dir)
   end
 
-  defp make_boot_script!(release, output_dir, rel_dir) do
+  # Generates .boot script
+  defp make_boot_script!(%Release{output_dir: output_dir} = release, rel_dir) do
     Logger.debug "Generating boot script"
-    options = [{:path, ['#{rel_dir}' | get_code_paths(release, output_dir)]},
+    options = [{:path, ['#{rel_dir}' | get_code_paths(release)]},
                {:outdir, '#{rel_dir}'},
                {:variables, [{'ERTS_LIB_DIR', :code.lib_dir()}]},
                :no_warn_sasl,
@@ -611,7 +637,7 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp get_code_paths(release, output_dir) do
+  defp get_code_paths(%Release{output_dir: output_dir} = release) do
     get_apps(release, false)
     |> Enum.map(&get_app_metadata(&1, release.applications))
     |> Enum.map(fn %{name: name, version: version} ->
@@ -620,6 +646,7 @@ defmodule Mix.Releases.Assembler do
     end)
   end
 
+  # Generates RELEASES
   defp create_RELEASES(output_dir, relfile) do
     Logger.debug "Generating RELEASES"
     old_cwd = File.cwd!
@@ -629,6 +656,7 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
+  # Generates start_clean.boot
   defp create_start_clean(rel_dir, output_dir, options) do
     Logger.debug "Generating start_clean.boot"
     case :systools.make_script('start_clean', options) do
@@ -653,7 +681,8 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: true}} = release, output_dir) do
+  # Strips debug info from the release, if so configured
+  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: true}, output_dir: output_dir} = release) do
     Logger.debug "Stripping release"
     case :beam_lib.strip_release(output_dir) do
       :ok ->
@@ -662,5 +691,5 @@ defmodule Mix.Releases.Assembler do
         {:error, "failed to strip release: #{inspect reason}"}
     end
   end
-  defp strip_release(%Release{} = release, _), do: {:ok, release}
+  defp strip_release(%Release{} = release), do: {:ok, release}
 end
