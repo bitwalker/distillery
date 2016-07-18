@@ -159,14 +159,12 @@ defmodule Mix.Releases.Config do
   end
 
   @doc """
-  Reads and validates a configuration file.
-  `file` is the path to the configuration file to be read. If that file doesn't
-  exist or if there's an error loading it, a `Mix.Releases.Config.LoadError` exception
-  will be raised.
+  Reads and validates a string containing the contents of a config file.
+  If an error occurs during reading, a `Mix.Releases.Config.LoadError` will be raised.
   """
-  def read!(file) do
+  def read_string!(contents) do
     try do
-      {config, binding} = Code.eval_file(file)
+      {config, binding} = Code.eval_string(contents)
 
       config = case List.keyfind(binding, {:config_agent, Mix.Releases.Config}, 0) do
                 {_, agent} -> get_config_and_stop_agent(agent)
@@ -178,6 +176,19 @@ defmodule Mix.Releases.Config do
       config
     rescue
       e in [LoadError] -> reraise(e, System.stacktrace)
+      e -> reraise(LoadError, [file: "nofile", error: e], System.stacktrace)
+    end
+  end
+
+  @doc """
+  Reads and validates a given configuration file.
+  If the file does not exist, or an error occurs, a `Mix.Releases.Config.LoadError` will be raised.
+  """
+  def read!(file) do
+    try do
+      read_string!(File.read!(file))
+    rescue
+      e in [LoadError] -> reraise(LoadError, [file: file, error: e.error], System.stacktrace)
       e -> reraise(LoadError, [file: file, error: e], System.stacktrace)
     end
   end
