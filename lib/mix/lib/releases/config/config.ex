@@ -301,7 +301,7 @@ defmodule Mix.Releases.Config do
   end
 
   defp to_struct(config, :environments, []) do
-    %{config | :environments => [Environment.new(:default)]}
+    %{config | :environments => %{default: Environment.new(:default)}}
   end
   defp to_struct(config, :environments, envs) do
     Enum.reduce(envs, config, fn {name, env}, acc ->
