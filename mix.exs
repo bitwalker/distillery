@@ -16,7 +16,7 @@ defmodule Distillery.Mixfile do
   def application, do: [applications: []]
 
   defp deps do
-    [{:ex_doc, github: "elixir-lang/ex_doc", only: [:dev]},
+    [{:ex_doc, "~> 0.13", only: [:dev]},
      {:earmark, "~> 1.0", only: [:dev]},
      {:excoveralls, "~> 0.5", only: [:dev, :test]}]
   end
