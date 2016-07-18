@@ -111,7 +111,7 @@ defmodule Mix.Releases.Archiver do
       end)
     ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
     overlays = hook_overlays ++ release.profile.overlays
-    case Overlays.apply(release, output_dir, overlays, overlay_vars) do
+    case Overlays.apply(output_dir, overlays, overlay_vars) do
       {:ok, paths} ->
         {:ok, Enum.map(paths, fn path ->
             {'#{path}', '#{Path.join([output_dir, path])}'}
