@@ -61,7 +61,7 @@ The following is a list of config options specific to releases
     which applications should be included. You can also
     specify the start type of an application by providing
     the application and start type as a tuple. Valid start
-    types are `:permanent`, `:temporary` and `:transient`.
+    types are `:load`, `:permanent`, `:temporary` and `:transient`.
     See http://erlang.org/doc/design_principles/applications.html,
     section 8.9 for details on these values.
 ```
