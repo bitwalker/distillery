@@ -140,8 +140,8 @@ defmodule Mix.Tasks.Release do
     end
     {rel, env} = case Keyword.get(overrides, :profile) do
       nil ->
-        rel = Keyword.get(overrides, :name, :default)
-        env = Keyword.get(overrides, :env, :default)
+        rel = Keyword.get(overrides, :name, "default")
+        env = Keyword.get(overrides, :env, "default")
         {String.to_atom(rel), String.to_atom(env)}
       profile ->
         case String.split(profile, ":", trim: true, parts: 2) do
