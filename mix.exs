@@ -18,7 +18,8 @@ defmodule Distillery.Mixfile do
   defp deps do
     [{:ex_doc, "~> 0.13", only: [:dev]},
      {:earmark, "~> 1.0", only: [:dev]},
-     {:excoveralls, "~> 0.5", only: [:dev, :test]}]
+     {:excoveralls, "~> 0.5", only: [:dev, :test]},
+     {:dialyze, "~> 0.2", only: [:dev]}]
   end
 
   defp description do
