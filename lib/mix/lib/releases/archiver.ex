@@ -127,9 +127,8 @@ defmodule Mix.Releases.Archiver do
             release_name: release.name,
             release_version: release.version]
     Logger.debug "Generated overlay vars:"
-    IO.puts "#{IO.ANSI.cyan}  " <>
-      "#{Enum.map(vars, fn {k,v} -> "#{k}=#{inspect v}" end) |> Enum.join("\n  ")}" <>
-      IO.ANSI.reset
+    Logger.debug "  " <>
+      "#{Enum.map(vars, fn {k,v} -> "#{k}=#{inspect v}" end) |> Enum.join("\n  ")}", :plain
     vars
   end
 end

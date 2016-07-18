@@ -210,7 +210,7 @@ defmodule Mix.Releases.Assembler do
           false -> get_apps(Application.spec(a), [a|acc])
         end
     end)
-    if show_debug? && Application.get_env(:mix, :release_logger_verbosity) == :verbose do
+    if show_debug? do
       Logger.debug "Discovered applications:"
       Enum.each(apps, fn a ->
         Application.load(a)
@@ -226,21 +226,21 @@ defmodule Mix.Releases.Assembler do
                     end
                   p -> Path.relative_to_cwd(List.to_string(p))
                 end
-        IO.puts "  #{a}-#{ver}\n" <>
-          "    #{IO.ANSI.cyan}from: #{where}"
+        Logger.debug "  #{IO.ANSI.reset}#{a}-#{ver}#{IO.ANSI.cyan}\n" <>
+          "    from: #{where}", :plain
         case applications do
           [] ->
-            IO.puts "    applications: none"
+            Logger.debug "    applications: none", :plain
           _  ->
-            IO.puts "    applications:\n" <>
-              "      #{Enum.map(applications, &Atom.to_string/1) |> Enum.join("\n      ")}"
+            Logger.debug "    applications:\n" <>
+              "      #{Enum.map(applications, &Atom.to_string/1) |> Enum.join("\n      ")}", :plain
         end
         case included_apps do
           [] ->
-            IO.puts "    includes: none#{IO.ANSI.reset}\n"
+            Logger.debug "    includes: none\n", :plain
           _ ->
-            IO.puts "    includes:\n" <>
-              "      #{Enum.map(included_apps, &Atom.to_string/1) |> Enum.join("\n     ")}#{IO.ANSI.reset}"
+            Logger.debug "    includes:\n" <>
+              "      #{Enum.map(included_apps, &Atom.to_string/1) |> Enum.join("\n     ")}", :plain
         end
       end)
     end

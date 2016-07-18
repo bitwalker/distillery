@@ -4,18 +4,25 @@ defmodule Mix.Releases.Logger do
     Application.put_env(:mix, :release_logger_verbosity, verbosity)
   end
 
+  @debug_color   IO.ANSI.cyan
+  @info_color    IO.ANSI.bright <> IO.ANSI.cyan
+  @success_color IO.ANSI.bright <> IO.ANSI.green
+  @warn_color    IO.ANSI.yellow
+  @error_color   IO.ANSI.red
+
   @doc "Print an informational message in cyan"
-  def debug(message),   do: log(:debug, "#{IO.ANSI.cyan}==> #{message}#{IO.ANSI.reset}")
+  def debug(message),         do: log(:debug, colorize("==> #{message}", @debug_color))
+  def debug(message, :plain), do: log(:debug, colorize(message, @debug_color))
   @doc "Print an informational message in bright cyan"
-  def info(message),    do: log(:info, "#{IO.ANSI.bright}#{IO.ANSI.cyan}==> #{message}#{IO.ANSI.reset}")
+  def info(message),    do: log(:info, colorize("==> #{message}", @info_color))
   @doc "Print a success message in bright green"
-  def success(message), do: log(:warn, "#{IO.ANSI.bright}#{IO.ANSI.green}==> #{message}#{IO.ANSI.reset}")
+  def success(message), do: log(:warn, colorize("==> #{message}", @success_color))
   @doc "Print a warning message in yellow"
-  def warn(message),    do: log(:warn, "#{IO.ANSI.yellow}==> #{message}#{IO.ANSI.reset}")
+  def warn(message),    do: log(:warn, colorize("==> #{message}", @warn_color))
   @doc "Print a notice in yellow"
-  def notice(message),  do: log(:notice, "#{IO.ANSI.yellow}#{message}#{IO.ANSI.reset}")
+  def notice(message),  do: log(:notice, colorize(message, @warn_color))
   @doc "Print an error message in red"
-  def error(message),   do: log(:error, "#{IO.ANSI.red}==> #{message}#{IO.ANSI.reset}")
+  def error(message),   do: log(:error, colorize("==> #{message}", @error_color))
 
   defp log(level, message),
     do: log(level, Application.get_env(:mix, :release_logger_verbosity, :normal), message)
@@ -29,5 +36,7 @@ defmodule Mix.Releases.Logger do
   defp log(:info, :quiet, _message),      do: :ok
   defp log(:info, _verbosity, message),   do: IO.puts message
   defp log(_level, _verbosity, message),  do: IO.puts message
+
+  defp colorize(message, color), do: "#{color}#{message}#{IO.ANSI.reset}"
 
 end
