@@ -1,0 +1,9 @@
+{application,test,
+             [{registered,[]},
+              {description,"test"},
+              {vsn,"0.2.0"},
+              {modules,['Elixir.Test','Elixir.Test.Server',
+                        'Elixir.Test.ServerB','Elixir.Test.ServerC',
+                        'Elixir.Test.Supervisor']},
+              {mod,{'Elixir.Test',[]}},
+              {applications,[kernel,stdlib,elixir,logger,timex]}]}.
