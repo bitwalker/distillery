@@ -1,5 +1,4 @@
 use Mix.Releases.Config,
-  default_release: :standard_app,
   default_environment: :dev
 
 environment :dev do
