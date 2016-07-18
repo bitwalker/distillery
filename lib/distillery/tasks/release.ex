@@ -101,11 +101,15 @@ defmodule Mix.Tasks.Release do
       {{:ok, %Release{:name => name} = release}, false} ->
         Logger.info "Packaging release.."
         case Mix.Releases.Archiver.archive(release) do
-          :ok ->
+          {:ok, _archive_path} ->
             print_success(name)
-          other ->
+          {:error, reason} when is_binary(reason) ->
             Logger.error "Problem generating release tarball:\n    " <>
-              "#{inspect other}"
+              reason
+            exit({:shutdown, 1})
+          {:error, reason} ->
+            Logger.error "Problem generating release tarball:\n    " <>
+              "#{inspect reason}"
             exit({:shutdown, 1})
         end
       {{:error, reason},_} when is_binary(reason) ->

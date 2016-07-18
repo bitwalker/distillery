@@ -4,32 +4,38 @@ defmodule Mix.Releases.Archiver do
   """
   alias Mix.Releases.{Release, Overlays, Utils, Logger}
 
-  def archive(%Release{} = release) do
-    name = "#{release.name}"
-    output_dir = Path.relative_to_cwd(Path.join("rel", "#{release.name}"))
+  @doc """
+  Given an assembled release, and the Release struct representing it,
+  this function will package up the release into a tar.gz file,
+  applying any overlays it contains prior to doing so.
 
+  It returns `{:ok, "path/to/tarball"}`, or `{:error, reason}`
+  """
+  @spec archive(Release.t) :: {:ok, String.t} | {:error, term}
+  def archive(%Release{} = release) do
     Logger.debug "Archiving #{release.name}-#{release.version}"
-    case make_tar(release, name, output_dir) do
+    case make_tar(release) do
       {:error, _} = err ->
         err
       :ok ->
-        case apply_overlays(release, name, output_dir) do
+        case apply_overlays(release) do
           {:ok, overlays} ->
-            update_tar(release, name, output_dir, overlays)
+            update_tar(release, overlays)
           {:error, _} = err ->
             err
         end
     end
   end
 
-  defp make_tar(release, name, output_dir) do
+  defp make_tar(release) do
+    name = "#{release.name}"
     opts = [
-      {:path, ['#{Path.join([output_dir, "lib", "*", "ebin"])}']},
+      {:path, ['#{Path.join([release.output_dir, "lib", "*", "ebin"])}']},
       {:dirs, [:include | case release.profile.include_src do
                           true  -> [:src, :c_src]
                           false -> []
                         end]},
-      {:outdir, '#{Path.join([output_dir, "releases", release.version])}'} |
+      {:outdir, '#{Path.join([release.output_dir, "releases", release.version])}'} |
       case release.profile.include_erts do
         true ->
           path = Path.expand("#{:code.root_dir()}")
@@ -41,7 +47,7 @@ defmodule Mix.Releases.Archiver do
           [{:erts, '#{path}'}]
       end
     ]
-    rel_path = '#{Path.join([output_dir, "releases", release.version, name])}'
+    rel_path = '#{Path.join([release.output_dir, "releases", release.version, name])}'
     Logger.debug "Writing tarball to #{rel_path}.tar.gz"
     case :systools.make_tar(rel_path, opts) do
       :ok ->
@@ -55,48 +61,56 @@ defmodule Mix.Releases.Archiver do
     end
   end
 
-  defp update_tar(release, name, output_dir, overlays) do
+  defp update_tar(release, overlays) do
     Logger.debug "Updating tarball"
-    tarfile = '#{Path.join([output_dir, "releases", release.version, name <> ".tar.gz"])}'
-    tmpdir = Utils.insecure_mkdtemp!
-    :erl_tar.extract(tarfile, [{:cwd, '#{tmpdir}'}, :compressed])
-    :ok = :erl_tar.create(tarfile, [
-          {'releases', '#{Path.join(tmpdir, "releases")}'},
-          {'#{Path.join("releases", "start_erl.data")}',
-           '#{Path.join([output_dir, "releases", "start_erl.data"])}'},
-          {'#{Path.join("releases", "RELEASES")}',
-           '#{Path.join([output_dir, "releases", "RELEASES"])}'},
-          {'#{Path.join(["releases", release.version, "vm.args"])}',
-           '#{Path.join([output_dir, "releases", release.version, "vm.args"])}'},
-          {'#{Path.join(["releases", release.version, "sys.config"])}',
-           '#{Path.join([output_dir, "releases", release.version, "sys.config"])}'},
-          {'#{Path.join(["releases", release.version, name <> ".sh"])}',
-           '#{Path.join([output_dir, "releases", release.version, name <> ".sh"])}'},
-          {'bin', '#{Path.join(output_dir, "bin")}'} |
-          case release.profile.include_erts do
-            false ->
-              case release.profile.include_system_libs do
-                false ->
-                  Logger.debug "Stripping system libs from release tarball"
-                  libs = Path.wildcard(Path.join([tmpdir, "lib", "*"]))
-                  system_libs = Path.wildcard(Path.join("#{:code.lib_dir}", "*"))
-                  for libdir <- :lists.subtract(libs, system_libs),
-                    do: {'#{Path.join("lib", libdir)}', '#{Path.join([tmpdir, "lib", libdir])}'}
-                true ->
-                  [{'lib', '#{Path.join(tmpdir, "lib")}'}]
-              end
-            true ->
-              erts_vsn = Utils.erts_version()
-              [{'lib', '#{Path.join(tmpdir, "lib")}'},
-               {'erts-#{erts_vsn}', '#{Path.join(output_dir, "erts-" <> erts_vsn)}'}]
-          end
-        ] ++ overlays, [:dereference, :compressed])
-    Logger.debug "Tarball updated!"
-    File.rm_rf!(tmpdir)
-    :ok
+    name       = "#{release.name}"
+    output_dir = release.output_dir
+    tarfile    = '#{Path.join([output_dir, "releases", release.version, name <> ".tar.gz"])}'
+    with {:ok, tmpdir} <- Utils.insecure_mkdir_temp(),
+         :ok <- :erl_tar.extract(tarfile, [{:cwd, '#{tmpdir}'}, :compressed]),
+         :ok <- :erl_tar.create(tarfile, [
+            {'releases', '#{Path.join(tmpdir, "releases")}'},
+            {'#{Path.join("releases", "start_erl.data")}',
+            '#{Path.join([output_dir, "releases", "start_erl.data"])}'},
+            {'#{Path.join("releases", "RELEASES")}',
+            '#{Path.join([output_dir, "releases", "RELEASES"])}'},
+            {'#{Path.join(["releases", release.version, "vm.args"])}',
+            '#{Path.join([output_dir, "releases", release.version, "vm.args"])}'},
+            {'#{Path.join(["releases", release.version, "sys.config"])}',
+            '#{Path.join([output_dir, "releases", release.version, "sys.config"])}'},
+            {'#{Path.join(["releases", release.version, name <> ".sh"])}',
+            '#{Path.join([output_dir, "releases", release.version, name <> ".sh"])}'},
+            {'bin', '#{Path.join(output_dir, "bin")}'} |
+            case release.profile.include_erts do
+              false ->
+                case release.profile.include_system_libs do
+                  false ->
+                    Logger.debug "Stripping system libs from release tarball"
+                    libs = Path.wildcard(Path.join([tmpdir, "lib", "*"]))
+                    system_libs = Path.wildcard(Path.join("#{:code.lib_dir}", "*"))
+                    for libdir <- :lists.subtract(libs, system_libs),
+                      do: {'#{Path.join("lib", libdir)}', '#{Path.join([tmpdir, "lib", libdir])}'}
+                  true ->
+                    [{'lib', '#{Path.join(tmpdir, "lib")}'}]
+                end
+              true ->
+                erts_vsn = Utils.erts_version()
+                [{'lib', '#{Path.join(tmpdir, "lib")}'},
+                {'erts-#{erts_vsn}', '#{Path.join(output_dir, "erts-" <> erts_vsn)}'}]
+            end
+              ] ++ overlays, [:dereference, :compressed]),
+        :ok      <- Logger.debug("Tarball updated!"),
+        {:ok, _} <-  File.rm_rf(tmpdir) do
+      {:ok, tarfile}
+    else
+      {:error, reason} ->
+        {:error, "Failed to create temporary directory `#{inspect reason}`"}
+      {:error, reason, file} ->
+        {:error, "Failed to remove #{file} (#{inspect reason})"}
+    end
   end
 
-  defp apply_overlays(release, _name, output_dir) do
+  defp apply_overlays(release) do
     Logger.debug "Applying overlays"
     overlay_vars = release.profile.overlay_vars ++ generate_overlay_vars(release)
     hook_overlays = [
@@ -110,7 +124,9 @@ defmodule Mix.Releases.Archiver do
         {:copy, path, "releases/<%= release_version %>/commands/#{name}"}
       end)
     ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
-    overlays = hook_overlays ++ release.profile.overlays
+
+    output_dir = release.output_dir
+    overlays   = hook_overlays ++ release.profile.overlays
     case Overlays.apply(output_dir, overlays, overlay_vars) do
       {:ok, paths} ->
         {:ok, Enum.map(paths, fn path ->

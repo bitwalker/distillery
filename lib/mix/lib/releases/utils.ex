@@ -56,11 +56,11 @@ defmodule Mix.Releases.Utils do
   temporary files directory of the current system
   (i.e. `/tmp` on *NIX or `./tmp` on Windows)
 
-  Returns the path of the temp directory, and raises an error
-  if it is unable to create the directory.
+  Returns an ok tuple with the path of the temp directory, or an error
+  tuple with the reason it failed.
   """
-  @spec insecure_mkdtemp!() :: String.t | no_return
-  def insecure_mkdtemp!() do
+  @spec insecure_mkdir_temp() :: {:ok, String.t} | {:error, term}
+  def insecure_mkdir_temp() do
     unique_num = trunc(:random.uniform() * 1000000000000)
     tmpdir_path = case :erlang.system_info(:system_architecture) do
                     "win32" ->
@@ -68,8 +68,10 @@ defmodule Mix.Releases.Utils do
                     _ ->
                       Path.join(["/tmp", ".tmp_dir#{unique_num}"])
                   end
-    File.mkdir_p!(tmpdir_path)
-    tmpdir_path
+    case File.mkdir_p(tmpdir_path) do
+      :ok -> {:ok, tmpdir_path}
+      {:error, _} = err -> err
+    end
   end
 
 
