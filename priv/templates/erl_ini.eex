@@ -1,0 +1,4 @@
+[erlang]
+Bindir=<%= bin_dir %>
+Progname=erl
+Rootdir=<%= output_dir %>
