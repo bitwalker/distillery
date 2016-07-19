@@ -67,9 +67,10 @@ defmodule Mix.Tasks.Release do
                    Mix.Releases.Config.read!(config_path)
                  rescue
                    e in [Mix.Releases.Config.LoadError]->
-                     file = e.file
-                     message = e.error.message
-                     Logger.error "Failed to load config (#{file})\n" <>
+                     file = Path.relative_to_cwd(e.file)
+                     message = e.error.__struct__.message(e.error)
+                     message = String.replace(message, "nofile", file)
+                     Logger.error "Failed to load config:\n" <>
                        "    #{message}"
                      exit({:shutdown, 1})
                  end
