@@ -16,6 +16,7 @@ defmodule Mix.Releases.Release do
     is_upgrade: false,
     upgrade_from: :latest,
     output_dir: nil,
+    resolved_overlays: [],
     profile: %Profile{
       code_paths: [],
       erl_opts: "",

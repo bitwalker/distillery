@@ -4,7 +4,8 @@ defmodule Mix.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by :systools and :release_handler.
   """
-  alias Mix.Releases.{Config, Release, Environment, Profile, Utils, Logger, Appup, Plugin}
+  alias Mix.Releases.{Config, Release, Environment, Profile}
+  alias Mix.Releases.{Utils, Logger, Appup, Plugin, Overlays}
 
   require Record
   Record.defrecordp :file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl")
@@ -29,6 +30,7 @@ defmodule Mix.Releases.Assembler do
          {:ok, apps}        <- copy_applications(release),
          :ok                <- create_release_info(release, apps),
          {:ok, release}     <- strip_release(release),
+         {:ok, release}     <- apply_overlays(release),
          {:ok, release}     <- Plugin.after_assembly(release),
       do: {:ok, release}
   end
@@ -713,4 +715,44 @@ defmodule Mix.Releases.Assembler do
     end
   end
   defp strip_release(%Release{} = release), do: {:ok, release}
+
+  defp apply_overlays(%Release{} = release) do
+    Logger.debug "Applying overlays"
+    overlay_vars = release.profile.overlay_vars ++ generate_overlay_vars(release)
+    hook_overlays = [
+      {:mkdir, "releases/<%= release_version %>/hooks"},
+      {:copy, release.profile.pre_start_hook, "releases/<%= release_version %>/hooks/pre_start"},
+      {:copy, release.profile.post_start_hook, "releases/<%= release_version %>/hooks/post_start"},
+      {:copy, release.profile.pre_stop_hook, "releases/<%= release_version %>/hooks/pre_stop"},
+      {:copy, release.profile.post_stop_hook, "releases/<%= release_version %>/hooks/post_stop"},
+      {:mkdir, "releases/<%= release_version %>/commands"} |
+      Enum.map(release.profile.commands, fn {name, path} ->
+        {:copy, path, "releases/<%= release_version %>/commands/#{name}"}
+      end)
+    ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
+
+    output_dir = release.output_dir
+    overlays   = hook_overlays ++ release.profile.overlays
+    case Overlays.apply(output_dir, overlays, overlay_vars) do
+      {:ok, paths} ->
+        release = %{release | :resolved_overlays => Enum.map(paths, fn path ->
+                      {'#{path}', '#{Path.join([output_dir, path])}'}
+                    end)}
+        {:ok, release}
+      {:error, _} = err ->
+        err
+    end
+  end
+
+  defp generate_overlay_vars(release) do
+    vars = [erts_vsn: Utils.erts_version(),
+            output_dir: release.output_dir,
+            release_name: release.name,
+            release_version: release.version]
+    Logger.debug "Generated overlay vars:"
+    Logger.debug "  " <>
+      "#{Enum.map(vars, fn {k,v} -> "#{k}=#{inspect v}" end) |> Enum.join("\n  ")}", :plain
+    vars
+  end
+
 end

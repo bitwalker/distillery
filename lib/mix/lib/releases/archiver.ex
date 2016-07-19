@@ -2,7 +2,7 @@ defmodule Mix.Releases.Archiver do
   @moduledoc """
   This module is responsible for packaging a release into a tarball.
   """
-  alias Mix.Releases.{Release, Overlays, Utils, Logger, Plugin}
+  alias Mix.Releases.{Release, Utils, Logger, Plugin}
 
   @doc """
   Given an assembled release, and the Release struct representing it,
@@ -16,8 +16,7 @@ defmodule Mix.Releases.Archiver do
     Logger.debug "Archiving #{release.name}-#{release.version}"
     with {:ok, release}  <- Plugin.before_package(release),
          :ok             <- make_tar(release),
-         {:ok, overlays} <- apply_overlays(release),
-         {:ok, tarfile}  <- update_tar(release, overlays),
+         {:ok, tarfile}  <- update_tar(release),
          {:ok, _}        <- Plugin.after_package(release),
        do: {:ok, tarfile}
   end
@@ -56,8 +55,9 @@ defmodule Mix.Releases.Archiver do
     end
   end
 
-  defp update_tar(release, overlays) do
+  defp update_tar(release) do
     Logger.debug "Updating tarball"
+    overlays   = release.resolved_overlays
     name       = "#{release.name}"
     output_dir = release.output_dir
     tarfile    = '#{Path.join([output_dir, "releases", release.version, name <> ".tar.gz"])}'
@@ -103,43 +103,5 @@ defmodule Mix.Releases.Archiver do
       {:error, reason, file} ->
         {:error, "Failed to remove #{file} (#{inspect reason})"}
     end
-  end
-
-  defp apply_overlays(release) do
-    Logger.debug "Applying overlays"
-    overlay_vars = release.profile.overlay_vars ++ generate_overlay_vars(release)
-    hook_overlays = [
-      {:mkdir, "releases/<%= release_version %>/hooks"},
-      {:copy, release.profile.pre_start_hook, "releases/<%= release_version %>/hooks/pre_start"},
-      {:copy, release.profile.post_start_hook, "releases/<%= release_version %>/hooks/post_start"},
-      {:copy, release.profile.pre_stop_hook, "releases/<%= release_version %>/hooks/pre_stop"},
-      {:copy, release.profile.post_stop_hook, "releases/<%= release_version %>/hooks/post_stop"},
-      {:mkdir, "releases/<%= release_version %>/commands"} |
-      Enum.map(release.profile.commands, fn {name, path} ->
-        {:copy, path, "releases/<%= release_version %>/commands/#{name}"}
-      end)
-    ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
-
-    output_dir = release.output_dir
-    overlays   = hook_overlays ++ release.profile.overlays
-    case Overlays.apply(output_dir, overlays, overlay_vars) do
-      {:ok, paths} ->
-        {:ok, Enum.map(paths, fn path ->
-            {'#{path}', '#{Path.join([output_dir, path])}'}
-          end)}
-      {:error, _} = err ->
-        err
-    end
-  end
-
-  defp generate_overlay_vars(release) do
-    vars = [erts_vsn: Utils.erts_version(),
-            output_dir: release.output_dir,
-            release_name: release.name,
-            release_version: release.version]
-    Logger.debug "Generated overlay vars:"
-    Logger.debug "  " <>
-      "#{Enum.map(vars, fn {k,v} -> "#{k}=#{inspect v}" end) |> Enum.join("\n  ")}", :plain
-    vars
   end
 end
