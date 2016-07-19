@@ -1,7 +1,7 @@
 defmodule Distillery.IO do
   @moduledoc false
 
-  @default_answer_pattern ~r/^(Y(es)?)?$/i
+  @default_answer_pattern ~r/^(y(es)?)?$/i
 
   @doc """
   Ask the user to confirm an action using the given message.
