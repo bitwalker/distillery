@@ -1,0 +1,16 @@
+sudo: false
+language: elixir
+git:
+  depth: 3
+elixir:
+  - 1.3.2
+otp_release:
+  - 18.3
+  - 19.0
+env:
+  - MIX_ENV=test
+script:
+  - mix test
+notifications:
+  email:
+    - paulschoenfelder@gmail.com
