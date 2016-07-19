@@ -4,6 +4,32 @@ defmodule OverlayTest do
 
   @output_dir Path.join([__DIR__, "fixtures", "mock_app", "rel", "mock_app"])
 
+  describe "apply" do
+    test "invalid overlay produces error" do
+      overlay = {:foobar, "baz"}
+      assert {:error, {:invalid_overlay, ^overlay}} = Overlays.apply(@output_dir, [overlay], [])
+    end
+
+    test "invalid template string produces error" do
+      str = "<%= foo %>"
+      expected = "undefined function foo/0"
+      assert {:error, {:template_str, {^str, ^expected}}} = Overlays.apply(@output_dir, [{:mkdir, str}], [])
+    end
+
+    test "invalid template file produces error" do
+      file = Path.join([__DIR__, "fixtures", "mock_app", "invalid_tmpl.eex"])
+      expected = "test/fixtures/mock_app/invalid_tmpl.eex:1: undefined function foo/0"
+      assert {:error, {:template_file, ^expected}} = Overlays.apply(@output_dir, [{:template, file, "invalid_tmpl.txt"}], [])
+    end
+
+    test "file system errors are handled" do
+      from = Path.join([__DIR__, "fixtures", "mock_app", "nodir"])
+      to = "nodir"
+      overlay = {:copy, from, to}
+      assert {:error, {:overlay_failed, :enoent, ^from, ^overlay}} = Overlays.apply(@output_dir, [overlay], [])
+    end
+  end
+
   describe "mkdir overlays" do
     test "mkdir creates directory" do
       result = Overlays.apply(@output_dir, [{:mkdir, "<%= release_name %>_test"}], [release_name: :mkdir])

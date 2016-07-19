@@ -55,6 +55,8 @@ defmodule Mix.Releases.Overlays do
       {:error, {:template_file, _}} = err   -> err
       {:error, reason} ->
         {:error, {:overlay_failed, reason, overlay}}
+      {:error, reason, file} ->
+        {:error, {:overlay_failed, reason, file, overlay}}
     end
   end
 
@@ -102,9 +104,7 @@ defmodule Mix.Releases.Overlays do
       {:ok, EEx.eval_string(str, overlay_vars)}
     rescue
       err in [CompileError] ->
-        {:error, {:template_str, err.description}}
-      e ->
-        {:error, {:template_str, e.__struct__.message(e)}}
+        {:error, {:template_str, {str, err.description}}}
     end
   end
 
@@ -113,8 +113,6 @@ defmodule Mix.Releases.Overlays do
     try do
       {:ok, EEx.eval_file(path, overlay_vars)}
     rescue
-      err in [CompileError] ->
-        {:error, {:template_file, {err.file, err.line, err.description}}}
       e ->
         {:error, {:template_file, e.__struct__.message(e)}}
     end
