@@ -10,7 +10,8 @@ defmodule Distillery.Mixfile do
      deps: deps,
      description: description,
      package: package,
-     docs: docs]
+     docs: docs,
+     test_coverage: [tool: ExCoveralls]]
   end
 
   def application, do: [applications: []]
