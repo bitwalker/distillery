@@ -39,10 +39,11 @@ defmodule Mix.Releases.Plugin do
   The required callback `after_cleanup/1` is passed the command line arguments. The return value is not used.
   """
   use Behaviour
+  alias Mix.Releases.Release
 
-  @callback before_assembly(Mix.Releases.Release.t) :: any
-  @callback after_assembly(Mix.Releases.Release.t) :: any
-  @callback after_package(Mix.Releases.Release.t) :: any
+  @callback before_assembly(Release.t) :: any
+  @callback after_assembly(Release.t) :: any
+  @callback after_package(Release.t) :: any
   @callback after_cleanup([String.t]) :: any
 
   @doc false
@@ -56,6 +57,72 @@ defmodule Mix.Releases.Plugin do
       Module.register_attribute __MODULE__, :name, accumulate: false, persist: true
       Module.register_attribute __MODULE__, :moduledoc, accumulate: false, persist: true
       Module.register_attribute __MODULE__, :shortdoc, accumulate: false, persist: true
+    end
+  end
+
+  @doc """
+  Runs before_assembly with all plugins.
+  """
+  @spec before_assembly(Release.t) :: {:ok, Release.t} | {:error, term}
+  def before_assembly(release), do: call(:before_assembly, release, fn %Release{} -> true; _ -> false end)
+  @doc """
+  Runs after_assembly with all plugins.
+  """
+  @spec after_assembly(Release.t) :: {:ok, Release.t} | {:error, term}
+  def after_assembly(release),  do: call(:after_assembly, release, fn %Release{} -> true; _ -> false end)
+  @doc """
+  Runs before_package with all plugins.
+  """
+  @spec before_package(Release.t) :: {:ok, Release.t} | {:error, term}
+  def before_package(release),  do: call(:before_package, release, fn %Release{} -> true; _ -> false end)
+  @doc """
+  Runs after_package with all plugins.
+  """
+  @spec after_package(Release.t) :: {:ok, Release.t} | {:error, term}
+  def after_package(release),   do: call(:after_package, release, fn %Release{} -> true; _ -> false end)
+  @doc """
+  Runs after_cleanup with all plugins.
+  """
+  @spec after_cleanup([String.t]) :: :ok | {:error, term}
+  def after_cleanup(args), do: run(:after_package, args)
+
+  @type predicate :: (term -> boolean)
+  @spec call(atom(), term, predicate) :: {:ok, term} | {:error, {:plugin_failed, term}}
+  defp call(callback, state, predicate) do
+    call(load_all(), callback, state, predicate)
+  end
+  def call([], _, state, _), do: {:ok, state}
+  def call([plugin|plugins], callback, state, predicate) do
+    try do
+      case apply(plugin, callback, [state]) do
+        nil ->
+          call(plugins, callback, state, predicate)
+        state ->
+          case predicate.(state) do
+            true  -> call(plugins, callback, state, predicate)
+            false -> {:error, {:plugin_failed, :bad_return_value, state}}
+          end
+      end
+    rescue
+      e ->
+        message = e.__struct__.message(e)
+        {:error, message}
+    end
+  end
+
+  @spec run(atom(), term) :: :ok | {:error, {:plugin_failed, term}}
+  def run(callback, state) do
+    run(load_all(), callback, state)
+  end
+  def run([], _, _), do: :ok
+  def run([plugin|plugins], callback, state) do
+    try do
+      apply(plugin, callback, [state])
+      run(plugins, callback, state)
+    rescue
+      e ->
+        message = e.__struct__.message(e)
+        {:error, message}
     end
   end
 

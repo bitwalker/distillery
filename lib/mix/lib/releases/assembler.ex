@@ -4,7 +4,7 @@ defmodule Mix.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by :systools and :release_handler.
   """
-  alias Mix.Releases.{Config, Release, Environment, Profile, Utils, Logger, Appup}
+  alias Mix.Releases.{Config, Release, Environment, Profile, Utils, Logger, Appup, Plugin}
 
   require Record
   Record.defrecordp :file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl")
@@ -25,9 +25,11 @@ defmodule Mix.Releases.Assembler do
          {:ok, release}     <- apply_environment(release, environment),
          {:ok, release}     <- apply_configuration(release, config),
          :ok                <- File.mkdir_p(release.output_dir),
+         {:ok, release}     <- Plugin.before_assembly(release),
          {:ok, apps}        <- copy_applications(release),
          :ok                <- create_release_info(release, apps),
          {:ok, release}     <- strip_release(release),
+         {:ok, release}     <- Plugin.after_assembly(release),
       do: {:ok, release}
   end
 

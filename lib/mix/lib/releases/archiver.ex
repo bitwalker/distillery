@@ -2,7 +2,7 @@ defmodule Mix.Releases.Archiver do
   @moduledoc """
   This module is responsible for packaging a release into a tarball.
   """
-  alias Mix.Releases.{Release, Overlays, Utils, Logger}
+  alias Mix.Releases.{Release, Overlays, Utils, Logger, Plugin}
 
   @doc """
   Given an assembled release, and the Release struct representing it,
@@ -14,17 +14,12 @@ defmodule Mix.Releases.Archiver do
   @spec archive(Release.t) :: {:ok, String.t} | {:error, term}
   def archive(%Release{} = release) do
     Logger.debug "Archiving #{release.name}-#{release.version}"
-    case make_tar(release) do
-      {:error, _} = err ->
-        err
-      :ok ->
-        case apply_overlays(release) do
-          {:ok, overlays} ->
-            update_tar(release, overlays)
-          {:error, _} = err ->
-            err
-        end
-    end
+    with {:ok, release}  <- Plugin.before_package(release),
+         :ok             <- make_tar(release),
+         {:ok, overlays} <- apply_overlays(release),
+         {:ok, tarfile}  <- update_tar(release, overlays),
+         {:ok, _}        <- Plugin.after_package(release),
+       do: {:ok, tarfile}
   end
 
   defp make_tar(release) do
