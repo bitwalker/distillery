@@ -275,11 +275,17 @@ defmodule Mix.Releases.Assembler do
     case File.exists?(path) do
       true ->
         File.rm_rf!(path)
-        :ok
       false ->
-        File.rm!(path)
-        :ok
+        case :file.read_link_info('#{path}') do
+          {:ok, info} ->
+            if elem(info, 2) == :symlink do
+              File.rm!(path)
+            end
+          _ ->
+            :ok
+        end
     end
+    :ok
   end
 
   # Gets metadata about a given application
