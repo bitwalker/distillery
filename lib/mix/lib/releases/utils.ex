@@ -4,6 +4,12 @@ defmodule Mix.Releases.Utils do
   @doc """
   Loads a template from :distillery's `priv/templates` directory based on the provided name.
   Any parameters provided are configured as bindings for the template
+
+  ## Example
+
+      iex> {:ok, contents} = #{__MODULE__}.template("vm.args", [rel_name: :test])
+      ...> String.contains?(contents, "-name test@127.0.0.1")
+      true
   """
   @spec template(atom | String.t, Keyword.t) :: {:ok, String.t} | {:error, String.t}
   def template(name, params \\ []) do
@@ -11,12 +17,8 @@ defmodule Mix.Releases.Utils do
       template_path = Path.join(["#{:code.priv_dir(:distillery)}", "templates", "#{name}.eex"])
       {:ok, EEx.eval_file(template_path, params)}
     rescue
-      e in [File.Error] ->
-        {:error, "could not read template #{name} (#{inspect e.reason})"}
-      e in [CompileError] ->
-        {:error, "error in template #{name}, line #{e.line}: #{e.description}"}
       e ->
-        {:error, "error in template #{name}: #{e.__struct__.message(e)}"}
+        {:error, e.__struct__.message(e)}
     end
   end
 
@@ -183,7 +185,7 @@ defmodule Mix.Releases.Utils do
         k when is_list(k) -> get_in(Map.from_struct(dep), k)
       end
     rescue
-      e -> IO.inspect(e); nil
+      _ -> nil
     end
   end
 
