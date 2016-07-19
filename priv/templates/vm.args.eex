@@ -17,3 +17,8 @@
 
 ## Tweak GC to run more often
 ##-env ERL_FULLSWEEP_AFTER 10
+
+# Start Elixir shell by default
+-noshell
+-user Elixir.IEx.CLI
+-extra --no-halt +iex

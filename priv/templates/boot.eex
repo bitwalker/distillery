@@ -406,7 +406,7 @@ case "$1" in
             -config "$SYS_CONFIG_PATH" \
             -mode "$CODE_LOADING_MODE" \
             ${ERL_OPTS} \
-            -user Elixir.IEx.CLI -extra --no-halt +iex
+            -extra
 
         # Dump environment info for logging purposes
         echo "Exec: $@" -- ${1+$ARGS}
