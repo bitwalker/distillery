@@ -32,9 +32,7 @@ defmodule Mix.Releases.Logger do
   defp log(_level, :silent, _message),    do: :ok
   defp log(:debug, :quiet, _message),     do: :ok
   defp log(:debug, :normal, _message),    do: :ok
-  defp log(:debug, _verbosity, message),  do: IO.puts message
   defp log(:info, :quiet, _message),      do: :ok
-  defp log(:info, _verbosity, message),   do: IO.puts message
   defp log(_level, _verbosity, message),  do: IO.puts message
 
   defp colorize(message, color), do: "#{color}#{message}#{IO.ANSI.reset}"
