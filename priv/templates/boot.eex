@@ -2,28 +2,86 @@
 
 set -e
 
+# Path to this script
 SCRIPT=$(readlink $0 || true)
 if [ -z $SCRIPT ]; then
     SCRIPT=$0
 fi;
+# Parent directory of this script
 SCRIPT_DIR="$(cd `dirname "$SCRIPT"` && pwd -P)"
+# Root directory of all releases
 RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd -P)"
+# Name of the release
 REL_NAME="<%= rel_name %>"
+# Current version of the release
 REL_VSN="<%= rel_vsn %>"
+# Current version of ERTS being used
 ERTS_VSN="<%= erts_vsn %>"
+# VM code loading mode, embedded by default, can also be interactive
+# See http://erlang.org/doc/man/code.html
 CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
+# Directory containing the current version of this release
 REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
+# The lib directory for this release
 REL_LIB_DIR="$RELEASE_ROOT_DIR/lib"
+# Options passed to erl
 ERL_OPTS="<%= erl_opts %>"
+# When stdout is piped to a file, this is the directory those files will
+# be stored in. defaults to /log in the release root directory
 RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_ROOT_DIR/log}"
+# A string of extra options to pass to erl, here for plugins
+EXTRA_OPTS=""
 
-# Pre-start/stop event hooks
+# Pre-start/stop event hook paths
 PRE_START_HOOK="$REL_DIR/hooks/pre_start"
 POST_START_HOOK="$REL_DIR/hooks/post_start"
 PRE_STOP_HOOK="$REL_DIR/hooks/pre_stop"
 POST_STOP_HOOK="$REL_DIR/hooks/post_stop"
 
-find_erts_dir() {
+# Get node pid
+get_pid() {
+    if output="$(nodetool rpcterms os getpid)"
+    then
+        echo "$output" | sed -e 's/"//g'
+        return 0
+    else
+        echo "$output"
+        return 1
+    fi
+}
+
+# Generate a unique nodename
+gen_nodename() {
+    id="longname$(gen_id)-${NAME}"
+    "$BINDIR/erl" -boot start_clean -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host]), halt()' -noshell ${NAME_TYPE} $id
+}
+
+# Generate a random id
+gen_id() {
+    od -t x -N 4 /dev/urandom | head -n1 | awk '{print $2}'
+}
+
+# Control a node
+# Use like `nodetool "ping"`
+nodetool() {
+    command="$1"; shift
+
+    "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$NAME" \
+                            -setcookie "$COOKIE" "$command" $@
+}
+
+# Run an escript in the node's environment
+# Use like `escript "path/to/escript"`
+escript() {
+    shift; scriptpath="$1"; shift
+    export RELEASE_ROOT_DIR
+
+    "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@
+}
+
+
+# Private. For setting ERTS_DIR and ROOTDIR
+_find_erts_dir() {
     __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
     if [ -d "$__erts_dir" ]; then
         ERTS_DIR="$__erts_dir";
@@ -37,31 +95,14 @@ find_erts_dir() {
     fi
 }
 
-# Get node pid
-_get_pid() {
-    if output="$(_nodetool rpcterms os getpid)"
-    then
-        echo "$output" | sed -e 's/"//g'
-        return 0
-    else
-        echo "$output"
-        return 1
-    fi
-}
-
-_get_nodename() {
-    id="longname$(_gen_id)-${NAME}"
-    "$BINDIR/erl" -boot start_clean -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host]), halt()' -noshell ${NAME_TYPE} $id
-}
-
-# Connect to a remote node
+# Private. Open a shell on a remote node
 _rem_sh() {
     # Generate a unique id used to allow multiple remsh to the same node
     # transparently
-    id="remsh$(_gen_id)-${NAME}"
+    id="remsh$(gen_id)-${NAME}"
 
     # Get the node's ticktime so that we use the same thing.
-    TICKTIME="$(_nodetool rpcterms net_kernel get_net_ticktime)"
+    TICKTIME="$(nodetool rpcterms net_kernel get_net_ticktime)"
 
     # Setup remote shell command to control node
     #exec "$BINDIR/erl" "$NAME_TYPE" "$id" -remsh "$NAME" -boot start_clean \
@@ -76,37 +117,23 @@ _rem_sh() {
          -extra --no-halt +iex -"$NAME_TYPE" "$id" --cookie "$COOKIE" --remsh "$NAME"
 }
 
-# Generate a random id
-_gen_id() {
-    od -t x -N 4 /dev/urandom | head -n1 | awk '{print $2}'
-}
-
-# Control a node
-_nodetool() {
-    command="$1"; shift
-
-    "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$NAME" \
-                                -setcookie "$COOKIE" "$command" $@
-}
-
-# Run an escript in the node's environment
-_escript() {
-    shift; scriptpath="$1"; shift
-    export RELEASE_ROOT_DIR
-
-    "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@
-}
-
 # Output a start command for the last argument of run_erl
 _start_command() {
     printf "exec \"%s\" \"%s\"" "$RELEASE_ROOT_DIR/bin/$REL_NAME" \
            "$START_OPTION"
 }
 
-# Use $CWD/vm.args if exists, otherwise releases/VSN/vm.args
+# Allow override of where to look for config files
+# By default it's $CWD/
+if [ -z "$RELEASE_CONFIG_DIR" ]; then
+    RELEASE_CONFIG_DIR="$RELEASE_ROOT_DIR"
+fi
+
+# Set VMARGS_PATH, the path to the vm.args file to use
+# Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
 if [ -z "$VMARGS_PATH" ]; then
-    if [ -f "$RELEASE_ROOT_DIR/vm.args" ]; then
-        VMARGS_PATH="$RELEASE_ROOT_DIR/vm.args"
+    if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
+        VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
     else
         VMARGS_PATH="$REL_DIR/vm.args"
     fi
@@ -134,10 +161,11 @@ fi
 # Make sure log directory exists
 mkdir -p "$RUNNER_LOG_DIR"
 
-# Use $CWD/sys.config if exists, otherwise releases/VSN/sys.config
+# Set SYS_CONFIG_PATH, the path to the sys.config file to use
+# Use $RELEASE_CONFIG_DIR/sys.config if exists, otherwise releases/VSN/sys.config
 if [ -z "$SYS_CONFIG_PATH" ]; then
-    if [ -f "$RELEASE_ROOT_DIR/sys.config" ]; then
-        SYS_CONFIG_PATH="$RELEASE_ROOT_DIR/sys.config"
+    if [ -f "$RELEASE_CONFIG_DIR/sys.config" ]; then
+        SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
     else
         SYS_CONFIG_PATH="$REL_DIR/sys.config"
     fi
@@ -163,6 +191,7 @@ if [ $REPLACE_OS_VARS ]; then
 fi
 
 # Extract the target node name from node.args
+# Should be `-sname somename` or `-name somename@somehost`
 NAME_ARG=$(egrep '^-s?name' "$VMARGS_PATH" || true)
 if [ -z "$NAME_ARG" ]; then
     echo "vm.args needs to have either -name or -sname parameter."
@@ -170,9 +199,14 @@ if [ -z "$NAME_ARG" ]; then
 fi
 
 # Extract the name type and name from the NAME_ARG for REMSH
+# NAME_TYPE should be -name or -sname
 NAME_TYPE="$(echo "$NAME_ARG" | awk '{print $1}')"
+# NAME will be either `somename` or `somename@somehost`
 NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
 
+# Where the pipe will be stored when using `start`
+# This is used so you can attach the running application to the current
+# shell using `attach`
 PIPE_DIR="${PIPE_DIR:-/tmp/erl_pipes/$NAME/}"
 
 # Extract the target cookie
@@ -190,7 +224,7 @@ else
     COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
 fi
 
-find_erts_dir
+_find_erts_dir
 export ROOTDIR="$RELEASE_ROOT_DIR"
 export BINDIR="$ERTS_DIR/bin"
 export EMU="beam"
@@ -209,7 +243,7 @@ case $NAME in
         # Nothing to do
         ;;
     *)
-        NAME=$NAME@$(_get_nodename)
+        NAME=$NAME@$(gen_nodename)
         ;;
 esac
 
@@ -239,6 +273,8 @@ case "$1" in
         esac
         RUN_PARAM="$@"
 
+        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
+
         # Set arguments for the heart command
         set -- "$SCRIPT_DIR/$REL_NAME" "$HEART_OPTION"
         [ "$RUN_PARAM" ] && set -- "$@" "$RUN_PARAM"
@@ -249,8 +285,6 @@ case "$1" in
 
         mkdir -p "$PIPE_DIR"
 
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
-
         "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
                           "$(_start_command)"
 
@@ -260,8 +294,8 @@ case "$1" in
     stop)
         [ -f "$PRE_STOP_HOOK" ] && . "$PRE_STOP_HOOK"
         # Wait for the node to completely stop...
-        PID="$(_get_pid)"
-        if ! _nodetool "stop"; then
+        PID="$(get_pid)"
+        if ! nodetool "stop"; then
             exit 1
         fi
         while $(kill -s 0 "$PID" 2>/dev/null);
@@ -272,43 +306,45 @@ case "$1" in
         ;;
 
     restart)
+        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
         ## Restart the VM without exiting the process
-        if ! _nodetool "restart"; then
+        if ! nodetool "restart"; then
             exit 1
         fi
         ;;
 
     reboot)
+        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
         ## Restart the VM completely (uses heart to restart it)
-        if ! _nodetool "reboot"; then
+        if ! nodetool "reboot"; then
             exit 1
         fi
         ;;
 
     pid)
         ## Get the VM's pid
-        if ! _get_pid; then
+        if ! get_pid; then
             exit 1
         fi
         ;;
 
     ping)
         ## See if the VM is alive
-        if ! _nodetool "ping"; then
+        if ! nodetool "ping"; then
             exit 1
         fi
         ;;
 
     escript)
         ## Run an escript under the node's environment
-        if ! _escript $@; then
+        if ! escript $@; then
             exit 1
         fi
         ;;
 
     attach)
         # Make sure a node IS running
-        if ! _nodetool "ping" > /dev/null; then
+        if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
             exit 1
         fi
@@ -319,7 +355,7 @@ case "$1" in
 
     remote_console)
         # Make sure a node IS running
-        if ! _nodetool "ping" > /dev/null; then
+        if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
             exit 1
         fi
@@ -337,7 +373,7 @@ case "$1" in
         fi
 
         # Make sure a node IS running
-        if ! _nodetool "ping" > /dev/null; then
+        if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
             exit 1
         fi
@@ -355,7 +391,7 @@ case "$1" in
         fi
 
         # Make sure a node IS running
-        if ! _nodetool "ping" > /dev/null; then
+        if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
             exit 1
         fi
@@ -395,6 +431,11 @@ case "$1" in
         # Store passed arguments since they will be erased by `set`
         ARGS="$@"
 
+        # Start the VM, executing pre_start hook along
+        # the way. We can't run the post_start hook because
+        # the console will crash with no TTY attached
+        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
+
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
         set -- "$BINDIR/erlexec" \
@@ -406,21 +447,18 @@ case "$1" in
             -config "$SYS_CONFIG_PATH" \
             -mode "$CODE_LOADING_MODE" \
             ${ERL_OPTS} \
-            -extra
+            -user Elixir.IEx.CLI \
+            -extra --no-halt +iex
 
         # Dump environment info for logging purposes
-        echo "Exec: $@" -- ${1+$ARGS}
+        echo "Exec: $@" -- ${1+$ARGS} ${EXTRA_OPTS}
         echo "Root: $ROOTDIR"
 
         # Log the startup
         echo "$RELEASE_ROOT_DIR"
         logger -t "$REL_NAME[$$]" "Starting up"
 
-        # Start the VM, executing pre_start hook along
-        # the way. We can't run the post_start hook because
-        # the console will crash with no TTY attached
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
-        exec "$@" -- ${1+$ARGS}
+        exec "$@" -- ${1+$ARGS} ${EXTRA_OPTS}
         ;;
 
     foreground)
@@ -440,6 +478,9 @@ case "$1" in
         # Store passed arguments since they will be erased by `set`
         ARGS="$@"
 
+        # Start the VM, executing pre and post start hooks
+        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
+
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
         set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
@@ -448,14 +489,13 @@ case "$1" in
             -args_file "$VMARGS_PATH" \
             -env ERL_LIBS "$REL_LIB_DIR" \
             -pa "$CONSOLIDATED_DIR" \
-            ${ERL_OPTS}
+            ${ERL_OPTS} \
+            -extra ${EXTRA_OPTS}
 
         # Dump environment info for logging purposes
         echo "Exec: $@" -- ${1+$ARGS}
         echo "Root: $ROOTDIR"
 
-        # Start the VM, executing pre and post start hooks
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
         trap '{}' QUIT TERM KILL HUP SIGUSR1 SIGUSR2
         "$@" -- ${1+$ARGS} &
         __bg_pid=$!
@@ -464,35 +504,35 @@ case "$1" in
         ;;
     rpc)
         # Make sure a node IS running
-        if ! _nodetool "ping" > /dev/null; then
+        if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
             exit 1
         fi
 
         shift
 
-        _nodetool rpc $@
+        nodetool rpc $@
         ;;
     rpcterms)
         # Make sure a node IS running
-        if ! _nodetool "ping" > /dev/null; then
+        if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
             exit 1
         fi
 
         shift
 
-        _nodetool rpcterms $@
+        nodetool rpcterms $@
         ;;
     eval)
         # Make sure a node IS running
-        if ! _nodetool "ping" > /dev/null; then
+        if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
             exit 1
         fi
 
         shift
-        _nodetool "eval" $@
+        nodetool "eval" $@
         ;;
     *)
         __command_path="$REL_DIR/commands/$1"
