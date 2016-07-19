@@ -272,16 +272,16 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.strip_debug_info) and not is_boolean(profile.strip_debug_info) ->
           raise ArgumentError,
             "expected :strip_debug_info to be a boolean, but got: #{inspect profile.strip_debug_info}"
-        not is_nil(profile.pre_start_hook) or is_binary(profile.pre_start_hook) ->
+        not is_nil(profile.pre_start_hook) and not is_binary(profile.pre_start_hook) ->
           raise ArgumentError,
             "expected :pre_start_hook to be nil or a path string, but got: #{inspect profile.pre_start_hook}"
-        not is_nil(profile.post_start_hook) or is_binary(profile.post_start_hook) ->
+        not is_nil(profile.post_start_hook) and not is_binary(profile.post_start_hook) ->
           raise ArgumentError,
             "expected :post_start_hook to be nil or a path string, but got: #{inspect config.post_start_hook}"
-        not is_nil(profile.pre_stop_hook) or is_binary(profile.pre_stop_hook) ->
+        not is_nil(profile.pre_stop_hook) and not is_binary(profile.pre_stop_hook) ->
           raise ArgumentError,
             "expected :pre_stop_hook to be nil or a path string, but got: #{inspect profile.pre_stop_hook}"
-        not is_nil(profile.post_stop_hook) or is_binary(profile.post_stop_hook) ->
+        not is_nil(profile.post_stop_hook) and not is_binary(profile.post_stop_hook) ->
           raise ArgumentError,
             "expected :post_stop_hook to be nil or a path string, but got: #{inspect profile.post_stop_hook}"
         :else ->
