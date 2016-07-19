@@ -99,7 +99,7 @@ defmodule Mix.Releases.Overlays do
   defp do_overlay(_output_dir, invalid, _), do: {:error, {:invalid_overlay, invalid}}
 
   @spec template_str(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template_str, term}}
-  defp template_str(str, overlay_vars) do
+  def template_str(str, overlay_vars) do
     try do
       {:ok, EEx.eval_string(str, overlay_vars)}
     rescue
@@ -109,7 +109,7 @@ defmodule Mix.Releases.Overlays do
   end
 
   @spec template_file(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template_file, term}}
-  defp template_file(path, overlay_vars) do
+  def template_file(path, overlay_vars) do
     try do
       {:ok, EEx.eval_file(path, overlay_vars)}
     rescue

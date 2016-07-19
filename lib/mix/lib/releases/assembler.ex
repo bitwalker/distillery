@@ -27,6 +27,7 @@ defmodule Mix.Releases.Assembler do
          {:ok, release}     <- apply_configuration(release, config),
          :ok                <- File.mkdir_p(release.output_dir),
          {:ok, release}     <- Plugin.before_assembly(release),
+         {:ok, release}     <- generate_overlay_vars(release),
          {:ok, apps}        <- copy_applications(release),
          :ok                <- create_release_info(release, apps),
          {:ok, release}     <- strip_release(release),
@@ -352,12 +353,10 @@ defmodule Mix.Releases.Assembler do
   # the release if so configured
   defp write_binfile(release, rel_dir) do
     name    = "#{release.name}"
-    version = release.version
     bin_dir         = Path.join(release.output_dir, "bin")
     bootloader_path = Path.join(bin_dir, name)
     boot_path       = Path.join(rel_dir, "#{name}.sh")
-    template_params = [rel_name: name, rel_vsn: version,
-                       erts_vsn: Utils.erts_version(), erl_opts: release.profile.erl_opts]
+    template_params = release.profile.overlay_vars
 
     with :ok <- File.mkdir_p(bin_dir),
          :ok <- generate_nodetool(bin_dir),
@@ -546,14 +545,20 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates vm.args
-  defp generate_vm_args(%Release{profile: %Profile{vm_args: nil}} = release, rel_dir) do
+  defp generate_vm_args(%Release{profile: %Profile{vm_args: nil}} = rel, rel_dir) do
     Logger.debug "Generating vm.args"
-    with {:ok, contents} <- Utils.template("vm.args", [rel_name: "#{release.name}"]),
-         do: File.write(Path.join(rel_dir, "vm.args"), contents)
+    overlay_vars = rel.profile.overlay_vars
+    with {:ok, contents} <- Utils.template("vm.args", overlay_vars),
+         :ok             <- File.write(Path.join(rel_dir, "vm.args"), contents),
+      do: :ok
   end
-  defp generate_vm_args(%Release{profile: %Profile{vm_args: path}}, rel_dir) do
+  defp generate_vm_args(%Release{profile: %Profile{vm_args: path}} = rel, rel_dir) do
     Logger.debug "Copying user-provided vm.args"
-    File.cp(path, Path.join(rel_dir, "vm.args"))
+    overlay_vars = rel.profile.overlay_vars
+    with {:ok, path}      <- Overlays.template_str(path, overlay_vars),
+         {:ok, templated} <- Overlays.template_file(path, overlay_vars),
+         :ok              <- File.write(Path.join(rel_dir, "vm.args"), templated),
+      do: :ok
   end
 
   # Generates sys.config
@@ -594,7 +599,7 @@ defmodule Mix.Releases.Assembler do
          :ok      <- File.mkdir_p(erts_output_dir),
          {:ok, _} <- File.cp_r(erts_dir, erts_output_dir),
          {:ok, _} <- File.rm_rf(erl_path),
-         {:ok, erl_script} <- Utils.template(:erl_script, [erts_vsn: erts_vsn]),
+         {:ok, erl_script} <- Utils.template(:erl_script, release.profile.overlay_vars),
          :ok      <- File.write(erl_path, erl_script),
          :ok      <- File.chmod(erl_path, 0o755),
          :ok      <- File.cp(nodetool_path, nodetool_dest),
@@ -718,7 +723,7 @@ defmodule Mix.Releases.Assembler do
 
   defp apply_overlays(%Release{} = release) do
     Logger.debug "Applying overlays"
-    overlay_vars = release.profile.overlay_vars ++ generate_overlay_vars(release)
+    overlay_vars = release.profile.overlay_vars
     hook_overlays = [
       {:mkdir, "releases/<%= release_version %>/hooks"},
       {:copy, release.profile.pre_start_hook, "releases/<%= release_version %>/hooks/pre_start"},
@@ -745,14 +750,15 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp generate_overlay_vars(release) do
-    vars = [erts_vsn: Utils.erts_version(),
+    vars = [release: release,
+            erts_vsn: Utils.erts_version(),
             output_dir: release.output_dir,
             release_name: release.name,
-            release_version: release.version]
+            release_version: release.version] ++ release.profile.overlay_vars
     Logger.debug "Generated overlay vars:"
     Logger.debug "  " <>
       "#{Enum.map(vars, fn {k,v} -> "#{k}=#{inspect v}" end) |> Enum.join("\n  ")}", :plain
-    vars
+    {:ok, %{release | :profile => %{release.profile | :overlay_vars => vars}}}
   end
 
 end

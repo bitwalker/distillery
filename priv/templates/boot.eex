@@ -12,9 +12,9 @@ SCRIPT_DIR="$(cd `dirname "$SCRIPT"` && pwd -P)"
 # Root directory of all releases
 RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd -P)"
 # Name of the release
-REL_NAME="<%= rel_name %>"
+REL_NAME="<%= release_name %>"
 # Current version of the release
-REL_VSN="<%= rel_vsn %>"
+REL_VSN="<%= release_version %>"
 # Current version of ERTS being used
 ERTS_VSN="<%= erts_vsn %>"
 # VM code loading mode, embedded by default, can also be interactive
@@ -25,7 +25,7 @@ REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
 # The lib directory for this release
 REL_LIB_DIR="$RELEASE_ROOT_DIR/lib"
 # Options passed to erl
-ERL_OPTS="<%= erl_opts %>"
+ERL_OPTS="<%= release.profile.erl_opts %>"
 # When stdout is piped to a file, this is the directory those files will
 # be stored in. defaults to /log in the release root directory
 RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_ROOT_DIR/log}"
