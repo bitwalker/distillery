@@ -107,7 +107,14 @@ defmodule Mix.Releases.Archiver do
   end
 
   # Strips debug info from the release, if so configured
-  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: false}}, strip_path) do
+  # We do not want to strip beams in dev_mode because it will strip Erlang/Elixir installation beams
+  # due to being symlinked.
+  # Additionally, we cannot strip debug info if this is going to be an upgrade, because the release handler
+  # requires some of the chunks which are stripped.
+  # TODO: Need to document these caveats, as it can cause problems if releases are stripped, then a user
+  # starts to use upgrades, and subsequently tries to downgrade - the downgrade release will be missing
+  # the chunks needed by the release handler.
+  defp strip_release(%Release{is_upgrade: false, profile: %Profile{strip_debug_info: true, dev_mode: false}}, strip_path) do
     Logger.debug "Stripping release (#{strip_path})"
     case :beam_lib.strip_release(String.to_charlist(strip_path)) do
       {:ok, _} ->

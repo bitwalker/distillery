@@ -24,7 +24,7 @@ defmodule Mix.Releases.Release do
       include_erts: true,
       include_src: false,
       include_system_libs: true,
-      strip_debug_info: true,
+      strip_debug_info: false,
       overlay_vars: [],
       overlays: [],
       commands: [],
