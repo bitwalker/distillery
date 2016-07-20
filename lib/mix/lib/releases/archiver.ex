@@ -112,6 +112,10 @@ defmodule Mix.Releases.Archiver do
   # Additionally, we cannot strip debug info if this is going to be an upgrade, because the release handler
   # requires some of the chunks which are stripped, in both the upfrom and downfrom versions.
   defp strip_release(%Release{is_upgrade: false, profile: %Profile{strip_debug_info: true, dev_mode: false}}, strip_path) do
+    Logger.warn "You have strip_debug_info set to true.\n" <>
+      "    Please be aware that if you plan on performing hot upgrades later,\n" <>
+      "    this setting will prevent you from doing so without a rolling restart.\n" <>
+      "    You may ignore this warning if you have no plans to use hot upgrades."
     Logger.debug "Stripping release (#{strip_path})"
     case :beam_lib.strip_release(String.to_charlist(strip_path)) do
       {:ok, _} ->
