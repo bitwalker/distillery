@@ -94,8 +94,10 @@ defmodule Mix.Tasks.Release.Clean do
     for erts <- erts_paths do
       File.rm_rf!(erts)
     end
-    # Remove lib
-    File.rm_rf!(Path.join(path, "lib"))
+    # Remove libs
+    for %App{name: name, vsn: vsn} <- Utils.get_apps(release) do
+      File.rm_rf!(Path.join([path, "lib", "#{name}-#{vsn}}"]))
+    end
     # Remove releases/start_erl.data
     File.rm(Path.join([path, "releases", "start_erl.data"]))
     # Remove current release version

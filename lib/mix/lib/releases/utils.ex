@@ -1,5 +1,6 @@
 defmodule Mix.Releases.Utils do
   @moduledoc false
+  alias Mix.Releases.{Logger, Release, App}
 
   @doc """
   Loads a template from :distillery's `priv/templates` directory based on the provided name.
@@ -169,24 +170,80 @@ defmodule Mix.Releases.Utils do
   end
 
   @doc """
-  Fetches a mix dep by name.
-  An optional key can be provided, which will be fetched from the Dep struct,
-  or a key path, i.e. list of atoms, which will be used via `get_in/2` to fetch
-  a value from the struct.
+  Gets a list of {app, vsn} tuples for the current release.
+
+  An optional second parameter enables/disables debug logging of discovered apps.
   """
-  @spec get_mix_dep(atom) :: Mix.Dep.t | nil
-  @spec get_mix_dep(atom, atom | [atom]) :: term | nil
-  def get_mix_dep(name, key \\ nil) do
-    try do
-      [dep] = Mix.Dep.loaded_by_name([name], [])
-      case key do
-        nil -> dep
-        k when is_atom(k) -> get_in(Map.from_struct(dep), [k])
-        k when is_list(k) -> get_in(Map.from_struct(dep), k)
-      end
-    rescue
-      _ -> nil
+  @spec get_apps(Mix.Releases.Release.t) :: [{atom, String.t}] | {:error, String.t}
+  # Gets all applications which are part of the release application tree
+  def get_apps(%Release{name: name, applications: apps}) do
+    children = get_apps(App.new(name), [])
+    IO.inspect children
+    apps = Enum.reduce(apps, children, fn
+      _, {:error, _} = err ->
+        err
+      {a, start_type}, acc ->
+        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
+          true  -> acc
+          false -> get_apps(App.new(a, start_type), acc)
+        end
+      a, acc when is_atom(a) ->
+        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
+          true  -> acc
+          false -> get_apps(App.new(a), acc)
+        end
+    end)
+    if is_list(apps) do
+      Logger.debug "Discovered applications:"
+      Enum.each(apps, fn %App{} = app ->
+        where = Path.relative_to_cwd(app.path)
+        Logger.debug "  #{IO.ANSI.reset}#{app.name}-#{app.vsn}#{IO.ANSI.cyan}\n" <>
+          "    from: #{where}", :plain
+        case app.applications do
+          [] ->
+            Logger.debug "    applications: none", :plain
+          _  ->
+            Logger.debug "    applications:\n" <>
+              "      #{Enum.map(app.applications, &Atom.to_string/1) |> Enum.join("\n      ")}", :plain
+        end
+        case app.included_applications do
+          [] ->
+            Logger.debug "    includes: none\n", :plain
+          _ ->
+            Logger.debug "    includes:\n" <>
+              "      #{Enum.map(app.included_applications, &Atom.to_string/1) |> Enum.join("\n     ")}", :plain
+        end
+      end)
+    end
+    apps
+  end
+  defp get_apps(nil, acc), do: Enum.uniq(acc)
+  defp get_apps({:error, _} = err, _acc), do: err
+  defp get_apps(%App{} = app, acc) do
+    new_acc = app.applications
+    |> Enum.reduce([app|acc], fn
+      {:error, _} = err, _acc ->
+        err
+      a, acc ->
+        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
+          true -> acc
+          false ->
+            case App.new(a) do
+              nil ->
+                acc
+              %App{} = app ->
+                case get_apps(app, acc) do
+                  {:error, _} = err -> err
+                  children -> Enum.concat(acc, children)
+                end
+              {:error, _} = err ->
+                err
+            end
+        end
+    end)
+    case new_acc do
+      {:error, _} = err -> err
+      apps -> Enum.uniq(apps)
     end
   end
-
 end

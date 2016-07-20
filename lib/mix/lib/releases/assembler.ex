@@ -4,7 +4,7 @@ defmodule Mix.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by :systools and :release_handler.
   """
-  alias Mix.Releases.{Config, Release, Environment, Profile}
+  alias Mix.Releases.{Config, Release, Environment, Profile, App}
   alias Mix.Releases.{Utils, Logger, Appup, Plugin, Overlays}
 
   require Record
@@ -28,8 +28,8 @@ defmodule Mix.Releases.Assembler do
          :ok                <- File.mkdir_p(release.output_dir),
          {:ok, release}     <- Plugin.before_assembly(release),
          {:ok, release}     <- generate_overlay_vars(release),
-         {:ok, apps}        <- copy_applications(release),
-         :ok                <- create_release_info(release, apps),
+         {:ok, release}     <- copy_applications(release),
+         :ok                <- create_release_info(release),
          {:ok, release}     <- apply_overlays(release),
          {:ok, release}     <- Plugin.after_assembly(release),
       do: {:ok, release}
@@ -70,41 +70,46 @@ defmodule Mix.Releases.Assembler do
 
   # Applies global configuration options to the release profile
   defp apply_configuration(%Release{version: current_version} = release, %Config{} = config) do
-    case config.is_upgrade do
-      true ->
-        case config.upgrade_from do
-          :latest ->
-            upfrom = case Utils.get_release_versions(release.output_dir) do
-              [] -> :no_upfrom
-              [^current_version, v|_] -> v
-              [v|_] -> v
-            end
-            case upfrom do
-              :no_upfrom ->
-                Logger.warn "An upgrade was requested, but there are no " <>
-                  "releases to upgrade from, no upgrade will be performed."
-                {:ok, %{release | :is_upgrade => false, :upgrade_from => nil}}
-              v ->
-                {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
-            end
-          ^current_version ->
-            Logger.error "Upgrade from #{current_version} to #{current_version} failed:\n  " <>
-              "Upfrom version and current version are the same"
-            {:error, :bad_upgrade_spec}
-          version when is_binary(version) ->
-            Logger.debug "Upgrading #{release.name} from #{version} to #{current_version}"
-            upfrom_path = Path.join([release.output_dir, "releases", version])
-            case File.exists?(upfrom_path) do
-              false ->
-                Logger.error "Upgrade from #{version} to #{current_version} failed:\n  " <>
-                  "#{version} does not exist at #{upfrom_path}"
+    case Utils.get_apps(release) do
+      {:error, _} = err -> err
+      release_apps ->
+        release = %{release | :applications => release_apps}
+        case config.is_upgrade do
+          true ->
+            case config.upgrade_from do
+              :latest ->
+                upfrom = case Utils.get_release_versions(release.output_dir) do
+                  [] -> :no_upfrom
+                  [^current_version, v|_] -> v
+                  [v|_] -> v
+                end
+                case upfrom do
+                  :no_upfrom ->
+                    Logger.warn "An upgrade was requested, but there are no " <>
+                      "releases to upgrade from, no upgrade will be performed."
+                    {:ok, %{release | :is_upgrade => false, :upgrade_from => nil}}
+                  v ->
+                    {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
+                end
+              ^current_version ->
+                Logger.error "Upgrade from #{current_version} to #{current_version} failed:\n  " <>
+                  "Upfrom version and current version are the same"
                 {:error, :bad_upgrade_spec}
-              true ->
-                {:ok, %{release | :is_upgrade => true, :upgrade_from => version}}
+              version when is_binary(version) ->
+                Logger.debug "Upgrading #{release.name} from #{version} to #{current_version}"
+                upfrom_path = Path.join([release.output_dir, "releases", version])
+                case File.exists?(upfrom_path) do
+                  false ->
+                    Logger.error "Upgrade from #{version} to #{current_version} failed:\n  " <>
+                      "#{version} does not exist at #{upfrom_path}"
+                    {:error, :bad_upgrade_spec}
+                  true ->
+                    {:ok, %{release | :is_upgrade => true, :upgrade_from => version}}
+                end
             end
+          false ->
+            {:ok, release}
         end
-      false ->
-        {:ok, release}
     end
   end
 
@@ -113,10 +118,7 @@ defmodule Mix.Releases.Assembler do
     Logger.debug "Copying applications to #{output_dir}"
     try do
       File.mkdir_p!(Path.join(output_dir, "lib"))
-      apps = release
-        |> get_apps
-        |> Enum.map(&get_app_metadata(&1, release.applications))
-      for app <- apps do
+      for app <- release.applications do
         copy_app(app, release)
       end
       # Copy consolidated .beams
@@ -124,7 +126,7 @@ defmodule Mix.Releases.Assembler do
       {:ok, _} = File.cp_r(
         Path.join(build_path, "consolidated"),
         Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"]))
-      {:ok, apps}
+      {:ok, release}
     rescue
       err ->
         {:error, {:copy_applications, err.__struct__.message(err)}}
@@ -138,7 +140,7 @@ defmodule Mix.Releases.Assembler do
                                 include_src: include_src?,
                                 include_erts: include_erts?}}) do
     app_name    = app.name
-    app_version = app.version
+    app_version = app.vsn
     app_dir     = app.path
     lib_dir     = Path.join(output_dir, "lib")
     target_dir  = Path.join(lib_dir, "#{app_name}-#{app_version}")
@@ -204,77 +206,6 @@ defmodule Mix.Releases.Assembler do
     String.starts_with?(app_dir, "#{:code.lib_dir()}")
   end
 
-  # Gets all applications which are part of the release application tree
-  defp get_apps(release), do: get_apps(release, true)
-  defp get_apps(%Release{name: name, applications: apps}, show_debug?) do
-    _ = Application.load(name)
-    children = get_apps(Application.spec(name), [name])
-    apps = Enum.reduce(apps, children, fn
-      {a, _}, acc ->
-        case (a in acc) do
-          true  -> acc
-          false -> get_apps(Application.spec(a), [a|acc])
-        end
-      a, acc when is_atom(a) ->
-        case (a in acc) do
-          true  -> acc
-          false -> get_apps(Application.spec(a), [a|acc])
-        end
-    end)
-    if show_debug? do
-      Logger.debug "Discovered applications:"
-      Enum.each(apps, fn a ->
-        _ = Application.load(a)
-        app           = Application.spec(a)
-        ver           = Keyword.fetch!(app, :vsn)
-        applications  = Keyword.get(app, :applications, [])
-        included_apps = Keyword.get(app, :included_applications, [])
-        where = case :code.lib_dir(a) do
-                  {:error, _} ->
-                    case Utils.get_mix_dep(a, :dest) do
-                      nil  -> :unknown
-                      path -> Path.relative_to_cwd(path)
-                    end
-                  p -> Path.relative_to_cwd(List.to_string(p))
-                end
-        Logger.debug "  #{IO.ANSI.reset}#{a}-#{ver}#{IO.ANSI.cyan}\n" <>
-          "    from: #{where}", :plain
-        case applications do
-          [] ->
-            Logger.debug "    applications: none", :plain
-          _  ->
-            Logger.debug "    applications:\n" <>
-              "      #{Enum.map(applications, &Atom.to_string/1) |> Enum.join("\n      ")}", :plain
-        end
-        case included_apps do
-          [] ->
-            Logger.debug "    includes: none\n", :plain
-          _ ->
-            Logger.debug "    includes:\n" <>
-              "      #{Enum.map(included_apps, &Atom.to_string/1) |> Enum.join("\n     ")}", :plain
-        end
-      end)
-    end
-    apps
-  end
-  defp get_apps(nil, acc) do
-    Enum.uniq(acc)
-  end
-  defp get_apps(spec, acc) do
-    spec
-    |> Keyword.get(:applications, [])
-    |> Enum.reduce(acc, fn a, acc ->
-      case (a in acc) do
-        true -> acc
-        false ->
-          _ = Application.load(a)
-          as = get_apps(Application.spec(a), [a|acc])
-          Enum.concat(acc, as)
-      end
-    end)
-    |> Enum.uniq
-  end
-
   defp remove_symlink_or_dir!(path) do
     case File.exists?(path) do
       true ->
@@ -292,30 +223,8 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
-  # Gets metadata about a given application
-  defp get_app_metadata(app, configured_apps) do
-    app = case app do
-      {a, _} -> a
-      a -> a
-    end
-    config = Enum.find(configured_apps, fn {^app, _} -> true; _ -> false end)
-    _ = Application.load(app)
-    spec = Application.spec(app)
-    type = case config do
-             {_, type} when type in [:permanent, :transient, :temporary, :load, :none] ->
-               type
-             _ ->
-               nil
-           end
-    %{name: app,
-      version: Keyword.get(spec, :vsn),
-      path: Application.app_dir(app),
-      type: type,
-      included: Keyword.get(spec, :included_applications)}
-  end
-
   # Creates release metadata files
-  defp create_release_info(%Release{name: relname, output_dir: output_dir} = release, apps) do
+  defp create_release_info(%Release{name: relname, output_dir: output_dir} = release) do
     rel_dir = Path.join([output_dir, "releases", "#{release.version}"])
     case File.mkdir_p(rel_dir) do
       {:error, reason} ->
@@ -323,22 +232,22 @@ defmodule Mix.Releases.Assembler do
       :ok ->
         release_file     = Path.join(rel_dir, "#{relname}.rel")
         start_clean_file = Path.join(rel_dir, "start_clean.rel")
-        start_clean_rel  = %{release | :applications => [:kernel, :stdlib]}
-        start_clean_apps = Enum.map(start_clean_rel.applications, &get_app_metadata(&1, release.applications))
-        with :ok <- write_relfile(release_file, release, apps),
-             :ok <- write_relfile(start_clean_file, start_clean_rel, start_clean_apps),
+        start_clean_rel  = %{release |
+           :applications => Enum.filter(release.applications, fn %App{name: n} -> n in [:kernel, :stdlib] end)}
+        with :ok <- write_relfile(release_file, release),
+             :ok <- write_relfile(start_clean_file, start_clean_rel),
              :ok <- write_binfile(release, rel_dir),
              :ok <- generate_relup(release, rel_dir), do: :ok
     end
   end
 
   # Creates the .rel file for the release
-  defp write_relfile(path, %Release{} = release, apps) do
+  defp write_relfile(path, %Release{applications: apps} = release) do
     relfile = {:release,
                  {'#{release.name}', '#{release.version}'},
                  {:erts, '#{Utils.erts_version}'},
-                Enum.map(apps, fn %{:name => name, :version => vsn, :type => type} ->
-                  case type do
+                Enum.map(apps, fn %App{name: name, vsn: vsn, start_type: start_type} ->
+                  case start_type do
                     nil ->
                       {name, '#{vsn}'}
                     t ->
@@ -655,9 +564,8 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp get_code_paths(%Release{output_dir: output_dir} = release) do
-    get_apps(release, false)
-    |> Enum.map(&get_app_metadata(&1, release.applications))
-    |> Enum.map(fn %{name: name, version: version} ->
+    release.applications
+    |> Enum.map(fn %App{name: name, vsn: version} ->
       lib_dir = Path.join([output_dir, "lib", "#{name}-#{version}", "ebin"])
       String.to_charlist(lib_dir)
     end)
@@ -743,8 +651,13 @@ defmodule Mix.Releases.Assembler do
             release_name: release.name,
             release_version: release.version] ++ release.profile.overlay_vars
     Logger.debug "Generated overlay vars:"
-    Logger.debug "  " <>
-      "#{Enum.map(vars, fn {k,v} -> "#{k}=#{inspect v}" end) |> Enum.join("\n  ")}", :plain
+    inspected = Enum.map(vars, fn
+        {:release, _} -> nil
+        {k, v} -> "#{k}=#{inspect v}"
+      end)
+      |> Enum.filter(fn nil -> false; _ -> true end)
+      |> Enum.join("\n  ")
+    Logger.debug "  #{inspected}", :plain
     {:ok, %{release | :profile => %{release.profile | :overlay_vars => vars}}}
   end
 
