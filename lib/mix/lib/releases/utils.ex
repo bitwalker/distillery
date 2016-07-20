@@ -179,7 +179,6 @@ defmodule Mix.Releases.Utils do
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps}) do
     children = get_apps(App.new(name), [])
-    IO.inspect children
     apps = Enum.reduce(apps, children, fn
       _, {:error, _} = err ->
         err
