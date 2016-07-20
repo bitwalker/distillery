@@ -73,7 +73,8 @@ defmodule Mix.Releases.Utils do
   """
   @spec insecure_mkdir_temp() :: {:ok, String.t} | {:error, term}
   def insecure_mkdir_temp() do
-    unique_num = trunc(:random.uniform() * 1000000000000)
+    :rand.seed(:exs64)
+    unique_num = :rand.uniform(1_000_000_000)
     tmpdir_path = case :erlang.system_info(:system_architecture) do
                     'win32' ->
                       Path.join(["./tmp", ".tmp_dir#{unique_num}"])
