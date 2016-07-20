@@ -30,7 +30,6 @@ defmodule Mix.Releases.Assembler do
          {:ok, release}     <- generate_overlay_vars(release),
          {:ok, apps}        <- copy_applications(release),
          :ok                <- create_release_info(release, apps),
-         {:ok, release}     <- strip_release(release),
          {:ok, release}     <- apply_overlays(release),
          {:ok, release}     <- Plugin.after_assembly(release),
       do: {:ok, release}
@@ -708,18 +707,6 @@ defmodule Mix.Releases.Assembler do
         {:error, error}
     end
   end
-
-  # Strips debug info from the release, if so configured
-  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: false}, output_dir: output_dir} = release) do
-    Logger.debug "Stripping release (#{output_dir})"
-    case :beam_lib.strip_release(String.to_charlist(output_dir)) do
-      {:ok, _} ->
-        {:ok, release}
-      {:error, :beam_lib, reason} ->
-        {:error, "failed to strip release: #{inspect reason}"}
-    end
-  end
-  defp strip_release(%Release{} = release), do: {:ok, release}
 
   defp apply_overlays(%Release{} = release) do
     Logger.debug "Applying overlays"

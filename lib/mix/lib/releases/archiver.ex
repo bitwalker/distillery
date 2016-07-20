@@ -2,7 +2,7 @@ defmodule Mix.Releases.Archiver do
   @moduledoc """
   This module is responsible for packaging a release into a tarball.
   """
-  alias Mix.Releases.{Release, Utils, Logger, Plugin}
+  alias Mix.Releases.{Release, Utils, Logger, Plugin, Profile}
 
   @doc """
   Given an assembled release, and the Release struct representing it,
@@ -63,6 +63,7 @@ defmodule Mix.Releases.Archiver do
     tarfile    = '#{Path.join([output_dir, "releases", release.version, name <> ".tar.gz"])}'
     with {:ok, tmpdir} <- Utils.insecure_mkdir_temp(),
          :ok <- :erl_tar.extract(tarfile, [{:cwd, '#{tmpdir}'}, :compressed]),
+         :ok <- strip_release(release, tmpdir),
          :ok <- :erl_tar.create(tarfile, [
             {'releases', '#{Path.join(tmpdir, "releases")}'},
             {'#{Path.join("releases", "start_erl.data")}',
@@ -104,4 +105,17 @@ defmodule Mix.Releases.Archiver do
         {:error, "Failed to remove #{file} (#{inspect reason})"}
     end
   end
+
+  # Strips debug info from the release, if so configured
+  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: false}}, strip_path) do
+    Logger.debug "Stripping release (#{strip_path})"
+    case :beam_lib.strip_release(String.to_charlist(strip_path)) do
+      {:ok, _} ->
+        :ok
+      {:error, :beam_lib, reason} ->
+        {:error, "failed to strip release: #{inspect reason}"}
+    end
+  end
+  defp strip_release(_, _), do: :ok
+
 end
