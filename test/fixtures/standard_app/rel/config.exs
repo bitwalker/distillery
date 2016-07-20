@@ -6,8 +6,9 @@ environment :dev do
   set include_erts: false
 end
 
-environment :default do
+environment :prod do
   set dev_mode: false
+  set strip_debug_info: true
   set include_erts: true
 end
 
