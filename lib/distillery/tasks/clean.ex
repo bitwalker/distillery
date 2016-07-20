@@ -13,13 +13,19 @@ defmodule Mix.Tasks.Release.Clean do
       # Remove all release files, and do it without confirmation
       mix release.clean --implode --no-confirm
 
+      # Log verbosely
+      mix release.clean --verbose
+
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
   alias Mix.Releases.{Logger, App, Utils}
 
   def run(args) do
-    Logger.configure(:debug)
+    # Parse options
+    opts = parse_args(args)
+    verbosity = Keyword.get(opts, :verbosity)
+    Logger.configure(verbosity)
 
     # make sure loadpaths are updated
     Mix.Task.run("loadpaths", [])
@@ -42,7 +48,7 @@ defmodule Mix.Tasks.Release.Clean do
   end
 
   defp clean_all! do
-    Logger.debug "Cleaning all releases.."
+    Logger.info "Cleaning all releases.."
     unless File.exists?("rel") do
       Logger.warn "No rel directory found! Nothing to do."
       exit(:normal)
@@ -53,7 +59,7 @@ defmodule Mix.Tasks.Release.Clean do
 
   defp clean! do
     # load release configuration
-    Logger.debug "Cleaning last release.."
+    Logger.info "Cleaning last release.."
 
     unless File.exists?("rel/config.exs") do
       Logger.warn "No config file found! Nothing to do."
@@ -105,8 +111,17 @@ defmodule Mix.Tasks.Release.Clean do
   end
 
   defp parse_args(argv) do
-    {overrides, _} = OptionParser.parse!(argv, [implode: :boolean, no_confirm: :boolean])
-    Keyword.merge([implode: false, no_confirm: false], overrides)
+    {overrides, _} = OptionParser.parse!(argv, [
+          implode: :boolean,
+          no_confirm: :boolean,
+          verbose: :boolean])
+    verbosity = case Keyword.get(overrides, :verbose) do
+                  true -> :verbose
+                  _    -> :normal
+                end
+    [implode: Keyword.get(overrides, :implode, false),
+      no_confirm: Keyword.get(overrides, :no_confirm, false),
+      verbosity: verbosity]
   end
 
   defp confirm_implode? do
