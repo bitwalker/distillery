@@ -10,6 +10,8 @@ defmodule StandardApp do
     children = [
       # Starts a worker by calling: StandardApp.Worker.start_link(arg1, arg2, arg3)
       # worker(StandardApp.Worker, [arg1, arg2, arg3]),
+      worker(StandardApp.A, []),
+      worker(StandardApp.B, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

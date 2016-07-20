@@ -8,10 +8,10 @@ end
 
 environment :prod do
   set dev_mode: false
-  set strip_debug_info: true
+  set strip_debug_info: false
   set include_erts: true
 end
 
 release :standard_app do
-  set version: current_version(:standard_app)
+  set version: "0.0.1"
 end
