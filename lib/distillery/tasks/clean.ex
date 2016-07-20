@@ -16,13 +16,15 @@ defmodule Mix.Tasks.Release.Clean do
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
-  alias Mix.Releases.Logger
+  alias Mix.Releases.{Logger, App, Utils}
 
   def run(args) do
     Logger.configure(:debug)
 
     # make sure loadpaths are updated
     Mix.Task.run("loadpaths", [])
+    # make sure we're compiled too
+    Mix.Task.run("compile", [])
 
     opts = parse_args(args)
 
@@ -65,18 +67,19 @@ defmodule Mix.Tasks.Release.Clean do
                    Mix.Releases.Config.read!(config_path)
                  rescue
                    e in [Mix.Releases.Config.LoadError]->
-                     file = e.file
-                   message = e.error.message
-                   Logger.error "Failed to load config (#{file})\n" <>
-                     "    #{message}"
-                   exit({:shutdown, 1})
+                     file = Path.relative_to_cwd(e.file)
+                     message = e.error.__struct__.message(e.error)
+                     message = String.replace(message, "nofile", file)
+                     Logger.error "Failed to load config:\n" <>
+                        "    #{message}"
+                     exit({:shutdown, 1})
                  end
                false ->
                  Logger.error "You are missing a release config file. Run the release.init task first"
                  exit({:shutdown, 1})
              end
     releases = config.releases
-    # build release
+    # clean release
     paths = Path.wildcard(Path.join("rel", "*"))
     for {name, release} <- releases, Path.join("rel", "#{name}") in paths do
       Logger.notice "    Removing release #{name}:#{release.version}"
