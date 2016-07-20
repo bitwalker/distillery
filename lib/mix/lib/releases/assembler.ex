@@ -710,9 +710,9 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Strips debug info from the release, if so configured
-  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: true}, output_dir: output_dir} = release) do
-    Logger.debug "Stripping release"
-    case :beam_lib.strip_release(output_dir) do
+  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: false}, output_dir: output_dir} = release) do
+    Logger.debug "Stripping release (#{output_dir})"
+    case :beam_lib.strip_release(String.to_charlist(output_dir)) do
       {:ok, _} ->
         {:ok, release}
       {:error, :beam_lib, reason} ->
