@@ -279,7 +279,8 @@ defmodule Mix.Releases.Assembler do
          :ok <- generate_start_erl_data(release, rel_dir),
          :ok <- generate_vm_args(release, rel_dir),
          :ok <- generate_sys_config(release, rel_dir),
-         :ok <- include_erts(release, rel_dir), do: :ok
+         :ok <- include_erts(release),
+         :ok <- make_boot_script(release, rel_dir), do: :ok
   end
 
   # Generates a relup and .appup for all upgraded applications during upgrade releases
@@ -489,8 +490,8 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Adds ERTS to the release, if so configured
-  defp include_erts(%Release{profile: %Profile{include_erts: false}}, _rel_dir), do: :ok
-  defp include_erts(%Release{profile: %Profile{include_erts: include_erts}, output_dir: output_dir} = release, rel_dir) do
+  defp include_erts(%Release{profile: %Profile{include_erts: false}}), do: :ok
+  defp include_erts(%Release{profile: %Profile{include_erts: include_erts}, output_dir: output_dir} = release) do
     prefix = case include_erts do
                true -> "#{:code.root_dir}"
                p when is_binary(p) -> Path.absname(p)
@@ -517,7 +518,7 @@ defmodule Mix.Releases.Assembler do
          :ok      <- File.cp(install_upgrade_path, install_upgrade_dest),
          :ok      <- File.chmod(nodetool_dest, 0o755),
          :ok      <- File.chmod(install_upgrade_dest, 0o755) do
-      make_boot_script(release, rel_dir)
+      :ok
     else
       {:error, reason} ->
         {:error, "Failed during include_erts: #{inspect reason}"}
