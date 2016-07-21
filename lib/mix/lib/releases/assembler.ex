@@ -474,8 +474,9 @@ defmodule Mix.Releases.Assembler do
     Logger.debug "Generating sys.config"
     config_path = Keyword.get(Mix.Project.config, :config_path)
     config = Mix.Config.read!(config_path)
-    case Keyword.get(config, :sasl) do
-      nil -> Keyword.put(config, :sasl, [errlog_type: :error])
+    config = case Keyword.get(config, :sasl) do
+      nil ->
+        Keyword.put(config, :sasl, [errlog_type: :error])
       sasl ->
         case Keyword.get(sasl, :errlog_type) do
           nil -> put_in(config, [:sasl, :errlog_type], :error)
