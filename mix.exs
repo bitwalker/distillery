@@ -40,9 +40,11 @@ defmodule Distillery.Mixfile do
      extras: [
        "docs/Getting Started.md",
        "docs/Configuration.md",
+       "docs/Runtime Configuration.md",
        "docs/Walkthrough.md",
        "docs/Upgrades and Downgrades.md",
        "docs/Common Issues.md",
+       "docs/Umbrella Projects.md",
        "docs/Plugins.md",
        "docs/Boot Hooks.md",
        "docs/Custom Commands.md"
