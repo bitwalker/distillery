@@ -221,6 +221,7 @@ defmodule Mix.Releases.Utils do
   defp get_apps({:error, _} = err, _acc), do: err
   defp get_apps(%App{} = app, acc) do
     new_acc = app.applications
+    |> Enum.concat(app.included_applications)
     |> Enum.reduce([app|acc], fn
       {:error, _} = err, _acc ->
         err
