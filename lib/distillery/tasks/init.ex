@@ -79,13 +79,16 @@ defmodule Mix.Tasks.Release.Init do
     if release_per_app? do
       [no_docs: no_doc?,
        releases: Enum.map(apps, fn {app, start_type} ->
-         [release_name: app, release_applications: [{app, start_type}]]
+         [release_name: app,
+          is_umbrella: false,
+          release_applications: [{app, start_type}]]
        end)]
     else
       release_name = String.replace(Path.basename(File.cwd!), "-", "_")
       [no_docs: no_doc?,
        releases: [
          [release_name: String.to_atom(release_name),
+          is_umbrella: true,
           release_applications: apps]]]
     end
   end
@@ -96,6 +99,7 @@ defmodule Mix.Tasks.Release.Init do
     [no_docs: no_doc?,
      releases: [
       [release_name: app,
+       is_umbrella: false,
        release_applications: [{app, :permanent}]]]]
   end
 end
