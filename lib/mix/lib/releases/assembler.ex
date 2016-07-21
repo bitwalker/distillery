@@ -123,9 +123,11 @@ defmodule Mix.Releases.Assembler do
       end
       # Copy consolidated .beams
       build_path = Mix.Project.build_path(Mix.Project.config)
+      consolidated_dest = Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])
+      File.mkdir_p!(consolidated_dest)
       {:ok, _} = File.cp_r(
         Path.join(build_path, "consolidated"),
-        Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"]))
+        consolidated_dest)
       {:ok, release}
     rescue
       err ->
