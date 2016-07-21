@@ -12,7 +12,7 @@ defmodule ConfigTest do
       end)
       assert %Config{environments: %{
                         dev: %Environment{profile: %Profile{dev_mode: true, include_erts: false}},
-                        default: %Environment{profile: %Profile{dev_mode: false, include_erts: true}}},
+                        prod: %Environment{profile: %Profile{dev_mode: false, include_erts: true, strip_debug_info: false}}},
                       releases: %{
                         standard_app: %Release{version: "0.0.1", applications: [:elixir, :iex, :sasl, :standard_app]}},
                       default_release: :default,

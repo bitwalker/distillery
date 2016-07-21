@@ -8,7 +8,7 @@ defmodule Mix.Releases.Utils do
 
   ## Example
 
-      iex> {:ok, contents} = #{__MODULE__}.template("vm.args", [rel_name: :test])
+      iex> {:ok, contents} = #{__MODULE__}.template("vm.args", [release_name: :test])
       ...> String.contains?(contents, "-name test@127.0.0.1")
       true
   """
