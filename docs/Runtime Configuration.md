@@ -1,5 +1,7 @@
 # Runtime Configuration
 
+## config.exs & sys.config
+
 There are differences in how you approach runtime configuration of your application
 when using releases vs regular Mix projects. You still use your `config.exs`, but
 there are caveats which apply:
@@ -19,7 +21,7 @@ there are caveats which apply:
   your application so that if you need to fetch environment information at runtime, you
   can do so. See the Configuration Conventions section below for more information.
 
-## Configuration Conventions
+### Configuration Conventions
 
 It is a common convention within the Elixir community to handle a `{:system, "VAR"}` tuple
 which indicates to the application being configured that it should use `System.get_env/1` to
@@ -34,7 +36,7 @@ it is so simple, that a simple gist seems more useful.
 
 See [config.ex](https://gist.github.com/bitwalker/a4f73b33aea43951fe19b242d06da7b9) for the implementation.
 
-## Configuration Tools
+### Configuration Tools
 
 It may be the case that you are providing release packages to end users, who will need to configure the
 application. These end users may even be your own internal ops team. They may or may not be familiar with
@@ -49,3 +51,22 @@ like, [take a look here](https://github.com/bitwalker/conform/tree/distillery#co
 When you deploy your application, user simply modify the `.conf` file as needed, and run the release, `conform` handles
 converting the configuration into runtime configuration for the release using the schema, and you can access that
 configuration via `Application.get_env/2` as usual.
+
+## vm.args
+
+This file is how you configure the Erlang runtime for your release. By default, it sets up the VM in distributed mode
+with the name set to `<release_name>@127.0.0.1`, and the cookie set to `<release_name>`. This is how we are able to
+remote shell to the node once it's started.
+
+For a complete list of flags you can use in `vm.args`, see [here](http://erlang.org/doc/man/erl.html).
+
+However, as is often the case, you may want to dynamically configure the name of the node (when clustering) and/or
+the cookie (for security), as well as other settings based on values provided via environment variables. You can do
+so by setting `REPLACE_OS_VARS=true` and then using `${VAR_NAME}` in the `vm.args` file.
+
+If you are uncertain where the default `vm.args` is located, you may find it under `releases/<version>/vm.args`.
+
+You may also provide your own config directory where your custom `vm.args`, `sys.config`, and potentially other
+configuration files will be loaded from, by setting `RELEASE_CONFIG_DIR=path/to/files`. By default this will be set
+to the root directory of the release, i.e. the folder to which you extracted the tarball. If `vm.args` or `sys.config`
+cannot be found in `RELEASE_CONFIG_DIR`, it will fall back to using the ones under the `releases/<version>` directory.
