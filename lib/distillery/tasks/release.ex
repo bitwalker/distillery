@@ -44,7 +44,7 @@ defmodule Mix.Tasks.Release do
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
-  alias Mix.Releases.{Release, Logger}
+  alias Mix.Releases.{Release, Profile, Logger}
 
   @spec run(OptionParser.argv) :: no_return
   def run(args) do
@@ -99,6 +99,9 @@ defmodule Mix.Tasks.Release do
     Logger.info "Assembling release.."
     case {Mix.Releases.Assembler.assemble(config), no_tar?} do
       {{:ok, %Release{:name => name}}, true} ->
+        print_success(name)
+      {{:ok, %Release{:name => name, profile: %Profile{:dev_mode => true}}}, false} ->
+        Logger.warn "You have set dev_mode to true, skipping archival phase"
         print_success(name)
       {{:ok, %Release{:name => name} = release}, false} ->
         Logger.info "Packaging release.."
