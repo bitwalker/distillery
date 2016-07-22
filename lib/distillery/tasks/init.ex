@@ -32,6 +32,11 @@ defmodule Mix.Tasks.Release.Init do
   alias Mix.Releases.{Utils, Logger}
 
   def run(args) do
+    # make sure loadpaths are updated
+    Mix.Task.run("loadpaths", [])
+    # make sure we're compiled too
+    Mix.Task.run("compile", [])
+
     Logger.configure(:debug)
 
     # Generate template bindings based on type of project and task opts
