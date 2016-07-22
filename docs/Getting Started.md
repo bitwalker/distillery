@@ -3,8 +3,8 @@
 Please take the time to review the output of `mix help release`, as well as other `release.*` tasks,
 they cover more detail about usage at the command line, and what the various options mean.
 
-Additionally, if you want to know what a certain configuration option does, please review the module
-docs [here](https://hexdocs.pm/distillery/Mix.Releases.Profile.html).
+Additionally, if you want to know what a certain configuration option does, you can find that information
+on the [Configuration](https://hexdocs.pm/distillery/configuration.html) page.
 
 ## Installation/Setup
 
