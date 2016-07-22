@@ -124,8 +124,8 @@ _rem_sh() {
 
 # Output a start command for the last argument of run_erl
 _start_command() {
-    printf "exec \"%s\" \"%s\"" "$RELEASE_ROOT_DIR/bin/$REL_NAME" \
-           "$START_OPTION"
+    printf "exec \"%s\" \"%s\" -- %s %s" "$RELEASE_ROOT_DIR/bin/$REL_NAME" \
+           "$START_OPTION" "${ARGS}" "${EXTRA_OPTS}"
 }
 
 # Allow override of where to look for config files
@@ -276,6 +276,7 @@ case "$1" in
                 HEART_OPTION="start_boot"
                 ;;
         esac
+        ARGS="$@"
         RUN_PARAM="$@"
 
         [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
