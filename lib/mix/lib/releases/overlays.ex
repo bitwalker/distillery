@@ -63,7 +63,8 @@ defmodule Mix.Releases.Overlays do
   @spec do_overlay(String.t, overlay, Keyword.t) :: {:ok, String.t} | {:error, term}
   defp do_overlay(output_dir, {:mkdir, path}, vars) when is_binary(path) do
     with {:ok, path} <- template_str(path, vars),
-         _           <- Logger.debug("Applying mkdir overlay for #{Path.relative_to_cwd(path)}"),
+         _           <- Logger.debug("Applying #{IO.ANSI.reset}mkdir#{IO.ANSI.cyan} overlay\n" <>
+                                     "    dst: #{Path.relative_to_cwd(path)}"),
          expanded    <- Path.join(output_dir, path),
          :ok         <- File.mkdir_p(expanded),
       do: {:ok, path}
@@ -71,7 +72,9 @@ defmodule Mix.Releases.Overlays do
   defp do_overlay(output_dir, {:copy, from, to}, vars) when is_binary(from) and is_binary(to) do
     with {:ok, from} <- template_str(from, vars),
          {:ok, to}   <- template_str(to, vars),
-         _           <- Logger.debug("Applying copy overlay from #{Path.relative_to_cwd(from)} to #{Path.relative_to_cwd(to)}"),
+         _           <- Logger.debug("Applying #{IO.ANSI.reset}copy#{IO.ANSI.cyan} overlay\n" <>
+                                     "    src: #{Path.relative_to_cwd(from)}\n" <>
+                                     "    dst: #{Path.relative_to_cwd(to)}"),
          expanded_to <- Path.join(output_dir, to),
          {:ok, _}    <- File.cp_r(from, expanded_to),
       do: {:ok, to}
@@ -79,7 +82,9 @@ defmodule Mix.Releases.Overlays do
   defp do_overlay(output_dir, {:link, from, to}, vars) when is_binary(from) and is_binary(to) do
     with {:ok, from} <- template_str(from, vars),
          {:ok, to}   <- template_str(to, vars),
-         _           <- Logger.debug("Applying link overlay from #{Path.relative_to_cwd(from)} to #{Path.relative_to_cwd(to)}"),
+         _           <- Logger.debug("Applying #{IO.ANSI.reset}link#{IO.ANSI.cyan} overlay\n" <>
+                                     "    src: #{Path.relative_to_cwd(from)}\n" <>
+                                     "    dst: #{Path.relative_to_cwd(to)}"),
          expanded_to <- Path.join(output_dir, to),
          _           <- File.rm(expanded_to),
          :ok         <- File.ln_s(from, expanded_to),
@@ -91,7 +96,9 @@ defmodule Mix.Releases.Overlays do
          true             <- File.exists?(tmpl_path),
          {:ok, templated} <- template_file(tmpl_path, vars),
          expanded_to      <- Path.join(output_dir, to),
-         _                <- Logger.debug("Applying template overlay with #{Path.relative_to_cwd(tmpl_path)} to #{to}"),
+         _                <- Logger.debug("Applying #{IO.ANSI.reset}template#{IO.ANSI.cyan} overlay\n" <>
+                                          "    src: #{Path.relative_to_cwd(tmpl_path)}\n" <>
+                                          "    dst: #{to}"),
          :ok              <- File.mkdir_p(Path.dirname(expanded_to)),
          :ok              <- File.write(expanded_to, templated),
       do: {:ok, to}

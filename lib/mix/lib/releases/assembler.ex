@@ -469,7 +469,7 @@ defmodule Mix.Releases.Assembler do
       do: :ok
   end
   defp generate_vm_args(%Release{profile: %Profile{vm_args: path}} = rel, rel_dir) do
-    Logger.debug "Copying user-provided vm.args"
+    Logger.debug "Generating vm.args from #{Path.relative_to_cwd(path)}"
     overlay_vars = rel.profile.overlay_vars
     with {:ok, path}      <- Overlays.template_str(path, overlay_vars),
          {:ok, templated} <- Overlays.template_file(path, overlay_vars),
@@ -671,8 +671,8 @@ defmodule Mix.Releases.Assembler do
         {k, v} -> "#{k}=#{inspect v}"
       end)
       |> Enum.filter(fn nil -> false; _ -> true end)
-      |> Enum.join("\n  ")
-    Logger.debug "  #{inspected}", :plain
+      |> Enum.join("\n    ")
+    Logger.debug "    #{inspected}", :plain
     {:ok, %{release | :profile => %{release.profile | :overlay_vars => vars}}}
   end
 
