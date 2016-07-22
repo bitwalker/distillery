@@ -95,6 +95,53 @@ defmodule Mix.Releases.Config do
   end
 
   @doc """
+  Adds a plugin to the environment or release definition it is part of.
+
+  ## Usage
+
+      release :myapp do
+        plugin MyApp.ReleasePlugin
+      end
+
+  """
+  defmacro plugin(name) do
+    name = case name do
+             n when is_atom(n) -> n
+             {:__aliases__, _, module_parts} -> Module.concat(module_parts)
+           end
+    quote do
+      current_env = var!(current_env, Mix.Releases.Config)
+      current_rel = var!(current_rel, Mix.Releases.Config)
+      if current_env == nil && current_rel == nil do
+        raise "cannot use plugin/1 outside of an environment or a release!"
+      end
+      case :code.which(unquote(name)) do
+        :non_existing ->
+          raise "cannot load plugin #{unquote(name)}, no such module could be found"
+        _ ->
+          :ok
+      end
+      config = Mix.Config.Agent.get(var!(config_agent, Mix.Releases.Config))
+      cond do
+        current_env != nil ->
+          env = get_in(config, [:environments, current_env])
+          profile = env.profile
+          plugins = [unquote(name)|profile.plugins]
+          env = %{env | :profile => %{profile | :plugins => plugins}}
+          Mix.Config.Agent.merge var!(config_agent, Mix.Releases.Config),
+            [environments: [{current_env, env}]]
+        current_rel != nil ->
+          rel = get_in(config, [:releases, current_rel])
+          profile = rel.profile
+          plugins = [unquote(name)|profile.plugins]
+          rel = %{rel | :profile => %{profile | :plugins => plugins}}
+          Mix.Config.Agent.merge var!(config_agent, Mix.Releases.Config),
+            [releases: [{current_rel, rel}]]
+      end
+    end
+  end
+
+  @doc """
   Set a config option within an environment or release definition.
   `set` takes a keyword list of one or more values to apply. An error
   will be raised if `set` is used outside of an environment or release definition,

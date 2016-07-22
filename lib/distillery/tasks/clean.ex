@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Release.Clean do
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
-  alias Mix.Releases.{Logger, App, Utils}
+  alias Mix.Releases.{Logger, App, Utils, Plugin}
 
   @spec run(OptionParser.argv) :: no_return
   def run(args) do
@@ -43,9 +43,8 @@ defmodule Mix.Tasks.Release.Clean do
       implode? && confirm_implode? ->
         clean_all!
       :else ->
-        clean!
+        clean!(args)
     end
-    execute_after_hooks(args)
   end
 
   @spec clean_all!() :: :ok | no_return
@@ -59,8 +58,8 @@ defmodule Mix.Tasks.Release.Clean do
     Logger.success "Clean successful!"
   end
 
-  @spec clean!() :: :ok | no_return
-  defp clean! do
+  @spec clean!([String.t]) :: :ok | no_return
+  defp clean!(args) do
     # load release configuration
     Logger.info "Cleaning last release.."
 
@@ -77,7 +76,7 @@ defmodule Mix.Tasks.Release.Clean do
                  rescue
                    e in [Mix.Releases.Config.LoadError]->
                      file = Path.relative_to_cwd(e.file)
-                     message = e.error.__struct__.message(e.error)
+                     message = Exception.message(e.error)
                      message = String.replace(message, "nofile", file)
                      Logger.error "Failed to load config:\n" <>
                         "    #{message}"
@@ -92,13 +91,13 @@ defmodule Mix.Tasks.Release.Clean do
     paths = Path.wildcard(Path.join("rel", "*"))
     for {name, release} <- releases, Path.join("rel", "#{name}") in paths do
       Logger.notice "    Removing release #{name}:#{release.version}"
-      clean_release(release, Path.join("rel", "#{name}"))
+      clean_release(release, Path.join("rel", "#{name}"), args)
     end
     Logger.success "Clean successful!"
   end
 
-  @spec clean_release(Release.t, String.t) :: :ok | :no_return
-  defp clean_release(release, path) do
+  @spec clean_release(Release.t, String.t, [String.t]) :: :ok | :no_return
+  defp clean_release(release, path, args) do
     # Remove erts
     erts_paths = Path.wildcard(Path.join(path, "erts-*"))
     for erts <- erts_paths do
@@ -112,7 +111,8 @@ defmodule Mix.Tasks.Release.Clean do
     File.rm(Path.join([path, "releases", "start_erl.data"]))
     # Remove current release version
     File.rm_rf!(Path.join([path, "releases", "#{release.version}"]))
-    :ok
+    # Execute plugin callbacks for this release
+    Plugin.after_cleanup(release, args)
   end
 
   @spec parse_args([String.t]) :: Keyword.t | no_return
@@ -137,20 +137,4 @@ defmodule Mix.Tasks.Release.Clean do
     Are you absolutely sure you want to proceed?
     """
   end
-
-  @spec execute_after_hooks([String.t]) :: :ok | no_return
-  defp execute_after_hooks(args) do
-    plugins = Mix.Releases.Plugin.load_all
-    Enum.each plugins, fn plugin ->
-      try do
-        plugin.after_cleanup(args)
-      rescue
-        exception ->
-          stacktrace = System.stacktrace
-        Logger.error "Failed to execute after_cleanup hook for #{plugin}!"
-        reraise exception, stacktrace
-      end
-    end
-  end
-
 end

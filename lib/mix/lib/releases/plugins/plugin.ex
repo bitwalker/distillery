@@ -64,108 +64,58 @@ defmodule Mix.Releases.Plugin do
   Runs before_assembly with all plugins.
   """
   @spec before_assembly(Release.t) :: {:ok, Release.t} | {:error, term}
-  def before_assembly(release), do: call(:before_assembly, release, fn %Release{} -> true; _ -> false end)
+  def before_assembly(release), do: call(:before_assembly, release)
   @doc """
   Runs after_assembly with all plugins.
   """
   @spec after_assembly(Release.t) :: {:ok, Release.t} | {:error, term}
-  def after_assembly(release),  do: call(:after_assembly, release, fn %Release{} -> true; _ -> false end)
+  def after_assembly(release),  do: call(:after_assembly, release)
   @doc """
   Runs before_package with all plugins.
   """
   @spec before_package(Release.t) :: {:ok, Release.t} | {:error, term}
-  def before_package(release),  do: call(:before_package, release, fn %Release{} -> true; _ -> false end)
+  def before_package(release),  do: call(:before_package, release)
   @doc """
   Runs after_package with all plugins.
   """
   @spec after_package(Release.t) :: {:ok, Release.t} | {:error, term}
-  def after_package(release),   do: call(:after_package, release, fn %Release{} -> true; _ -> false end)
+  def after_package(release),   do: call(:after_package, release)
   @doc """
   Runs after_cleanup with all plugins.
   """
-  @spec after_cleanup([String.t]) :: :ok | {:error, term}
-  def after_cleanup(args), do: run(:after_package, args)
+  @spec after_cleanup(Release.t, [String.t]) :: :ok | {:error, term}
+  def after_cleanup(release, args), do: run(release.profile.plugins, :after_package, args)
 
-  @type predicate :: (term -> boolean)
-  @spec call(atom(), term, predicate) :: {:ok, term} | {:error, {:plugin_failed, term}}
-  defp call(callback, state, predicate) do
-    call(load_all(), callback, state, predicate)
+  @spec call(atom(), Release.t) :: {:ok, term} | {:error, {:plugin_failed, term}}
+  defp call(callback, release) do
+    call(release.profile.plugins, callback, release)
   end
-  def call([], _, state, _), do: {:ok, state}
-  def call([plugin|plugins], callback, state, predicate) do
+  defp call([], _, release), do: {:ok, release}
+  defp call([plugin|plugins], callback, release) do
     try do
-      case apply(plugin, callback, [state]) do
+      case apply(plugin, callback, [release]) do
         nil ->
-          call(plugins, callback, state, predicate)
-        state ->
-          case predicate.(state) do
-            true  -> call(plugins, callback, state, predicate)
-            false -> {:error, {:plugin_failed, :bad_return_value, state}}
-          end
+          call(plugins, callback, release)
+        %Release{} = updated ->
+          call(plugins, callback, updated)
+        result ->
+          {:error, {:plugin_failed, :bad_return_value, result}}
       end
     rescue
       e ->
-        message = e.__struct__.message(e)
-        {:error, message}
+        {:error, Exception.message(e)}
     end
   end
 
-  @spec run(atom(), term) :: :ok | {:error, {:plugin_failed, term}}
-  def run(callback, state) do
-    run(load_all(), callback, state)
-  end
-  def run([], _, _), do: :ok
-  def run([plugin|plugins], callback, state) do
+  @spec run([atom()], atom, [String.t]) :: :ok | {:error, {:plugin_failed, term}}
+  defp run([], _, _), do: :ok
+  defp run([plugin|plugins], callback, args) do
     try do
-      apply(plugin, callback, [state])
-      run(plugins, callback, state)
+      apply(plugin, callback, [args])
+      run(plugins, callback, args)
     rescue
       e ->
-        message = e.__struct__.message(e)
-        {:error, message}
+        {:error, Exception.message(e)}
     end
-  end
-
-  @doc """
-  Loads all plugins in all code paths.
-  """
-  @spec load_all() :: [] | [atom]
-  def load_all, do: get_plugins(Mix.Releases.Plugin)
-
-  # Loads all modules that extend a given module in the current code path.
-  #
-  # The convention is that it will fetch modules with the same root namespace,
-  # and that are suffixed with the name of the module they are extending.
-  @spec get_plugins(atom) :: [] | [atom]
-  defp get_plugins(plugin_type) when is_atom(plugin_type) do
-    available_modules(plugin_type) |> Enum.reduce([], &load_plugin/2)
-  end
-
-  defp load_plugin(module, modules) do
-    if Code.ensure_loaded?(module), do: [module | modules], else: modules
-  end
-
-  defp available_modules(plugin_type) do
-    # Ensure the current projects code path is loaded
-    Mix.Task.run("loadpaths", [])
-    # Fetch all .beam files
-    Path.wildcard(Path.join([Mix.Project.build_path, "lib/**/ebin/**/*.beam"]))
-    |> Stream.map(&String.to_charlist/1)
-    # Parse the BEAM for behaviour implementations
-    |> Stream.map(fn path ->
-      case :beam_lib.chunks(path, [:attributes]) do
-        {:ok, {mod, [attributes: attrs]}}  ->
-          {mod, Keyword.get(attrs, :behaviour)}
-        _ ->
-          :error
-      end
-    end)
-    # Filter out behaviours we don't care about and duplicates
-    |> Stream.filter(fn
-      :error -> false
-      {_mod, behaviours} -> is_list(behaviours) && plugin_type in behaviours
-    end)
-    |> Enum.map(fn {module, _} -> module end)
-    |> Enum.uniq
   end
 end
