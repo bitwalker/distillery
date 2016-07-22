@@ -69,7 +69,12 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Applies global configuration options to the release profile
-  defp apply_configuration(%Release{version: current_version} = release, %Config{} = config) do
+  defp apply_configuration(%Release{version: current_version, profile: profile} = release, %Config{} = config) do
+    config_path = case profile.config do
+                    p when is_binary(p) -> p
+                    _ -> Keyword.get(Mix.Project.config, :config_path)
+                  end
+    release = %{release | :profile => %{profile | :config => config_path}}
     case Utils.get_apps(release) do
       {:error, _} = err -> err
       release_apps ->
@@ -473,9 +478,8 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates sys.config
-  defp generate_sys_config(_release, rel_dir) do
-    Logger.debug "Generating sys.config"
-    config_path = Keyword.get(Mix.Project.config, :config_path)
+  defp generate_sys_config(%Release{profile: %Profile{config: config_path}}, rel_dir) do
+    Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
     config = Mix.Config.read!(config_path)
     config = case Keyword.get(config, :sasl) do
       nil ->

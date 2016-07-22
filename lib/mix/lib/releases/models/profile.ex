@@ -6,6 +6,7 @@ defmodule Mix.Releases.Profile do
   environment profile overrides the release profile.
   """
   defstruct vm_args: nil, # path to a custom vm.args
+    config: nil, # path to a custom config.exs
     sys_config: nil, # path to a custom sys.config
     code_paths: nil, # list of additional code paths to search
     erl_opts: nil, # string to be passed to erl
