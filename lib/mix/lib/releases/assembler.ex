@@ -478,6 +478,14 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates sys.config
+  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir)
+    when is_binary(config_path) do
+    Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
+    overlay_vars = rel.profile.overlay_vars
+    with {:ok, path}      <- Overlays.template_str(config_path, overlay_vars),
+         {:ok, templated} <- Overlays.template_file(path, overlay_vars),
+      do: Utils.write_term(Path.join(rel_dir, "sys.config"), templated)
+  end
   defp generate_sys_config(%Release{profile: %Profile{config: config_path}}, rel_dir) do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
     config = Mix.Config.read!(config_path)
