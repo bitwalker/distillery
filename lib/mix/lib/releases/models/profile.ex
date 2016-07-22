@@ -25,4 +25,25 @@ defmodule Mix.Releases.Profile do
     pre_stop_hook: nil, # path or nil
     post_stop_hook: nil # path or nil
 
+    @type t :: %__MODULE__{
+      vm_args: nil | String.t,
+      config: nil | String.t,
+      sys_config: nil | String.t,
+      code_paths: nil | [String.t],
+      erl_opts: nil | String.t,
+      dev_mode: nil | boolean,
+      include_erts: nil | boolean | String.t,
+      include_src: nil | boolean,
+      include_system_libs: nil | boolean | String.t,
+      strip_debug_info: nil | boolean,
+      plugins: [module()],
+      overlay_vars: nil | Keyword.t,
+      overlays: nil | Mix.Releases.Overlay.overlay,
+      overrides: nil | [{atom, String.t}],
+      commands: nil | [{atom, String.t}],
+      pre_start_hook: nil | String.t,
+      post_start_hook: nil | String.t,
+      pre_stop_hook: nil | String.t,
+      post_stop_hook: nil | String.t,
+    }
 end
