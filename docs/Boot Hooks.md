@@ -47,8 +47,5 @@ we've started!
 ```
 
 You have access to anything defined in the boot script's environment,
-including it's helper methods. At this point in time there is not a public
-API for these things, and no documentation on what is there, so if you need
-something from there right now, you'll have to do some experimenting, however
-I plan to define an API for the hook scripts (and custom command scripts), as
-well as document what env vars you can use and what their values are.
+see [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for
+details.
