@@ -89,8 +89,13 @@ and environments.
     for applications/modules
 - vm_args (string);
     a path to a custom vm.args file
+- config (string);
+    a path to a custom config.exs file, this will be used when generating
+    the sys.config for the release
 - sys_config (string);
-    a path to a custom sys.config file
+    a path to a custom sys.config file, this will be used in place of generating
+    a sys.config, and thus will result in the config setting being ignored, choose
+    one or the other as needed
 - include_erts (boolean | string);
     whether to include the system ERTS or not,
     a path to an alternative ERTS can also be provided
