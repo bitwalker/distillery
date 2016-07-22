@@ -40,7 +40,7 @@ There is no real clear example of how appups are supposed to be built, so the fo
 to help you get started. For more complicated application upgrades, you'll want to check out the
 [Appup Cookbook](http://erlang.org/doc/design_principles/appup_cookbook.html).
 
-Given a sample application called `test`, with a supervisor (`test_sup`), and a `gen_server` (`test_server`),
+Given a sample application called `test`, with a supervisor (`TestSup`), and a `gen_server` (`TestServ`),
 you should have a `test.app` file in `_build/<env>/lib/test/ebin` that looks something like the following:
 
 ```erlang
@@ -50,34 +50,32 @@ you should have a `test.app` file in `_build/<env>/lib/test/ebin` that looks som
               {mod,{test,[]}},
               {applications,[stdlib,kernel]},
               {vsn,"0.0.1"},
-              {modules,[test,test_server,
-                        test_sup]}]}.
+              {modules,['Elixir.Test','Elixir.TestServ',
+                        'Elixir.TestSup']}]}.
 ```
 
 If you make code changes to, `test_server` for instance, the following is a simple appup file that will
-load your project's application, and call `code_change/3` on both `test_sup` and `test_server`. The first
+load your project's application, and call `code_change/3` on `test_server`. The first
 `"0.0.1"` block is the order of operations for the upgrade, the second one is the order of operations for the
-downgrade (note that it's in reverse order of the upgrade process).
+downgrade (note that they should be in reverse order of the upgrade instructions).
 
 ```erlang
-{"0.0.2",
- [{"0.0.1",
-   [{load_module,test},
-    {update,test_server,infinity,
-            {advanced,[]},
-            brutal_purge,brutal_purge,[]},
-    {update,test_sup,supervisor}]}],
- [{"0.0.1",
-   [{update,test_sup,supervisor},
-    {update,test_server,infinity,
-            {advanced,[]},
-            brutal_purge,brutal_purge,[]},
-    {load_module,test}]}]}.
+{"0.2.0",
+ [{"0.1.0",[{update,'Elixir.TestServ',{advanced,[]},[]}]}],
+ [{"0.1.0",[{update,'Elixir.TestServ',{advanced,[]},[]}]}]}.
 ```
 
-This is the simplest case for an appup, but it should cover you for common upgrade scenarios. For anything more complicated,
-I encourage you to read the Appup Cookbook, to fully understand each of the options for the upgrade process.
 Note that the `{advanced, []}` tuple in each of the blocks is where you would pass additional arguments to `code_change`, if needed.
+
+It is important that you order the instructions such that processes which depend on each other are upgraded
+in an order compatible with the dependencies between them. If you have `proc_a` and `proc_b`, and `proc_a` calls
+`proc_b` for something, upgrade `proc_b` first, then `proc_a`. When processes are upgraded, they are suspended
+during the upgrade, but in-flight requests will be handled by the old version, until the upgrade is complete and
+the new version is un-suspended.
+
+This is the simplest case for an appup, but it covers the gist of the process. The Appup Cookbook should be your
+reference when authoring appups, as it goes into great detail all of the steps, what each instruction type does, and
+more.
 
 To generate an upgrade release, you'll need to pass `--upgrade` to `mix release`. To generate an upgrade from an arbitrary
 version you've previously built, pass `--upfrom=<version>`. Distillery will look for the appup in the ebin of your current build.

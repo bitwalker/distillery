@@ -152,9 +152,9 @@ When you run `mix release`, you should see something like the following:
 ==> You have set dev_mode to true, skipping archival phase
 ==> Release successfully built!
     You can run it in one of the following ways:
-      Interactive: rel/test/bin/test console
-      Foreground: rel/test/bin/test foreground
-      Daemon: rel/test/bin/test start
+      Interactive: rel/myapp/bin/test console
+      Foreground: rel/myapp/bin/test foreground
+      Daemon: rel/myapp/bin/test start
 ```
 
 As an example, building the release for the `prod` environment looks like this:
@@ -166,9 +166,9 @@ As an example, building the release for the `prod` environment looks like this:
 ==> Packaging release..
 ==> Release successfully built!
     You can run it in one of the following ways:
-      Interactive: rel/test/bin/test console
-      Foreground: rel/test/bin/test foreground
-      Daemon: rel/test/bin/test start
+      Interactive: rel/myapp/bin/test console
+      Foreground: rel/myapp/bin/test foreground
+      Daemon: rel/myapp/bin/test start
 ```
 
 At this point, you can run your release using one of the three commands listed in the output.

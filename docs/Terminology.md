@@ -35,6 +35,10 @@ between the current release and one or more older releases.
 A file containing Erlang terms which describes with low-level instructions how to upgrade and downgrade
 between the current release and one or more older releases.
 
+#### Target System
+
+Refers to the deployment host, or to an already installed release on that host.
+
 ## Distillery Terms
 
 #### Release

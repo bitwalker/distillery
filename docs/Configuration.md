@@ -10,15 +10,19 @@ use Mix.Releases.Config,
     # This sets the default release built by `mix release`
     default_release: :default,
     # This sets the default environment used by `mix release`
-    default_environment: :default
+    default_environment: :dev
 
 # You may define one or more environments in this file,
 # an environment's settings will override those of a release
 # when building in that environment, this combination of release
 # and environment configuration is called a profile
-environment :default do
-  set dev_mode: false
+environment :dev do
+  set dev_mode: true
+  set include_erts: false
+end
+environment :prod do
   set include_erts: true
+  set include_src: false
 end
 
 # You may define one or more releases in this file.
@@ -97,6 +101,8 @@ and environments.
     a path to system libs to be included can also be provided
 - strip_debug_info (boolean);
     should debugging info be stripped from BEAM files in the release
+    CAUTION: This setting will result in releases which cannot
+    be hot upgraded. Only use this if you need it.
 - erl_opts (string);
     a string of Erlang VM options to be passed along to erl
 - commands (keyword list of names to paths);
