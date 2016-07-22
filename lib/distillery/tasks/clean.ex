@@ -21,6 +21,7 @@ defmodule Mix.Tasks.Release.Clean do
   use Mix.Task
   alias Mix.Releases.{Logger, App, Utils}
 
+  @spec run(OptionParser.argv) :: no_return
   def run(args) do
     # Parse options
     opts = parse_args(args)
@@ -47,6 +48,7 @@ defmodule Mix.Tasks.Release.Clean do
     execute_after_hooks(args)
   end
 
+  @spec clean_all!() :: :ok | no_return
   defp clean_all! do
     Logger.info "Cleaning all releases.."
     unless File.exists?("rel") do
@@ -57,6 +59,7 @@ defmodule Mix.Tasks.Release.Clean do
     Logger.success "Clean successful!"
   end
 
+  @spec clean!() :: :ok | no_return
   defp clean! do
     # load release configuration
     Logger.info "Cleaning last release.."
@@ -94,6 +97,7 @@ defmodule Mix.Tasks.Release.Clean do
     Logger.success "Clean successful!"
   end
 
+  @spec clean_release(Release.t, String.t) :: :ok | :no_return
   defp clean_release(release, path) do
     # Remove erts
     erts_paths = Path.wildcard(Path.join(path, "erts-*"))
@@ -108,8 +112,10 @@ defmodule Mix.Tasks.Release.Clean do
     File.rm(Path.join([path, "releases", "start_erl.data"]))
     # Remove current release version
     File.rm_rf!(Path.join([path, "releases", "#{release.version}"]))
+    :ok
   end
 
+  @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
     {overrides, _} = OptionParser.parse!(argv, [
           implode: :boolean,
@@ -124,6 +130,7 @@ defmodule Mix.Tasks.Release.Clean do
       verbosity: verbosity]
   end
 
+  @spec confirm_implode?() :: boolean
   defp confirm_implode? do
     Distillery.IO.confirm """
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!
@@ -131,6 +138,7 @@ defmodule Mix.Tasks.Release.Clean do
     """
   end
 
+  @spec execute_after_hooks([String.t]) :: :ok | no_return
   defp execute_after_hooks(args) do
     plugins = Mix.Releases.Plugin.load_all
     Enum.each plugins, fn plugin ->

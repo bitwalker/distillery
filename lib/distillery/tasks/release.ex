@@ -128,6 +128,7 @@ defmodule Mix.Tasks.Release do
     end
   end
 
+  @spec print_success(atom) :: :ok
   defp print_success(app) do
     Logger.success "Release successfully built!\n    " <>
       "You can run it in one of the following ways:\n      " <>

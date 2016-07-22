@@ -31,6 +31,7 @@ defmodule Mix.Tasks.Release.Init do
   use Mix.Task
   alias Mix.Releases.{Utils, Logger}
 
+  @spec run(OptionParser.argv) :: no_return
   def run(args) do
     # make sure loadpaths are updated
     Mix.Task.run("loadpaths", [])
@@ -62,6 +63,7 @@ defmodule Mix.Tasks.Release.Init do
 
   @defaults [no_doc: false,
              release_per_app: false]
+  @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
     {overrides, _} = OptionParser.parse!(argv,
       strict: [no_doc: :boolean,
@@ -69,6 +71,7 @@ defmodule Mix.Tasks.Release.Init do
     Keyword.merge(@defaults, overrides)
   end
 
+  @spec get_umbrella_bindings(Keyword.t) :: Keyword.t | no_return
   defp get_umbrella_bindings(opts) do
     apps_path = Keyword.get(Mix.Project.config, :apps_path)
     apps_paths = File.ls!(apps_path)
@@ -98,6 +101,7 @@ defmodule Mix.Tasks.Release.Init do
     end
   end
 
+  @spec get_standard_bindings(Keyword.t) :: Keyword.t | no_return
   defp get_standard_bindings(opts) do
     app = Keyword.get(Mix.Project.config, :app)
     no_doc? = Keyword.get(opts, :no_doc, false)
