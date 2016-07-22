@@ -2,9 +2,9 @@ defmodule Mix.Releases.Release do
   @moduledoc """
   Represents metadata about a release
   """
-  alias Mix.Releases.Profile
+  alias Mix.Releases.{App, Profile, Overlays}
 
-  defstruct name: "",
+  defstruct name: nil,
     version: "0.1.0",
     applications: [
       :elixir, # required for elixir apps
@@ -30,6 +30,17 @@ defmodule Mix.Releases.Release do
       commands: [],
       overrides: []
     }
+
+  @type t :: %__MODULE__{
+    name: atom(),
+    version: String.t,
+    applications: list(atom | {atom, App.start_type} | App.t),
+    is_upgrade: boolean,
+    upgrade_from: nil | String.t,
+    output_dir: nil | String.t,
+    resolved_overlays: [Overlays.overlay],
+    profile: Profile.t
+  }
 
   def new(name, version, apps \\ []) do
     output_dir = Path.relative_to_cwd(Path.join("rel", "#{name}"))
