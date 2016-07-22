@@ -4,8 +4,20 @@ Plugins are how you extend `distillery` itself during release generation. It is 
 to review the module documentation for `Mix.Releases.Plugin` for more detailed information,
 including an example plugin.
 
-The plugin system executes the following callbacks in modules extending the `Mix.Releases.Plugin`
-behaviour.
+You add plugins to a release or environment like so:
+
+```elixir
+environment :prod do
+  plugin MyApp.ProdPlugin
+end
+
+release :myapp do
+  ..snip..
+  plugin MyApp.DoStuff
+end
+```
+
+These plugins are expected to adhere to the `Mix.Releases.Plugin` behaviour.
 
 ### before_assembly
 
