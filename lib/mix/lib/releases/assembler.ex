@@ -650,10 +650,17 @@ defmodule Mix.Releases.Assembler do
 
   defp generate_overlay_vars(release) do
     vars = [release: release,
-            erts_vsn: Utils.erts_version(),
-            output_dir: release.output_dir,
             release_name: release.name,
-            release_version: release.version] ++ release.profile.overlay_vars
+            release_version: release.version,
+            is_upgrade: release.is_upgrade,
+            upgrade_from: release.upgrade_from,
+            dev_mode: release.profile.dev_mode,
+            include_erts: release.profile.include_erts,
+            include_src: release.profile.include_src,
+            include_system_libs: release.profile.include_system_libs,
+            erl_opts: release.profile.erl_opts,
+            erts_vsn: Utils.erts_version(),
+            output_dir: release.output_dir] ++ release.profile.overlay_vars
     Logger.debug "Generated overlay vars:"
     inspected = Enum.map(vars, fn
         {:release, _} -> nil
