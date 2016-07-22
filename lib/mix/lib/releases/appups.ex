@@ -22,11 +22,11 @@ defmodule Mix.Releases.Appup do
 
   ## Parameters
 
-  - `application`: the application name as an atom
-  - `v1`: the previous version, such as "0.0.1"
-  - `v2`: the new version, such as "0.0.2"
-  - `v1_path`: the path to the v1 artifacts (rel/<app>/lib/<app>-0.0.1)
-  - `v2_path`: the path to the v2 artifacts (_build/prod/lib/<app>)
+      - application: the application name as an atom
+      - v1: the previous version, such as "0.0.1"
+      - v2: the new version, such as "0.0.2"
+      - v1_path: the path to the v1 artifacts (rel/<app>/lib/<app>-0.0.1)
+      - v2_path: the path to the v2 artifacts (_build/prod/lib/<app>)
 
   """
   @spec make(app, version_str, version_str, path_str, path_str) :: {:ok, appup} | {:error, term}

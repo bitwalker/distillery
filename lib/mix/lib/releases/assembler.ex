@@ -2,7 +2,7 @@ defmodule Mix.Releases.Assembler do
   @moduledoc """
   This module is responsible for assembling a release based on a `Mix.Releases.Config`
   struct. It creates the release directory, copies applications, and generates release-specific
-  files required by :systools and :release_handler.
+  files required by `:systools` and `:release_handler`.
   """
   alias Mix.Releases.{Config, Release, Environment, Profile, App}
   alias Mix.Releases.{Utils, Logger, Appup, Plugin, Overlays}

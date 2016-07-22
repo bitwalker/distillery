@@ -6,8 +6,7 @@ defmodule Mix.Releases.Archiver do
 
   @doc """
   Given an assembled release, and the Release struct representing it,
-  this function will package up the release into a tar.gz file,
-  applying any overlays it contains prior to doing so.
+  this function will package up the release into a tar.gz file.
 
   It returns `{:ok, "path/to/tarball"}`, or `{:error, reason}`
   """

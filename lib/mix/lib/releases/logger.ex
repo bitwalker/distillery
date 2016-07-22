@@ -1,5 +1,24 @@
 defmodule Mix.Releases.Logger do
+  @moduledoc """
+  This is the logger implementation for Distillery. It is necessary to use
+  because the process-based Logger in Elixir will drop messages when errors
+  occur which kill the runtime, making debugging more difficult. We also
+  colorize and format messages here.
+  """
 
+  @type verbosity :: :silent | :quiet | :normal | :verbose
+
+  @doc """
+  Configure the logging verbosity of the release logger.
+
+  Valid verbosity settings are:
+
+      - silent - no output except errors
+      - quiet - no output except warnings/errors
+      - normal - no debug output (default)
+      - verbose - all output
+  """
+  @spec configure(verbosity) :: :ok
   def configure(verbosity) when is_atom(verbosity) do
     Application.put_env(:mix, :release_logger_verbosity, verbosity)
   end
@@ -10,19 +29,27 @@ defmodule Mix.Releases.Logger do
   @warn_color    IO.ANSI.yellow
   @error_color   IO.ANSI.red
 
-  @doc "Print an informational message in cyan"
-  def debug(message),         do: log(:debug, colorize("==> #{message}", @debug_color))
+  @doc "Print a debug message in cyan"
+  @spec debug(String.t) :: :ok
+  def debug(message), do: log(:debug, colorize("==> #{message}", @debug_color))
+  @doc "Print an unformatted debug message in cyan"
+  @spec debug(String.t, :plain) :: :ok
   def debug(message, :plain), do: log(:debug, colorize(message, @debug_color))
   @doc "Print an informational message in bright cyan"
-  def info(message),    do: log(:info, colorize("==> #{message}", @info_color))
+  @spec info(String.t) :: :ok
+  def info(message), do: log(:info, colorize("==> #{message}", @info_color))
   @doc "Print a success message in bright green"
+  @spec success(String.t) :: :ok
   def success(message), do: log(:warn, colorize("==> #{message}", @success_color))
   @doc "Print a warning message in yellow"
-  def warn(message),    do: log(:warn, colorize("==> #{message}", @warn_color))
+  @spec warn(String.t) :: :ok
+  def warn(message), do: log(:warn, colorize("==> #{message}", @warn_color))
   @doc "Print a notice in yellow"
+  @spec notice(String.t) :: :ok
   def notice(message),  do: log(:notice, colorize(message, @warn_color))
   @doc "Print an error message in red"
-  def error(message),   do: log(:error, colorize("==> #{message}", @error_color))
+  @spec error(String.t) :: :ok
+  def error(message), do: log(:error, colorize("==> #{message}", @error_color))
 
   defp log(level, message),
     do: log(level, Application.get_env(:mix, :release_logger_verbosity, :normal), message)
