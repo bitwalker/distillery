@@ -48,7 +48,8 @@ defmodule Distillery.Mixfile do
        "docs/Overlays.md",
        "docs/Plugins.md",
        "docs/Boot Hooks.md",
-       "docs/Custom Commands.md"
+       "docs/Custom Commands.md",
+       "docs/Terminology.md"
      ]]
   end
 end
