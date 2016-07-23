@@ -21,11 +21,11 @@ Just add the following to your deps list in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:distillery, "~> 0.7"}]
+  [{:distillery, "~> 0.8"}]
 end
 ```
 
-The run `mix do deps.get, compile`, and you're ready to go!
+Then run `mix do deps.get, compile`, and you're ready to go!
 
 ## Initializing Distillery
 
