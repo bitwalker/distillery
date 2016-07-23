@@ -48,7 +48,7 @@ As a developer, you define a schema which maps simple configuration settings con
 into the specific structures required for your application's configuration. To see an example of what these look
 like, [take a look here](https://github.com/bitwalker/conform/tree/distillery#conf-files-and-schema-files).
 
-When you deploy your application, user simply modify the `.conf` file as needed, and run the release, `conform` handles
+When you deploy your application, users simply modify the `.conf` file as needed, and run the release, `conform` handles
 converting the configuration into runtime configuration for the release using the schema, and you can access that
 configuration via `Application.get_env/2` as usual.
 
