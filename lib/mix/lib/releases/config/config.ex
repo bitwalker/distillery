@@ -272,7 +272,9 @@ defmodule Mix.Releases.Config do
       end
       for overlay <- (profile.overlays || []) do
         case overlay do
-          {op, opts} when is_atom(op) and is_list(opts) ->
+          {op, opt} when is_atom(op) and is_binary(opt) ->
+            :ok
+          {op, opt1, opt2} when is_atom(op) and is_binary(opt1) and is_binary(opt2) ->
             :ok
           value ->
             raise ArgumentError,
