@@ -28,10 +28,6 @@ Just add as a mix dependency and use `mix release`. This is a replacement for ex
 
 If you are new to releases, please review the [documentation](https://hexdocs.pm/distillery).
 
-**NOTE**: If you are currently using `conform` with `exrm`, you can use `conform` with Distillery by using
-the `distillery` branch of `conform`. You will not need the `conform_exrm` dependency, but there are some
-changes, so please read the README carefully.
-
 ## TODO
 
 - [x] Upgrades/downgrades
@@ -39,7 +35,7 @@ changes, so please read the README carefully.
 - [ ] Read-only filesystems
 - [x] CLI tooling improvements
 - [x] Documentation
-- [ ] Code cleanup
+- [x] Code cleanup
 
 ## License
 
