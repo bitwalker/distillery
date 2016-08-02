@@ -15,7 +15,7 @@ defmodule Mix.Releases.Profile do
     include_src: nil, # boolean
     include_system_libs: nil, # boolean | "path/to/libs"
     strip_debug_info: nil, # boolean
-    plugins: nil, # list of module names
+    plugins: [], # list of module names
     overlay_vars: nil, # keyword list
     overlays: nil, # overlay list
     overrides: nil, # override list [app: app_path]
