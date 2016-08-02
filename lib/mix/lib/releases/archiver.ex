@@ -75,9 +75,9 @@ defmodule Mix.Releases.Archiver do
             '#{Path.join([output_dir, "releases", release.version, "sys.config"])}'},
             {'#{Path.join(["releases", release.version, name <> ".sh"])}',
             '#{Path.join([output_dir, "releases", release.version, name <> ".sh"])}'},
-            {'bin', '#{Path.join(output_dir, "bin")}'}
+            {'bin', '#{Path.join(output_dir, "bin")}'},
             {'#{Path.join(["lib", "#{release.name}-#{release.version}", "consolidated"])}',
-            '#{Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])}'}, |
+            '#{Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])}'} |
             case release.profile.include_erts do
               false ->
                 case release.profile.include_system_libs do
