@@ -75,7 +75,22 @@ defmodule Mix.Releases.Archiver do
             '#{Path.join([output_dir, "releases", release.version, "sys.config"])}'},
             {'#{Path.join(["releases", release.version, name <> ".sh"])}',
             '#{Path.join([output_dir, "releases", release.version, name <> ".sh"])}'},
-            {'bin', '#{Path.join(output_dir, "bin")}'} |
+            {'#{Path.join(["releases", release.version, name <> ".boot"])}',
+             '#{Path.join([output_dir, "releases", release.version, name <> ".boot"])}'},
+            {'#{Path.join(["releases", release.version, name <> ".script"])}',
+             '#{Path.join([output_dir, "releases", release.version, name <> ".script"])}'},
+            {'#{Path.join(["releases", release.version, name <> ".rel"])}',
+             '#{Path.join([output_dir, "releases", release.version, name <> ".rel"])}'},
+            {'#{Path.join(["releases", release.version, "start_clean.boot"])}',
+             '#{Path.join([output_dir, "releases", release.version, "start_clean.boot"])}'},
+            {'bin', '#{Path.join(output_dir, "bin")}'}] ++
+            case release.is_upgrade do
+              true ->
+                [{'#{Path.join(["releases", release.version, "relup"])}',
+                  '#{Path.join([output_dir, "releases", release.version, "relup"])}'}]
+              false ->
+                []
+            end ++
             case release.profile.include_erts do
               false ->
                 case release.profile.include_system_libs do
@@ -91,9 +106,8 @@ defmodule Mix.Releases.Archiver do
               true ->
                 erts_vsn = Utils.erts_version()
                 [{'lib', '#{Path.join(tmpdir, "lib")}'},
-                {'erts-#{erts_vsn}', '#{Path.join(output_dir, "erts-" <> erts_vsn)}'}]
-            end
-              ] ++ overlays, [:dereference, :compressed]),
+                 {'erts-#{erts_vsn}', '#{Path.join(output_dir, "erts-" <> erts_vsn)}'}]
+            end ++ overlays, [:dereference, :compressed]),
         :ok      <- Logger.debug("Tarball updated!"),
         {:ok, _} <-  File.rm_rf(tmpdir) do
       {:ok, tarfile}
