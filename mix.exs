@@ -3,7 +3,7 @@ defmodule Distillery.Mixfile do
 
   def project do
     [app: :distillery,
-     version: "0.8.0",
+     version: "0.9.0",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -18,7 +18,6 @@ defmodule Distillery.Mixfile do
 
   defp deps do
     [{:ex_doc, "~> 0.13", only: [:dev]},
-     {:earmark, "~> 1.0", only: [:dev]},
      {:excoveralls, "~> 0.5", only: [:dev, :test]},
      {:dialyze, "~> 0.2", only: [:dev]}]
   end
