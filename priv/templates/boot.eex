@@ -558,7 +558,7 @@ case "$1" in
 
         # Build arguments for erlexec
         set -- "$ERL_OPTS"
-        [ "$SYS_CONFIG" ] && set -- "$@" -config "$SYS_CONFIG_PATH"
+        [ "$SYS_CONFIG_PATH" ] && set -- "$@" -config "$SYS_CONFIG_PATH"
         set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
         set -- "$@" -noshell
         set -- "$@" -boot start_clean
