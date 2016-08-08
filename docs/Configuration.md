@@ -120,8 +120,8 @@ and environments.
     that you are working on for a 'production' version of an app. You can
     explicitly tell Mix to override all versions of an app that you specify
     with an app in an arbitrary directory. Mix will then symlink that app
-    into the release in place of the specified app. be aware though that Mix
-    will check your app for consistancy so it should be a normal OTP app and
+    into the release in place of the specified app. Be aware though that Mix
+    will check your app for consistency so it should be a normal OTP app and
     already be built.
 - overlay_vars (keyword list);
     A keyword list of bindings to use in overlays
