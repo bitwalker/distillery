@@ -553,12 +553,40 @@ case "$1" in
         shift
         nodetool "eval" $@
         ;;
+    command)
+        # Execute as command-line utility
+        #
+        # Like the escript command, this does not start the OTP application.
+        # If your command depends on a running OTP application,
+        # use
+        #
+        #     {:ok, _} = Application.ensure_all_started(:your_app)
+
+        shift
+        MODULE="$1"; shift
+        FUNCTION="$1"; shift
+
+        # Save extra arguments
+        ARGS="$@"
+
+        # Build arguments for erlexec
+        set -- "$ERL_OPTS"
+        [ "$SYS_CONFIG_PATH" ] && set -- "$@" -config "$SYS_CONFIG_PATH"
+        set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
+        set -- "$@" -noshell
+        set -- "$@" -boot start_clean
+        set -- "$@" -s "$MODULE" "$FUNCTION"
+
+
+        $BINDIR/erlexec $@ -extra $ARGS
+        exit "$?"
+        ;;
     *)
         __command_path="$REL_DIR/commands/$1"
         if [ -f "$__command_path" ]; then
             . "$__command_path"
         else
-            echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|console_clean|console_boot <file>|attach|remote_console|upgrade|downgrade|install|escript|rpc|rpcterms|eval}"
+            echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|console_clean|console_boot <file>|attach|remote_console|upgrade|downgrade|install|escript|rpc|rpcterms|eval|command <module> <function> <args>}"
             exit 1
         fi
         ;;
