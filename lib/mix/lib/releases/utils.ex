@@ -64,6 +64,22 @@ defmodule Mix.Releases.Utils do
   def erts_version, do: "#{:erlang.system_info(:version)}"
 
   @doc """
+  Detects the version of ERTS in the given directory
+  """
+  @spec detect_erts_version(String.t) :: {:ok, Stringt} | {:error, term}
+  def detect_erts_version(path) when is_binary(path) do
+    entries = Path.expand(path)
+    |> Path.join("erts-*")
+    |> Path.wildcard
+    case entries do
+      [<<"erts-", vsn::binary>>] ->
+        {:ok, vsn}
+      _ ->
+        {:error, "invalid ERTS path, cannot determine version"}
+    end
+  end
+
+  @doc """
   Creates a temporary directory with a random name in a canonical
   temporary files directory of the current system
   (i.e. `/tmp` on *NIX or `./tmp` on Windows)

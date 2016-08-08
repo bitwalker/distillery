@@ -454,6 +454,21 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates start_erl.data
+  defp generate_start_erl_data(%Release{version: version, profile: %Profile{include_erts: false}}, rel_dir) do
+    Logger.debug "Generating start_erl.data"
+    contents = "ERTS_VSN #{version}"
+    File.write(Path.join([rel_dir, "..", "start_erl.data"]), contents)
+  end
+  defp generate_start_erl_data(%Release{profile: %Profile{include_erts: path}} = release, rel_dir)
+    when is_binary(path) do
+    Logger.debug "Generating start_erl.data"
+    case Utils.detect_erts_version(path) do
+      {:error, _} = err -> err
+      {:ok, vsn} ->
+        contents = "#{vsn} #{release.version}"
+        File.write(Path.join([rel_dir, "..", "start_erl.data"]), contents)
+    end
+  end
   defp generate_start_erl_data(release, rel_dir) do
     Logger.debug "Generating start_erl.data"
     contents = "#{Utils.erts_version} #{release.version}"
@@ -508,7 +523,10 @@ defmodule Mix.Releases.Assembler do
                true -> "#{:code.root_dir}"
                p when is_binary(p) -> Path.absname(p)
              end
-    erts_vsn = Utils.erts_version()
+    erts_vsn = case include_erts do
+                 true -> Utils.erts_version()
+                 p when is_binary(p) -> Utils.detect_erts_version(prefix)
+               end
     erts_dir = Path.join(prefix, "erts-#{erts_vsn}")
 
     Logger.info "Including ERTS #{erts_vsn} from #{Path.relative_to_cwd(erts_dir)}"
@@ -661,6 +679,11 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp generate_overlay_vars(release) do
+    erts_vsn = case release.profile.include_erts do
+                 true -> Utils.erts_version()
+                 false -> nil
+                 p when is_binary(p) -> Utils.detect_erts_version(p)
+               end
     vars = [release: release,
             release_name: release.name,
             release_version: release.version,
@@ -671,7 +694,7 @@ defmodule Mix.Releases.Assembler do
             include_src: release.profile.include_src,
             include_system_libs: release.profile.include_system_libs,
             erl_opts: release.profile.erl_opts,
-            erts_vsn: Utils.erts_version(),
+            erts_vsn: erts_vsn,
             output_dir: release.output_dir] ++ release.profile.overlay_vars
     Logger.debug "Generated overlay vars:"
     inspected = Enum.map(vars, fn

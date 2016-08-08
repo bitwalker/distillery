@@ -16,10 +16,13 @@ REL_NAME="<%= release_name %>"
 # Current version of the release
 REL_VSN="<%= release_version %>"
 # Current version of ERTS being used
-ERTS_VSN="<%= erts_vsn %>"
+# If this is not present/unset, it will be detected
+<%= unless is_nil(erts_vsn) do %>ERTS_VSN="<%= erts_vsn %>"<% end %>
 # VM code loading mode, embedded by default, can also be interactive
 # See http://erlang.org/doc/man/code.html
 CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
+# Path to start_erl.data
+START_ERL_DATA="$RELEASE_ROOT_DIR/releases/start_erl.data"
 # Directory containing the current version of this release
 REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
 # The lib directory for this release
@@ -79,6 +82,10 @@ escript() {
     "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@
 }
 
+# Private. For determining the version of ERTS available to the release
+_detect_erts_vsn() {
+    erl -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
+}
 
 # Private. For setting ERTS_DIR and ROOTDIR
 _find_erts_dir() {
@@ -127,6 +134,12 @@ _start_command() {
     printf "exec \"%s\" \"%s\" -- %s %s" "$RELEASE_ROOT_DIR/bin/$REL_NAME" \
            "$START_OPTION" "${ARGS}" "${EXTRA_OPTS}"
 }
+
+# If ERTS_VSN is not set, detect it
+if [ -z "$ERTS_VSN" ]; then
+    ERTS_VSN="$(_detect_erts_vsn)"
+    echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
+fi
 
 # Allow override of where to look for config files
 # By default it's $CWD/
