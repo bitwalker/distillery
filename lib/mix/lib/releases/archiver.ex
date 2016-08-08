@@ -103,7 +103,7 @@ defmodule Mix.Releases.Archiver do
                   true ->
                     [{'lib', '#{Path.join(tmpdir, "lib")}'}]
                 end
-              true ->
+              yes when yes == true or is_binary(yes) ->
                 erts_vsn = Utils.erts_version()
                 [{'lib', '#{Path.join(tmpdir, "lib")}'},
                  {'erts-#{erts_vsn}', '#{Path.join(output_dir, "erts-" <> erts_vsn)}'}]
