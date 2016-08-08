@@ -56,7 +56,7 @@ An environment's settings override those of a release.
 #### Profile
 
 A specific combination of release and environment configuration settings, after environment settings have
-been merged over the release settings. When talking about profiles, it may be easier to do so by `{name}-#{env}`,
+been merged over the release settings. When talking about profiles, it may be easier to do so by `{name}:#{env}`,
 e.g. `myapp:staging` where `myapp` is the release name, and the environment is `staging`.
 
 #### Overlay
