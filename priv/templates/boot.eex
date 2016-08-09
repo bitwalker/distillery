@@ -225,7 +225,7 @@ NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
 # Where the pipe will be stored when using `start`
 # This is used so you can attach the running application to the current
 # shell using `attach`
-PIPE_DIR="${PIPE_DIR:-/tmp/erl_pipes/$NAME/}"
+PIPE_DIR="${PIPE_DIR:-$RELEASE_ROOT_DIR/tmp/erl_pipes/$NAME/}"
 
 # Extract the target cookie
 COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
