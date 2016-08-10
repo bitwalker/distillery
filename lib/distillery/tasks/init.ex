@@ -74,9 +74,8 @@ defmodule Mix.Tasks.Release.Init do
   @spec get_umbrella_bindings(Keyword.t) :: Keyword.t | no_return
   defp get_umbrella_bindings(opts) do
     apps_path = Keyword.get(Mix.Project.config, :apps_path)
-    apps_paths = File.ls!(apps_path)
+    apps_paths = Path.wildcard("#{apps_path}/*")
     apps = apps_paths
-      |> Enum.map(&Path.join(apps_path, &1))
       |> Enum.map(fn app_path ->
         Mix.Project.in_project(String.to_atom(Path.basename(app_path)), app_path, fn mixfile ->
           {Keyword.get(mixfile.project, :app), :permanent}
