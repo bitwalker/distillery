@@ -38,4 +38,18 @@ defmodule ConfigTest do
                      default_release: :default, default_environment: :default} = config
     end
   end
+
+  describe "plugin config" do
+    test "read!" do
+      config = Mix.Project.in_project(:standard_app, @standard_app, fn _mixfile ->
+        Mix.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
+      end)
+      assert %Config{environments: %{
+                        dev: %Environment{profile: %Profile{plugins: []}},
+                        prod: %Environment{profile: %Profile{plugins: [SampleApp.ProdPlugin]}}},
+                     releases: %{
+                       standard_app: %Release{profile: %Profile{plugins: [SampleApp.ReleasePlugin]}}}
+      } = config
+    end
+  end
 end
