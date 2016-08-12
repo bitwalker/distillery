@@ -363,7 +363,8 @@ defmodule Mix.Releases.Assembler do
   defp extract_relfile_apps(path) do
     case Utils.read_terms(path) do
       {:error, err} -> raise err
-      {:ok, [{:release, _rel, _erts, apps}]} -> apps
+      {:ok, [{:release, _rel, _erts, apps}]} ->
+        Enum.map(apps, fn {a, v} -> {a, v}; {a, v, _start_type} -> {a, v} end)
       {:ok, other} -> raise "malformed relfile (#{path}): #{inspect other}"
     end
   end
