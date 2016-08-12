@@ -35,10 +35,11 @@ defmodule Mix.Releases.App do
     case Application.spec(name) do
       nil -> nil
       spec ->
-        vsn = '#{Keyword.get(spec, :vsn)}'
-        apps = Keyword.get(spec, :applications, [])
+        vsn      = '#{Keyword.get(spec, :vsn)}'
+        deps     = get_children(name)
+        apps     = Enum.uniq(deps ++ Keyword.get(spec, :applications, []))
         included = Keyword.get(spec, :included_applications, [])
-        path = Application.app_dir(name)
+        path     = Application.app_dir(name)
         %__MODULE__{name: name, vsn: vsn,
                     applications: apps,
                     included_applications: included,
@@ -46,4 +47,33 @@ defmodule Mix.Releases.App do
     end
   end
   def new(name, start_type), do: {:error, "Invalid start type for #{name}: #{start_type}"}
+
+  # Gets a list of all applications which are children
+  # of this application.
+  defp get_children(name) do
+    try do
+      Mix.Dep.loaded_by_name([name], [])
+      |> Enum.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
+      |> Enum.map(fn %Mix.Dep{app: n} -> {n, :load} end)
+    rescue
+      Mix.Error -> # This is a top-level app
+        cond do
+          Mix.Project.umbrella? ->
+            # find the app in the umbrella
+            app_path = Path.join(Mix.Project.config[:apps_path], "#{name}")
+            cond do
+              File.exists?(app_path) ->
+                Mix.Project.in_project(name, app_path, fn mixfile ->
+                  mixfile.project[:deps]
+                  |> Enum.map(fn {a, _} -> {a, :load} end)
+                end)
+              :else ->
+                []
+            end
+          :else ->
+            Mix.Project.config[:deps]
+            |> Enum.map(fn {a, _} -> {a, :load} end)
+        end
+    end
+  end
 end

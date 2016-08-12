@@ -220,14 +220,14 @@ defmodule Mix.Releases.Utils do
             Logger.debug "    applications: none", :plain
           _  ->
             Logger.debug "    applications:\n" <>
-              "      #{Enum.map(app.applications, &Atom.to_string/1) |> Enum.join("\n      ")}", :plain
+              "      #{Enum.map(app.applications, &inspect/1) |> Enum.join("\n      ")}", :plain
         end
         case app.included_applications do
           [] ->
             Logger.debug "    includes: none\n", :plain
           _ ->
             Logger.debug "    includes:\n" <>
-              "      #{Enum.map(app.included_applications, &Atom.to_string/1) |> Enum.join("\n     ")}", :plain
+              "      #{Enum.map(app.included_applications, &inspect/1) |> Enum.join("\n     ")}", :plain
         end
       end)
     end
@@ -241,6 +241,22 @@ defmodule Mix.Releases.Utils do
     |> Enum.reduce([app|acc], fn
       {:error, _} = err, _acc ->
         err
+      {a, load_type}, acc ->
+        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
+          true -> acc
+          false ->
+            case App.new(a, load_type) do
+              nil ->
+                acc
+              %App{} = app ->
+                case get_apps(app, acc) do
+                  {:error, _} = err -> err
+                  children -> Enum.concat(acc, children)
+                end
+              {:error, _} = err ->
+                err
+            end
+        end
       a, acc ->
         case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
           true -> acc
