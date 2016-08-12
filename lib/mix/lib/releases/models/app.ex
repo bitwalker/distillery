@@ -41,6 +41,7 @@ defmodule Mix.Releases.App do
         included = Keyword.get(spec, :included_applications, [])
         path     = Application.app_dir(name)
         %__MODULE__{name: name, vsn: vsn,
+                    start_type: start_type,
                     applications: apps,
                     included_applications: included,
                     path: path}
@@ -54,7 +55,7 @@ defmodule Mix.Releases.App do
     try do
       Mix.Dep.loaded_by_name([name], [])
       |> Enum.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
-      |> Enum.map(fn %Mix.Dep{app: n} -> {n, :load} end)
+      |> Enum.map(fn %Mix.Dep{app: a} -> {a, :load} end)
     rescue
       Mix.Error -> # This is a top-level app
         cond do
