@@ -192,7 +192,7 @@ defmodule Mix.Releases.Assembler do
               "Reason: #{reason}"
           :ok ->
             Path.wildcard(Path.join(app_dir, "*"))
-            |> Enum.filter(fn p -> Path.basename(p) in ["ebin", "include", "priv", "lib"] end)
+            |> Enum.filter(fn p -> Path.basename(p) in ["ebin", "include", "priv", "lib", "src"] end)
             |> Enum.each(fn p ->
               t = Path.join(target_dir, Path.basename(p))
               case File.cp_r(p, t) do
