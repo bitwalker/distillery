@@ -87,6 +87,11 @@ _detect_erts_vsn() {
     erl -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
 }
 
+# Private. Gets a list of code paths for this release
+_get_code_paths() {
+    erl -noshell -boot start_clean -eval "{ok, [{release,_,_,Apps}]} = file:consult(\"$REL_DIR/$REL_NAME.rel\"),lists:foreach(fun(A) -> io:fwrite(\"-pa $ROOTDIR/lib/~p-~s/ebin \", [element(1, A), element(2, A)]) end, Apps),halt()."
+}
+
 # Private. For setting ERTS_DIR and ROOTDIR
 _find_erts_dir() {
     __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
@@ -119,8 +124,10 @@ _rem_sh() {
             -kernel net_ticktime $TICKTIME \
             "$NAME_TYPE" "$id" -remsh "$NAME" -setcookie "$COOKIE"
     else
+        __code_paths=$(_get_code_paths)
         exec "$BINDIR/erl" \
-            -pa "$ROOTDIR"/lib/*/ebin -pa "$CONSOLIDATED_DIR" \
+            -pa "$CONSOLIDATED_DIR" \
+            ${__code_paths} \
             -hidden -noshell \
             -boot start_clean -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
             -kernel net_ticktime $TICKTIME \
@@ -455,6 +462,7 @@ case "$1" in
         # the console will crash with no TTY attached
         [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
 
+        __code_paths=$(_get_code_paths)
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
         set -- "$BINDIR/erlexec" \
@@ -462,6 +470,7 @@ case "$1" in
             -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
             -env ERL_LIBS "$REL_LIB_DIR" \
             -pa "$CONSOLIDATED_DIR" \
+            ${__code_paths} \
             -args_file "$VMARGS_PATH" \
             -config "$SYS_CONFIG_PATH" \
             -mode "$CODE_LOADING_MODE" \
