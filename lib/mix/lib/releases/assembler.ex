@@ -240,7 +240,9 @@ defmodule Mix.Releases.Assembler do
         release_file     = Path.join(rel_dir, "#{relname}.rel")
         start_clean_file = Path.join(rel_dir, "start_clean.rel")
         start_clean_rel  = %{release |
-           :applications => Enum.filter(release.applications, fn %App{name: n} -> n in [:kernel, :stdlib] end)}
+                             :applications => Enum.filter(release.applications, fn %App{name: n} ->
+                               n in [:kernel, :stdlib, :compiler, :elixir, :iex]
+                             end)}
         with :ok <- write_relfile(release_file, release),
              :ok <- write_relfile(start_clean_file, start_clean_rel),
              :ok <- write_binfile(release, rel_dir),
