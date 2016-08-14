@@ -3,48 +3,111 @@ defmodule Mix.Releases.Plugin do
   This module provides a simple way to add additional processing to
   phases of the release assembly and archival.
 
-  You can define your own plugins using the sample definition below. Note that
+  ## Implementing your own plugin
+
+  To create a Distillery plugin, create a new module in which you
+  `use Mix.Releases.Plugin`. Then write implentations for the following
+  callbacks:
+
+    - `c:before_assembly/1`
+    - `c:after_assembly/1`
+    - `c:before_package/1`
+    - `c:after_package/1`
+    - `c:after_cleanup/1`
+
+  Currently, there are no default implementations. You are required to
+  implement all callbacks yourself.
+
+  When you `use Mix.Releases.Plugin`, the following happens:
+
+    - Your module is marked with `@behaviour Mix.Releases.Plugin`.
+    - The `Mix.Releases.Release` struct is aliased to `%Release{}`.
+    - The functions `debug/1`, `info/1`, `warn/1`, `notice/1`, and `error/1`
+      are imported from `Mix.Releases.Logger`. These should be used to present
+      output to the user.
+
+  The first four callbacks (`c:before_assembly/1`, `c:after_assembly/1`,
+  `c:before_package/1`, and `c:after_package/1`) will each be passed the
+  `%Release{}` struct. You can return a modified struct, or `nil`. Any other
+  return value will lead to runtime errors.
+
+  `c:after_cleanup/1` is only invoked on `mix release.clean`. It will be passed
+  the command line arguments. The return value is not used.
+
+  ## Example
 
       defmodule MyApp.PluginDemo do
         use Mix.Releases.Plugin
 
         def before_assembly(%Release{} = release) do
           info "This is executed just prior to assembling the release"
+          release # or nil
         end
 
         def after_assembly(%Release{} = release) do
           info "This is executed just after assembling, and just prior to packaging the release"
+          release # or nil
+        end
+
+        def before_package(%Release{} = release) do
+          info "This is executed just before packaging the release"
+          release # or nil
         end
 
         def after_package(%Release{} = release) do
           info "This is executed just after packaging the release"
+          release # or nil
         end
 
         def after_cleanup(_args) do
           info "This is executed just after running cleanup"
+          :ok # It doesn't matter what we return here
         end
       end
-
-  A couple things are imported or aliased for you. Those things are:
-
-    - The `Mix.Releases.Release` struct is aliased for you to just Release
-    - `debug/1`, `info/1`, `warn/1`, `notice/1`, and `error/1` are imported for you.
-      These should be used to do any output for the user.
-
-  `before_assembly/1` and `after_assembly/1` will each be passed a `Release` struct,
-  containing the configuration for the release task, after the environment configuration
-  has been merged into it. You can choose to return the struct modified or unmodified, or not at all.
-  In the former case, any modifications you made will be passed on to the remaining plugins and then
-  used during assembly/archival.
-  The required callback `after_cleanup/1` is passed the command line arguments. The return value is not used.
   """
-  use Behaviour
+
   alias Mix.Releases.Release
 
-  @callback before_assembly(Release.t) :: any
-  @callback after_assembly(Release.t) :: any
-  @callback after_package(Release.t) :: any
-  @callback after_cleanup([String.t]) :: any
+  @doc """
+  Called before assembling the release.
+
+  Should return a modified `%Release{}` or `nil`.
+  """
+  @callback before_assembly(Release.t) :: Release.t | nil
+
+  @doc """
+  Called after assembling the release.
+
+  Should return a modified `%Release{}` or `nil`.
+  """
+  @callback after_assembly(Release.t)  :: Release.t | nil
+
+  @doc """
+  Called before packaging the release.
+
+  Should return a modified `%Release{}` or `nil`.
+
+  When in `dev_mode`, the packaging phase is skipped.
+  """
+  @callback before_package(Release.t)  :: Release.t | nil
+
+  @doc """
+  Called after packaging the release.
+
+  Should return a modified `%Release{}` or `nil`.
+
+  When in `dev_mode`, the packaging phase is skipped.
+  """
+  @callback after_package(Release.t)   :: Release.t | nil
+
+  @doc """
+  Called when the user invokes the `mix release.clean` task.
+
+  The callback will be passed the command line arguments to `mix release.clean`.
+  It should clean up the files the plugin created. The return value of this
+  callback is ignored.
+  """
+  @callback after_cleanup([String.t])  :: any
 
   @doc false
   defmacro __using__(_opts) do
@@ -61,27 +124,31 @@ defmodule Mix.Releases.Plugin do
   end
 
   @doc """
-  Runs before_assembly with all plugins.
+  Run the `c:before_assembly/1` callback of all plugins of `release`.
   """
   @spec before_assembly(Release.t) :: {:ok, Release.t} | {:error, term}
   def before_assembly(release), do: call(:before_assembly, release)
+
   @doc """
-  Runs after_assembly with all plugins.
+  Run the `c:after_assembly/1` callback of all plugins of `release`.
   """
   @spec after_assembly(Release.t) :: {:ok, Release.t} | {:error, term}
   def after_assembly(release),  do: call(:after_assembly, release)
+
   @doc """
-  Runs before_package with all plugins.
+  Run the `c:before_package/1` callback of all plugins of `release`.
   """
   @spec before_package(Release.t) :: {:ok, Release.t} | {:error, term}
   def before_package(release),  do: call(:before_package, release)
+
   @doc """
-  Runs after_package with all plugins.
+  Run the `c:after_package/1` callback of all plugins of `release`.
   """
   @spec after_package(Release.t) :: {:ok, Release.t} | {:error, term}
   def after_package(release),   do: call(:after_package, release)
+
   @doc """
-  Runs after_cleanup with all plugins.
+  Run the `c:after_cleanup/1` callback of all plugins of `release`.
   """
   @spec after_cleanup(Release.t, [String.t]) :: :ok | {:error, term}
   def after_cleanup(release, args), do: run(release.profile.plugins, :after_package, args)
