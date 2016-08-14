@@ -2,6 +2,9 @@
 
 set -e
 
+
+# Set VERBOSE to enable verbose logging of the boot script
+#VERBOSE=true
 # Path to this script
 SCRIPT=$(readlink $0 || true)
 if [ -z $SCRIPT ]; then
@@ -479,11 +482,14 @@ case "$1" in
             -extra --no-halt +iex
 
         # Dump environment info for logging purposes
-        echo "Exec: $@" -- ${1+$ARGS} ${EXTRA_OPTS}
-        echo "Root: $ROOTDIR"
+        if [ ! -z $VERBOSE ]; then
+            echo "Exec: $@" -- ${1+$ARGS} ${EXTRA_OPTS}
+            echo "Root: $ROOTDIR"
 
-        # Log the startup
-        echo "$RELEASE_ROOT_DIR"
+            # Log the startup
+            echo "$RELEASE_ROOT_DIR"
+        fi;
+
         logger -t "$REL_NAME[$$]" "Starting up"
 
         exec "$@" -- ${1+$ARGS} ${EXTRA_OPTS}
@@ -521,8 +527,10 @@ case "$1" in
             -extra ${EXTRA_OPTS}
 
         # Dump environment info for logging purposes
-        echo "Exec: $@" -- ${1+$ARGS}
-        echo "Root: $ROOTDIR"
+        if [ ! -z $VERBOSE ]; then
+            echo "Exec: $@" -- ${1+$ARGS}
+            echo "Root: $ROOTDIR"
+        fi;
 
         trap '{}' QUIT TERM KILL HUP SIGUSR1 SIGUSR2
         "$@" -- ${1+$ARGS} &
