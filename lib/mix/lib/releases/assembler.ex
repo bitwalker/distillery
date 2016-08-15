@@ -61,8 +61,7 @@ defmodule Mix.Releases.Assembler do
     env_profile = Map.from_struct(env_profile)
     profile = Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
       case v do
-        nil -> acc
-        []  -> nil
+        ignore when ignore in [nil, []] -> acc
         _   -> Map.put(acc, k, v)
       end
     end)
