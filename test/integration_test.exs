@@ -16,10 +16,10 @@ defmodule IntegrationTest do
       File.cd!(@standard_app_path)
       {:ok, _} = File.rm_rf(Path.join(@standard_app_path, "_build"))
       _ = File.rm(Path.join(@standard_app_path, "mix.lock"))
-      :ok = mix("deps.get")
-      :ok = mix("deps.compile", ["distillery"])
-      :ok = mix("compile")
-      :ok = mix("release.clean")
+      {:ok, _} = mix("deps.get")
+      {:ok, _} = mix("deps.compile", ["distillery"])
+      {:ok, _} = mix("compile")
+      {:ok, _} = mix("release.clean")
       unquote(body)
       File.cd!(old_dir)
     end
@@ -42,12 +42,17 @@ defmodule IntegrationTest do
         # Build release
         result = mix("release", ["--verbose", "--env=prod"])
         r = case result do
-          :ok -> :ok
+          {:ok, output} -> {:ok, output}
           {:error, _code, output} ->
             IO.puts(output)
             :error
         end
-        assert :ok = r
+        assert {:ok, output} = r
+        for callback <- ~w(before_assembly after_assembly before_package after_package) do
+          assert output =~ "Prod Plugin - #{callback}"
+        end
+        refute String.contains?(output, "Release Plugin")
+
         assert ["0.0.1"] == Utils.get_release_versions(@standard_output_path)
         # Boot it, ping it, and shut it down
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
@@ -80,12 +85,12 @@ defmodule IntegrationTest do
         # Build v1 release
         result = mix("release", ["--verbose", "--env=prod"])
         r = case result do
-              :ok -> :ok
+              {:ok, output} -> {:ok, output}
               {:error, _code, output} ->
                 IO.puts(output)
                 :error
             end
-        assert :ok = r
+        assert {:ok, _output} = r
         # Update config for v2
         project_config_path = Path.join(@standard_app_path, "mix.exs")
         project = File.read!(project_config_path)
@@ -122,15 +127,15 @@ defmodule IntegrationTest do
         File.write!(a_mod_path, new_a_mod)
         File.write!(b_mod_path, new_b_mod)
         # Build v2 release
-        :ok = mix("compile")
+        {:ok, _} = mix("compile")
         result = mix("release", ["--verbose", "--env=prod", "--upgrade"])
         r = case result do
-              :ok -> :ok
+              {:ok, output} -> {:ok, output}
               {:error, _code, output} ->
                 IO.puts(output)
                 :error
             end
-        assert :ok = r
+        assert {:ok, _} = r
         assert ["0.0.2", "0.0.1"] == Utils.get_release_versions(@standard_output_path)
         # Deploy it
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
@@ -214,7 +219,7 @@ defmodule IntegrationTest do
         if System.get_env("VERBOSE_TESTS") do
           IO.puts(output)
         end
-        :ok
+        {:ok, output}
       {output, err} -> {:error, err, output}
     end
   end

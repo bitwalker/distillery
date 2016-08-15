@@ -62,6 +62,7 @@ defmodule Mix.Releases.Assembler do
     profile = Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
       case v do
         nil -> acc
+        []  -> nil
         _   -> Map.put(acc, k, v)
       end
     end)
