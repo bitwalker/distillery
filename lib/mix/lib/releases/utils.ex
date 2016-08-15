@@ -71,6 +71,7 @@ defmodule Mix.Releases.Utils do
     entries = Path.expand(path)
     |> Path.join("erts-*")
     |> Path.wildcard
+    |> Enum.map(&Path.basename/1)
     case entries do
       [<<"erts-", vsn::binary>>] ->
         {:ok, vsn}
