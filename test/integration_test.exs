@@ -173,6 +173,7 @@ defmodule IntegrationTest do
             reraise(e.__struct__, Enum.into(fields, []), System.stacktrace)
         after
           File.rm_rf!(tmpdir)
+          clean_up_standard_app!
           :ok
         end
       end
