@@ -5,6 +5,16 @@ set -e
 
 # Set VERBOSE to enable verbose logging of the boot script
 #VERBOSE=true
+if [ ! -z $DEBUG_BOOT ]; then
+    set -x
+fi;
+# Disable flow control for run_erl
+# Flow control can cause several problems. On Linux, if you
+# accidentally hit Ctrl-S (instead of Ctrl-D to detach) and
+# then some other key, the entire beam process will hang when
+# attempting to write to stdout. On Solaris, the beam process
+# will hang on writing if ScrollLock is on.
+RUN_ERL_DISABLE_FLOWCNTRL="${RUN_ERL_DISABLE_FLOWCNTRL:-true}"
 # Path to this script
 SCRIPT=$(readlink $0 || true)
 if [ -z $SCRIPT ]; then
