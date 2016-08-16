@@ -21,7 +21,7 @@ Just add the following to your deps list in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:distillery, "~> 0.8"}]
+  [{:distillery, "~> 0.9"}]
 end
 ```
 
