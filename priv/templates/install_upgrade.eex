@@ -101,8 +101,8 @@ install_and_permafy(TargetNode, RelName, Vsn) ->
             ?INFO("ERROR: unable to install '~s' - old processes still running code from ~p~n",
                   [Vsn, Mod]),
             erlang:halt(3);
-        {error, Reason} ->
-            ?INFO("ERROR: release_handler:install_release failed: ~p~n", [Reason]),
+        {error, InstallFailedReason} ->
+            ?INFO("ERROR: release_handler:install_release failed: ~p~n", [InstallFailedReason]),
             erlang:halt(3)
     end.
 
