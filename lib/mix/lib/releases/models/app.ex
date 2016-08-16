@@ -66,14 +66,14 @@ defmodule Mix.Releases.App do
               File.exists?(app_path) ->
                 Mix.Project.in_project(name, app_path, fn mixfile ->
                   mixfile.project[:deps]
-                  |> Enum.map(fn {a, _} -> {a, :load} end)
+                  |> Enum.map(fn {a, _} -> {a, :load}; {a, _, _opts} -> {a, :load} end)
                 end)
               :else ->
                 []
             end
           :else ->
             Mix.Project.config[:deps]
-            |> Enum.map(fn {a, _} -> {a, :load} end)
+            |> Enum.map(fn {a, _} -> {a, :load}; {a, _, _opts} -> {a, :load} end)
         end
     end
   end
