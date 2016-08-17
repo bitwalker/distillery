@@ -210,6 +210,35 @@ defmodule Mix.Releases.Utils do
           false -> get_apps(App.new(a), acc)
         end
     end)
+    # Accumulate all unhandled deps, and see if they are present in the list
+    # of applications, if so they can be ignored, if not, warn about them
+    unhandled = Enum.flat_map(apps, fn %App{unhandled_deps: unhandled} ->
+      unhandled
+    end) |> MapSet.new
+    handled = Enum.flat_map(apps, fn %App{name: a} = app ->
+      Enum.concat([a | app.applications], app.included_applications)
+    end) |> Enum.uniq |> MapSet.new
+    ignore_missing = Application.get_env(:distillery, :no_warn_missing, [])
+    missing = MapSet.to_list(MapSet.difference(unhandled, handled))
+    case missing do
+      [] -> :ok
+      _ when ignore_missing == true -> :ok
+      _ ->
+        missing = case ignore_missing do
+                    false -> missing
+                    ignore ->
+                      Enum.filter(missing, fn
+                        a -> not Enum.member?(ignore, a)
+                      end)
+                  end
+        Logger.warn "One or more direct or transitive dependencies are missing from\n" <>
+          "    :applications or :included_applications, they will not be included\n" <>
+          "    in the release:\n\n" <>
+        Enum.join(Enum.map(missing, fn a -> "    #{inspect a}" end), "\n") <>
+        "\n\n    This can cause your application to fail at runtime. If you are sure\n" <>
+        "    that this is not an issue, you may ignore this warning.\n"
+    end
+    # Print apps
     if is_list(apps) do
       Logger.debug "Discovered applications:"
       Enum.each(apps, fn %App{} = app ->

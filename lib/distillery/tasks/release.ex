@@ -142,7 +142,7 @@ defmodule Mix.Tasks.Release do
     switches = [silent: :boolean, quiet: :boolean, verbose: :boolean,
                 dev: :boolean, erl: :string, no_tar: :boolean,
                 upgrade: :boolean, upfrom: :string, name: :string,
-                env: :string]
+                env: :string, no_warn_missing: :boolean]
     {overrides, _} = OptionParser.parse!(argv, switches)
     verbosity = :normal
     verbosity = cond do
@@ -162,6 +162,16 @@ defmodule Mix.Tasks.Release do
           other ->
             Logger.error "invalid profile name `#{other}`, must be `name:env`"
             exit({:shutdown, 1})
+        end
+    end
+    # Handle warnings about missing applications
+    cond do
+      Keyword.get(overrides, :no_warn_missing, false) ->
+        Application.put_env(:distillery, :no_warn_missing, true)
+      :else ->
+        case Application.get_env(:distillery, :no_warn_missing) do
+          false -> Application.put_env(:distillery, :no_warn_missing, [:distillery])
+          list  -> Application.put_env(:distillery, :no_warn_missing, [:distillery|list])
         end
     end
     [verbosity: verbosity,

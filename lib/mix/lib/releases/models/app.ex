@@ -2,10 +2,12 @@ defmodule Mix.Releases.App do
   @moduledoc """
   Represents important metadata about a given application.
   """
+
   defstruct name: nil,
     vsn: nil,
     applications: [],
     included_applications: [],
+    unhandled_deps: [],
     start_type: nil,
     path: nil
 
@@ -15,6 +17,7 @@ defmodule Mix.Releases.App do
     vsn: String.t,
     applications: [atom()],
     included_applications: [atom()],
+    unhandled_deps: [atom()],
     start_type: start_type,
     path: nil | String.t
   }
@@ -36,14 +39,18 @@ defmodule Mix.Releases.App do
       nil -> nil
       spec ->
         vsn      = '#{Keyword.get(spec, :vsn)}'
-        deps     = get_children(name)
-        apps     = Enum.uniq(deps ++ Keyword.get(spec, :applications, []))
+        deps     = get_dependencies(name)
+        apps     = Keyword.get(spec, :applications, [])
         included = Keyword.get(spec, :included_applications, [])
         path     = Application.app_dir(name)
+        missing  = MapSet.new(deps)
+                   |> MapSet.difference(MapSet.union(MapSet.new(apps), MapSet.new(included)))
+                   |> MapSet.to_list
         %__MODULE__{name: name, vsn: vsn,
                     start_type: start_type,
                     applications: apps,
                     included_applications: included,
+                    unhandled_deps: missing,
                     path: path}
     end
   end
@@ -51,7 +58,7 @@ defmodule Mix.Releases.App do
 
   # Gets a list of all applications which are children
   # of this application.
-  defp get_children(name) do
+  defp get_dependencies(name) do
     try do
       Mix.Dep.loaded_by_name([name], [])
       |> Enum.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
@@ -92,7 +99,7 @@ defmodule Mix.Releases.App do
     end
   end
 
-  defp map_dep({a, _}),           do: {a, :load}
-  defp map_dep({a, _, _opts}),    do: {a, :load}
-  defp map_dep(%Mix.Dep{app: a}), do: {a, :load}
+  defp map_dep({a, _}),           do: a
+  defp map_dep({a, _, _opts}),    do: a
+  defp map_dep(%Mix.Dep{app: a}), do: a
 end
