@@ -41,6 +41,12 @@ defmodule Mix.Tasks.Release do
       # Do not package release, just assemble it
       mix release --no-tar
 
+      # Treat warnings as errors
+      mix release --warnings-as-errors
+
+      # Skip warnings about missing applications
+      mix release --no-warn-missing
+
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task

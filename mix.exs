@@ -38,6 +38,7 @@ defmodule Distillery.Mixfile do
     [main: "getting-started",
      extras: [
        "docs/Getting Started.md",
+       "docs/CLI.md",
        "docs/Configuration.md",
        "docs/Runtime Configuration.md",
        "docs/Walkthrough.md",

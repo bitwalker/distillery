@@ -28,15 +28,6 @@ Just add as a mix dependency and use `mix release`. This is a replacement for ex
 
 If you are new to releases, please review the [documentation](https://hexdocs.pm/distillery).
 
-## TODO
-
-- [x] Upgrades/downgrades
-- [x] Plugin system from exrm
-- [ ] Read-only filesystems
-- [x] CLI tooling improvements
-- [x] Documentation
-- [x] Code cleanup
-
 ## License
 
 MIT. See the `LICENSE.md` in this repository for more details.
