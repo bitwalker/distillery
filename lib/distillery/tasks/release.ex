@@ -142,7 +142,8 @@ defmodule Mix.Tasks.Release do
     switches = [silent: :boolean, quiet: :boolean, verbose: :boolean,
                 dev: :boolean, erl: :string, no_tar: :boolean,
                 upgrade: :boolean, upfrom: :string, name: :string,
-                env: :string, no_warn_missing: :boolean]
+                env: :string, no_warn_missing: :boolean,
+                warnings_as_errors: :boolean]
     {overrides, _} = OptionParser.parse!(argv, switches)
     verbosity = :normal
     verbosity = cond do
@@ -174,6 +175,9 @@ defmodule Mix.Tasks.Release do
           list  -> Application.put_env(:distillery, :no_warn_missing, [:distillery|list])
         end
     end
+    # Set warnings_as_errors
+    Application.put_env(:distillery, :warnings_as_errors, Keyword.get(overrides, :warnings_as_errors, false))
+    # Return options
     [verbosity: verbosity,
      selected_release: rel,
      selected_environment: env,

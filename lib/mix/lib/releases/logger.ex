@@ -43,7 +43,15 @@ defmodule Mix.Releases.Logger do
   def success(message), do: log(:warn, colorize("==> #{message}", @success_color))
   @doc "Print a warning message in yellow"
   @spec warn(String.t) :: :ok
-  def warn(message), do: log(:warn, colorize("==> #{message}", @warn_color))
+  def warn(message) do
+    case Application.get_env(:distillery, :warnings_as_errors) do
+      true ->
+        error(message)
+        exit({:shutdown, 1})
+      _ ->
+        log(:warn, colorize("==> #{message}", @warn_color))
+    end
+  end
   @doc "Print a notice in yellow"
   @spec notice(String.t) :: :ok
   def notice(message),  do: log(:notice, colorize(message, @warn_color))
