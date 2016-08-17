@@ -55,7 +55,7 @@ defmodule Mix.Releases.App do
     try do
       Mix.Dep.loaded_by_name([name], [])
       |> Enum.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
-      |> Enum.map(fn %Mix.Dep{app: a} -> {a, :load} end)
+      |> Enum.filter_map(&include_dep?/1, &map_dep/1)
     rescue
       Mix.Error -> # This is a top-level app
         cond do
@@ -66,15 +66,33 @@ defmodule Mix.Releases.App do
               File.exists?(app_path) ->
                 Mix.Project.in_project(name, app_path, fn mixfile ->
                   mixfile.project[:deps]
-                  |> Enum.map(fn {a, _} -> {a, :load}; {a, _, _opts} -> {a, :load} end)
+                  |> Enum.filter_map(&include_dep?/1, &map_dep/1)
                 end)
               :else ->
                 []
             end
           :else ->
             Mix.Project.config[:deps]
-            |> Enum.map(fn {a, _} -> {a, :load}; {a, _, _opts} -> {a, :load} end)
+            |> Enum.filter_map(&include_dep?/1, &map_dep/1)
         end
     end
   end
+
+  defp include_dep?({_, _}),               do: true
+  defp include_dep?({_, _, opts}),         do: include_dep?(opts)
+  defp include_dep?(%Mix.Dep{opts: opts}), do: include_dep?(opts)
+  defp include_dep?(opts) when is_list(opts) do
+    case Keyword.get(opts, :release) do
+      false -> false
+      true  ->
+        case Keyword.get(opts, :only) do
+          nil  -> true
+          envs -> Enum.member?(envs, :prod)
+        end
+    end
+  end
+
+  defp map_dep({a, _}),           do: {a, :load}
+  defp map_dep({a, _, _opts}),    do: {a, :load}
+  defp map_dep(%Mix.Dep{app: a}), do: {a, :load}
 end
