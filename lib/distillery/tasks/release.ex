@@ -176,9 +176,10 @@ defmodule Mix.Tasks.Release do
       Keyword.get(overrides, :no_warn_missing, false) ->
         Application.put_env(:distillery, :no_warn_missing, true)
       :else ->
-        case Application.get_env(:distillery, :no_warn_missing) do
+        case Application.get_env(:distillery, :no_warn_missing, false) do
+          list when is_list(list) -> Application.put_env(:distillery, :no_warn_missing, [:distillery|list])
           false -> Application.put_env(:distillery, :no_warn_missing, [:distillery])
-          list  -> Application.put_env(:distillery, :no_warn_missing, [:distillery|list])
+          _ -> :ok
         end
     end
     # Set warnings_as_errors
