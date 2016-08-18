@@ -91,7 +91,8 @@ defmodule Mix.Releases.App do
   defp include_dep?(opts) when is_list(opts) do
     case Keyword.get(opts, :only) do
       nil  -> true
-      envs -> Enum.member?(envs, :prod)
+      envs when is_list(envs) -> Enum.member?(envs, :prod)
+      env when is_atom(env) -> env == :prod
     end
   end
 
