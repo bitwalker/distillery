@@ -220,17 +220,17 @@ defmodule Mix.Releases.Utils do
     end) |> Enum.uniq |> MapSet.new
     ignore_missing = Application.get_env(:distillery, :no_warn_missing, [])
     missing = MapSet.to_list(MapSet.difference(unhandled, handled))
+    missing = case ignore_missing do
+                false  -> missing
+                true   -> []
+                ignore ->
+                  Enum.filter(missing, fn
+                    a -> not Enum.member?(ignore, a)
+                  end)
+              end
     case missing do
       [] -> :ok
-      _ when ignore_missing == true -> :ok
       _ ->
-        missing = case ignore_missing do
-                    false -> missing
-                    ignore ->
-                      Enum.filter(missing, fn
-                        a -> not Enum.member?(ignore, a)
-                      end)
-                  end
         Logger.warn "One or more direct or transitive dependencies are missing from\n" <>
           "    :applications or :included_applications, they will not be included\n" <>
           "    in the release:\n\n" <>
