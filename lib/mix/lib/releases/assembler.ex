@@ -157,16 +157,9 @@ defmodule Mix.Releases.Assembler do
       true ->
         copy_app(app_dir, target_dir, dev_mode?, include_src?)
       p when is_binary(p) ->
-        case is_erts_lib?(app_dir) do
-          true ->
-            erts_lib_path = Path.expand(Path.join(p, "lib"))
-            proper_app_dir = Path.join(erts_lib_path, "#{app_name}-#{app_version}")
-            copy_app(proper_app_dir, target_dir, dev_mode?, include_src?)
-          false ->
-            copy_app(app_dir, target_dir, dev_mode?, include_src?)
-        end
+        copy_app(app_dir, target_dir, dev_mode?, include_src?)
       _ ->
-        case is_erts_lib?(app_dir) do
+        case Utils.is_erts_lib?(app_dir) do
           true ->
             :ok
           false ->
@@ -218,10 +211,6 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  # Determines if the given application directory is part of the Erlang installation
-  defp is_erts_lib?(app_dir), do: is_erts_lib?(app_dir, "#{:code.lib_dir()}")
-  defp is_erts_lib?(app_dir, lib_dir), do: String.starts_with?(app_dir, lib_dir)
-
   defp remove_symlink_or_dir!(path) do
     case File.exists?(path) do
       true ->
@@ -261,18 +250,22 @@ defmodule Mix.Releases.Assembler do
 
   # Creates the .rel file for the release
   defp write_relfile(path, %Release{applications: apps} = release) do
-    relfile = {:release,
-                 {'#{release.name}', '#{release.version}'},
-                 {:erts, '#{Utils.erts_version}'},
-                Enum.map(apps, fn %App{name: name, vsn: vsn, start_type: start_type} ->
-                  case start_type do
-                    nil ->
-                      {name, '#{vsn}'}
-                    t ->
-                      {name, '#{vsn}', t}
-                  end
-                end)}
-    Utils.write_term(path, relfile)
+    case get_erts_version(release) do
+      {:error, _} = err -> err
+      {:ok, erts_vsn} ->
+        relfile = {:release,
+                    {'#{release.name}', '#{release.version}'},
+                    {:erts, '#{erts_vsn}'},
+                    Enum.map(apps, fn %App{name: name, vsn: vsn, start_type: start_type} ->
+                      case start_type do
+                        nil ->
+                          {name, '#{vsn}'}
+                        t ->
+                          {name, '#{vsn}', t}
+                      end
+                    end)}
+        Utils.write_term(path, relfile)
+    end
   end
 
   # Creates the .boot files, nodetool, vm.args, sys.config, start_erl.data, and includes ERTS into
@@ -714,19 +707,10 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp generate_overlay_vars(release) do
-    erts_vsn = case release.profile.include_erts do
-                 true -> Utils.erts_version()
-                 false -> nil
-                 p when is_binary(p) ->
-                   case Utils.detect_erts_version(p) do
-                     {:ok, vsn} -> vsn
-                     {:error, _} = err -> err
-                   end
-               end
-    case erts_vsn do
+    case get_erts_version(release) do
       {:error, _} = err ->
         err
-      _ ->
+      {:ok, erts_vsn} ->
         vars = [release: release,
                 release_name: release.name,
                 release_version: release.version,
@@ -750,4 +734,9 @@ defmodule Mix.Releases.Assembler do
         {:ok, %{release | :profile => %{release.profile | :overlay_vars => vars}}}
     end
   end
+
+  defp get_erts_version(%Release{profile: %Profile{include_erts: path}}) when is_binary(path),
+    do: Utils.detect_erts_version(path)
+  defp get_erts_version(%Release{profile: %Profile{include_erts: true}}),
+    do: {:ok, Utils.erts_version()}
 end

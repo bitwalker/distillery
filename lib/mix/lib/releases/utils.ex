@@ -194,7 +194,7 @@ defmodule Mix.Releases.Utils do
   """
   @spec get_apps(Mix.Releases.Release.t) :: [{atom, String.t}] | {:error, String.t}
   # Gets all applications which are part of the release application tree
-  def get_apps(%Release{name: name, applications: apps}) do
+  def get_apps(%Release{name: name, applications: apps} = release) do
     children = get_apps(App.new(name), [])
     apps = Enum.reduce(apps, children, fn
       _, {:error, _} = err ->
@@ -210,6 +210,24 @@ defmodule Mix.Releases.Utils do
           false -> get_apps(App.new(a), acc)
         end
     end)
+    # Correct any ERTS libs which should be pulled from the correct
+    # ERTS directory, not from the current environment.
+    apps = case release.profile.include_erts do
+             true  -> apps
+             false -> apps
+             p when is_binary(p) ->
+               lib_dir = Path.expand(Path.join(p, "lib"))
+               Enum.map(apps, fn %App{name: a} = app ->
+                 case is_erts_lib?(app.path) do
+                   false -> app
+                   true ->
+                     [corrected_app_path] = Path.wildcard(Path.join(lib_dir, "#{a}-*"))
+                     [_, corrected_app_vsn] = String.split(Path.basename(corrected_app_path), "-", trim: true)
+                     %{app | :vsn => corrected_app_vsn,
+                             :path => corrected_app_path}
+                 end
+               end)
+           end
     # Accumulate all unhandled deps, and see if they are present in the list
     # of applications, if so they can be ignored, if not, warn about them
     unhandled = Enum.flat_map(apps, fn %App{unhandled_deps: unhandled} ->
@@ -309,4 +327,9 @@ defmodule Mix.Releases.Utils do
       apps -> Enum.uniq(apps)
     end
   end
+
+  # Determines if the given application directory is part of the Erlang installation
+  def is_erts_lib?(app_dir), do: is_erts_lib?(app_dir, "#{:code.lib_dir()}")
+  def is_erts_lib?(app_dir, lib_dir), do: String.starts_with?(app_dir, lib_dir)
+
 end
