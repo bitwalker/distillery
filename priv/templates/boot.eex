@@ -97,12 +97,12 @@ escript() {
 
 # Private. For determining the version of ERTS available to the release
 _detect_erts_vsn() {
-    erl -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
+    $BINDIR/erl -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
 }
 
 # Private. Gets a list of code paths for this release
 _get_code_paths() {
-    erl -noshell -boot start_clean -eval "{ok, [{release,_,_,Apps}]} = file:consult(\"$REL_DIR/$REL_NAME.rel\"),lists:foreach(fun(A) -> io:fwrite(\"-pa $ROOTDIR/lib/~p-~s/ebin \", [element(1, A), element(2, A)]) end, Apps),halt()."
+    $BINDIR/erl -noshell -boot start_clean -eval "{ok, [{release,_,_,Apps}]} = file:consult(\"$REL_DIR/$REL_NAME.rel\"),lists:foreach(fun(A) -> io:fwrite(\"-pa $ROOTDIR/lib/~p-~s/ebin \", [element(1, A), element(2, A)]) end, Apps),halt()."
 }
 
 # Private. For setting ERTS_DIR and ROOTDIR
