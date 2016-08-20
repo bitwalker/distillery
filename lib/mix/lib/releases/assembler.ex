@@ -735,8 +735,9 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
+  @spec get_erts_version(Release.t) :: {:ok, String.t} | {:error, term}
   defp get_erts_version(%Release{profile: %Profile{include_erts: path}}) when is_binary(path),
     do: Utils.detect_erts_version(path)
-  defp get_erts_version(%Release{profile: %Profile{include_erts: true}}),
+  defp get_erts_version(%Release{profile: %Profile{include_erts: _}}),
     do: {:ok, Utils.erts_version()}
 end
