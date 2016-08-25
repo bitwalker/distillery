@@ -81,33 +81,66 @@ defmodule Mix.Tasks.Release.Init do
           {Keyword.get(mixfile.project, :app), :permanent}
         end)
       end)
-    no_doc? = Keyword.get(opts, :no_doc, false)
     release_per_app? = Keyword.get(opts, :release_per_app, false)
     if release_per_app? do
-      [no_docs: no_doc?,
-       releases: Enum.map(apps, fn {app, start_type} ->
+      [releases: Enum.map(apps, fn {app, start_type} ->
          [release_name: app,
           is_umbrella: false,
           release_applications: [{app, start_type}]]
        end)]
+      ++ get_common_bindings(opts)
     else
       release_name = String.replace(Path.basename(File.cwd!), "-", "_")
-      [no_docs: no_doc?,
-       releases: [
+      [releases: [
          [release_name: String.to_atom(release_name),
           is_umbrella: true,
           release_applications: apps]]]
+      ++ get_common_bindings(opts)
     end
   end
 
   @spec get_standard_bindings(Keyword.t) :: Keyword.t | no_return
   defp get_standard_bindings(opts) do
     app = Keyword.get(Mix.Project.config, :app)
-    no_doc? = Keyword.get(opts, :no_doc, false)
-    [no_docs: no_doc?,
-     releases: [
+    [releases: [
       [release_name: app,
        is_umbrella: false,
        release_applications: [{app, :permanent}]]]]
+    ++ get_common_bindings(opts)
+  end
+
+  @spec get_common_bindings(Keyword.t) :: Keyword.t
+  defp get_common_bindings(opts) do
+    no_doc? = Keyword.get(opts, :no_doc, false)
+    [no_docs: no_doc?,
+     cookie: get_cookie]
+  end
+
+  defp get_cookie do
+    if can_generate_secure_cookie? do
+      generate_secure_cookie
+    else
+      # When the :crypto module is unavailable, rather than generating
+      # a cookie guessable by a computer, produce this obviously
+      # insecure cookie. A warning will be emitted every time
+      # it is used (i.e. when vm.args is being generated with it).
+      :"insecure_cookie_in_distillery_config"
+    end
+  end
+
+  defp can_generate_secure_cookie? do
+    case Code.ensure_loaded(:crypto) do
+      {:module, :crypto} -> true
+      _ -> false
+    end
+  end
+
+  defp generate_secure_cookie do
+    Stream.unfold(nil, fn _ -> {:crypto.strong_rand_bytes(1), nil} end)
+    |> Stream.filter(fn b -> b >= "!" && b <= "~" end)
+    |> Stream.reject(fn b -> Enum.member?(["'", "\"", "\\", "#"], b) end) # special when erlexec parses vm.args
+    |> Enum.take(64)
+    |> Enum.join
+    |> String.to_atom
   end
 end

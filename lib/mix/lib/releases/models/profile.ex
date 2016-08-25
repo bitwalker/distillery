@@ -6,6 +6,7 @@ defmodule Mix.Releases.Profile do
   environment profile overrides the release profile.
   """
   defstruct vm_args: nil, # path to a custom vm.args
+    cookie: nil,
     config: nil, # path to a custom config.exs
     sys_config: nil, # path to a custom sys.config
     code_paths: nil, # list of additional code paths to search
@@ -27,6 +28,7 @@ defmodule Mix.Releases.Profile do
 
     @type t :: %__MODULE__{
       vm_args: nil | String.t,
+      cookie: nil | Atom.t,
       config: nil | String.t,
       sys_config: nil | String.t,
       code_paths: nil | [String.t],

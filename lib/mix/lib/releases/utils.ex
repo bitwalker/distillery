@@ -8,8 +8,8 @@ defmodule Mix.Releases.Utils do
 
   ## Example
 
-      iex> {:ok, contents} = #{__MODULE__}.template("vm.args", [release_name: :test])
-      ...> String.contains?(contents, "-name test@127.0.0.1")
+      iex> {:ok, contents} = #{__MODULE__}.template("erl_script", [erts_vsn: "8.0"])
+      ...> String.contains?(contents, "erts-8.0")
       true
   """
   @spec template(atom | String.t, Keyword.t) :: {:ok, String.t} | {:error, String.t}
