@@ -42,6 +42,8 @@ defmodule Distillery.Mixfile do
        "docs/Configuration.md",
        "docs/Runtime Configuration.md",
        "docs/Walkthrough.md",
+       "docs/Use With Phoenix.md",
+       "docs/Phoenix Walkthrough.md",
        "docs/Upgrades and Downgrades.md",
        "docs/Common Issues.md",
        "docs/Umbrella Projects.md",
