@@ -81,7 +81,8 @@ install_and_permafy(TargetNode, RelName, Vsn) ->
             ?INFO("ERROR: release_handler:check_install_release failed: ~p~n",[Reason]),
             erlang:halt(3)
     end,
-    case rpc:call(TargetNode, release_handler, install_release, [Vsn], ?TIMEOUT) of
+    case rpc:call(TargetNode, release_handler, install_release,
+                  [Vsn, [{update_paths, true}]], ?TIMEOUT) of
         {ok, _, _} ->
             ?INFO("Installed Release: ~s~n", [Vsn]),
             permafy(TargetNode, RelName, Vsn),
