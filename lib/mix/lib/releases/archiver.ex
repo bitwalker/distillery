@@ -98,8 +98,8 @@ defmodule Mix.Releases.Archiver do
                 case release.profile.include_system_libs do
                   false ->
                     Logger.debug "Stripping system libs from release tarball"
-                    libs = Path.wildcard(Path.join([tmpdir, "lib", "*"]))
-                    system_libs = Path.wildcard(Path.join("#{:code.lib_dir}", "*"))
+                    libs = Enum.map(Path.wildcard(Path.join([tmpdir, "lib", "*"])), &Path.basename/1)
+                    system_libs = Enum.map(Path.wildcard(Path.join("#{:code.lib_dir}", "*")), &Path.basename/1)
                     for libdir <- :lists.subtract(libs, system_libs),
                       do: {'#{Path.join("lib", libdir)}', '#{Path.join([tmpdir, "lib", libdir])}'}
                   true ->
