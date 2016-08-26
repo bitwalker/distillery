@@ -16,7 +16,7 @@ _cleanup() {
 
 case "$1" in
     foreground)
-        trap '_cleanup' HUP INT TERM QUIT
+        trap '_cleanup' HUP INT TERM QUIT EXIT USR1 USR2
 
         "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" $@ &
         __pid=$!
