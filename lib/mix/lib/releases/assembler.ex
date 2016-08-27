@@ -453,8 +453,10 @@ defmodule Mix.Releases.Assembler do
     Logger.debug "Generating nodetool"
     with {:ok, node_tool_file} = Utils.template(:nodetool),
          {:ok, install_upgrade_file} = Utils.template(:install_upgrade),
+         {:ok, release_utils_file} = Utils.template(:release_utils),
          :ok <- File.write(Path.join(bin_dir, "nodetool"), node_tool_file),
          :ok <- File.write(Path.join(bin_dir, "install_upgrade.escript"), install_upgrade_file),
+         :ok <- File.write(Path.join(bin_dir, "release_utils.escript"), release_utils_file),
       do: :ok
   end
 

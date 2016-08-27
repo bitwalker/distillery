@@ -97,12 +97,12 @@ escript() {
 
 # Private. For determining the version of ERTS available to the release
 _detect_erts_vsn() {
-    $BINDIR/erl -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
+    "$BINDIR/erl" -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
 }
 
 # Private. Gets a list of code paths for this release
 _get_code_paths() {
-    $BINDIR/erl -noshell -boot start_clean -eval "{ok, [{release,_,_,Apps}]} = file:consult(\"$REL_DIR/$REL_NAME.rel\"),lists:foreach(fun(A) -> io:fwrite(\"-pa $ROOTDIR/lib/~p-~s/ebin \", [element(1, A), element(2, A)]) end, Apps),halt()."
+    "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/release_utils.escript" "get_code_paths" "$ROOTDIR" "$ERTS_DIR" "$REL_DIR" "$REL_NAME"
 }
 
 # Private. For setting ERTS_DIR and ROOTDIR
@@ -528,11 +528,13 @@ case "$1" in
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
         set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
-            -boot "$REL_DIR/$BOOTFILE" -mode "$CODE_LOADING_MODE" -config "$SYS_CONFIG_PATH" \
+            -boot "$REL_DIR/$BOOTFILE" \
             -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-            -args_file "$VMARGS_PATH" \
             -env ERL_LIBS "$REL_LIB_DIR" \
             -pa "$CONSOLIDATED_DIR" \
+            -args_file "$VMARGS_PATH" \
+            -config "$SYS_CONFIG_PATH" \
+            -mode "$CODE_LOADING_MODE" \
             ${ERL_OPTS} \
             -extra ${EXTRA_OPTS}
 
