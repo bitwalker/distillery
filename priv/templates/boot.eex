@@ -542,7 +542,6 @@ case "$1" in
             echo "Root: $ROOTDIR"
         fi;
 
-        trap '{}' EXIT QUIT TERM KILL HUP USR1 USR2
         "$@" -- ${1+$ARGS} &
         __bg_pid=$!
         [ -f "$POST_START_HOOK" ] && . "$POST_START_HOOK"
