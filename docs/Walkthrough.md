@@ -225,7 +225,19 @@ You will now have a new tarball in `rel/<name>/releases/<upgrade_version>/` whic
 
 ## Deploying an upgrade
 
-This part is very straightforward:
+*Important*: This part is very straightforward with an important
+caveat: Once you have deployed an upgrades, if you make a mistake in,
+say version X (eg, version X has a bug that is detected in
+production), you cannot "redeploy" a new release with the same version
+number (X). If you try to do so, you will discover that your
+application instance has marked version X as "[old](http://erlang.org/doc/man/release_handler.html)" and will refuse to
+upgrade to that version number. If you find a mistake in your
+application and you wish to continue with hot upgrades, rollback to
+the previous version (X -1), cut a new release at version (X + 1), and
+deploy it. At this time you will be able to upgrade twice in a row
+`X - 1 => X => X + 1` and have a clean production instance.
+
+Now with that caveat explained, on to the easy stuff:
 
 - Copy the new tarball to `<deployment_root>/releases/<upgrade_version>/<name>.tar.gz`,
   where `deployment_root` is the directory where the old version of the release was deployed.
