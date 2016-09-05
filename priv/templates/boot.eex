@@ -597,10 +597,11 @@ case "$1" in
         # Save extra arguments
         ARGS="$@"
 
+        __code_paths=$(_get_code_paths)
         # Build arguments for erlexec
         set -- "$ERL_OPTS"
         [ "$SYS_CONFIG_PATH" ] && set -- "$@" -config "$SYS_CONFIG_PATH"
-        set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
+        set -- "$@" "$__code_paths"
         set -- "$@" -noshell
         set -- "$@" -boot start_clean
         set -- "$@" -s "$MODULE" "$FUNCTION"
