@@ -2,6 +2,7 @@
 
 set -e
 
+command -v erl >/dev/null 2>&1 || { echo "erlang runtime not found. If erlang is installed check your $PATH. aborting.";  exit 1; }
 
 # Set VERBOSE to enable verbose logging of the boot script
 #VERBOSE=true
