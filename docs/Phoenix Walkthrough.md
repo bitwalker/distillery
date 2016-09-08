@@ -30,7 +30,7 @@ Next we will install distillery in our `mix.exs`
   end
 ```
 
-Execute a `mix deps.get, compile` and you are ready to continue.
+Execute a `mix do deps.get, compile` and you are ready to continue.
 
 ### Distillery Configuration
 
