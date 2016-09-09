@@ -12,7 +12,7 @@ will be added at a later time.
 ### First Steps
 
 First off we will create a new Phoenix app (without Ecto) using `mix
-phoenix.new --no-ecto phoenix-distillery`. Go ahead and fetch
+phoenix.new --no-ecto phoenix_distillery`. Go ahead and fetch
 dependencies when prompted by the mix task.
 
 Don't forget to run an `npm install` from within your project
