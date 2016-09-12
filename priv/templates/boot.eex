@@ -155,6 +155,21 @@ _start_command() {
            "$START_OPTION" "${ARGS}" "${EXTRA_OPTS}"
 }
 
+# Do a textual replacement of ${VAR} occurances in $1 and pipe to $2
+_replace_os_vars() {
+    awk '
+        function escape(s) {
+            gsub(/'\&'/, "\\\\&", s);
+            return s;
+        }
+        {
+            while(match($0,"[$]{[^}]*}")) {
+                var=substr($0,RSTART+2,RLENGTH-3);
+                gsub("[$]{"var"}", escape(ENVIRON[var]))
+            }
+        }1' < "$1" > "$2"
+}
+
 # If ERTS_VSN is not set, detect it
 if [ -z "$ERTS_VSN" ]; then
     ERTS_VSN="$(_detect_erts_vsn)"
@@ -186,7 +201,7 @@ if [ $REPLACE_OS_VARS ]; then
        mv "$VMARGS_PATH" "$orig_vmargs_path"
     fi
 
-    awk '{while(match($0,"[$]{[^}]*}")) {var=substr($0,RSTART+2,RLENGTH -3);gsub("[$]{"var"}",ENVIRON[var])}}1' < "$orig_vmargs_path" > "$VMARGS_PATH"
+    _replace_os_vars "$orig_vmargs_path" "$VMARGS_PATH"
  else
     #We don't need to replace env. vars, just rename the
     #symlink vm.args.orig to vm.args, and keep it as a
@@ -218,7 +233,7 @@ if [ $REPLACE_OS_VARS ]; then
        mv "$SYS_CONFIG_PATH" "$orig_sys_config_path"
     fi
 
-    awk '{while(match($0,"[$]{[^}]*}")) {var=substr($0,RSTART+2,RLENGTH -3);gsub("[$]{"var"}",ENVIRON[var])}}1' < "$orig_sys_config_path" > "$SYS_CONFIG_PATH"
+    _replace_os_vars "$orig_sys_config_path" "$SYS_CONFIG_PATH"
  else
     #We don't need to replace env. vars, just rename the
     #symlink sys.config.orig to sys.config. Keep it as
