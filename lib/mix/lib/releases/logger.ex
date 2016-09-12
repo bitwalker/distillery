@@ -70,6 +70,6 @@ defmodule Mix.Releases.Logger do
   defp log(:info, :quiet, _message),      do: :ok
   defp log(_level, _verbosity, message),  do: IO.puts message
 
-  defp colorize(message, color), do: "#{color}#{message}#{IO.ANSI.reset}"
+  defp colorize(message, color), do: IO.ANSI.format([color, message])
 
 end
