@@ -59,6 +59,8 @@ defmodule Mix.Tasks.Release do
     verbosity = Keyword.get(opts, :verbosity)
     Logger.configure(verbosity)
 
+    Application.load(:distillery)
+
     # make sure we've compiled latest
     Mix.Task.run("compile", [])
     # make sure loadpaths are updated
