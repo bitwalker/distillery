@@ -2,12 +2,49 @@
 
 set -e
 
-
 # Set VERBOSE to enable verbose logging of the boot script
 #VERBOSE=true
 if [ ! -z $DEBUG_BOOT ]; then
     set -x
 fi;
+
+my_readlink_f() {
+    TARGET_FILE="$1"
+    cd $(dirname "$TARGET_FILE")
+    TARGET_FILE=$(basename "$TARGET_FILE")
+
+    # Iterate down a (possible) chain of symlinks
+    while [ -L "$TARGET_FILE" ]
+    do
+        TARGET_FILE=$(readlink "$TARGET_FILE")
+        cd $(dirname "$TARGET_FILE")
+        TARGET_FILE=$(basename "$TARGET_FILE")
+    done
+    # Compute the canonicalized name by finding the physical path 
+    # for the directory we're in and appending the target file.
+    PHYS_DIR=$(pwd -P)
+    RESULT="$PHYS_DIR/$TARGET_FILE"
+    echo "$RESULT"
+}
+
+# Path to this script
+if uname | grep -q 'Darwin'; then
+  # on OSX, best to install coreutils from homebrew or similar
+  # to get greadlink
+  if command -v greadlink >/dev/null 2>&1; then
+    SCRIPT=$(greadlink -f "$0")
+  else
+    SCRIPT=$(my_readlink_f "$0" )
+  fi
+else
+  SCRIPT=$(readlink -f "$0" )
+fi
+
+# Parent directory of this script
+SCRIPT_DIR=$(dirname "${SCRIPT}")
+# Root directory of all releases
+RELEASE_ROOT_DIR=$(dirname $(dirname ${SCRIPT_DIR}))
+
 # Disable flow control for run_erl
 # Flow control can cause several problems. On Linux, if you
 # accidentally hit Ctrl-S (instead of Ctrl-D to detach) and
@@ -15,15 +52,6 @@ fi;
 # attempting to write to stdout. On Solaris, the beam process
 # will hang on writing if ScrollLock is on.
 RUN_ERL_DISABLE_FLOWCNTRL="${RUN_ERL_DISABLE_FLOWCNTRL:-true}"
-# Path to this script
-SCRIPT=$(readlink $0 || true)
-if [ -z $SCRIPT ]; then
-    SCRIPT=$0
-fi;
-# Parent directory of this script
-SCRIPT_DIR="$(cd `dirname "$SCRIPT"` && pwd -P)"
-# Root directory of all releases
-RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd -P)"
 # Name of the release
 REL_NAME="<%= release_name %>"
 # Current version of the release
