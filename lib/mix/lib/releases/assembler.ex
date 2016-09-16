@@ -298,12 +298,10 @@ defmodule Mix.Releases.Assembler do
 
     cond do
       !cookie ->
-        Logger.warn "Attention! You did not provide a cookie for the erlang distribution " <>
-          "protocol inside rel/config.exs. For backwards compatibility, the release name " <>
-          "will be used as cookie, which is potentially a security risk! " <>
-          "Please generate a cookie that is not guessable " <>
-          "by a machine and place it inside rel/config.exs. " <>
-          "This will be an error in a future release."
+        Logger.warn "Attention! You did not provide a cookie for the erlang distribution protocol in rel/config.exs\n" <>
+          "    For backwards compatibility, the release name will be used as a cookie, which is potentially a security risk!\n" <>
+          "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs.\n" <>
+          "    This will be an error in a future release."
 
         release_with_cookie =
           %{ release |
@@ -313,10 +311,9 @@ defmodule Mix.Releases.Assembler do
         params
         |> Keyword.put(:release, release_with_cookie)
       String.contains?(Atom.to_string(release.profile.cookie), "insecure") ->
-        Logger.warn "Attention! You have an insecure cookie for the erlang distribution " <>
-          "protocol inside rel/config.exs, probably because a secure cookie could not " <>
-          "be automatically generated. Please generate a cookie that is not guessable " <>
-          "by a machine and replace the current cookie with it."
+        Logger.warn "Attention! You have an insecure cookie for the erlang distribution protocol in rel/config.exs\n" <>
+          "This is probably because a secure cookie could not be auto-generated.\n" <>
+          "Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs." <>
         params
       true -> params
     end
