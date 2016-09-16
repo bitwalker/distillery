@@ -75,6 +75,7 @@ defmodule Mix.Releases.Assembler do
                     _ -> Keyword.get(Mix.Project.config, :config_path)
                   end
     release = %{release | :profile => %{profile | :config => config_path}}
+    release = check_cookie(release)
     case Utils.get_apps(release) do
       {:error, _} = err -> err
       release_apps ->
@@ -275,7 +276,7 @@ defmodule Mix.Releases.Assembler do
     bin_dir         = Path.join(release.output_dir, "bin")
     bootloader_path = Path.join(bin_dir, name)
     boot_path       = Path.join(rel_dir, "#{name}.sh")
-    template_params = release.profile.overlay_vars |> sanitize_binfile_template_params
+    template_params = release.profile.overlay_vars
 
     with :ok <- File.mkdir_p(bin_dir),
          :ok <- generate_nodetool(bin_dir),
@@ -290,33 +291,6 @@ defmodule Mix.Releases.Assembler do
          :ok <- generate_sys_config(release, rel_dir),
          :ok <- include_erts(release),
          :ok <- make_boot_script(release, rel_dir), do: :ok
-  end
-
-  defp sanitize_binfile_template_params(params) do
-    release = Keyword.get(params, :release)
-    cookie = release.profile.cookie
-
-    cond do
-      !cookie ->
-        Logger.warn "Attention! You did not provide a cookie for the erlang distribution protocol in rel/config.exs\n" <>
-          "    For backwards compatibility, the release name will be used as a cookie, which is potentially a security risk!\n" <>
-          "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs.\n" <>
-          "    This will be an error in a future release."
-
-        release_with_cookie =
-          %{ release |
-            profile: %{ release.profile | cookie: release.name }
-          }
-
-        params
-        |> Keyword.put(:release, release_with_cookie)
-      String.contains?(Atom.to_string(release.profile.cookie), "insecure") ->
-        Logger.warn "Attention! You have an insecure cookie for the erlang distribution protocol in rel/config.exs\n" <>
-          "This is probably because a secure cookie could not be auto-generated.\n" <>
-          "Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs." <>
-        params
-      true -> params
-    end
   end
 
   # Generates a relup and .appup for all upgraded applications during upgrade releases
@@ -769,4 +743,25 @@ defmodule Mix.Releases.Assembler do
     do: Utils.detect_erts_version(path)
   defp get_erts_version(%Release{profile: %Profile{include_erts: _}}),
     do: {:ok, Utils.erts_version()}
+
+  defp check_cookie(%Release{profile: %Profile{cookie: cookie} = profile} = release) do
+    cond do
+      !cookie ->
+        Logger.warn "Attention! You did not provide a cookie for the erlang distribution protocol in rel/config.exs\n" <>
+          "    For backwards compatibility, the release name will be used as a cookie, which is potentially a security risk!\n" <>
+          "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs.\n" <>
+          "    This will be an error in a future release."
+        %{release | :profile => %{profile | :cookie => release.name}}
+      not is_atom(cookie) ->
+        %{release | :profile => %{profile | :cookie => :"#{cookie}"}}
+      String.contains?(Atom.to_string(cookie), "insecure") ->
+        Logger.warn "Attention! You have an insecure cookie for the erlang distribution protocol in rel/config.exs\n" <>
+          "This is probably because a secure cookie could not be auto-generated.\n" <>
+          "Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs." <>
+        release
+      :else ->
+        release
+    end
+  end
+
 end
