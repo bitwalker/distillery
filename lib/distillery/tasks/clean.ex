@@ -39,9 +39,9 @@ defmodule Mix.Tasks.Release.Clean do
     no_confirm? = Keyword.get(opts, :no_confirm, false)
     cond do
       implode? && no_confirm? ->
-        clean_all!
-      implode? && confirm_implode? ->
-        clean_all!
+        clean_all!()
+      implode? && confirm_implode?() ->
+        clean_all!()
       :else ->
         clean!(args)
     end

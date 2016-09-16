@@ -11,7 +11,7 @@ defmodule OverlayTest do
     end
 
     test "invalid template string produces error" do
-      str = "<%= foo %>"
+      str = "<%= foo() %>"
       expected = "undefined function foo/0"
       assert {:error, {:template_str, {^str, ^expected}}} = Overlays.apply(@output_dir, [{:mkdir, str}], [])
     end

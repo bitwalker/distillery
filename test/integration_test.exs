@@ -11,7 +11,7 @@ defmodule IntegrationTest do
 
   defmacrop with_standard_app(body) do
     quote do
-      clean_up_standard_app!
+      clean_up_standard_app!()
       old_dir = File.cwd!
       File.cd!(@standard_app_path)
       {:ok, _} = File.rm_rf(Path.join(@standard_app_path, "_build"))
@@ -173,7 +173,7 @@ defmodule IntegrationTest do
             reraise(e.__struct__, Enum.into(fields, []), System.stacktrace)
         after
           File.rm_rf!(tmpdir)
-          clean_up_standard_app!
+          clean_up_standard_app!()
           :ok
         end
       end
