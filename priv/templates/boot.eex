@@ -72,7 +72,11 @@ REL_LIB_DIR="$RELEASE_ROOT_DIR/lib"
 ERL_OPTS="<%= release.profile.erl_opts %>"
 # When stdout is piped to a file, this is the directory those files will
 # be stored in. defaults to /log in the release root directory
-RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_ROOT_DIR/log}"
+
+# RELEASE_MUTABLE_DIR
+RELEASE_MUTABLE_DIR="${RELEASE_MUTABLE_DIR:-$RELEASE_ROOT_DIR/var}"
+
+RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_MUTABLE_DIR/log}"
 # A string of extra options to pass to erl, here for plugins
 EXTRA_OPTS=""
 
@@ -204,11 +208,17 @@ if [ -z "$ERTS_VSN" ]; then
     echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
 fi
 
-# Allow override of where to look for config files
-# By default it's $CWD/
+# Allow override of where to read configuration from
+# By default it's RELEASE_ROOT_DIR
 if [ -z "$RELEASE_CONFIG_DIR" ]; then
     RELEASE_CONFIG_DIR="$RELEASE_ROOT_DIR"
 fi
+
+# Make sure directories exist
+mkdir -p "$RELEASE_MUTABLE_DIR"
+echo "Files in this directory are regenerated frequently, edits will be lost" \
+    > "$RELEASE_MUTABLE_DIR/WARNING_README"
+mkdir -p "$RUNNER_LOG_DIR"
 
 # Set VMARGS_PATH, the path to the vm.args file to use
 # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
@@ -219,28 +229,15 @@ if [ -z "$VMARGS_PATH" ]; then
         VMARGS_PATH="$REL_DIR/vm.args"
     fi
 fi
+echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
+    >  "$RELEASE_MUTABLE_DIR/vm.args"
+cat  "$VMARGS_PATH"                              \
+    >> "$RELEASE_MUTABLE_DIR/vm.args"
+VMARGS_PATH=$RELEASE_MUTABLE_DIR/vm.args
 
-orig_vmargs_path="$VMARGS_PATH.orig"
 if [ $REPLACE_OS_VARS ]; then
-    #Make sure we don't break dev mode by keeping the symbolic link to
-    #the user's vm.args
-    if [ ! -L "$orig_vmargs_path" ]; then
-       #we're in copy mode, rename the vm.args file to vm.args.orig
-       mv "$VMARGS_PATH" "$orig_vmargs_path"
-    fi
-
     _replace_os_vars "$orig_vmargs_path" "$VMARGS_PATH"
- else
-    #We don't need to replace env. vars, just rename the
-    #symlink vm.args.orig to vm.args, and keep it as a
-    #symlink.
-    if [ -L "$orig_vmargs_path" ]; then
-       mv "$orig_vmargs_path" "$VMARGS_PATH"
-    fi
 fi
-
-# Make sure log directory exists
-mkdir -p "$RUNNER_LOG_DIR"
 
 # Set SYS_CONFIG_PATH, the path to the sys.config file to use
 # Use $RELEASE_CONFIG_DIR/sys.config if exists, otherwise releases/VSN/sys.config
@@ -251,24 +248,14 @@ if [ -z "$SYS_CONFIG_PATH" ]; then
         SYS_CONFIG_PATH="$REL_DIR/sys.config"
     fi
 fi
+echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead." \
+    >  "$RELEASE_MUTABLE_DIR/sys.config"
+cat  "$SYS_CONFIG_PATH"                              \
+    >> "$RELEASE_MUTABLE_DIR/sys.config"
+SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
 
-orig_sys_config_path="$SYS_CONFIG_PATH.orig"
 if [ $REPLACE_OS_VARS ]; then
-    #Make sure we don't break dev mode by keeping the symbolic link to
-    #the user's sys.config
-    if [ ! -L "$orig_sys_config_path" ]; then
-       #We're in copy mode, rename sys.config to sys.config.orig
-       mv "$SYS_CONFIG_PATH" "$orig_sys_config_path"
-    fi
-
     _replace_os_vars "$orig_sys_config_path" "$SYS_CONFIG_PATH"
- else
-    #We don't need to replace env. vars, just rename the
-    #symlink sys.config.orig to sys.config. Keep it as
-    #a symlink.
-    if [ -L "$orig_sys_config_path" ]; then
-       mv "$orig_sys_config_path"  "$SYS_CONFIG_PATH"
-    fi
 fi
 
 # Extract the target node name from node.args
@@ -288,7 +275,7 @@ NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
 # Where the pipe will be stored when using `start`
 # This is used so you can attach the running application to the current
 # shell using `attach`
-PIPE_DIR="${PIPE_DIR:-$RELEASE_ROOT_DIR/tmp/erl_pipes/$NAME/}"
+PIPE_DIR="${PIPE_DIR:-$RELEASE_MUTABLE_DIR/erl_pipes/$NAME/}"
 
 # Extract the target cookie
 COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
