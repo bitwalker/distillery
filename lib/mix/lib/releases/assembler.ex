@@ -275,7 +275,7 @@ defmodule Mix.Releases.Assembler do
     bin_dir         = Path.join(release.output_dir, "bin")
     bootloader_path = Path.join(bin_dir, name)
     boot_path       = Path.join(rel_dir, "#{name}.sh")
-    template_params = release.profile.overlay_vars
+    template_params = release.profile.overlay_vars |> sanitize_binfile_template_params
 
     with :ok <- File.mkdir_p(bin_dir),
          :ok <- generate_nodetool(bin_dir),
@@ -290,6 +290,36 @@ defmodule Mix.Releases.Assembler do
          :ok <- generate_sys_config(release, rel_dir),
          :ok <- include_erts(release),
          :ok <- make_boot_script(release, rel_dir), do: :ok
+  end
+
+  defp sanitize_binfile_template_params(params) do
+    release = Keyword.get(params, :release)
+    cookie = release.profile.cookie
+
+    cond do
+      !cookie ->
+        Logger.warn "Attention! You did not provide a cookie for the erlang distribution " <>
+          "protocol inside rel/config.exs. For backwards compatibility, the release name " <>
+          "will be used as cookie, which is potentially a security risk! " <>
+          "Please generate a cookie that is not guessable " <>
+          "by a machine and place it inside rel/config.exs. " <>
+          "This will be an error in a future release."
+
+        release_with_cookie =
+          %{ release |
+            profile: %{ release.profile | cookie: release.name }
+          }
+
+        params
+        |> Keyword.put(:release, release_with_cookie)
+      String.contains?(Atom.to_string(release.profile.cookie), "insecure") ->
+        Logger.warn "Attention! You have an insecure cookie for the erlang distribution " <>
+          "protocol inside rel/config.exs, probably because a secure cookie could not " <>
+          "be automatically generated. Please generate a cookie that is not guessable " <>
+          "by a machine and replace the current cookie with it."
+        params
+      true -> params
+    end
   end
 
   # Generates a relup and .appup for all upgraded applications during upgrade releases

@@ -16,11 +16,13 @@ use Mix.Releases.Config,
 environment :dev do
   set dev_mode: true
   set include_erts: false
+  set cookie: <%= inspect(cookie) %>
 end
 
 environment :prod do
   set include_erts: true
   set include_src: false
+  set cookie: <%= inspect(cookie) %>
 end
 <%= unless no_docs do %>
 # You may define one or more releases in this file.

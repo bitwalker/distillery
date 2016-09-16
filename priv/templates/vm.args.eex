@@ -2,7 +2,7 @@
 -name <%= release_name %>@127.0.0.1
 
 ## Cookie for distributed erlang
--setcookie <%= release_name %>
+-setcookie <%= release.profile.cookie %>
 
 ## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
 ## (Disabled by default..use with caution!)
