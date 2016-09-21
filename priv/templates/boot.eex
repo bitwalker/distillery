@@ -229,12 +229,13 @@ if [ -z "$VMARGS_PATH" ]; then
         VMARGS_PATH="$REL_DIR/vm.args"
     fi
 fi
-echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
-    >  "$RELEASE_MUTABLE_DIR/vm.args"
-cat  "$VMARGS_PATH"                              \
-    >> "$RELEASE_MUTABLE_DIR/vm.args"
-VMARGS_PATH=$RELEASE_MUTABLE_DIR/vm.args
-
+if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
+    echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
+        >  "$RELEASE_MUTABLE_DIR/vm.args"
+    cat  "$VMARGS_PATH"                              \
+        >> "$RELEASE_MUTABLE_DIR/vm.args"
+    VMARGS_PATH=$RELEASE_MUTABLE_DIR/vm.args
+fi
 if [ $REPLACE_OS_VARS ]; then
     _replace_os_vars "$orig_vmargs_path" "$VMARGS_PATH"
 fi
@@ -248,12 +249,13 @@ if [ -z "$SYS_CONFIG_PATH" ]; then
         SYS_CONFIG_PATH="$REL_DIR/sys.config"
     fi
 fi
-echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead." \
-    >  "$RELEASE_MUTABLE_DIR/sys.config"
-cat  "$SYS_CONFIG_PATH"                              \
-    >> "$RELEASE_MUTABLE_DIR/sys.config"
-SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
-
+if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
+    echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead." \
+        >  "$RELEASE_MUTABLE_DIR/sys.config"
+    cat  "$SYS_CONFIG_PATH"                              \
+        >> "$RELEASE_MUTABLE_DIR/sys.config"
+    SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
+fi
 if [ $REPLACE_OS_VARS ]; then
     _replace_os_vars "$orig_sys_config_path" "$SYS_CONFIG_PATH"
 fi
