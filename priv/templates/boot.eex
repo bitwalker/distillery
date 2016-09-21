@@ -628,11 +628,14 @@ case "$1" in
         ARGS="$@"
 
         # Build arguments for erlexec
+        __code_paths=$(_get_code_paths)
         set -- "$ERL_OPTS"
         [ "$SYS_CONFIG_PATH" ] && set -- "$@" -config "$SYS_CONFIG_PATH"
         set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
         set -- "$@" -noshell
         set -- "$@" -boot start_clean
+        set -- "$@" ${_code_paths}
+        set -- "$@" -pa "$CONSOLIDATED_DIR"
         set -- "$@" -s "$MODULE" "$FUNCTION"
 
 
