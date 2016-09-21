@@ -634,8 +634,8 @@ case "$1" in
         set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
         set -- "$@" -noshell
         set -- "$@" -boot start_clean
-        set -- "$@" ${_code_paths}
         set -- "$@" -pa "$CONSOLIDATED_DIR"
+        set -- "$@" ${__code_paths}
         set -- "$@" -s "$MODULE" "$FUNCTION"
 
 
