@@ -501,18 +501,40 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates sys.config
-  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir)
+  defp generate_sys_config(%Release{profile: %Profile{config: base_config_path, sys_config: config_path}} = rel, rel_dir)
     when is_binary(config_path) do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
     overlay_vars = rel.profile.overlay_vars
-    with {:ok, path}      <- Overlays.template_str(config_path, overlay_vars),
-         {:ok, templated} <- Overlays.template_file(path, overlay_vars),
-      do: Utils.write_term(Path.join(rel_dir, "sys.config"), templated)
+    base_config  = generate_base_config(base_config_path)
+    res = with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
+               {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
+               {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
+               {:ok, sys_config} <- :erl_parse.parse_term(tokens),
+               :ok               <- validate_sys_config(sys_config),
+               merged            <- Mix.Config.merge(base_config, sys_config),
+             do: Utils.write_term(Path.join(rel_dir, "sys.config"), merged)
+    case res do
+      {:error, :invalid_sys_config, reason} ->
+        {:error, "invalid sys.config: #{reason}"}
+      {:error, {_loc, _module, description}, {line, col}} ->
+        {:error, "invalid sys.config at line #{line}, column #{col}: #{inspect description}"}
+      {:error, {_loc, _module, description}, line} ->
+        {:error, "invalid sys.config at line #{line}: #{inspect description}"}
+      {:error, {line, _module, description}} ->
+        {:error, "could not parse sys.config at line #{line}: #{inspect description}"}
+      other ->
+        other
+    end
   end
   defp generate_sys_config(%Release{profile: %Profile{config: config_path}}, rel_dir) do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
-    config = Mix.Config.read!(config_path)
-    config = case Keyword.get(config, :sasl) do
+    config = generate_base_config(config_path)
+    Utils.write_term(Path.join(rel_dir, "sys.config"), config)
+  end
+
+  defp generate_base_config(base_config_path) do
+    config = Mix.Config.read!(base_config_path)
+    case Keyword.get(config, :sasl) do
       nil ->
         Keyword.put(config, :sasl, [errlog_type: :error])
       sasl ->
@@ -521,8 +543,28 @@ defmodule Mix.Releases.Assembler do
           _   -> config
         end
     end
-    Utils.write_term(Path.join(rel_dir, "sys.config"), config)
   end
+
+  defp validate_sys_config(sys_config) when is_list(sys_config) do
+    cond do
+      Keyword.keyword?(sys_config) ->
+        is_config? = Enum.reduce(sys_config, true, fn
+          {app, config}, acc when is_atom(app) and is_list(config) ->
+            acc && Keyword.keyword?(config)
+          {_app, _config}, _acc ->
+            false
+        end)
+        cond do
+          is_config? ->
+            :ok
+          :else ->
+            {:error, :invalid_sys_config, "must be a list of {:app_name, [{:key, value}]} tuples"}
+        end
+      :else ->
+        {:error, :invalid_sys_config, "must be a keyword list"}
+    end
+  end
+  defp validate_sys_config(_sys_config), do: {:error, :invalid_sys_config, "must be a keyword list"}
 
   # Adds ERTS to the release, if so configured
   defp include_erts(%Release{profile: %Profile{include_erts: false}}), do: :ok
