@@ -144,7 +144,13 @@ _find_erts_dir() {
         ERTS_DIR="$__erts_dir";
         ROOTDIR="$RELEASE_ROOT_DIR"
     else
+        set +e # temporarily disable so we can display a nice error message to the user
         __erl="$(which erl)"
+        set -e
+        if [ -z "${__erl}"  ]; then
+          echo 'erlang runtime not found. If erlang is installed check your $PATH. aborting.'
+          exit 1
+        fi
         code="io:format(\"~s\", [code:root_dir()]), halt()."
         __erl_root="$("$__erl" -noshell -eval "$code")"
         ERTS_DIR="$__erl_root/erts-$ERTS_VSN"
