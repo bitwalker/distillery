@@ -200,9 +200,17 @@ defmodule Mix.Releases.Utils do
       _, {:error, _} = err ->
         err
       {a, start_type}, acc ->
-        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
-          true  -> acc
-          false -> get_apps(App.new(a, start_type), acc)
+        cond do
+          App.valid_start_type?(start_type) ->
+            case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
+              true  ->
+                # Override start type
+                Enum.map(acc, fn %App{name: ^a} = app -> %{app | start_type: start_type}; app -> app end)
+              false ->
+                get_apps(App.new(a, start_type), acc)
+            end
+          :else ->
+            {:error, "Invalid start type for #{a}: #{start_type}"}
         end
       a, acc when is_atom(a) ->
         case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do

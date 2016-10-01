@@ -56,6 +56,14 @@ defmodule Mix.Releases.App do
   end
   def new(name, start_type), do: {:error, "Invalid start type for #{name}: #{start_type}"}
 
+  @doc """
+  Determines if the provided start type is a valid one.
+  """
+  def valid_start_type?(start_type)
+    when start_type in [:permanent, :temporary, :transient, :load, :none],
+    do: true
+  def valid_start_type?(_), do: false
+
   # Gets a list of all applications which are children
   # of this application.
   defp get_dependencies(name) do
