@@ -453,10 +453,8 @@ defmodule Mix.Releases.Assembler do
   defp generate_nodetool(bin_dir) do
     Logger.debug "Generating nodetool"
     with {:ok, node_tool_file} = Utils.template(:nodetool),
-         {:ok, install_upgrade_file} = Utils.template(:install_upgrade),
          {:ok, release_utils_file} = Utils.template(:release_utils),
          :ok <- File.write(Path.join(bin_dir, "nodetool"), node_tool_file),
-         :ok <- File.write(Path.join(bin_dir, "install_upgrade.escript"), install_upgrade_file),
          :ok <- File.write(Path.join(bin_dir, "release_utils.escript"), release_utils_file),
       do: :ok
   end
@@ -602,8 +600,6 @@ defmodule Mix.Releases.Assembler do
         erl_path             = Path.join([erts_output_dir, "bin", "erl"])
         nodetool_path        = Path.join([output_dir, "bin", "nodetool"])
         nodetool_dest        = Path.join([erts_output_dir, "bin", "nodetool"])
-        install_upgrade_path = Path.join([output_dir, "bin", "install_upgrade.escript"])
-        install_upgrade_dest = Path.join([erts_output_dir, "bin", "install_upgrade.escript"])
         with :ok     <- remove_if_exists(erts_output_dir),
             :ok      <- File.mkdir_p(erts_output_dir),
             {:ok, _} <- File.cp_r(erts_dir, erts_output_dir),
@@ -612,9 +608,7 @@ defmodule Mix.Releases.Assembler do
             :ok      <- File.write(erl_path, erl_script),
             :ok      <- File.chmod(erl_path, 0o755),
             :ok      <- File.cp(nodetool_path, nodetool_dest),
-            :ok      <- File.cp(install_upgrade_path, install_upgrade_dest),
-            :ok      <- File.chmod(nodetool_dest, 0o755),
-            :ok      <- File.chmod(install_upgrade_dest, 0o755) do
+            :ok      <- File.chmod(nodetool_dest, 0o755) do
           :ok
         else
           {:error, reason} ->

@@ -134,7 +134,7 @@ _detect_erts_vsn() {
 
 # Private. Gets a list of code paths for this release
 _get_code_paths() {
-    "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/release_utils.escript" "get_code_paths" "$ROOTDIR" "$ERTS_DIR" "$REL_DIR" "$REL_NAME"
+    "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/release_utils.escript" "get_code_paths" "$ROOTDIR" "$ERTS_DIR" "$REL_NAME" "$REL_VSN"
 }
 
 # Private. For setting ERTS_DIR and ROOTDIR
@@ -455,8 +455,8 @@ case "$1" in
             exit 1
         fi
 
-        exec "$BINDIR/escript" "$ROOTDIR/bin/install_upgrade.escript" \
-             "install" "$REL_NAME" "$NAME_TYPE" "$NAME" "$COOKIE" "$2"
+        exec "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
+             "install_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$2"
         ;;
 
     unpack)
@@ -473,8 +473,8 @@ case "$1" in
             exit 1
         fi
 
-        exec "$BINDIR/escript" "$ROOTDIR/bin/install_upgrade.escript" \
-             "unpack" "$REL_NAME" "$NAME_TYPE" "$NAME" "$COOKIE" "$2"
+        exec "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
+             "unpack_release" "$REL_NAME" "$NAME_TYPE" "$NAME" "$COOKIE" "$2"
         ;;
 
     console|console_clean|console_boot)
@@ -491,6 +491,8 @@ case "$1" in
                 ;;
             console_clean)
                 BOOTFILE="$ROOTDIR/bin/start_clean"
+                __code_paths=$(_get_code_paths)
+                EXTRA_CODE_PATHS=${_code_paths}
                 ;;
             console_boot)
                 shift
@@ -513,7 +515,6 @@ case "$1" in
         # the console will crash with no TTY attached
         [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
 
-        __code_paths=$(_get_code_paths)
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
         set -- "$BINDIR/erlexec" \
@@ -521,7 +522,7 @@ case "$1" in
             -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
             -env ERL_LIBS "$REL_LIB_DIR" \
             -pa "$CONSOLIDATED_DIR" \
-            ${__code_paths} \
+            ${EXTRA_CODE_PATHS} \
             -args_file "$VMARGS_PATH" \
             -config "$SYS_CONFIG_PATH" \
             -mode "$CODE_LOADING_MODE" \
