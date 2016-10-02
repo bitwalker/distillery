@@ -404,10 +404,34 @@ defmodule Mix.Releases.Assembler do
     v2_path       = Path.join([output_dir, "lib", "#{app}-#{v2}"])
     appup_path    = Path.join([v2_path, "ebin", "#{app}.appup"])
     appup_exists? = File.exists?(appup_path)
+    appup_valid? = case :file.consult(~c[#{appup_path}]) do
+                     {:ok, [{upto_ver, [{downto_ver, _}], [{downto_ver, _}]}]} ->
+                       cond do
+                         upto_ver == ~c[#{v2}] and downto_ver == ~c[#{v1}] ->
+                           true
+                         :else ->
+                           false
+                       end
+                     _other ->
+                       false
+                   end
     cond do
-      appup_exists? ->
+      appup_exists? && appup_valid? ->
         Logger.debug "#{app} requires an appup, and one was provided, skipping generation.."
         generate_appups(apps, output_dir)
+      appup_exists? ->
+        Logger.warn "#{app} has an appup file, but it is invalid for this release,\n" <>
+          "    Backing up appfile with .bak extension and generating new one.."
+        :ok = File.cp!(appup_path, "#{appup_path}.bak")
+        case Appup.make(app, v1, v2, v1_path, v2_path) do
+          {:error, reason} ->
+            {:error, "Failed to generate appup for #{app}:\n    " <>
+              inspect(reason)}
+          {:ok, appup} ->
+            :ok = Utils.write_term(appup_path, appup)
+            Logger.info "Generated .appup for #{app} #{v1} -> #{v2}"
+            generate_appups(apps, output_dir)
+        end
       :else ->
         Logger.debug "#{app} requires an appup, but it wasn't provided, one will be generated for you.."
         case Appup.make(app, v1, v2, v1_path, v2_path) do
