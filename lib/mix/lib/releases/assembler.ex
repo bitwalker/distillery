@@ -589,7 +589,11 @@ defmodule Mix.Releases.Assembler do
   defp validate_sys_config(_sys_config), do: {:error, :invalid_sys_config, "must be a keyword list"}
 
   # Adds ERTS to the release, if so configured
-  defp include_erts(%Release{profile: %Profile{include_erts: false}}), do: :ok
+  defp include_erts(%Release{profile: %Profile{include_erts: false}, is_upgrade: false}), do: :ok
+  defp include_erts(%Release{profile: %Profile{include_erts: false}, is_upgrade: true}) do
+    {:error, "Hot upgrades will fail when include_erts: false is set,\n" <>
+      "    you need to set include_erts to true or a path if you plan to use them!"}
+  end
   defp include_erts(%Release{profile: %Profile{include_erts: include_erts}, output_dir: output_dir} = release) do
     prefix = case include_erts do
                true -> "#{:code.root_dir}"
@@ -699,6 +703,19 @@ defmodule Mix.Releases.Assembler do
   # Generates RELEASES
   defp create_RELEASES(output_dir, relfile) do
     Logger.debug "Generating RELEASES"
+    # NOTE: The RELEASES file must contain the correct paths to all libs,
+    # including ERTS libs. When include_erts: false, the ERTS path, and thus
+    # the paths to all ERTS libs, are not known until runtime. That means the
+    # RELEASES file we generate here is invalid, which also means that performing
+    # hot upgrades with include_erts: false will fail.
+    #
+    # This is annoying, but makes sense in the context of how release_handler works,
+    # it must be able to handle upgrades where ERTS itself is also upgraded, and that
+    # clearly can't happen if there is only one ERTS version (the host). It would be
+    # possible to handle this if we could update the release_handler's state after it
+    # unpacks a release in order to "fix" the invalid ERTS lib paths, but unfortunately
+    # this is not exposed, and short of re-writing release_handler from scratch, there is
+    # no work around for this
     old_cwd = File.cwd!
     File.cd!(output_dir)
     :ok = :release_handler.create_RELEASES('./', 'releases', '#{relfile}', [])

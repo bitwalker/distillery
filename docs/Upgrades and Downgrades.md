@@ -10,6 +10,10 @@ is nothing preventing you from using upgrades until you hit that point, doing a 
 continuing with upgrades from there - it ultimately depends on your needs. I would caution anyone thinking
 of using them to evaluate whether they are truly necessary for their use case.
 
+**IMPORTANT**: It is not possible to use hot upgrades and `include_erts: false` in conjunction with one
+another. This is due to how `release_handler` manages information about releases as they are unpacked
+and installed. ERTS must be packaged in the release in order for hot upgrades/downgrades to properly work.
+
 ## A bit about upgrades
 
 When building upgrade releases, Distillery will ensure that all modified
