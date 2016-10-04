@@ -225,69 +225,85 @@ defmodule Mix.Releases.Utils do
              false -> apps
              p when is_binary(p) ->
                lib_dir = Path.expand(Path.join(p, "lib"))
-               Enum.map(apps, fn %App{name: a} = app ->
-                 case is_erts_lib?(app.path) do
-                   false -> app
-                   true ->
-                     [corrected_app_path] = Path.wildcard(Path.join(lib_dir, "#{a}-*"))
-                     [_, corrected_app_vsn] = String.split(Path.basename(corrected_app_path), "-", trim: true)
-                     %{app | :vsn => corrected_app_vsn,
-                             :path => corrected_app_path}
-                 end
+               Enum.reduce(apps, [], fn
+                 _, {:error, _} = err ->
+                   err
+                 %App{name: a} = app, acc ->
+                    case is_erts_lib?(app.path) do
+                      false ->
+                        [app|acc]
+                      true ->
+                        case Path.wildcard(Path.join(lib_dir, "#{a}-*}")) do
+                          [corrected_app_path|_] ->
+                            [_, corrected_app_vsn] = String.split(Path.basename(corrected_app_path), "-", trim: true)
+                            [%{app | :vsn => corrected_app_vsn,
+                                     :path => corrected_app_path} | acc]
+                          _ ->
+                            {:error, "You have included a version of ERTS which does not contain a required library\n" <>
+                              "    Required: #{inspect a}\n" <>
+                              "    Search path: #{Path.relative_to_cwd(lib_dir)}"}
+                        end
+                    end
                end)
            end
-    # Accumulate all unhandled deps, and see if they are present in the list
-    # of applications, if so they can be ignored, if not, warn about them
-    unhandled = Enum.flat_map(apps, fn %App{unhandled_deps: unhandled} ->
-      unhandled
-    end) |> MapSet.new
-    handled = Enum.flat_map(apps, fn %App{name: a} = app ->
-      Enum.concat([a | app.applications], app.included_applications)
-    end) |> Enum.uniq |> MapSet.new
-    ignore_missing = Application.get_env(:distillery, :no_warn_missing, [])
-    missing = MapSet.to_list(MapSet.difference(unhandled, handled))
-    missing = case ignore_missing do
-                false  -> missing
-                true   -> []
-                ignore ->
-                  Enum.filter(missing, fn
-                    a -> not Enum.member?(ignore, a)
-                  end)
-              end
-    case missing do
-      [] -> :ok
-      _ ->
-        Logger.warn "One or more direct or transitive dependencies are missing from\n" <>
-          "    :applications or :included_applications, they will not be included\n" <>
-          "    in the release:\n\n" <>
-        Enum.join(Enum.map(missing, fn a -> "    #{inspect a}" end), "\n") <>
-        "\n\n    This can cause your application to fail at runtime. If you are sure\n" <>
-        "    that this is not an issue, you may ignore this warning.\n"
-    end
-    # Print apps
-    if is_list(apps) do
-      Logger.debug "Discovered applications:"
-      Enum.each(apps, fn %App{} = app ->
-        where = Path.relative_to_cwd(app.path)
-        Logger.debug "  #{IO.ANSI.reset}#{app.name}-#{app.vsn}#{IO.ANSI.cyan}\n" <>
-          "    from: #{where}", :plain
-        case app.applications do
-          [] ->
-            Logger.debug "    applications: none", :plain
-          _  ->
-            Logger.debug "    applications:\n" <>
-              "      #{Enum.map(app.applications, &inspect/1) |> Enum.join("\n      ")}", :plain
-        end
-        case app.included_applications do
-          [] ->
-            Logger.debug "    includes: none\n", :plain
+    case apps do
+      {:error, _} = err ->
+        err
+      ^apps when is_list(apps) ->
+        apps = Enum.reverse(apps)
+        # Accumulate all unhandled deps, and see if they are present in the list
+        # of applications, if so they can be ignored, if not, warn about them
+        unhandled = Enum.flat_map(apps, fn %App{unhandled_deps: unhandled} ->
+          unhandled
+        end) |> MapSet.new
+        handled = Enum.flat_map(apps, fn %App{name: a} = app ->
+          Enum.concat([a | app.applications], app.included_applications)
+        end) |> Enum.uniq |> MapSet.new
+        ignore_missing = Application.get_env(:distillery, :no_warn_missing, [])
+        missing = MapSet.to_list(MapSet.difference(unhandled, handled))
+        missing = case ignore_missing do
+                    false  -> missing
+                    true   -> []
+                    ignore ->
+                      Enum.filter(missing, fn
+                        a -> not Enum.member?(ignore, a)
+                      end)
+                  end
+        case missing do
+          [] -> :ok
           _ ->
-            Logger.debug "    includes:\n" <>
-              "      #{Enum.map(app.included_applications, &inspect/1) |> Enum.join("\n     ")}", :plain
+            Logger.warn "One or more direct or transitive dependencies are missing from\n" <>
+              "    :applications or :included_applications, they will not be included\n" <>
+              "    in the release:\n\n" <>
+            Enum.join(Enum.map(missing, fn a -> "    #{inspect a}" end), "\n") <>
+            "\n\n    This can cause your application to fail at runtime. If you are sure\n" <>
+            "    that this is not an issue, you may ignore this warning.\n"
         end
-      end)
+        # Print apps
+        if is_list(apps) do
+          Logger.debug "Discovered applications:"
+          Enum.each(apps, fn %App{} = app ->
+            where = Path.relative_to_cwd(app.path)
+            Logger.debug "  #{IO.ANSI.reset}#{app.name}-#{app.vsn}#{IO.ANSI.cyan}\n" <>
+              "    from: #{where}", :plain
+            case app.applications do
+              [] ->
+                Logger.debug "    applications: none", :plain
+              _  ->
+                Logger.debug "    applications:\n" <>
+                  "      #{Enum.map(app.applications, &inspect/1) |> Enum.join("\n      ")}", :plain
+            end
+            case app.included_applications do
+              [] ->
+                Logger.debug "    includes: none\n", :plain
+              _ ->
+                Logger.debug "    includes:\n" <>
+                  "      #{Enum.map(app.included_applications, &inspect/1) |> Enum.join("\n     ")}", :plain
+            end
+          end)
+        end
+        apps
     end
-    apps
   end
   defp get_apps(nil, acc), do: Enum.uniq(acc)
   defp get_apps({:error, _} = err, _acc), do: err
