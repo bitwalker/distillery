@@ -233,7 +233,7 @@ defmodule Mix.Releases.Utils do
                       false ->
                         [app|acc]
                       true ->
-                        case Path.wildcard(Path.join(lib_dir, "#{a}-*}")) do
+                        case Path.wildcard(Path.join(lib_dir, "#{a}-*")) do
                           [corrected_app_path|_] ->
                             [_, corrected_app_vsn] = String.split(Path.basename(corrected_app_path), "-", trim: true)
                             [%{app | :vsn => corrected_app_vsn,
