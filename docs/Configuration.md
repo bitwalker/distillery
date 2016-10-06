@@ -142,4 +142,13 @@ and environments.
     A path to a shell script which will be executed prior to stopping a release
 - post_stop_hook (path);
     A path to a shell script which will be executed after stopping a release
-```
+- pre_start_hooks (path);
+    A path to a directory with hooks which will be executed prior to starting a
+release
+- post_start_hooks (path);
+    A path to a directory with hooks which will be executed after starting a
+release
+- pre_stop_hooks (path);
+    A path to a directory with hooks which will be executed prior to stopping a release
+- post_stop_hooks (path);
+    A path to a directory with hooks which will be executed after stopping a release
