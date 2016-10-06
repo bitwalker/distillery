@@ -162,7 +162,7 @@ This is the same command as in version 0.0.1 with the exception of
 [appup](https://hexdocs.pm/distillery/upgrades-and-downgrades.html)
 for every application included in the release. These files are then
 used to generate a
-`[relup](https://hexdocs.pm/distillery/upgrades-and-downgrades.html)`
+[relup](https://hexdocs.pm/distillery/upgrades-and-downgrades.html)
 which details how an upgrade (or downgrade) is applied to a running
 application instance.
 
