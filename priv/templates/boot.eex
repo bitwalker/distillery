@@ -20,7 +20,7 @@ my_readlink_f() {
         cd $(dirname "$TARGET_FILE")
         TARGET_FILE=$(basename "$TARGET_FILE")
     done
-    # Compute the canonicalized name by finding the physical path 
+    # Compute the canonicalized name by finding the physical path
     # for the directory we're in and appending the target file.
     PHYS_DIR=$(pwd -P)
     RESULT="$PHYS_DIR/$TARGET_FILE"
@@ -81,10 +81,10 @@ RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_MUTABLE_DIR/log}"
 EXTRA_OPTS=""
 
 # Pre-start/stop event hook paths
-PRE_START_HOOK="$REL_DIR/hooks/pre_start"
-POST_START_HOOK="$REL_DIR/hooks/post_start"
-PRE_STOP_HOOK="$REL_DIR/hooks/pre_stop"
-POST_STOP_HOOK="$REL_DIR/hooks/post_stop"
+PRE_START_HOOKS="$REL_DIR/hooks/pre_start.d"
+POST_START_HOOKS="$REL_DIR/hooks/post_start.d"
+PRE_STOP_HOOKS="$REL_DIR/hooks/pre_stop.d"
+POST_STOP_HOOKS="$REL_DIR/hooks/post_stop.d"
 
 # Get node pid
 get_pid() {
@@ -236,6 +236,16 @@ _replace_os_vars() {
     mv -- "$1.bak" "$1"
 }
 
+# Private. Run hooks from directory.
+_run_hooks_from_dir() {
+   if [ -d "$1" ]; then
+      find "$1" -name "[0-9a-zA-Z]*.sh" -type f -print0 | while read -d $'\0' s; do
+            . "$s"
+      done
+   fi
+}
+
+
 # If TERM is not set, set it to xterm
 if [ -z "$TERM" ]; then
     export TERM=xterm
@@ -371,7 +381,8 @@ case "$1" in
         ARGS="$@"
         RUN_PARAM="$@"
 
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
+        _check_cookie
+        _run_hooks_from_dir "$PRE_START_HOOKS"
 
         # Set arguments for the heart command
         set -- "$SCRIPT_DIR/$REL_NAME" "$HEART_OPTION"
@@ -383,17 +394,16 @@ case "$1" in
 
         mkdir -p "$PIPE_DIR"
 
-        _check_cookie
 
         "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
                           "$(_start_command)"
 
-        [ -f "$POST_START_HOOK" ] && . "$POST_START_HOOK"
+        _run_hooks_from_dir "$POST_START_HOOKS"
         ;;
 
     stop)
         _check_cookie
-        [ -f "$PRE_STOP_HOOK" ] && . "$PRE_STOP_HOOK"
+        _run_hooks_from_dir "$PRE_STOP_HOOKS"
         # Wait for the node to completely stop...
         PID="$(get_pid)"
         if ! nodetool "stop"; then
@@ -403,12 +413,12 @@ case "$1" in
         do
             sleep 1
         done
-        [ -f "$POST_STOP_HOOK" ] && . "$POST_STOP_HOOK"
+        _run_hooks_from_dir "$POST_STOP_HOOKS"
         ;;
 
     restart)
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
         _check_cookie
+        _run_hooks_from_dir "$PRE_START_HOOKS"
         ## Restart the VM without exiting the process
         if ! nodetool "restart"; then
             exit 1
@@ -416,8 +426,8 @@ case "$1" in
         ;;
 
     reboot)
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
         _check_cookie
+        _run_hooks_from_dir "$PRE_START_HOOKS"
         ## Restart the VM completely (uses heart to restart it)
         if ! nodetool "reboot"; then
             exit 1
@@ -547,12 +557,12 @@ case "$1" in
         # Store passed arguments since they will be erased by `set`
         ARGS="$@"
 
+        _check_cookie
+
         # Start the VM, executing pre_start hook along
         # the way. We can't run the post_start hook because
         # the console will crash with no TTY attached
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
-
-        _check_cookie
+        _run_hooks_from_dir "$PRE_START_HOOKS"
 
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
@@ -600,10 +610,10 @@ case "$1" in
         # Store passed arguments since they will be erased by `set`
         ARGS="$@"
 
-        # Start the VM, executing pre and post start hooks
-        [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
-
         _check_cookie
+
+        # Start the VM, executing pre and post start hooks
+        _run_hooks_from_dir "$PRE_START_HOOKS"
 
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
@@ -626,7 +636,7 @@ case "$1" in
 
         "$@" -- ${1+$ARGS} &
         __bg_pid=$!
-        [ -f "$POST_START_HOOK" ] && . "$POST_START_HOOK"
+        _run_hooks_from_dir "$POST_START_HOOKS"
         wait $__bg_pid
         ;;
     rpc)

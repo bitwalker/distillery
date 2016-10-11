@@ -333,6 +333,18 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.post_stop_hook) and not is_binary(profile.post_stop_hook) ->
           raise ArgumentError,
             "expected :post_stop_hook to be nil or a path string, but got: #{inspect profile.post_stop_hook}"
+        not is_nil(profile.pre_start_hooks) and not is_binary(profile.pre_start_hooks) ->
+          raise ArgumentError,
+            "expected :pre_start_hooks to be nil or a path string, but got: #{inspect profile.pre_start_hooks}"
+        not is_nil(profile.post_start_hooks) and not is_binary(profile.post_start_hooks) ->
+          raise ArgumentError,
+            "expected :post_start_hooks to be nil or a path string, but got: #{inspect config.post_start_hooks}"
+        not is_nil(profile.pre_stop_hooks) and not is_binary(profile.pre_stop_hooks) ->
+          raise ArgumentError,
+            "expected :pre_stop_hooks to be nil or a path string, but got: #{inspect profile.pre_stop_hooks}"
+        not is_nil(profile.post_stop_hooks) and not is_binary(profile.post_stop_hooks) ->
+          raise ArgumentError,
+            "expected :post_stop_hooks to be nil or a path string, but got: #{inspect profile.post_stop_hooks}"
         :else ->
           true
       end
