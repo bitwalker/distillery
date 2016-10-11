@@ -224,7 +224,7 @@ defmodule Mix.Releases.Utils do
              true  -> apps
              false -> apps
              p when is_binary(p) ->
-               lib_dir = Path.expand(Path.join(p, "lib"))
+               lib_dir = Path.expand(Path.join([p, "..", "lib"]))
                Enum.reduce(apps, [], fn
                  _, {:error, _} = err ->
                    err
