@@ -19,10 +19,12 @@ use Mix.Releases.Config,
 environment :dev do
   set dev_mode: true
   set include_erts: false
+  set cookie: :test
 end
 environment :prod do
   set include_erts: true
   set include_src: false
+  set cookie: :"#{:crypto.hash(:sha256, System.get_env("COOKIE"))}"
 end
 
 # You may define one or more releases in this file.
