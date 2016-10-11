@@ -127,6 +127,33 @@ escript() {
     "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@
 }
 
+# Private. Load target cookie, either from vm.args or $HOME/.cookie
+_load_cookie() {
+    COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
+    DEFAULT_COOKIE_FILE="$HOME/.erlang.cookie"
+    if [ -z "$COOKIE_ARG" ]; then
+        if [ -f "$DEFAULT_COOKIE_FILE" ]; then
+            COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
+        fi
+    else
+        # Extract cookie name from COOKIE_ARG
+        COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
+    fi
+}
+
+# Private. Ensure that cookie is set.
+_check_cookie() {
+    # Attempt reloading cookie in case it has been set in a hook
+    if [ -z "$COOKIE" ]; then
+        _load_cookie
+    fi
+    # Die if cookie is still not set, as connecting via distribution will fail
+    if [ -z "$COOKIE" ]; then
+        printf "a secret cookie must be provided in one of the following ways:\n  - with vm.args using the -setcookie parameter,\n  or\n  by writing the cookie to '$DEFAULT_COOKIE_FILE', with permissions set to 0400"
+        exit 1
+    fi
+}
+
 # Private. For determining the version of ERTS available to the release
 _detect_erts_vsn() {
     "$BINDIR/erl" -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
@@ -292,19 +319,7 @@ NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
 PIPE_DIR="${PIPE_DIR:-$RELEASE_MUTABLE_DIR/erl_pipes/$NAME/}"
 
 # Extract the target cookie
-COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
-DEFAULT_COOKIE_FILE="$HOME/.erlang.cookie"
-if [ -z "$COOKIE_ARG" ]; then
-    if [ -f "$DEFAULT_COOKIE_FILE" ]; then
-        COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
-    else
-        printf "a secret cookie must be provided in one of the following ways:\n  - with vm.args using the -setcookie parameter,\n  or\n  by writing the cookie to '$DEFAULT_COOKIE_FILE', with permissions set to 0400"
-        exit 1
-    fi
-else
-    # Extract cookie name from COOKIE_ARG
-    COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
-fi
+_load_cookie
 
 _find_erts_dir
 export ROOTDIR="$RELEASE_ROOT_DIR"
@@ -368,6 +383,8 @@ case "$1" in
 
         mkdir -p "$PIPE_DIR"
 
+        _check_cookie
+
         "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
                           "$(_start_command)"
 
@@ -375,6 +392,7 @@ case "$1" in
         ;;
 
     stop)
+        _check_cookie
         [ -f "$PRE_STOP_HOOK" ] && . "$PRE_STOP_HOOK"
         # Wait for the node to completely stop...
         PID="$(get_pid)"
@@ -390,6 +408,7 @@ case "$1" in
 
     restart)
         [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
+        _check_cookie
         ## Restart the VM without exiting the process
         if ! nodetool "restart"; then
             exit 1
@@ -398,6 +417,7 @@ case "$1" in
 
     reboot)
         [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
+        _check_cookie
         ## Restart the VM completely (uses heart to restart it)
         if ! nodetool "reboot"; then
             exit 1
@@ -406,12 +426,14 @@ case "$1" in
 
     pid)
         ## Get the VM's pid
+        _check_cookie
         if ! get_pid; then
             exit 1
         fi
         ;;
 
     ping)
+        _check_cookie
         ## See if the VM is alive
         if ! nodetool "ping"; then
             exit 1
@@ -419,6 +441,7 @@ case "$1" in
         ;;
 
     escript)
+        _check_cookie
         ## Run an escript under the node's environment
         if ! escript $@; then
             exit 1
@@ -426,6 +449,8 @@ case "$1" in
         ;;
 
     attach)
+        _check_cookie
+
         # Make sure a node IS running
         if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
@@ -437,6 +462,8 @@ case "$1" in
         ;;
 
     remote_console)
+        _check_cookie
+
         # Make sure a node IS running
         if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
@@ -455,6 +482,8 @@ case "$1" in
             exit 1
         fi
 
+        _check_cookie
+
         # Make sure a node IS running
         if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
@@ -472,6 +501,8 @@ case "$1" in
             echo "NOTE {package base name} MUST NOT include the .tar.gz suffix"
             exit 1
         fi
+
+        _check_cookie
 
         # Make sure a node IS running
         if ! nodetool "ping" > /dev/null; then
@@ -520,6 +551,8 @@ case "$1" in
         # the way. We can't run the post_start hook because
         # the console will crash with no TTY attached
         [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
+
+        _check_cookie
 
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
@@ -570,6 +603,8 @@ case "$1" in
         # Start the VM, executing pre and post start hooks
         [ -f "$PRE_START_HOOK" ] && . "$PRE_START_HOOK"
 
+        _check_cookie
+
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
         set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
@@ -595,6 +630,8 @@ case "$1" in
         wait $__bg_pid
         ;;
     rpc)
+        _check_cookie
+
         # Make sure a node IS running
         if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
@@ -606,6 +643,8 @@ case "$1" in
         nodetool rpc $@
         ;;
     rpcterms)
+        _check_cookie
+
         # Make sure a node IS running
         if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
@@ -617,6 +656,8 @@ case "$1" in
         nodetool rpcterms $@
         ;;
     eval)
+        _check_cookie
+
         # Make sure a node IS running
         if ! nodetool "ping" > /dev/null; then
             echo "Node is not running!"
@@ -634,6 +675,8 @@ case "$1" in
         # use
         #
         #     {:ok, _} = Application.ensure_all_started(:your_app)
+
+        _check_cookie
 
         shift
         MODULE="$1"; shift
@@ -660,6 +703,7 @@ case "$1" in
     *)
         __command_path="$REL_DIR/commands/$1"
         if [ -f "$__command_path" ]; then
+            _check_cookie
             . "$__command_path"
         else
             echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|console|console_clean|console_boot <file>|attach|remote_console|upgrade|downgrade|install|escript|rpc|rpcterms|eval|command <module> <function> <args>}"
