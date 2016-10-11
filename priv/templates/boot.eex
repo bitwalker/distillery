@@ -205,7 +205,8 @@ _replace_os_vars() {
                 var=substr($0,RSTART+2,RLENGTH-3);
                 gsub("[$]{"var"}", escape(ENVIRON[var]))
             }
-        }1' < "$1" > "$2"
+        }1' < "$1" > "$1.bak"
+    mv -- "$1.bak" "$1"
 }
 
 # If ERTS_VSN is not set, detect it
@@ -243,7 +244,7 @@ if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
     VMARGS_PATH=$RELEASE_MUTABLE_DIR/vm.args
 fi
 if [ $REPLACE_OS_VARS ]; then
-    _replace_os_vars "$orig_vmargs_path" "$VMARGS_PATH"
+    _replace_os_vars "$VMARGS_PATH"
 fi
 
 # Set SYS_CONFIG_PATH, the path to the sys.config file to use
@@ -263,7 +264,7 @@ if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
     SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
 fi
 if [ $REPLACE_OS_VARS ]; then
-    _replace_os_vars "$orig_sys_config_path" "$SYS_CONFIG_PATH"
+    _replace_os_vars "$SYS_CONFIG_PATH"
 fi
 
 # Extract the target node name from node.args
