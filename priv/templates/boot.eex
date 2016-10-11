@@ -209,6 +209,11 @@ _replace_os_vars() {
     mv -- "$1.bak" "$1"
 }
 
+# If TERM is not set, set it to xterm
+if [ -z "$TERM" ]; then
+    export TERM=xterm
+fi
+
 # If ERTS_VSN is not set, detect it
 if [ -z "$ERTS_VSN" ]; then
     ERTS_VSN="$(_detect_erts_vsn)"
