@@ -76,6 +76,7 @@ defmodule Mix.Releases.Assembler do
                   end
     release = %{release | :profile => %{profile | :config => config_path}}
     release = check_cookie(release)
+    :ok = Utils.validate_erts(profile.include_erts)
     case Utils.get_apps(release) do
       {:error, _} = err -> err
       release_apps ->
@@ -620,15 +621,7 @@ defmodule Mix.Releases.Assembler do
                  true -> Utils.erts_version()
                  p when is_binary(p) ->
                    case Utils.detect_erts_version(prefix) do
-                     {:ok, vsn} ->
-                       # verify that the path given was actually the right one
-                       case File.exists?(Path.join(prefix, "bin")) do
-                         true -> vsn
-                         false ->
-                           pfx = Path.relative_to_cwd(prefix)
-                           maybe_path = Path.relative_to_cwd(Path.expand(Path.join(prefix, "..")))
-                           {:error, "invalid ERTS path, did you mean #{maybe_path} instead of #{pfx}?"}
-                       end
+                     {:ok, vsn} -> vsn
                      {:error, _} = err -> err
                    end
                end

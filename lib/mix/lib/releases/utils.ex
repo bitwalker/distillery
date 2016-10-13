@@ -79,6 +79,46 @@ defmodule Mix.Releases.Utils do
   def erts_version, do: "#{:erlang.system_info(:version)}"
 
   @doc """
+  Verify that the path given was actually the right one  
+  """
+  @spec validate_erts(String.t) :: :ok | {:error, String.t, [String.t]}
+  def validate_erts(path) when is_binary(path) do
+    erts = case Path.join(path, "erts-*") |> Path.wildcard |> Enum.count do
+      0 -> {:error, "Missing erts-* directory"}
+      1 -> :ok
+      _ -> {:error, "Too many erts-* directory"}
+    end
+    bin = case File.exists?(Path.join(path, "bin")) do
+      false -> {:error, "Missing bin directory"}
+      true -> :ok
+    end
+    lib = case File.exists?(Path.join(path, "lib")) do
+      false -> {:error, "Missing lib directory"}
+      true -> :ok      
+    end
+    errors =
+      Enum.filter_map(
+        [erts, bin, lib],
+        fn (x) -> x != :ok end,
+        fn {:error, message} -> message end)
+    case Enum.empty?(errors) do
+      true -> :ok
+      false -> {:error ,
+        "Invalid ERTS path #{Path.expand(path)}",
+        errors}    
+    end    
+  end
+
+  @doc """
+  If no ERTS path is specified it's fine. Distillery will work out
+  the system ERTS
+  """
+  @spec validate_erts(nil | boolean) :: :ok
+  def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts) do
+    :ok
+  end
+
+  @doc """
   Detects the version of ERTS in the given directory
   """
   @spec detect_erts_version(String.t) :: {:ok, Stringt} | {:error, term}
