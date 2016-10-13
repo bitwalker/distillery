@@ -239,8 +239,9 @@ _replace_os_vars() {
 # Private. Run hooks from directory.
 _run_hooks_from_dir() {
    if [ -d "$1" ]; then
-      find "$1" -name "[0-9a-zA-Z]*.sh" -type f -print0 | while read -d $'\0' s; do
-            . "$s"
+      for file in $1/[0-9a-zA-Z]*.sh; do
+        [ -f "$file" ] || continue
+        . "$file"
       done
    fi
 }
