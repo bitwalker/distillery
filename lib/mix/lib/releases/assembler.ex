@@ -606,7 +606,7 @@ defmodule Mix.Releases.Assembler do
                    case Utils.detect_erts_version(prefix) do
                      {:ok, vsn} ->
                        # verify that the path given was actually the right one
-                       case File.exists?(Path.join(prefix, "bin")) do
+                       case File.exists?(Path.join([prefix, "erts-#{vsn}", "bin"])) do
                          true -> vsn
                          false ->
                            pfx = Path.relative_to_cwd(prefix)
