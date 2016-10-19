@@ -36,6 +36,8 @@ it is so simple, that a simple gist seems more useful.
 
 See [config.ex](https://gist.github.com/bitwalker/a4f73b33aea43951fe19b242d06da7b9) for the implementation.
 
+If you still want to use it as Hex package, take look at [confex](https://hex.pm/packages/confex).
+
 ### Configuration Tools
 
 It may be the case that you are providing release packages to end users, who will need to configure the
