@@ -85,6 +85,8 @@ PRE_START_HOOKS="$REL_DIR/hooks/pre_start.d"
 POST_START_HOOKS="$REL_DIR/hooks/post_start.d"
 PRE_STOP_HOOKS="$REL_DIR/hooks/pre_stop.d"
 POST_STOP_HOOKS="$REL_DIR/hooks/post_stop.d"
+PRE_UPGRADE_HOOKS="$REL_DIR/hooks/pre_upgrade.d"
+POST_UPGRADE_HOOKS="$REL_DIR/hooks/post_upgrade.d"
 
 # Get node pid
 get_pid() {
@@ -501,10 +503,12 @@ case "$1" in
             exit 1
         fi
 
+        _run_hooks_from_dir "$PRE_UPGRADE_HOOKS"
         exec "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
              "install_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$2"
-        ;;
+        _run_hooks_from_dir "$POST_UPGRADE_HOOKS"
 
+        ;;
     unpack)
         if [ -z "$2" ]; then
             echo "Missing package argument"
