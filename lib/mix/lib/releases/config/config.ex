@@ -333,6 +333,12 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.post_stop_hook) and not is_binary(profile.post_stop_hook) ->
           raise ArgumentError,
             "expected :post_stop_hook to be nil or a path string, but got: #{inspect profile.post_stop_hook}"
+        not is_nil(profile.pre_upgrade_hook) and not is_binary(profile.pre_upgrade_hook) ->
+          raise ArgumentError,
+            "expected :pre_upgrade_hook to be nil or a path string, but got: #{inspect profile.pre_upgrade_hook}"
+        not is_nil(profile.post_upgrade_hook) and not is_binary(profile.post_upgrade_hook) ->
+          raise ArgumentError,
+            "expected :post_upgrade_hook to be nil or a path string, but got: #{inspect profile.post_upgrade_hook}"
         not is_nil(profile.pre_start_hooks) and not is_binary(profile.pre_start_hooks) ->
           raise ArgumentError,
             "expected :pre_start_hooks to be nil or a path string, but got: #{inspect profile.pre_start_hooks}"
@@ -345,6 +351,12 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.post_stop_hooks) and not is_binary(profile.post_stop_hooks) ->
           raise ArgumentError,
             "expected :post_stop_hooks to be nil or a path string, but got: #{inspect profile.post_stop_hooks}"
+        not is_nil(profile.pre_upgrade_hooks) and not is_binary(profile.pre_upgrade_hooks) ->
+          raise ArgumentError,
+            "expected :pre_upgrade_hooks to be nil or a path string, but got: #{inspect profile.pre_upgrade_hooks}"
+        not is_nil(profile.post_upgrade_hooks) and not is_binary(profile.post_upgrade_hooks) ->
+          raise ArgumentError,
+            "expected :post_upgrade_hooks to be nil or a path string, but got: #{inspect profile.post_upgrade_hooks}"
         :else ->
           true
       end
