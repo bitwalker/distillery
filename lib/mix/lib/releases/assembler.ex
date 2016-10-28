@@ -770,7 +770,7 @@ defmodule Mix.Releases.Assembler do
       {:mkdir, "#{hooks_dir}/post_stop.d"},
       {:copy, release.profile.pre_start_hook, "#{hooks_dir}/pre_start.d/00_pre_start_hook.sh"},
       {:copy, release.profile.post_start_hook, "#{hooks_dir}/post_start.d/00_post_start_hook.sh"},
-      {:copy, release.profile.pre_stop_hook, "#{hooks_dir}/pre_stop.d/00_post_start_hook.sh"},
+      {:copy, release.profile.pre_stop_hook, "#{hooks_dir}/pre_stop.d/00_pre_stop_hook.sh"},
       {:copy, release.profile.post_stop_hook, "#{hooks_dir}/post_stop.d/00_post_stop_hook.sh"},
       {:copy, release.profile.pre_start_hooks, "#{hooks_dir}/pre_start.d"},
       {:copy, release.profile.post_start_hooks, "#{hooks_dir}/post_start.d"},
