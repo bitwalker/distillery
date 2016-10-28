@@ -62,12 +62,14 @@ defmodule Mix.Tasks.Release.Init do
   end
 
   @defaults [no_doc: false,
-             release_per_app: false]
+             release_per_app: false,
+             name: nil]
   @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
     {overrides, _} = OptionParser.parse!(argv,
       strict: [no_doc: :boolean,
-               release_per_app: :boolean])
+               release_per_app: :boolean,
+               name: :string])
     Keyword.merge(@defaults, overrides)
   end
 
@@ -90,7 +92,8 @@ defmodule Mix.Tasks.Release.Init do
        end)]
       ++ get_common_bindings(opts)
     else
-      release_name = String.replace(Path.basename(File.cwd!), "-", "_")
+      release_name_from_cwd = String.replace(Path.basename(File.cwd!), "-", "_")
+      release_name = Keyword.get(opts, :name, release_name_from_cwd)
       [releases: [
          [release_name: String.to_atom(release_name),
           is_umbrella: true,
