@@ -106,16 +106,16 @@ defmodule Mix.Tasks.Release do
     # build release
     Logger.info "Assembling release.."
     case {Mix.Releases.Assembler.assemble(config), no_tar?} do
-      {{:ok, %Release{:name => name}}, true} ->
-        print_success(name)
-      {{:ok, %Release{:name => name, profile: %Profile{:dev_mode => true}}}, false} ->
+      {{:ok, %Release{:name => name} = release}, true} ->
+        print_success(release, name)
+      {{:ok, %Release{:name => name, profile: %Profile{:dev_mode => true}} = release}, false} ->
         Logger.warn "You have set dev_mode to true, skipping archival phase"
-        print_success(name)
+        print_success(release, name)
       {{:ok, %Release{:name => name} = release}, false} ->
         Logger.info "Packaging release.."
         case Mix.Releases.Archiver.archive(release) do
           {:ok, _archive_path} ->
-            print_success(name)
+            print_success(release, name)
           {:error, reason} when is_binary(reason) ->
             Logger.error "Problem generating release tarball:\n    " <>
               reason
@@ -136,13 +136,14 @@ defmodule Mix.Tasks.Release do
     end
   end
 
-  @spec print_success(atom) :: :ok
-  defp print_success(app) do
+  @spec print_success(Release.t, atom) :: :ok
+  defp print_success(%Release{profile: %Profile{output_dir: output_dir}}, app) do
+    relative_output_dir = Path.relative_to_cwd(output_dir)
     Logger.success "Release successfully built!\n    " <>
       "You can run it in one of the following ways:\n      " <>
-      "Interactive: rel/#{app}/bin/#{app} console\n      " <>
-      "Foreground: rel/#{app}/bin/#{app} foreground\n      " <>
-      "Daemon: rel/#{app}/bin/#{app} start"
+      "Interactive: #{relative_output_dir}/bin/#{app} console\n      " <>
+      "Foreground: #{relative_output_dir}/bin/#{app} foreground\n      " <>
+      "Daemon: #{relative_output_dir}/bin/#{app} start"
   end
 
   @spec parse_args(OptionParser.argv) :: Keyword.t | no_return
