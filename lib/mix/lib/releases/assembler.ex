@@ -36,27 +36,27 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Determines the correct environment to assemble in
-  defp select_environment(%Config{selected_environment: :default, default_environment: :default} = c),
+  def select_environment(%Config{selected_environment: :default, default_environment: :default} = c),
     do: select_environment(Map.fetch(c.environments, :default))
-  defp select_environment(%Config{selected_environment: :default, default_environment: name} = c),
+  def select_environment(%Config{selected_environment: :default, default_environment: name} = c),
     do: select_environment(Map.fetch(c.environments, name))
-  defp select_environment(%Config{selected_environment: name} = c),
+  def select_environment(%Config{selected_environment: name} = c),
     do: select_environment(Map.fetch(c.environments, name))
-  defp select_environment({:ok, _} = e), do: e
-  defp select_environment(_),            do: {:error, :no_environments}
+  def select_environment({:ok, _} = e), do: e
+  def select_environment(_),            do: {:error, :no_environments}
 
   # Determines the correct release to assemble
-  defp select_release(%Config{selected_release: :default, default_release: :default} = c),
+  def select_release(%Config{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
-  defp select_release(%Config{selected_release: :default, default_release: name} = c),
+  def select_release(%Config{selected_release: :default, default_release: name} = c),
     do: select_release(Map.fetch(c.releases, name))
-  defp select_release(%Config{selected_release: name} = c),
+  def select_release(%Config{selected_release: name} = c),
     do: select_release(Map.fetch(c.releases, name))
-  defp select_release({:ok, _} = r), do: r
-  defp select_release(_),            do: {:error, :no_releases}
+  def select_release({:ok, _} = r), do: r
+  def select_release(_),            do: {:error, :no_releases}
 
   # Applies the environment profile to the release profile.
-  defp apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
+  def apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
     Logger.info "Building release #{r.name}:#{r.version} using environment #{e.name}"
     env_profile = Map.from_struct(env_profile)
     profile = Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
@@ -69,7 +69,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Applies global configuration options to the release profile
-  defp apply_configuration(%Release{version: current_version, profile: profile} = release, %Config{} = config) do
+  def apply_configuration(%Release{version: current_version, profile: profile} = release, %Config{} = config) do
     config_path = case profile.config do
                     p when is_binary(p) -> p
                     _ -> Keyword.get(Mix.Project.config, :config_path)
