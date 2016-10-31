@@ -56,24 +56,22 @@ Please see the module docs for `Mix.Releases.Config` for specifics on the
 The following is a list of config options specific to releases
 
 
-```
-- version (string);
-    Required. The version of this release.
-    Use `current_version/1` to load the current version
-    of an application instead of hardcoding it.
-- applications (list of atom | atom: start_type);
-    Optional. A list of applications which should be
-    included in the release. By default, the list will
-    contain required apps, and apps discovered by walking
-    the tree of dependencies. In umbrella apps, you must
-    provide this setting, as it is not possible to know
-    which applications should be included. You can also
-    specify the start type of an application by providing
-    the application and start type as a tuple. Valid start
-    types are `:load`, `:permanent`, `:temporary` and `:transient`.
-    See http://erlang.org/doc/design_principles/applications.html,
-    section 8.9 for details on these values.
-```
+    - version (string);
+        Required. The version of this release.
+        Use `current_version/1` to load the current version
+        of an application instead of hardcoding it.
+    - applications (list of atom | atom: start_type);
+        Optional. A list of applications which should be
+        included in the release. By default, the list will
+        contain required apps, and apps discovered by walking
+        the tree of dependencies. In umbrella apps, you must
+        provide this setting, as it is not possible to know
+        which applications should be included. You can also
+        specify the start type of an application by providing
+        the application and start type as a tuple. Valid start
+        types are `:load`, `:permanent`, `:temporary` and `:transient`.
+        See http://erlang.org/doc/design_principles/applications.html,
+        section 8.9 for details on these values.
 
 ## Environment/Release settings
 
@@ -81,74 +79,76 @@ The following is a full list of config options for both releases
 and environments.
 
 
-```
-- dev_mode (boolean);
-    symlink compiled files into the release, rather than copy them.
-    this allows you to recompile and the release will be automatically
-    updated. Use only for development.
-- code_paths (list of strings);
-    a list of additional code paths to use when searching
-    for applications/modules
-- vm_args (string);
-    a path to a custom vm.args file
-- config (string);
-    a path to a custom config.exs file, this will be used when generating
-    the sys.config for the release
-- sys_config (string);
-    a path to a custom sys.config file, this will be used in place of generating
-    a sys.config, and thus will result in the config setting being ignored, choose
-    one or the other as needed
-- include_erts (boolean | string);
-    whether to include the system ERTS or not,
-    a path to an alternative ERTS can also be provided
-- include_src (boolean);
-    should source code be included in the release
-- include_system_libs (boolean | string);
-    should system libs be included in the release,
-    a path to system libs to be included can also be provided
-- strip_debug_info (boolean);
-    should debugging info be stripped from BEAM files in the release
-    CAUTION: This setting will result in releases which cannot
-    be hot upgraded. Only use this if you need it.
-- erl_opts (string);
-    a string of Erlang VM options to be passed along to erl
-- commands (keyword list of names to paths);
-    Commands are extensions to the boot script which will run like any
-    other boot script command, i.e. foreground, and are implemented
-    as shell scripts, which will be copied into the release when it is built,
-    just like boot script hooks.
-- overrides (keyword list of app names to paths);
-    During development its often the case that you want to substitute the app
-    that you are working on for a 'production' version of an app. You can
-    explicitly tell Mix to override all versions of an app that you specify
-    with an app in an arbitrary directory. Mix will then symlink that app
-    into the release in place of the specified app. Be aware though that Mix
-    will check your app for consistency so it should be a normal OTP app and
-    already be built.
-- overlay_vars (keyword list);
-    A keyword list of bindings to use in overlays
-- overlays (special keyword list);
-    A list of overlay operations to perform against the release, prior to archival,
-    such as copying files, symlinking files, etc.
-  - copy: {from_path, to_path} (copy a file)
-  - link: {from_path, to_path} (symlink a file)
-  - mkdir: path (ensure a path exists)
-  - template: {template_path, output_path} (generate a file from a template)
-- pre_start_hook (path);
-    A path to a shell script which will be executed prior to starting a release
-- post_start_hook (path);
-    A path to a shell script which will be executed after starting a release
-- pre_stop_hook (path);
-    A path to a shell script which will be executed prior to stopping a release
-- post_stop_hook (path);
-    A path to a shell script which will be executed after stopping a release
-- pre_start_hooks (path);
-    A path to a directory with hooks which will be executed prior to starting a
-release
-- post_start_hooks (path);
-    A path to a directory with hooks which will be executed after starting a
-release
-- pre_stop_hooks (path);
-    A path to a directory with hooks which will be executed prior to stopping a release
-- post_stop_hooks (path);
-    A path to a directory with hooks which will be executed after stopping a release
+    - output_dir (string);
+        the path where the release artifacts will be generated.
+        by default this is under '_build/<$MIX_ENV>/rel/<release_name>'
+    - dev_mode (boolean);
+        symlink compiled files into the release, rather than copy them.
+        this allows you to recompile and the release will be automatically
+        updated. Use only for development.
+    - code_paths (list of strings);
+        a list of additional code paths to use when searching
+        for applications/modules
+    - vm_args (string);
+        a path to a custom vm.args file
+    - config (string);
+        a path to a custom config.exs file, this will be used when generating
+        the sys.config for the release
+    - sys_config (string);
+        a path to a custom sys.config file, this will be used in place of generating
+        a sys.config, and thus will result in the config setting being ignored, choose
+        one or the other as needed
+    - include_erts (boolean | string);
+        whether to include the system ERTS or not,
+        a path to an alternative ERTS can also be provided
+    - include_src (boolean);
+        should source code be included in the release
+    - include_system_libs (boolean | string);
+        should system libs be included in the release,
+        a path to system libs to be included can also be provided
+    - strip_debug_info (boolean);
+        should debugging info be stripped from BEAM files in the release
+        CAUTION: This setting will result in releases which cannot
+        be hot upgraded. Only use this if you need it.
+    - erl_opts (string);
+        a string of Erlang VM options to be passed along to erl
+    - commands (keyword list of names to paths);
+        Commands are extensions to the boot script which will run like any
+        other boot script command, i.e. foreground, and are implemented
+        as shell scripts, which will be copied into the release when it is built,
+        just like boot script hooks.
+    - overrides (keyword list of app names to paths);
+        During development its often the case that you want to substitute the app
+        that you are working on for a 'production' version of an app. You can
+        explicitly tell Mix to override all versions of an app that you specify
+        with an app in an arbitrary directory. Mix will then symlink that app
+        into the release in place of the specified app. Be aware though that Mix
+        will check your app for consistency so it should be a normal OTP app and
+        already be built.
+    - overlay_vars (keyword list);
+        A keyword list of bindings to use in overlays
+    - overlays (special keyword list);
+        A list of overlay operations to perform against the release, prior to archival,
+        such as copying files, symlinking files, etc.
+      - copy: {from_path, to_path} (copy a file)
+      - link: {from_path, to_path} (symlink a file)
+      - mkdir: path (ensure a path exists)
+      - template: {template_path, output_path} (generate a file from a template)
+    - pre_start_hook (path);
+        A path to a shell script which will be executed prior to starting a release
+    - post_start_hook (path);
+        A path to a shell script which will be executed after starting a release
+    - pre_stop_hook (path);
+        A path to a shell script which will be executed prior to stopping a release
+    - post_stop_hook (path);
+        A path to a shell script which will be executed after stopping a release
+    - pre_start_hooks (path);
+        A path to a directory with hooks which will be executed prior to starting a
+    release
+    - post_start_hooks (path);
+        A path to a directory with hooks which will be executed after starting a
+    release
+    - pre_stop_hooks (path);
+        A path to a directory with hooks which will be executed prior to stopping a release
+    - post_stop_hooks (path);
+        A path to a directory with hooks which will be executed after stopping a release

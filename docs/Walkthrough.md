@@ -152,9 +152,9 @@ When you run `mix release`, you should see something like the following:
 ==> You have set dev_mode to true, skipping archival phase
 ==> Release successfully built!
     You can run it in one of the following ways:
-      Interactive: rel/myapp/bin/test console
-      Foreground: rel/myapp/bin/test foreground
-      Daemon: rel/myapp/bin/test start
+      Interactive: _build/dev/rel/myapp/bin/test console
+      Foreground: _build/dev/rel/myapp/bin/test foreground
+      Daemon: _build/dev/rel/myapp/bin/test start
 ```
 
 As an example, building the release for the `prod` environment looks like this:
@@ -166,9 +166,9 @@ As an example, building the release for the `prod` environment looks like this:
 ==> Packaging release..
 ==> Release successfully built!
     You can run it in one of the following ways:
-      Interactive: rel/myapp/bin/test console
-      Foreground: rel/myapp/bin/test foreground
-      Daemon: rel/myapp/bin/test start
+      Interactive: _build/dev/rel/myapp/bin/test console
+      Foreground: _build/dev/rel/myapp/bin/test foreground
+      Daemon: _build/dev/rel/myapp/bin/test start
 ```
 
 At this point, you can run your release using one of the three commands listed in the output.
@@ -186,7 +186,7 @@ directory somewhere on your build machine, then provided the path to that direct
 
 Let's assume you've built your release with `MIX_ENV=prod mix release --env=prod` and
 are ready to deploy it to production. The artifact you will want to deploy is the release
-tarball, which is located at `rel/<name>/releases/<version>/<name>.tar.gz`. If you included
+tarball, which is located at `_build/prod/rel/<name>/releases/<version>/<name>.tar.gz`. If you included
 ERTS in the release, then you can simply copy this tarball to the target machine, extract it
 with `tar -xzf <name>.tar.gz`, and run it with `bin/<name> start`. If you didn't include ERTS,
 make sure you have installed Erlang first, and then you can proceed with deployment.
@@ -221,7 +221,7 @@ of the target system. This is pretty simple!
 
 - Run `mix release --upgrade` to build an upgrade release
 
-You will now have a new tarball in `rel/<name>/releases/<upgrade_version>/` which you can use for the next step.
+You will now have a new tarball in `_build/prod/rel/<name>/releases/<upgrade_version>/` which you can use for the next step.
 
 ## Deploying an upgrade
 
