@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Release.Clean do
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
-  alias Mix.Releases.{Logger, App, Utils, Plugin}
+  alias Mix.Releases.{Logger, App, Utils, Plugin, Assembler, Release, Config, Profile}
 
   @spec run(OptionParser.argv) :: no_return
   def run(args) do
@@ -28,6 +28,8 @@ defmodule Mix.Tasks.Release.Clean do
     verbosity = Keyword.get(opts, :verbosity)
     Logger.configure(verbosity)
 
+    Application.load(:distillery)
+
     # make sure loadpaths are updated
     Mix.Task.run("loadpaths", [])
     # make sure we're compiled too
@@ -35,39 +37,8 @@ defmodule Mix.Tasks.Release.Clean do
 
     opts = parse_args(args)
 
-    implode? = Keyword.get(opts, :implode, false)
-    no_confirm? = Keyword.get(opts, :no_confirm, false)
-    cond do
-      implode? && no_confirm? ->
-        clean_all!()
-      implode? && confirm_implode?() ->
-        clean_all!()
-      :else ->
-        clean!(args)
-    end
-  end
-
-  @spec clean_all!() :: :ok | no_return
-  defp clean_all! do
-    Logger.info "Cleaning all releases.."
-    unless File.exists?("rel") do
-      Logger.warn "No rel directory found! Nothing to do."
-      exit(:normal)
-    end
-    File.rm_rf!("rel")
-    Logger.success "Clean successful!"
-  end
-
-  @spec clean!([String.t]) :: :ok | no_return
-  defp clean!(args) do
     # load release configuration
-    Logger.info "Cleaning last release.."
-
-    unless File.exists?("rel/config.exs") do
-      Logger.warn "No config file found! Nothing to do."
-      exit(:normal)
-    end
-
+    Logger.debug "Loading configuration.."
     config_path = Path.join([File.cwd!, "rel", "config.exs"])
     config = case File.exists?(config_path) do
                true ->
@@ -76,41 +47,77 @@ defmodule Mix.Tasks.Release.Clean do
                  rescue
                    e in [Mix.Releases.Config.LoadError]->
                      file = Path.relative_to_cwd(e.file)
-                     message = Exception.message(e.error)
+                     message = e.error.__struct__.message(e.error)
                      message = String.replace(message, "nofile", file)
                      Logger.error "Failed to load config:\n" <>
-                        "    #{message}"
+                       "    #{message}"
                      exit({:shutdown, 1})
                  end
                false ->
                  Logger.error "You are missing a release config file. Run the release.init task first"
                  exit({:shutdown, 1})
              end
-    releases = config.releases
+
+    config = %{config |
+               :selected_environment => Keyword.fetch!(opts, :selected_environment),
+               :selected_release => Keyword.fetch!(opts, :selected_release)}
+
+    implode?    = Keyword.get(opts, :implode, false)
+    no_confirm? = Keyword.get(opts, :no_confirm, false)
+    with {:ok, environment} <- Assembler.select_environment(config),
+         {:ok, release}     <- Assembler.select_release(config),
+         {:ok, release}     <- Assembler.apply_environment(release, environment),
+         {:ok, release}     <- Assembler.apply_configuration(release, config) do
+      cond do
+        implode? && no_confirm? ->
+          clean_all!(release.profile.output_dir)
+        implode? && confirm_implode?() ->
+          clean_all!(release.profile.output_dir)
+        :else ->
+          clean!(config, args)
+      end
+    end
+
+  end
+
+  @spec clean_all!(String.t) :: :ok | no_return
+  defp clean_all!(output_dir) do
+    Logger.info "Cleaning all releases.."
+    unless File.exists?(output_dir) do
+      Logger.warn "Release output directory not found! Nothing to do."
+      exit(:normal)
+    end
+    File.rm_rf!(output_dir)
+    Logger.success "Clean successful!"
+  end
+
+  @spec clean!(Mix.Releases.Config.t, [String.t]) :: :ok | no_return
+  defp clean!(%Config{releases: releases}, args) do
+    # load release configuration
+    Logger.info "Cleaning last release.."
     # clean release
-    paths = Path.wildcard(Path.join("rel", "*"))
-    for {name, release} <- releases, Path.join("rel", "#{name}") in paths do
+    for {name, release} <- releases, File.exists?(release.profile.output_dir) do
       Logger.notice "    Removing release #{name}:#{release.version}"
-      clean_release(release, Path.join("rel", "#{name}"), args)
+      clean_release(release, args)
     end
     Logger.success "Clean successful!"
   end
 
-  @spec clean_release(Release.t, String.t, [String.t]) :: :ok | :no_return
-  defp clean_release(release, path, args) do
+  @spec clean_release(Release.t, [String.t]) :: :ok | :no_return
+  defp clean_release(%Release{profile: %Profile{output_dir: output_dir}} = release, args) do
     # Remove erts
-    erts_paths = Path.wildcard(Path.join(path, "erts-*"))
+    erts_paths = Path.wildcard(Path.join(output_dir, "erts-*"))
     for erts <- erts_paths do
       File.rm_rf!(erts)
     end
     # Remove libs
     for %App{name: name, vsn: vsn} <- Utils.get_apps(release) do
-      File.rm_rf!(Path.join([path, "lib", "#{name}-#{vsn}}"]))
+      File.rm_rf!(Path.join([output_dir, "lib", "#{name}-#{vsn}}"]))
     end
     # Remove releases/start_erl.data
-    File.rm(Path.join([path, "releases", "start_erl.data"]))
+    File.rm(Path.join([output_dir, "releases", "start_erl.data"]))
     # Remove current release version
-    File.rm_rf!(Path.join([path, "releases", "#{release.version}"]))
+    File.rm_rf!(Path.join([output_dir, "releases", "#{release.version}"]))
     # Execute plugin callbacks for this release
     Plugin.after_cleanup(release, args)
   end
