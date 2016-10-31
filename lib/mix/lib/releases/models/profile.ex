@@ -5,7 +5,8 @@ defmodule Mix.Releases.Profile do
   when determining the configuration for a release in a given environment, the
   environment profile overrides the release profile.
   """
-  defstruct vm_args: nil, # path to a custom vm.args
+  defstruct output_dir: nil,
+    vm_args: nil, # path to a custom vm.args
     cookie: nil,
     config: nil, # path to a custom config.exs
     sys_config: nil, # path to a custom sys.config
@@ -17,8 +18,8 @@ defmodule Mix.Releases.Profile do
     include_system_libs: nil, # boolean | "path/to/libs"
     strip_debug_info: nil, # boolean
     plugins: [], # list of module names
-    overlay_vars: nil, # keyword list
-    overlays: nil, # overlay list
+    overlay_vars: [], # keyword list
+    overlays: [], # overlay list
     overrides: nil, # override list [app: app_path]
     commands: nil, # keyword list
     pre_start_hook: nil, # path or nil
@@ -31,6 +32,7 @@ defmodule Mix.Releases.Profile do
     post_stop_hooks: nil # path or nil
 
     @type t :: %__MODULE__{
+      output_dir: nil | String.t,
       vm_args: nil | String.t,
       cookie: nil | Atom.t,
       config: nil | String.t,
@@ -44,7 +46,7 @@ defmodule Mix.Releases.Profile do
       strip_debug_info: nil | boolean,
       plugins: [module()],
       overlay_vars: nil | Keyword.t,
-      overlays: nil | Mix.Releases.Overlay.overlay,
+      overlays: Mix.Releases.Overlay.overlay,
       overrides: nil | [{atom, String.t}],
       commands: nil | [{atom, String.t}],
       pre_start_hook: nil | String.t,

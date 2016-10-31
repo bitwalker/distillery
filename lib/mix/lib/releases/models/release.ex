@@ -15,7 +15,6 @@ defmodule Mix.Releases.Release do
     ],
     is_upgrade: false,
     upgrade_from: :latest,
-    output_dir: nil,
     resolved_overlays: [],
     profile: %Profile{
       code_paths: [],
@@ -38,7 +37,6 @@ defmodule Mix.Releases.Release do
     applications: list(atom | {atom, App.start_type} | App.t),
     is_upgrade: boolean,
     upgrade_from: nil | String.t,
-    output_dir: nil | String.t,
     resolved_overlays: [Overlays.overlay],
     profile: Profile.t
   }
@@ -49,8 +47,11 @@ defmodule Mix.Releases.Release do
   @spec new(atom(), String.t) :: __MODULE__.t
   @spec new(atom(), String.t, [atom()]) :: __MODULE__.t
   def new(name, version, apps \\ []) do
-    output_dir = Path.relative_to_cwd(Path.join("rel", "#{name}"))
-    definition = %__MODULE__{name: name, version: version, output_dir: output_dir}
-    %{definition | :applications => definition.applications ++ apps}
+    build_path = Mix.Project.build_path
+    output_dir = Path.relative_to_cwd(Path.join([build_path, "rel", "#{name}"]))
+    definition = %__MODULE__{name: name, version: version}
+    profile    = definition.profile
+    %{definition | :applications => definition.applications ++ apps,
+                   :profile => %{profile | :output_dir => output_dir}}
   end
 end

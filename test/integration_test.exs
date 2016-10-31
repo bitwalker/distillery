@@ -4,10 +4,13 @@ defmodule IntegrationTest do
   alias Mix.Releases.Utils
 
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
-  @standard_output_path Path.join([__DIR__, "fixtures", "standard_app", "rel", "standard_app"])
+  @standard_src_path Path.join([__DIR__, "fixtures", "standard_app", "rel", "standard_app"])
+  @standard_output_path Path.join([__DIR__, "fixtures", "standard_app", "_build", "prod", "rel", "standard_app"])
   @umbrella_app_path Path.join([__DIR__, "fixtures", "umbrella_app"])
-  @umbrella_output_path Path.join([__DIR__, "fixtures", "umbrella_app", "rel", "umbrella"])
-  @partial_umbrella_output_path Path.join([__DIR__, "fixtures", "umbrella_app", "rel", "partial_umbrella"])
+  @umbrella_src_path Path.join([__DIR__, "fixtures", "umbrella_app", "rel", "umbrella"])
+  @umbrella_output_path Path.join([__DIR__, "fixtures", "umbrella_app", "_build", "prod", "rel", "umbrella"])
+  @partial_umbrella_src_path Path.join([__DIR__, "fixtures", "umbrella_app", "rel", "partial_umbrella"])
+  @partial_umbrella_output_path Path.join([__DIR__, "fixtures", "umbrella_app", "_build", "prod", "rel", "partial_umbrella"])
 
   defmacrop with_standard_app(body) do
     quote do

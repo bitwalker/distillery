@@ -23,12 +23,12 @@ defmodule Mix.Releases.Archiver do
   defp make_tar(release) do
     name = "#{release.name}"
     opts = [
-      {:path, ['#{Path.join([release.output_dir, "lib", "*", "ebin"])}']},
+      {:path, ['#{Path.join([release.profile.output_dir, "lib", "*", "ebin"])}']},
       {:dirs, [:include | case release.profile.include_src do
                           true  -> [:src, :c_src]
                           false -> []
                         end]},
-      {:outdir, '#{Path.join([release.output_dir, "releases", release.version])}'} |
+      {:outdir, '#{Path.join([release.profile.output_dir, "releases", release.version])}'} |
       case release.profile.include_erts do
         true ->
           path = Path.expand("#{:code.root_dir()}")
@@ -40,7 +40,7 @@ defmodule Mix.Releases.Archiver do
           [{:erts, '#{path}'}]
       end
     ]
-    rel_path = '#{Path.join([release.output_dir, "releases", release.version, name])}'
+    rel_path = '#{Path.join([release.profile.output_dir, "releases", release.version, name])}'
     Logger.debug "Writing tarball to #{rel_path}.tar.gz"
     case :systools.make_tar(rel_path, opts) do
       :ok ->
@@ -58,7 +58,7 @@ defmodule Mix.Releases.Archiver do
     Logger.debug "Updating tarball"
     overlays   = release.resolved_overlays
     name       = "#{release.name}"
-    output_dir = release.output_dir
+    output_dir = release.profile.output_dir
     tarfile    = '#{Path.join([output_dir, "releases", release.version, name <> ".tar.gz"])}'
     with {:ok, tmpdir} <- Utils.insecure_mkdir_temp(),
          :ok <- :erl_tar.extract(tarfile, [{:cwd, '#{tmpdir}'}, :compressed]),

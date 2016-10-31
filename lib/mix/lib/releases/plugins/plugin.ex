@@ -168,9 +168,9 @@ defmodule Mix.Releases.Plugin do
         result ->
           {:error, {:plugin_failed, :bad_return_value, result}}
       end
-    rescue
-      e ->
-        {:error, Exception.message(e)}
+    catch
+      kind, err ->
+        {:error, Exception.format(kind, err, System.stacktrace)}
     end
   end
 
@@ -180,9 +180,9 @@ defmodule Mix.Releases.Plugin do
     try do
       apply(plugin, callback, [args])
       run(plugins, callback, args)
-    rescue
-      e ->
-        {:error, Exception.message(e)}
+    catch
+      kind, err ->
+        {:error, Exception.format(kind, err, System.stacktrace)}
     end
   end
 end
