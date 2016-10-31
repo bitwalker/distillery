@@ -1,3 +1,22 @@
+## 0.11.0
+
+## Added
+
+- Link to config helpers package - Andrew Dryga
+
+## Changed
+
+- Default output path for release artifacts is `_build/<env>/rel/<relname>`,
+  this can be configured in `rel/config.exs` with `set output_dir: "path"`
+
+## Fixed
+
+- 675f492 - Fix issue with terminal color output not being reset (#126) - Akira Takahashi
+- 9c7fc9f - Accept --name option as documented for release.init - Victor Borja
+- 851a622 - Fix typo in pre_stop hook overlay - Alexander Malaev
+- d5da953 - Make execution of hooks to work on busybox - Alexander Malaev
+- 75e80bf - Add support for hooks directories - Alexander Malaev
+
 ## 0.10.0
 
 ## Added
