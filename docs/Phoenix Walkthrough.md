@@ -97,7 +97,7 @@ Create a new directory somewhere on your machine called `local_deploy`
 and copy the release tarball you just created into it. Your command
 should look something like this:
 
-`cp rel/phoenix_distillery/releases/0.0.1/phoenix_distillery.tar.gz local_deploy/`
+`cp _build/prod/rel/phoenix_distillery/releases/0.0.1/phoenix_distillery.tar.gz local_deploy/`
 
 Now `cd` into `local_deploy` and extract the tarball with:
 
@@ -167,12 +167,12 @@ which details how an upgrade (or downgrade) is applied to a running
 application instance.
 
 If all went as planned, you now have a 0.0.2 release in
-`/rel/phoenix_distillery/releases/`. In order to deploy this tarball,
+`_build/prod/rel/phoenix_distillery/releases/`. In order to deploy this tarball,
 you need to create a `0.0.2` directory in `local_deploy/releases` and
 copy the 0.0.2 tarball into this directory. Your copy command should
 look something like this:
 
-`cp rel/phoenix_distillery/releases/0.0.2/phoenix_distillery.tar.gz local_deploy/releases/0.0.2`
+`cp _build/prod/rel/phoenix_distillery/releases/0.0.2/phoenix_distillery.tar.gz local_deploy/releases/0.0.2`
 
 Now all you have to do is upgrade your running instance by executing
 `local_deploy/bin/phoenix_distillery upgrade 0.0.2`. If you go reload
@@ -265,7 +265,7 @@ just as we did with 0.0.2. So we will generate a release, copy the
 upgrade the application.
 
 1. `./node_modules/brunch/bin/brunch b -p && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
-1. `cp rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3`
+1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
 
 If you go reload your browser and open your console you will be
@@ -314,7 +314,7 @@ into a new release directory under `local_deploy`, and upgrade the
 application.
 
 1. `./node_modules/brunch/bin/brunch b -p && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
-1. `cp rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4`
+1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
 
 *DO NOT RELOAD YOUR BROWSER* Simply stare at your console and wait. In

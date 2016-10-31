@@ -26,7 +26,7 @@ process begins. This callback receives a `Release` struct, fully configured.
 
 ### after_assembly
 
-Executed after the release is assembled in `rel/<release_name>`, but prior to being archived. Useful
+Executed after the release is assembled in `output_dir`, but prior to being archived. Useful
 if you want to manipulate the release in some way after assembly. This callback also receives a
 `Release` struct.
 

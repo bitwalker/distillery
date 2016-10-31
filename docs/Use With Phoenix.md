@@ -88,9 +88,9 @@ As an example, building the release for the `prod` environment using
 ==> Packaging release..
 ==> Release successfully built!
     You can run it in one of the following ways:
-        Interactive: rel/myapp/bin/myapp console
-        Foreground: rel/myapp/bin/myapp foreground
-        Daemon: rel/myapp/bin/myapp start
+        Interactive: _build/dev/rel/myapp/bin/myapp console
+        Foreground: _build/dev/rel/myapp/bin/myapp foreground
+        Daemon: _build/dev/rel/myapp/bin/myapp start
 ```
 
 At this point, you can run your release using one of the three

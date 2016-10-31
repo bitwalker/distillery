@@ -33,7 +33,7 @@ echo "$2"
 When you build your release, you can then call your command like so:
 
 ```
-> rel/myapp/bin/myapp echo hi
+> _build/dev/rel/myapp/bin/myapp echo hi
 hi
 ```
 
