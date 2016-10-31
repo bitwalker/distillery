@@ -5,6 +5,10 @@ defmodule OverlayTest do
   @src_dir Path.join([__DIR__, "fixtures", "mock_app", "rel", "mock_app"])
   @output_dir Path.join([__DIR__, "fixtures", "mock_app", "_build", "test", "rel", "mock_app"])
 
+  setup_all do
+    File.mkdir_p! @output_dir
+  end
+
   describe "apply" do
     test "invalid overlay produces error" do
       overlay = {:foobar, "baz"}
