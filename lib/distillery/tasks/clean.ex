@@ -58,10 +58,6 @@ defmodule Mix.Tasks.Release.Clean do
                  exit({:shutdown, 1})
              end
 
-    config = %{config |
-               :selected_environment => Keyword.fetch!(opts, :selected_environment),
-               :selected_release => Keyword.fetch!(opts, :selected_release)}
-
     implode?    = Keyword.get(opts, :implode, false)
     no_confirm? = Keyword.get(opts, :no_confirm, false)
     with {:ok, environment} <- Assembler.select_environment(config),
