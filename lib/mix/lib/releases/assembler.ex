@@ -25,7 +25,7 @@ defmodule Mix.Releases.Assembler do
          {:ok, release}     <- select_release(config),
          {:ok, release}     <- apply_environment(release, environment),
          {:ok, release}     <- apply_configuration(release, config),
-         :ok                <- File.mkdir_p(release.output_dir),
+         :ok                <- File.mkdir_p(release.profile.output_dir),
          {:ok, release}     <- Plugin.before_assembly(release),
          {:ok, release}     <- generate_overlay_vars(release),
          {:ok, release}     <- copy_applications(release),
@@ -84,7 +84,7 @@ defmodule Mix.Releases.Assembler do
           true ->
             case config.upgrade_from do
               :latest ->
-                upfrom = case Utils.get_release_versions(release.output_dir) do
+                upfrom = case Utils.get_release_versions(release.profile.output_dir) do
                   [] -> :no_upfrom
                   [^current_version, v|_] -> v
                   [v|_] -> v
@@ -103,7 +103,7 @@ defmodule Mix.Releases.Assembler do
                 {:error, :bad_upgrade_spec}
               version when is_binary(version) ->
                 Logger.debug "Upgrading #{release.name} from #{version} to #{current_version}"
-                upfrom_path = Path.join([release.output_dir, "releases", version])
+                upfrom_path = Path.join([release.profile.output_dir, "releases", version])
                 case File.exists?(upfrom_path) do
                   false ->
                     Logger.error "Upgrade from #{version} to #{current_version} failed:\n  " <>
@@ -120,7 +120,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Copies application beams to the output directory
-  defp copy_applications(%Release{output_dir: output_dir} = release) do
+  defp copy_applications(%Release{profile: %Profile{output_dir: output_dir}} = release) do
     Logger.debug "Copying applications to #{output_dir}"
     try do
       File.mkdir_p!(Path.join(output_dir, "lib"))
@@ -136,15 +136,15 @@ defmodule Mix.Releases.Assembler do
         {:ok, _} = File.cp_r(consolidated_src, consolidated_dest)
       end
       {:ok, release}
-    rescue
-      err ->
-        {:error, {:copy_applications, err.__struct__.message(err)}}
+    catch
+      kind, err ->
+        {:error, Exception.format(kind, err, System.stacktrace)}
     end
   end
 
   # Copies a specific application to the output directory
-  defp copy_app(app, %Release{output_dir: output_dir,
-                              profile: %Profile{
+  defp copy_app(app, %Release{profile: %Profile{
+                                output_dir: output_dir,
                                 dev_mode: dev_mode?,
                                 include_src: include_src?,
                                 include_erts: include_erts?}}) do
@@ -230,7 +230,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Creates release metadata files
-  defp create_release_info(%Release{name: relname, output_dir: output_dir} = release) do
+  defp create_release_info(%Release{name: relname, profile: %Profile{output_dir: output_dir}} = release) do
     rel_dir = Path.join([output_dir, "releases", "#{release.version}"])
     case File.mkdir_p(rel_dir) do
       {:error, reason} ->
@@ -273,7 +273,7 @@ defmodule Mix.Releases.Assembler do
   # the release if so configured
   defp write_binfile(release, rel_dir) do
     name    = "#{release.name}"
-    bin_dir         = Path.join(release.output_dir, "bin")
+    bin_dir         = Path.join(release.profile.output_dir, "bin")
     bootloader_path = Path.join(bin_dir, name)
     boot_path       = Path.join(rel_dir, "#{name}.sh")
     template_params = release.profile.overlay_vars
@@ -295,7 +295,7 @@ defmodule Mix.Releases.Assembler do
 
   # Generates a relup and .appup for all upgraded applications during upgrade releases
   defp generate_relup(%Release{is_upgrade: false}, _rel_dir), do: :ok
-  defp generate_relup(%Release{name: name, upgrade_from: upfrom, output_dir: output_dir} = release, rel_dir) do
+  defp generate_relup(%Release{name: name, upgrade_from: upfrom, profile: %Profile{output_dir: output_dir}} = release, rel_dir) do
     Logger.debug "Generating relup for #{name}"
     v1_rel = Path.join([output_dir, "releases", upfrom, "#{name}.rel"])
     v2_rel = Path.join(rel_dir, "#{name}.rel")
@@ -594,7 +594,7 @@ defmodule Mix.Releases.Assembler do
     {:error, "Hot upgrades will fail when include_erts: false is set,\n" <>
       "    you need to set include_erts to true or a path if you plan to use them!"}
   end
-  defp include_erts(%Release{profile: %Profile{include_erts: include_erts}, output_dir: output_dir} = release) do
+  defp include_erts(%Release{profile: %Profile{include_erts: include_erts, output_dir: output_dir}} = release) do
     prefix = case include_erts do
                true -> "#{:code.root_dir}"
                p when is_binary(p) ->
@@ -659,7 +659,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates .boot script
-  defp make_boot_script(%Release{output_dir: output_dir} = release, rel_dir) do
+  defp make_boot_script(%Release{profile: %Profile{output_dir: output_dir}} = release, rel_dir) do
     Logger.debug "Generating boot script"
     erts_lib_dir = case release.profile.include_erts do
                      false -> :code.lib_dir()
@@ -692,7 +692,7 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp get_code_paths(%Release{output_dir: output_dir} = release) do
+  defp get_code_paths(%Release{profile: %Profile{output_dir: output_dir}} = release) do
     release.applications
     |> Enum.map(fn %App{name: name, vsn: version} ->
       lib_dir = Path.join([output_dir, "lib", "#{name}-#{version}", "ebin"])
@@ -782,7 +782,7 @@ defmodule Mix.Releases.Assembler do
       end)
     ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
 
-    output_dir = release.output_dir
+    output_dir = release.profile.output_dir
     overlays   = hook_overlays ++ release.profile.overlays
     case Overlays.apply(output_dir, overlays, overlay_vars) do
       {:ok, paths} ->
@@ -811,7 +811,7 @@ defmodule Mix.Releases.Assembler do
                 include_system_libs: release.profile.include_system_libs,
                 erl_opts: release.profile.erl_opts,
                 erts_vsn: erts_vsn,
-                output_dir: release.output_dir] ++ release.profile.overlay_vars
+                output_dir: release.profile.output_dir] ++ release.profile.overlay_vars
         Logger.debug "Generated overlay vars:"
         inspected = Enum.map(vars, fn
             {:release, _} -> nil

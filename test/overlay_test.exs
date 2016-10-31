@@ -2,7 +2,8 @@ defmodule OverlayTest do
   use ExUnit.Case
   alias Mix.Releases.Overlays
 
-  @output_dir Path.join([__DIR__, "fixtures", "mock_app", "rel", "mock_app"])
+  @src_dir Path.join([__DIR__, "fixtures", "mock_app", "rel", "mock_app"])
+  @output_dir Path.join([__DIR__, "fixtures", "mock_app", "_build", "test", "rel", "mock_app"])
 
   describe "apply" do
     test "invalid overlay produces error" do
