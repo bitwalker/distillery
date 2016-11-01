@@ -104,7 +104,7 @@ defmodule Mix.Releases.Config do
       end
 
   """
-  defmacro plugin(name) do
+  defmacro plugin(name, opts \\ []) do
     name = case name do
              n when is_atom(n) -> n
              {:__aliases__, _, module_parts} -> Module.concat(module_parts)
@@ -126,14 +126,14 @@ defmodule Mix.Releases.Config do
         current_env != nil ->
           env = get_in(config, [:environments, current_env])
           profile = env.profile
-          plugins = [unquote(name)|profile.plugins]
+          plugins = [{unquote(name), unquote(opts)}|profile.plugins]
           env = %{env | :profile => %{profile | :plugins => plugins}}
           Mix.Config.Agent.merge var!(config_agent, Mix.Releases.Config),
             [environments: [{current_env, env}]]
         current_rel != nil ->
           rel = get_in(config, [:releases, current_rel])
           profile = rel.profile
-          plugins = [unquote(name)|profile.plugins]
+          plugins = [{unquote(name), unquote(opts)}|profile.plugins]
           rel = %{rel | :profile => %{profile | :plugins => plugins}}
           Mix.Config.Agent.merge var!(config_agent, Mix.Releases.Config),
             [releases: [{current_rel, rel}]]
