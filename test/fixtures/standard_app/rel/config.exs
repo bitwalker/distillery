@@ -28,7 +28,7 @@ environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: :"^PoW@${;Ny~KcOdkRGf$6:kka8K88{c>roBcBZmSlc-+&?(nk=7~PJT|:=5%KumV"
-  plugin SampleApp.ProdPlugin
+  plugin SampleApp.ProdPlugin, some: :config
 end
 
 # You may define one or more releases in this file.

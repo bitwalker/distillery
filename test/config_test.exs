@@ -44,11 +44,13 @@ defmodule ConfigTest do
       config = Mix.Project.in_project(:standard_app, @standard_app, fn _mixfile ->
         Mix.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
       end)
+      prod_plugin = [{SampleApp.ProdPlugin, [some: :config]}]
+      rel_plugin = [{SampleApp.ReleasePlugin, []}]
       assert %Config{environments: %{
                         dev: %Environment{profile: %Profile{plugins: []}},
-                        prod: %Environment{profile: %Profile{plugins: [SampleApp.ProdPlugin]}}},
+                        prod: %Environment{profile: %Profile{plugins: ^prod_plugin}}},
                      releases: %{
-                       standard_app: %Release{profile: %Profile{plugins: [SampleApp.ReleasePlugin]}}}
+                       standard_app: %Release{profile: %Profile{plugins: ^rel_plugin}}}
       } = config
     end
   end
