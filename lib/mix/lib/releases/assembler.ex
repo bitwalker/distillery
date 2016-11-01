@@ -178,27 +178,39 @@ defmodule Mix.Releases.Assembler do
     end
   end
   defp copy_app(app_dir, target_dir, false, include_src?) do
-    case include_src? do
-      true ->
-        case File.cp_r(app_dir, target_dir) do
-          {:ok, _} -> :ok
-          {:error, reason, file} ->
-            raise "unable to copy app directory:\n  " <>
-              "#{app_dir} -> #{target_dir}\n  " <>
-              "File: #{file}\n  " <>
-              "Reason: #{reason}"
+    case File.mkdir_p(target_dir) do
+      {:error, reason} ->
+        raise "unable to create app directory:\n  " <>
+          "#{target_dir}\n  " <>
+          "Reason: #{reason}"
+      :ok ->
+        valid_dirs = cond do
+          include_src? ->
+            ["ebin", "include", "priv", "lib", "src"]
+          :else ->
+            ["ebin", "include", "priv"]
         end
-      false ->
-        case File.mkdir_p(target_dir) do
-          {:error, reason} ->
-            raise "unable to create app directory:\n  " <>
-              "#{target_dir}\n  " <>
-              "Reason: #{reason}"
-          :ok ->
-            Path.wildcard(Path.join(app_dir, "*"))
-            |> Enum.filter(fn p -> Path.basename(p) in ["ebin", "include", "priv", "lib", "src"] end)
-            |> Enum.each(fn p ->
-              t = Path.join(target_dir, Path.basename(p))
+        Path.wildcard(Path.join(app_dir, "*"))
+        |> Enum.filter(fn p -> Path.basename(p) in valid_dirs end)
+        |> Enum.each(fn p ->
+          t = Path.join(target_dir, Path.basename(p))
+          case symlink?(p) do
+            true ->
+              # We need to follow the symlink
+              File.mkdir_p!(t)
+              Path.wildcard(Path.join(p, "*"))
+              |> Enum.each(fn child ->
+                tc = Path.join(t, Path.basename(child))
+                case File.cp_r(child, tc) do
+                  {:ok, _} -> :ok
+                  {:error, reason, file} ->
+                    raise "unable to copy app directory:\n " <>
+                      "#{child} -> #{tc}\n  " <>
+                      "File: #{file}\n  " <>
+                      "Reason: #{reason}"
+                end
+              end)
+            false ->
               case File.cp_r(p, t) do
                 {:ok, _} -> :ok
                 {:error, reason, file} ->
@@ -207,8 +219,8 @@ defmodule Mix.Releases.Assembler do
                     "File: #{file}\n  " <>
                     "Reason: #{reason}"
               end
-            end)
-        end
+          end
+        end)
     end
   end
 
@@ -217,16 +229,20 @@ defmodule Mix.Releases.Assembler do
       true ->
         File.rm_rf!(path)
       false ->
-        case :file.read_link_info('#{path}') do
-          {:ok, info} ->
-            if elem(info, 2) == :symlink do
-              File.rm!(path)
-            end
-          _ ->
-            :ok
+        if symlink?(path) do
+          File.rm!(path)
         end
     end
     :ok
+  end
+
+  defp symlink?(path) do
+    case :file.read_link_info('#{path}') do
+      {:ok, info} ->
+        elem(info, 2) == :symlink
+      _ ->
+        false
+    end
   end
 
   # Creates release metadata files
