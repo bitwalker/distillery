@@ -79,10 +79,14 @@ defmodule Mix.Tasks.Release.Init do
     apps_paths = Path.wildcard("#{apps_path}/*")
     apps = apps_paths
       |> Enum.map(fn app_path ->
-        Mix.Project.in_project(String.to_atom(Path.basename(app_path)), app_path, fn mixfile ->
-          {Keyword.get(mixfile.project, :app), :permanent}
+        Mix.Project.in_project(String.to_atom(Path.basename(app_path)), app_path, fn
+          nil ->
+            :ignore
+          mixfile ->
+            {Keyword.get(mixfile.project, :app), :permanent}
         end)
       end)
+      |> Enum.filter(fn :ignore -> false; _ -> true end)
     release_per_app? = Keyword.get(opts, :release_per_app, false)
     if release_per_app? do
       [releases: Enum.map(apps, fn {app, start_type} ->
