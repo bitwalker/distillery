@@ -503,9 +503,17 @@ case "$1" in
             exit 1
         fi
 
+        SOURCE_VERSION="$REL_VSN"
+        TARGET_VERSION="$2"
+
+        "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
+             "unpack_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
+
         _run_hooks_from_dir "$PRE_UPGRADE_HOOKS"
-        exec "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
-             "install_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$2"
+
+        "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
+             "install_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
+
         _run_hooks_from_dir "$POST_UPGRADE_HOOKS"
 
         ;;
