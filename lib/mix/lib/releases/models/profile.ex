@@ -26,10 +26,14 @@ defmodule Mix.Releases.Profile do
     post_start_hook: nil, # path or nil
     pre_stop_hook: nil, # path or nil
     post_stop_hook: nil, # path or nil
+    pre_upgrade_hook: nil, # path or nil
+    post_upgrade_hook: nil, # path or nil
     pre_start_hooks: nil, # path or nil
     post_start_hooks: nil, # path or nil
     pre_stop_hooks: nil, # path or nil
-    post_stop_hooks: nil # path or nil
+    post_stop_hooks: nil, # path or nil
+    pre_upgrade_hooks: nil, # path or nil
+    post_upgrade_hooks: nil # path or nil
 
     @type t :: %__MODULE__{
       output_dir: nil | String.t,
@@ -53,9 +57,13 @@ defmodule Mix.Releases.Profile do
       post_start_hook: nil | String.t,
       pre_stop_hook: nil | String.t,
       post_stop_hook: nil | String.t,
+      pre_upgrade_hook: nil | String.t,
+      post_upgrade_hook: nil | String.t,
       pre_start_hooks: nil | String.t,
       post_start_hooks: nil | String.t,
       pre_stop_hooks: nil | String.t,
-      post_stop_hooks: nil | String.t
+      post_stop_hooks: nil | String.t,
+      pre_upgrade_hooks: nil | String.t,
+      post_upgrade_hooks: nil | String.t
     }
 end

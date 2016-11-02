@@ -784,14 +784,20 @@ defmodule Mix.Releases.Assembler do
       {:mkdir, "#{hooks_dir}/post_start.d"},
       {:mkdir, "#{hooks_dir}/pre_stop.d"},
       {:mkdir, "#{hooks_dir}/post_stop.d"},
+      {:mkdir, "#{hooks_dir}/pre_upgrade.d"},
+      {:mkdir, "#{hooks_dir}/post_upgrade.d"},
       {:copy, release.profile.pre_start_hook, "#{hooks_dir}/pre_start.d/00_pre_start_hook.sh"},
       {:copy, release.profile.post_start_hook, "#{hooks_dir}/post_start.d/00_post_start_hook.sh"},
       {:copy, release.profile.pre_stop_hook, "#{hooks_dir}/pre_stop.d/00_pre_stop_hook.sh"},
       {:copy, release.profile.post_stop_hook, "#{hooks_dir}/post_stop.d/00_post_stop_hook.sh"},
+      {:copy, release.profile.pre_upgrade_hook, "#{hooks_dir}/pre_upgrade.d/00_pre_upgrade_hook.sh"},
+      {:copy, release.profile.post_upgrade_hook, "#{hooks_dir}/post_upgrade.d/00_post_upgrade_hook.sh"},
       {:copy, release.profile.pre_start_hooks, "#{hooks_dir}/pre_start.d"},
       {:copy, release.profile.post_start_hooks, "#{hooks_dir}/post_start.d"},
       {:copy, release.profile.pre_stop_hooks, "#{hooks_dir}/pre_stop.d"},
       {:copy, release.profile.post_stop_hooks, "#{hooks_dir}/post_stop.d"},
+      {:copy, release.profile.pre_upgrade_hooks, "#{hooks_dir}/pre_upgrade.d"},
+      {:copy, release.profile.post_upgrade_hooks, "#{hooks_dir}/post_upgrade.d"},
       {:mkdir, "releases/<%= release_version %>/commands"} |
       Enum.map(release.profile.commands, fn {name, path} ->
         {:copy, path, "releases/<%= release_version %>/commands/#{name}"}
