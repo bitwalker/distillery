@@ -552,7 +552,7 @@ case "$1" in
             console_clean)
                 BOOTFILE="$ROOTDIR/bin/start_clean"
                 __code_paths=$(_get_code_paths)
-                EXTRA_CODE_PATHS=${_code_paths}
+                EXTRA_CODE_PATHS=${__code_paths}
                 ;;
             console_boot)
                 shift
