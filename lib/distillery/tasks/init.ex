@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Release.Init do
   and creates a basic initial configuration file in `rel/config.exs`.
 
   After running this, you can build a release right away with `mix release`,
-  but it is recommended you review the config file to understand it's contents.
+  but it is recommended you review the config file to understand its contents.
 
   ## Examples
 
@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Release.Init do
       mix release.init --no-doc
 
       # For umbrella projects, generate a config where each app
-      # in the umbrella is it's own release, rather than all
+      # in the umbrella is its own release, rather than all
       # apps under a single release
       mix release.init --release-per-app
 
