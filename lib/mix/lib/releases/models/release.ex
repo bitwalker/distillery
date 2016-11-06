@@ -13,6 +13,7 @@ defmodule Mix.Releases.Release do
       # can also use `app_name: type`, as in `some_dep: load`,
       # to only load the application, not start it
     ],
+    output_dir: nil,
     is_upgrade: false,
     upgrade_from: :latest,
     resolved_overlays: [],
@@ -52,6 +53,7 @@ defmodule Mix.Releases.Release do
     definition = %__MODULE__{name: name, version: version}
     profile    = definition.profile
     %{definition | :applications => definition.applications ++ apps,
+                   :output_dir => output_dir,
                    :profile => %{profile | :output_dir => output_dir}}
   end
 end
