@@ -145,7 +145,7 @@ defmodule Mix.Tasks.Release.Init do
   defp generate_secure_cookie do
     Stream.unfold(nil, fn _ -> {:crypto.strong_rand_bytes(1), nil} end)
     |> Stream.filter(fn b -> b >= "!" && b <= "~" end)
-    |> Stream.reject(fn b -> Enum.member?(["'", "\"", "\\", "#"], b) end) # special when erlexec parses vm.args
+    |> Stream.reject(fn b -> Enum.member?(["-", "'", "\"", "\\", "#"], b) end) # special when erlexec parses vm.args
     |> Enum.take(64)
     |> Enum.join
     |> String.to_atom
