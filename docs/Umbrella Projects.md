@@ -16,7 +16,7 @@ resolved to pull them in as needed. For instance, maybe you want to release `app
 but release `app_e`  separately - this would look like the following in `rel/config.exs`:
 
 ```elixir
-release :app_a_and_b do
+release :app_c_and_d do
   set version: "0.1.0"
   set applications: [:app_c, :app_d]
 end
