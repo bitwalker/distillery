@@ -97,7 +97,7 @@ defmodule Mix.Tasks.Release.Init do
       ++ get_common_bindings(opts)
     else
       release_name_from_cwd = String.replace(Path.basename(File.cwd!), "-", "_")
-      release_name = Keyword.get(opts, :name, release_name_from_cwd)
+      release_name = Keyword.get(opts, :name, release_name_from_cwd) || release_name_from_cwd
       [releases: [
          [release_name: String.to_atom(release_name),
           is_umbrella: true,
