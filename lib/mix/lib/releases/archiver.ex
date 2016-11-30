@@ -104,6 +104,9 @@ defmodule Mix.Releases.Archiver do
                       do: {'#{Path.join("lib", libdir)}', '#{Path.join([tmpdir, "lib", libdir])}'}
                   true ->
                     [{'lib', '#{Path.join(tmpdir, "lib")}'}]
+                  p when is_binary(p) ->
+                    p = Path.expand(p)
+                    [{'lib', '#{p}'}]
                 end
               true ->
                 erts_vsn = Utils.erts_version()
