@@ -14,8 +14,23 @@ defmodule Mix.Releases.Utils do
   """
   @spec template(atom | String.t, Keyword.t) :: {:ok, String.t} | {:error, String.t}
   def template(name, params \\ []) do
+    Path.join(["#{:code.priv_dir(:distillery)}", "templates", "#{name}.eex"])
+    |> template_path(params)
+  end
+
+  @doc """
+  Loads a template from the provided path
+  Any parameters provided are configured as bindings for the template
+
+  ## Example
+      iex> path = Path.join(["#{:code.priv_dir(:distillery)}", "templates", "erl_script.eex"])
+      ...> {:ok, contents} = #{__MODULE__}.template_path(path, [erts_vsn: "8.0"])
+      ...> String.contains?(contents, "erts-8.0")
+      true
+  """
+  @spec template_path(String.t, Keyword.t) :: {:ok, String.t} | {:error, String.t}
+  def template_path(template_path, params \\ []) do
     try do
-      template_path = Path.join(["#{:code.priv_dir(:distillery)}", "templates", "#{name}.eex"])
       {:ok, EEx.eval_file(template_path, params)}
     rescue
       e ->

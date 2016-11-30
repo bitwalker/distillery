@@ -26,6 +26,9 @@ defmodule Mix.Tasks.Release.Init do
       # invalid characters replaced or stripped out.
       mix release.init --name foobar
 
+      # Use a custom template for generating the release config.
+      mix release.init --template path/to/template
+
   """
   @shortdoc "initialize a new release configuration"
   use Mix.Task
@@ -49,7 +52,14 @@ defmodule Mix.Tasks.Release.Init do
     # Create /rel
     File.mkdir_p!("rel")
     # Generate config.exs
-    {:ok, config} = Utils.template(:example_config, bindings)
+    {:ok, config} =
+      case opts[:template] do
+        nil ->
+          Utils.template(:example_config, bindings)
+        template_path ->
+          Utils.template_path(template_path, bindings)
+      end
+
     # Save config.exs to /rel
     File.write!(Path.join("rel", "config.exs"), config)
 
@@ -63,13 +73,15 @@ defmodule Mix.Tasks.Release.Init do
 
   @defaults [no_doc: false,
              release_per_app: false,
-             name: nil]
+             name: nil,
+             template: nil]
   @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
     {overrides, _} = OptionParser.parse!(argv,
       strict: [no_doc: :boolean,
                release_per_app: :boolean,
-               name: :string])
+               name: :string,
+               template: :string])
     Keyword.merge(@defaults, overrides)
   end
 
