@@ -58,7 +58,7 @@ REL_NAME="<%= release_name %>"
 REL_VSN="<%= release_version %>"
 # Current version of ERTS being used
 # If this is not present/unset, it will be detected
-<%= unless is_nil(erts_vsn) do %>ERTS_VSN="<%= erts_vsn %>"<% end %>
+<%= if (include_erts and not is_nil(erts_vsn)) do %>ERTS_VSN="<%= erts_vsn %>"<% end %>
 # VM code loading mode, embedded by default, can also be interactive
 # See http://erlang.org/doc/man/code.html
 CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
@@ -157,8 +157,16 @@ _check_cookie() {
 }
 
 # Private. For determining the version of ERTS available to the release
+# This is only ever called if ERTS_VSN is not set
 _detect_erts_vsn() {
-    "$BINDIR/erl" -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
+    set +e # temporarily disable so we can display a nice error message to the user
+    __erl="$(which erl)"
+    set -e
+    if [ -z "${__erl}"  ]; then
+        echo 'erlang runtime not found. If erlang is installed check your $PATH. aborting.'
+        exit 1
+    fi
+    "$__erl" -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
 }
 
 # Private. Gets a list of code paths for this release
