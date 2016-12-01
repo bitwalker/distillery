@@ -146,8 +146,7 @@ defmodule Mix.Releases.Appup do
   end
 
   # supervisor
-  defp generate_instruction_advanced(m, true, _is_special, []),       do: {:update, m, :supervisor}
-  defp generate_instruction_advanced(m, true, _is_special, dep_mods), do: {:update, m, :supervisor, dep_mods}
+  defp generate_instruction_advanced(m, true, _is_special, _dep_mods), do: {:update, m, :supervisor}
   # special process (i.e. exports code_change/3 or system_code_change/4)
   defp generate_instruction_advanced(m, _is_sup, true, []),       do: {:update, m, {:advanced, []}}
   defp generate_instruction_advanced(m, _is_sup, true, dep_mods), do: {:update, m, {:advanced, []}, dep_mods}
@@ -214,8 +213,10 @@ defmodule Mix.Releases.Appup do
     end
   end
 
-  defp extract_deps({:update, _, _, deps}),   do: deps
-  defp extract_deps({:load_module, _, deps}), do: deps
+  defp extract_deps({:update, _, deps}) when is_list(deps), do: deps
+  defp extract_deps({:update, _, _}),                       do: []
+  defp extract_deps({:update, _, _, deps}),                 do: deps
+  defp extract_deps({:load_module, _, deps}),               do: deps
 
   defp module_name(file) do
     Keyword.fetch!(:beam_lib.info(file), :module)
