@@ -74,7 +74,7 @@ main(["install_release", RelName, NameTypeArg, NodeName, Cookie, VersionArg]) ->
 main(["get_code_paths", RootDir, ErtsDir, RelName, RelVsn]) ->
     {ok, {release,_,_,_,Libs,_}} = select_RELEASE(RootDir, ErtsDir, RelName, RelVsn),
     lists:foreach(fun({_LibName, _LibVer, LibDir}) ->
-                        io:fwrite("~s ", [LibDir])
+                        io:fwrite("-pa ~s/ebin ", [LibDir])
                   end, Libs);
 
 %% Invalid command, return error
