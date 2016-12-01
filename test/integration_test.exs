@@ -1,7 +1,10 @@
+Code.require_file("test/mix_test_helper.exs")
+
 defmodule IntegrationTest do
   use ExUnit.Case, async: false
 
   alias Mix.Releases.Utils
+  import MixTestHelper
 
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
   @standard_src_path Path.join([__DIR__, "fixtures", "standard_app", "rel", "standard_app"])
@@ -211,20 +214,5 @@ defmodule IntegrationTest do
     end
     File.rm_rf!(Path.join([@standard_app_path, "rel", "standard_app"]))
     :ok
-  end
-
-  # Call the elixir mix binary with the given arguments
-  defp mix(command),       do: do_cmd(:prod, command)
-  defp mix(command, args), do: do_cmd(:prod, command, args)
-
-  defp do_cmd(env, command, args \\ []) do
-    case System.cmd "mix", [command|args], env: [{"MIX_ENV", "#{env}"}] do
-      {output, 0} ->
-        if System.get_env("VERBOSE_TESTS") do
-          IO.puts(output)
-        end
-        {:ok, output}
-      {output, err} -> {:error, err, output}
-    end
   end
 end
