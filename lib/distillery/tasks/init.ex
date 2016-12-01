@@ -132,7 +132,8 @@ defmodule Mix.Tasks.Release.Init do
   defp get_common_bindings(opts) do
     no_doc? = Keyword.get(opts, :no_doc, false)
     [no_docs: no_doc?,
-     cookie: get_cookie]
+     cookie: get_cookie,
+     get_cookie: &get_cookie/0]
   end
 
   defp get_cookie do

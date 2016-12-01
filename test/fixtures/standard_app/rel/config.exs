@@ -19,7 +19,7 @@ use Mix.Releases.Config,
 environment :dev do
   set dev_mode: true
   set include_erts: false
-  set cookie: :"^PoW@${;Ny~KcOdkRGf$6:kka8K88{c>roBcBZmSlc-+&?(nk=7~PJT|:=5%KumV"
+  set cookie: :"&tNN%@WG3w]R7Ta).Ynkyamh^l0>sG1@1LFd!).=p:39^;T,eg[Ic]*:BDtF,eiT"
 end
 
 environment :prod do
@@ -27,7 +27,7 @@ environment :prod do
   set strip_debug_info: false
   set include_erts: true
   set include_src: false
-  set cookie: :"^PoW@${;Ny~KcOdkRGf$6:kka8K88{c>roBcBZmSlc-+&?(nk=7~PJT|:=5%KumV"
+  set cookie: :"*GU1?EY8/~,K!9*Ohazv{O9<Ao@)pMFFKjs/q=$HlMo~q=s!~,O8!DIs0PT(v&;="
   plugin SampleApp.ProdPlugin, some: :config
 end
 
