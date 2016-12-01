@@ -15,12 +15,12 @@ defmodule AppupTest do
                   {:add_module, Test.ServerB},
                   {:add_module, Test.ServerC},
                   {:update, Test.Server, {:advanced, []}, []},
-                  {:update, Test.Supervisor, :supervisor, []}]}],
+                  {:update, Test.Supervisor, :supervisor}]}],
              [{'0.1.0', [
                   {:delete_module, Test.ServerB},
                   {:delete_module, Test.ServerC},
                   {:update, Test.Server, {:advanced, []}, []},
-                  {:update, Test.Supervisor, :supervisor, []}]}]}}
+                  {:update, Test.Supervisor, :supervisor}]}]}}
     assert ^expected = Appup.make(:test, "0.1.0", "0.2.0", @v1_path, @v2_path)
   end
 
