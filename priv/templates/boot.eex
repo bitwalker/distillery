@@ -58,7 +58,7 @@ REL_NAME="<%= release_name %>"
 REL_VSN="<%= release_version %>"
 # Current version of ERTS being used
 # If this is not present/unset, it will be detected
-<%= if (include_erts and not is_nil(erts_vsn)) do %>ERTS_VSN="<%= erts_vsn %>"<% end %>
+<%= if ((is_binary(include_erts) or include_erts) and not is_nil(erts_vsn)) do %>ERTS_VSN="<%= erts_vsn %>"<% end %>
 # VM code loading mode, embedded by default, can also be interactive
 # See http://erlang.org/doc/man/code.html
 CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
