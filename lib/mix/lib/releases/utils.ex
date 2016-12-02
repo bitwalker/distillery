@@ -83,7 +83,7 @@ defmodule Mix.Releases.Utils do
   If no ERTS path is specified it's fine. Distillery will work out
   the system ERTS
   """
-  @spec validate_erts(String.t | nil | boolean) :: :ok | {:error, String.t, [String.t]}
+  @spec validate_erts(String.t | nil | boolean) :: :ok | {:error, String.t}
   def validate_erts(path) when is_binary(path) do
     erts = case Path.join(path, "erts-*") |> Path.wildcard |> Enum.count do
       0 -> {:error, "Missing erts-* directory"}
@@ -106,8 +106,7 @@ defmodule Mix.Releases.Utils do
     case Enum.empty?(errors) do
       true -> :ok
       false -> {:error ,
-        "Invalid ERTS path #{Path.expand(path)}",
-        errors}    
+        "Invalid ERTS path #{Path.expand(path)}\n" <> Enum.join(errors, "\n")}    
     end    
   end
 

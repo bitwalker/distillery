@@ -24,6 +24,7 @@ defmodule Mix.Releases.Assembler do
     with {:ok, environment} <- select_environment(config),
          {:ok, release}     <- select_release(config),
          {:ok, release}     <- apply_environment(release, environment),
+         :ok                <- validate_configuration(release),
          {:ok, release}     <- apply_configuration(release, config),
          :ok                <- File.mkdir_p(release.profile.output_dir),
          {:ok, release}     <- Plugin.before_assembly(release),
@@ -68,6 +69,10 @@ defmodule Mix.Releases.Assembler do
     {:ok, %{r | :profile => profile}}
   end
 
+  def validate_configuration(%Release{version: _, profile: profile}) do
+    Utils.validate_erts(profile.include_erts)    
+  end
+
   # Applies global configuration options to the release profile
   def apply_configuration(%Release{version: current_version, profile: profile} = release, %Config{} = config) do
     config_path = case profile.config do
@@ -82,7 +87,7 @@ defmodule Mix.Releases.Assembler do
         release = %{release | :applications => release_apps}
         case config.is_upgrade do
           true ->
-            case config.upgrade_from do
+            case config.upgrade_from do 
               :latest ->
                 upfrom = case Utils.get_release_versions(release.profile.output_dir) do
                   [] -> :no_upfrom
