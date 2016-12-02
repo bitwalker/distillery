@@ -79,9 +79,11 @@ defmodule Mix.Releases.Utils do
   def erts_version, do: "#{:erlang.system_info(:version)}"
 
   @doc """
-  Verify that the path given was actually the right one  
+  Verified that the ERTS path provided is the right one.
+  If no ERTS path is specified it's fine. Distillery will work out
+  the system ERTS
   """
-  @spec validate_erts(String.t) :: :ok | {:error, String.t, [String.t]}
+  @spec validate_erts(String.t | nil | boolean) :: :ok | {:error, String.t, [String.t]}
   def validate_erts(path) when is_binary(path) do
     erts = case Path.join(path, "erts-*") |> Path.wildcard |> Enum.count do
       0 -> {:error, "Missing erts-* directory"}
@@ -109,11 +111,6 @@ defmodule Mix.Releases.Utils do
     end    
   end
 
-  @doc """
-  If no ERTS path is specified it's fine. Distillery will work out
-  the system ERTS
-  """
-  @spec validate_erts(nil | boolean) :: :ok
   def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts) do
     :ok
   end
