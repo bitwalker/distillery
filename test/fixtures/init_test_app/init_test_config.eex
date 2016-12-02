@@ -1,0 +1,15 @@
+<%=
+  # Verify that the expected bindings are available in the template
+
+  true = is_boolean no_docs
+
+  true = is_list releases
+
+  true = is_function get_cookie
+  gotten_cookie = get_cookie.()
+  false = is_nil gotten_cookie
+  true = is_atom gotten_cookie
+
+  false = is_nil cookie
+  true = is_atom cookie
+%>
