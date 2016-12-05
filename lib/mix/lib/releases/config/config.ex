@@ -212,8 +212,11 @@ defmodule Mix.Releases.Config do
       end
 
   """
-  defmacro current_version(app) when is_atom(app) do
+  defmacro current_version(app) do
     quote do
+      unless is_atom(unquote(app)) do
+        raise "current_version argument must be an atom! got #{inspect unquote(app)}"
+      end
       Application.load(unquote(app))
       case Application.spec(unquote(app)) do
         nil  -> raise "could not get current version of #{unquote(app)}, app could not be loaded"
