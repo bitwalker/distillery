@@ -57,8 +57,11 @@ defmodule Mix.Releases.Config do
       end
 
   """
-  defmacro environment(name, do: block) when is_atom(name) do
+  defmacro environment(name, do: block) do
     quote do
+      unless is_atom(unquote(name)) do
+        raise "environment name must be an atom! got #{inspect unquote(name)}"
+      end
       env = Environment.new(unquote(name))
       Mix.Config.Agent.merge var!(config_agent, Mix.Releases.Config),
         [environments: [{unquote(name), env}]]
@@ -83,8 +86,11 @@ defmodule Mix.Releases.Config do
       end
 
   """
-  defmacro release(name, do: block) when is_atom(name) do
+  defmacro release(name, do: block) do
     quote do
+      unless is_atom(unquote(name)) do
+        raise "release name must be an atom! got #{inspect unquote(name)}"
+      end
       rel = Release.new(unquote(name), unquote(@default_release_version), [unquote(name)])
       Mix.Config.Agent.merge var!(config_agent, Mix.Releases.Config),
         [releases: [{unquote(name), rel}]]
