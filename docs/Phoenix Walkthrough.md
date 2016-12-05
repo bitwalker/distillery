@@ -241,6 +241,7 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
  socket.connect()
 
 let channel = socket.channel("heartbeat:listen", {})
+channel.join()
 channel.on("ping", payload => { console.log(payload.body) })
 ...
 ```
