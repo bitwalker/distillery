@@ -212,7 +212,7 @@ defmodule Mix.Releases.Config do
       end
 
   """
-  defmacro current_version(app) when is_atom(app) do
+  defmacro current_version(app) do
     quote do
       Application.load(unquote(app))
       case Application.spec(unquote(app)) do
