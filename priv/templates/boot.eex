@@ -716,6 +716,8 @@ case "$1" in
         # Save extra arguments
         ARGS="$@"
 
+        _run_hooks_from_dir "$PRE_START_HOOKS"
+
         # Build arguments for erlexec
         __code_paths=$(_get_code_paths)
         set -- "$ERL_OPTS"
