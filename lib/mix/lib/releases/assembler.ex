@@ -278,7 +278,14 @@ defmodule Mix.Releases.Assembler do
         relfile = {:release,
                     {'#{release.name}', '#{release.version}'},
                     {:erts, '#{erts_vsn}'},
-                    Enum.map(apps, fn %App{name: name, vsn: vsn, start_type: start_type} ->
+                    apps
+                    |> Enum.with_index
+                    |> Enum.sort_by(fn
+                          {%App{name: :kernel}, _idx} -> -2
+                          {%App{name: :stdlib}, _idx} -> -1
+                          {%App{}, idx}               -> idx
+                       end)
+                    |> Enum.map(fn {%App{name: name, vsn: vsn, start_type: start_type}, _idx} ->
                       case start_type do
                         nil ->
                           {name, '#{vsn}'}
@@ -715,9 +722,9 @@ defmodule Mix.Releases.Assembler do
 
   defp get_code_paths(%Release{profile: %Profile{output_dir: output_dir}} = release) do
     release.applications
-    |> Enum.map(fn %App{name: name, vsn: version} ->
+    |> Enum.flat_map(fn %App{name: name, vsn: version, path: path} ->
       lib_dir = Path.join([output_dir, "lib", "#{name}-#{version}", "ebin"])
-      String.to_charlist(lib_dir)
+      [String.to_charlist(lib_dir), String.to_charlist(Path.join(path, "ebin"))]
     end)
   end
 
