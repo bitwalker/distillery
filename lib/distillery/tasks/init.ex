@@ -132,13 +132,13 @@ defmodule Mix.Tasks.Release.Init do
   defp get_common_bindings(opts) do
     no_doc? = Keyword.get(opts, :no_doc, false)
     [no_docs: no_doc?,
-     cookie: get_cookie,
+     cookie: get_cookie(),
      get_cookie: &get_cookie/0]
   end
 
   defp get_cookie do
-    if can_generate_secure_cookie? do
-      generate_secure_cookie
+    if can_generate_secure_cookie?() do
+      generate_secure_cookie()
     else
       # When the :crypto module is unavailable, rather than generating
       # a cookie guessable by a computer, produce this obviously
