@@ -155,7 +155,11 @@ defmodule Mix.Releases.Plugin do
 
   @spec call(atom(), Release.t) :: {:ok, term} | {:error, {:plugin_failed, term}}
   defp call(callback, release) do
-    call(release.profile.plugins, callback, release)
+    Enum.map(release.profile.plugins, fn
+        {_p, _opts} = p -> p
+        p when is_atom(p) -> {p, []}
+    end)
+    |> call(callback, release)
   end
   defp call([], _, release), do: {:ok, release}
   defp call([{plugin, opts}|plugins], callback, release) do
