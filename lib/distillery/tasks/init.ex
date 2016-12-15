@@ -50,7 +50,11 @@ defmodule Mix.Tasks.Release.Init do
       false -> get_standard_bindings(opts)
     end
     # Create /rel
-    File.mkdir_p!("rel")
+    File.mkdir_p!("rel/plugins")
+    # Generate .gitignore for plugins folder
+    unless File.exists?("rel/plugins/.gitignore") do
+      File.write!("rel/plugins/.gitignore", "*.*\n!*.exs", [:utf8])
+    end
     # Generate config.exs
     {:ok, config} =
       case opts[:template] do
