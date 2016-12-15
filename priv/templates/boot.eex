@@ -367,6 +367,9 @@ case $NAME in
         ;;
 esac
 
+# For Elixir runtime
+export DISTILLERY_TASK="$1"
+
 # Check the first argument for instructions
 case "$1" in
     start|start_boot)
