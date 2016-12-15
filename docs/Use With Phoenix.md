@@ -15,6 +15,7 @@ It is expected that you will have:
 - a working `config/prod.exs`
 - a _build environment which matches your production environment_
 - your static asset path is the default `priv/static`
+- Have reviewed the [Advanced Deployment Guide](https://phoenixframework.org/docs/advanced-deployment)
 
 **NOTE**: It does not make much sense to cut a release for a `dev`
 configuration with Phoenix, so this guide assumes you are interested
