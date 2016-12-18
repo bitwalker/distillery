@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/bitwalker/distillery/badge.svg?branch=master)](https://coveralls.io/github/bitwalker/distillery?branch=master)
 
 Every alchemist requires good tools, and one of the greatest tools in the alchemist's disposal
-is the distillery. The purpose of the distillery is to take something and break it down to it's
+is the distillery. The purpose of the distillery is to take something and break it down to its
 component parts, reassembling it into something better, more powerful. That is exactly
 what this project does - it takes your Mix project and produces an Erlang/OTP release, a
 distilled form of your raw application's components; a single package which can be deployed anywhere,
