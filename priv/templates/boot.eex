@@ -744,13 +744,47 @@ case "$1" in
         $BINDIR/erlexec $@ -extra $ARGS
         exit "$?"
         ;;
+    describe)
+        ## Print a summary of information about this release
+        echo "$REL_NAME-$REL_VSN\n"
+        echo "erts:       $ERTS_VSN"
+        echo "path:       $REL_DIR"
+        echo "sys.config: $SYS_CONFIG_PATH"
+        echo "vm.args:    $VMARGS_PATH"
+        echo "name:       $NAME"
+        echo "cookie:     $COOKIE"
+        echo "erl_opts:   ${ERL_OPTS:-none provided}"
+        echo ""
+        echo "hooks:"
+        __has_hooks=0
+        for hook in "$REL_DIR"/hooks/*.d/[0-9a-zA-Z]*.sh; do
+            [ -f "$hook" ] || continue
+            __has_hooks=1
+            echo "$hook"
+        done
+        if [ $__has_hooks -eq 0 ]; then
+            echo "No custom hooks found."
+        fi
+        echo ""
+        echo "commands:"
+        __has_commands=0
+        for command in "$REL_DIR"/commands/*.sh; do
+            [ -f "$command" ] || continue
+            __has_commands=1
+            echo "$command"
+        done
+        if [ $__has_commands -eq 0 ]; then
+            echo "No custom commands found."
+        fi
+        exit 0
+        ;;
     *)
         __command_path="$REL_DIR/commands/$1"
         if [ -f "$__command_path" ]; then
             _check_cookie
             . "$__command_path"
         else
-            echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|pingpeer|console|console_clean|console_boot <file>|attach|remote_console|upgrade|downgrade|install|escript|rpc|rpcterms|eval|command <module> <function> <args>}"
+            echo "Usage: $REL_NAME {start|start_boot <file>|foreground|stop|restart|reboot|pid|ping|pingpeer|console|console_clean|console_boot <file>|attach|remote_console|upgrade|downgrade|install|escript|rpc|rpcterms|eval|command <module> <function> <args>}|describe"
             exit 1
         fi
         ;;
