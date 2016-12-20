@@ -47,6 +47,12 @@ options available.
 We will need to configure the `prod` environment before we start
 building releases.
 
+*NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure
+that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure
+at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix,
+which is not intended to be packaged in releases. As you won't be doing code reloading in a release
+(at least not with the same mechanism), you must disable this.
+
 *file: config/prod.exs*
 ```elixir
 config :phoenix_distillery, PhoenixDistillery.Endpoint,

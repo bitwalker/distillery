@@ -19,7 +19,11 @@ It is expected that you will have:
 
 **NOTE**: It does not make much sense to cut a release for a `dev`
 configuration with Phoenix, so this guide assumes you are interested
-in `prod` releases.
+in `prod` releases. If you do build a release in `dev`, then you must also ensure
+that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure
+at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix,
+which is not intended to be packaged in releases. As you won't be doing code reloading in a release
+(at least not with the same mechanism), you must disable this.
 
 Let's get started!
 
