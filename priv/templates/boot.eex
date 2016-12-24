@@ -232,7 +232,7 @@ _start_command() {
            "$START_OPTION" "${ARGS}" "${EXTRA_OPTS}"
 }
 
-# Do a textual replacement of ${VAR} occurances in $1 and pipe to $2
+# Do a textual replacement of ${VAR} occurrences in $1 and pipe to $2
 _replace_os_vars() {
     awk '
         function escape(s) {
