@@ -85,9 +85,9 @@ Before we modify our app at all, we will generate a release with the
 current state. We will generate a release. Our release command is 3
 separate commands which I have linked with `&&`:
 
-`./node_modules/brunch/bin/brunch b -P && MIX_ENV=prod mix do phoenix.digest, release --env=prod`
+`./node_modules/brunch/bin/brunch b -p && MIX_ENV=prod mix do phoenix.digest, release --env=prod`
 
-1. `./node_modules/brunch/bin/brunch b -P` builds your assets in
+1. `./node_modules/brunch/bin/brunch b -p` builds your assets in
    production mode. More detail can be found in the
    [Phoenix Static Asset Guide](http://www.phoenixframework.org/docs/static-assets)
 1. `MIX_ENV=prod mix phoenix.digest` To compress and tag your assets
