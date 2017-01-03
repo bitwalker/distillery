@@ -1,6 +1,6 @@
 ## Phoenix Walkthrough
 
-It is recommended that you review the [Advanced Deployment Guide](https://phoenixframework.org/docs/advanced-deployment),
+It is recommended that you review the [Advanced Deployment Guide](http://phoenixframework.org/docs/advanced-deployment),
 which covers Phoenix-specific configuration that needs to be provided in order for your application to work within a release.
 The guide currently references Exrm, but it is an almost identical process with Distillery. I would recommend skipping over
 those parts, and focus on what you need to do to prepare your application. The guide below will walk you through everything in
