@@ -56,4 +56,17 @@ defmodule Mix.Releases.Release do
                    :output_dir => output_dir,
                    :profile => %{profile | :output_dir => output_dir}}
   end
+
+
+  @doc """
+  Returns a list of all code_paths of all appliactions included in the release
+  """
+  @spec get_code_paths(__MODULE__.t) :: [charlist()]
+  def get_code_paths(%__MODULE__{profile: %Profile{output_dir: output_dir}} = release) do
+    release.applications
+    |> Enum.flat_map(fn %App{name: name, vsn: version, path: path} ->
+      lib_dir = Path.join([output_dir, "lib", "#{name}-#{version}", "ebin"])
+      [String.to_charlist(lib_dir), String.to_charlist(Path.join(path, "ebin"))]
+    end)
+  end
 end
