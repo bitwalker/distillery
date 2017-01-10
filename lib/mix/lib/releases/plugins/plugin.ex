@@ -9,10 +9,10 @@ defmodule Mix.Releases.Plugin do
   `use Mix.Releases.Plugin`. Then write implentations for the following
   callbacks:
 
-    - `c:before_assembly/2`
-    - `c:after_assembly/2`
-    - `c:before_package/2`
-    - `c:after_package/2`
+    - `c:before_assembly/1`
+    - `c:after_assembly/1`
+    - `c:before_package/1`
+    - `c:after_package/1`
     - `c:after_cleanup/2`
 
   Currently, there are no default implementations. You are required to
@@ -39,27 +39,27 @@ defmodule Mix.Releases.Plugin do
       defmodule MyApp.PluginDemo do
         use Mix.Releases.Plugin
 
-        def before_assembly(%Release{} = release, _opts) do
+        def before_assembly(%Release{} = release) do
           info "This is executed just prior to assembling the release"
           release # or nil
         end
 
-        def after_assembly(%Release{} = release, _opts) do
+        def after_assembly(%Release{} = release) do
           info "This is executed just after assembling, and just prior to packaging the release"
           release # or nil
         end
 
-        def before_package(%Release{} = release, _opts) do
+        def before_package(%Release{} = release) do
           info "This is executed just before packaging the release"
           release # or nil
         end
 
-        def after_package(%Release{} = release, _opts) do
+        def after_package(%Release{} = release) do
           info "This is executed just after packaging the release"
           release # or nil
         end
 
-        def after_cleanup(_args, _opts) do
+        def after_cleanup(%Release{} = release, _args) do
           info "This is executed just after running cleanup"
           :ok # It doesn't matter what we return here
         end
@@ -73,14 +73,14 @@ defmodule Mix.Releases.Plugin do
 
   Should return a modified `%Release{}` or `nil`.
   """
-  @callback before_assembly(Release.t, Keyword.t) :: Release.t | nil
+  @callback before_assembly(Release.t) :: Release.t | nil
 
   @doc """
   Called after assembling the release.
 
   Should return a modified `%Release{}` or `nil`.
   """
-  @callback after_assembly(Release.t, Keyword.t)  :: Release.t | nil
+  @callback after_assembly(Release.t)  :: Release.t | nil
 
   @doc """
   Called before packaging the release.
@@ -89,7 +89,7 @@ defmodule Mix.Releases.Plugin do
 
   When in `dev_mode`, the packaging phase is skipped.
   """
-  @callback before_package(Release.t, Keyword.t)  :: Release.t | nil
+  @callback before_package(Release.t)  :: Release.t | nil
 
   @doc """
   Called after packaging the release.
@@ -98,7 +98,7 @@ defmodule Mix.Releases.Plugin do
 
   When in `dev_mode`, the packaging phase is skipped.
   """
-  @callback after_package(Release.t, Keyword.t)   :: Release.t | nil
+  @callback after_package(Release.t)   :: Release.t | nil
 
   @doc """
   Called when the user invokes the `mix release.clean` task.
@@ -107,7 +107,7 @@ defmodule Mix.Releases.Plugin do
   It should clean up the files the plugin created. The return value of this
   callback is ignored.
   """
-  @callback after_cleanup([String.t], Keyword.t)  :: any
+  @callback after_cleanup(Release.t, [String.t])  :: any
 
   @doc false
   defmacro __using__(_opts) do
