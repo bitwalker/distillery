@@ -694,7 +694,7 @@ defmodule Mix.Releases.Assembler do
                      true  -> :code.lib_dir()
                      p     -> String.to_charlist(Path.expand(Path.join(p, "lib")))
                    end
-    options = [{:path, ['#{rel_dir}' | get_code_paths(release)]},
+    options = [{:path, ['#{rel_dir}' | Release.get_code_paths(release)]},
                {:outdir, '#{rel_dir}'},
                {:variables, [{'ERTS_LIB_DIR', erts_lib_dir}]},
                :no_warn_sasl,
@@ -718,14 +718,6 @@ defmodule Mix.Releases.Assembler do
         error = format_systools_error(mod, errors)
         {:error, error}
     end
-  end
-
-  defp get_code_paths(%Release{profile: %Profile{output_dir: output_dir}} = release) do
-    release.applications
-    |> Enum.flat_map(fn %App{name: name, vsn: version, path: path} ->
-      lib_dir = Path.join([output_dir, "lib", "#{name}-#{version}", "ebin"])
-      [String.to_charlist(lib_dir), String.to_charlist(Path.join(path, "ebin"))]
-    end)
   end
 
   # Generates RELEASES
