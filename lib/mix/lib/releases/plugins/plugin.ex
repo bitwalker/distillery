@@ -15,8 +15,8 @@ defmodule Mix.Releases.Plugin do
     - `c:after_package/2`
     - `c:after_cleanup/2`
 
-  Currently, there are no default implementations. You are required to
-  implement all callbacks yourself.
+  The default implementation is to pass the original `%Release{}`.
+  You will only need to implement the functions your plugin requires.
 
   When you `use Mix.Releases.Plugin`, the following happens:
 
@@ -120,6 +120,15 @@ defmodule Mix.Releases.Plugin do
       Module.register_attribute __MODULE__, :name, accumulate: false, persist: true
       Module.register_attribute __MODULE__, :moduledoc, accumulate: false, persist: true
       Module.register_attribute __MODULE__, :shortdoc, accumulate: false, persist: true
+
+      def before_assembly(release), do: release
+      def after_assembly(release), do: release
+      def before_package(release), do: release
+      def after_package(release), do: release
+      def after_cleanup(release, _), do: release
+
+      defoverridable [before_assembly: 1, after_assembly: 1,
+        before_package: 1, after_package: 1, after_cleanup: 2]
     end
   end
 
