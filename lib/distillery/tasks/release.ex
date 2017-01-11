@@ -50,7 +50,7 @@ defmodule Mix.Tasks.Release do
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
-  alias Mix.Releases.{Release, Profile, Logger}
+  alias Mix.Releases.{Config, Release, Profile, Logger, Assembler, Archiver}
 
   @spec run(OptionParser.argv) :: no_return
   def run(args) do
@@ -69,12 +69,12 @@ defmodule Mix.Tasks.Release do
     # load release configuration
     Logger.debug "Loading configuration.."
     config_path = Path.join([File.cwd!, "rel", "config.exs"])
-    config = case File.exists?(config_path) do
+    base_config = case File.exists?(config_path) do
                true ->
                  try do
-                   Mix.Releases.Config.read!(config_path)
+                   Config.read!(config_path)
                  rescue
-                   e in [Mix.Releases.Config.LoadError]->
+                   e in [Config.LoadError] ->
                      file = Path.relative_to_cwd(e.file)
                      message = e.error.__struct__.message(e.error)
                      message = String.replace(message, "nofile", file)
@@ -88,24 +88,21 @@ defmodule Mix.Tasks.Release do
              end
 
     # Apply override options
-    config = case Keyword.get(opts, :dev_mode) do
-               nil -> config
-               m   -> %{config | :dev_mode => m}
-             end
-    config = case Keyword.get(opts, :erl_opts) do
-               nil -> config
-               o   -> %{config | :erl_opts => o}
-             end
-    config = %{config |
-               :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
-               :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
-               :selected_environment => Keyword.fetch!(opts, :selected_environment),
-               :selected_release => Keyword.fetch!(opts, :selected_release)}
+    config = %{base_config |
+      :environments => Enum.into(Enum.map(base_config.environments, fn {name, e} ->
+        {name, %{e | :profile => %{e.profile |
+          :dev_mode => Keyword.get(opts, :dev_mode, e.profile.dev_mode),
+          :erl_opts => Keyword.get(opts, :erl_opts, e.profile.erl_opts)}}}
+      end), %{}),
+      :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
+      :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
+      :selected_environment => Keyword.fetch!(opts, :selected_environment),
+      :selected_release => Keyword.fetch!(opts, :selected_release)}
     no_tar? = Keyword.get(opts, :no_tar)
 
     # build release
     Logger.info "Assembling release.."
-    case {Mix.Releases.Assembler.assemble(config), no_tar?} do
+    case {Assembler.assemble(config), no_tar?} do
       {{:ok, %Release{:name => name} = release}, true} ->
         print_success(release, name)
       {{:ok, %Release{:name => name, profile: %Profile{:dev_mode => true}} = release}, false} ->
@@ -113,7 +110,7 @@ defmodule Mix.Tasks.Release do
         print_success(release, name)
       {{:ok, %Release{:name => name} = release}, false} ->
         Logger.info "Packaging release.."
-        case Mix.Releases.Archiver.archive(release) do
+        case Archiver.archive(release) do
           {:ok, _archive_path} ->
             print_success(release, name)
           {:error, reason} when is_binary(reason) ->
@@ -154,12 +151,11 @@ defmodule Mix.Tasks.Release do
                 env: :string, no_warn_missing: :boolean,
                 warnings_as_errors: :boolean]
     {overrides, _} = OptionParser.parse!(argv, switches)
-    verbosity = :normal
     verbosity = cond do
       Keyword.get(overrides, :verbose, false) -> :verbose
       Keyword.get(overrides, :quiet, false)   -> :quiet
       Keyword.get(overrides, :silent, false)  -> :silent
-      :else -> verbosity
+      :else -> :normal
     end
     {rel, env} = case Keyword.get(overrides, :profile) do
       nil ->

@@ -19,7 +19,6 @@ defmodule Mix.Releases.Appup do
   @type downgrade_instructions :: [{appup_ver, instruction}]
   @type appup :: {appup_ver, upgrade_instructions, downgrade_instructions}
 
-
   @doc """
   Generate a .appup for the given application, start version, and upgrade version.
 
@@ -169,7 +168,7 @@ defmodule Mix.Releases.Appup do
   # feedback arc sets, and none appeared to work as well as the one below. I'm definitely
   # open to better algorithms, because I don't particularly like this one.
   defp topological_sort(instructions) do
-    mods = Enum.map(instructions, fn i-> elem(i, 1) end)
+    mods = Enum.map(instructions, fn i -> elem(i, 1) end)
     instructions
     |> Enum.sort(&do_sort_instructions(mods, &1, &2))
     |> Enum.map(fn

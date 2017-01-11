@@ -59,6 +59,7 @@ defmodule Mix.Releases.App do
   @doc """
   Determines if the provided start type is a valid one.
   """
+  @spec valid_start_type?(atom) :: boolean()
   def valid_start_type?(start_type)
     when start_type in [:permanent, :temporary, :transient, :load, :none],
     do: true
@@ -67,30 +68,28 @@ defmodule Mix.Releases.App do
   # Gets a list of all applications which are children
   # of this application.
   defp get_dependencies(name) do
-    try do
-      Mix.Dep.loaded_by_name([name], [])
-      |> Enum.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
-      |> Enum.filter_map(&include_dep?/1, &map_dep/1)
-    rescue
-      Mix.Error -> # This is a top-level app
-        cond do
-          Mix.Project.umbrella? ->
-            # find the app in the umbrella
-            app_path = Path.join(Mix.Project.config[:apps_path], "#{name}")
-            cond do
-              File.exists?(app_path) ->
-                Mix.Project.in_project(name, app_path, fn mixfile ->
-                  mixfile.project[:deps]
-                  |> Enum.filter_map(&include_dep?/1, &map_dep/1)
-                end)
-              :else ->
-                []
-            end
-          :else ->
-            Mix.Project.config[:deps]
-            |> Enum.filter_map(&include_dep?/1, &map_dep/1)
-        end
-    end
+    Mix.Dep.loaded_by_name([name], [])
+    |> Enum.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
+    |> Enum.filter_map(&include_dep?/1, &map_dep/1)
+  rescue
+    Mix.Error -> # This is a top-level app
+      cond do
+        Mix.Project.umbrella? ->
+          # find the app in the umbrella
+          app_path = Path.join(Mix.Project.config[:apps_path], "#{name}")
+          cond do
+            File.exists?(app_path) ->
+              Mix.Project.in_project(name, app_path, fn mixfile ->
+                mixfile.project[:deps]
+                |> Enum.filter_map(&include_dep?/1, &map_dep/1)
+              end)
+            :else ->
+              []
+          end
+        :else ->
+          Mix.Project.config[:deps]
+          |> Enum.filter_map(&include_dep?/1, &map_dep/1)
+      end
   end
 
   defp include_dep?({_, _}),               do: true

@@ -57,7 +57,6 @@ defmodule Mix.Releases.Release do
                    :profile => %{profile | :output_dir => output_dir}}
   end
 
-
   @doc """
   Returns a list of all code_paths of all appliactions included in the release
   """

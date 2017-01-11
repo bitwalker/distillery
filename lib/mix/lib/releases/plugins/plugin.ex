@@ -113,8 +113,7 @@ defmodule Mix.Releases.Plugin do
   defmacro __using__(_opts) do
     quote do
       @behaviour Mix.Releases.Plugin
-      alias  Mix.Releases.Release
-      alias  Mix.Releases.Logger
+      alias  Mix.Releases.{Logger, Release}
       import Mix.Releases.Logger, only: [debug: 1, info: 1, warn: 1, notice: 1, error: 1]
 
       Module.register_attribute __MODULE__, :name, accumulate: false, persist: true
@@ -172,19 +171,17 @@ defmodule Mix.Releases.Plugin do
   end
   defp call([], _, release), do: {:ok, release}
   defp call([{plugin, opts}|plugins], callback, release) do
-    try do
-      apply_plugin(plugin, callback, release, opts)
-    catch
-      kind, err ->
-        {:error, Exception.format(kind, err, System.stacktrace)}
-    else
-      nil ->
-        call(plugins, callback, release)
-      %Release{} = updated ->
-        call(plugins, callback, updated)
-      result ->
-        {:error, {:plugin_failed, :bad_return_value, result}}
-    end
+    apply_plugin(plugin, callback, release, opts)
+  catch
+    kind, err ->
+      {:error, Exception.format(kind, err, System.stacktrace)}
+  else
+    nil ->
+      call(plugins, callback, release)
+    %Release{} = updated ->
+      call(plugins, callback, updated)
+    result ->
+      {:error, {:plugin_failed, :bad_return_value, result}}
   end
 
   # TODO: remove once the /1 plugins are deprecated
@@ -199,14 +196,12 @@ defmodule Mix.Releases.Plugin do
   @spec run([atom()], atom, [String.t]) :: :ok | {:error, {:plugin_failed, term}}
   defp run([], _, _), do: :ok
   defp run([{plugin, opts}|plugins], callback, args) do
-    try do
-      apply_plugin(plugin, callback, args, opts)
-    catch
-      kind, err ->
-        {:error, Exception.format(kind, err, System.stacktrace)}
-    else
-      _ ->
-        run(plugins, callback, args)
-    end
+    apply_plugin(plugin, callback, args, opts)
+  catch
+    kind, err ->
+      {:error, Exception.format(kind, err, System.stacktrace)}
+  else
+    _ ->
+      run(plugins, callback, args)
   end
 end
