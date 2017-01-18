@@ -96,10 +96,14 @@ defmodule Mix.Releases.App do
   defp include_dep?({_, _, opts}),         do: include_dep?(opts)
   defp include_dep?(%Mix.Dep{opts: opts}), do: include_dep?(opts)
   defp include_dep?(opts) when is_list(opts) do
-    case Keyword.get(opts, :only) do
-      nil  -> true
-      envs when is_list(envs) -> Enum.member?(envs, :prod)
-      env when is_atom(env) -> env == :prod
+    if Keyword.get(opts, :runtime) == false do
+      false
+    else
+      case Keyword.get(opts, :only) do
+        nil  -> true
+        envs when is_list(envs) -> Enum.member?(envs, :prod)
+        env when is_atom(env) -> env == :prod
+      end
     end
   end
 
