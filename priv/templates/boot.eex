@@ -312,10 +312,9 @@ if [ -z "$SYS_CONFIG_PATH" ]; then
     fi
 fi
 if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
-    echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead." \
-        >  "$RELEASE_MUTABLE_DIR/sys.config"
-    cat  "$SYS_CONFIG_PATH"                              \
-        >> "$RELEASE_MUTABLE_DIR/sys.config"
+    (echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead."; \
+    cat  "$SYS_CONFIG_PATH")                              \
+        > "$RELEASE_MUTABLE_DIR/sys.config"
     SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
 fi
 if [ $REPLACE_OS_VARS ]; then
