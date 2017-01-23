@@ -157,7 +157,7 @@ defmodule Mix.Releases.Config do
         raise "release name must be an atom! got #{inspect(unquote(name))}"
       end
 
-      rel = Release.new(unquote(name), unquote(@default_release_version), [unquote(name)])
+      rel = Release.new(unquote(name), unquote(@default_release_version), [])
 
       Mix.Config.Agent.merge(
         var!(config_agent, Mix.Releases.Config),

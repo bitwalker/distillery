@@ -28,7 +28,6 @@ defmodule ConfigTest do
                      :sasl,
                      {:mix, :load},
                      {:distillery, :load},
-                     :standard_app
                    ]
                  }
                },

@@ -308,11 +308,16 @@ defmodule Mix.Releases.Utils do
   @spec get_apps(Mix.Releases.Release.t()) :: [{atom, String.t()}] | {:error, String.t()}
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps} = release) do
-    children = get_apps(App.new(name), [])
+    apps =
+      if Enum.member?(apps, name) do
+        apps
+      else
+        apps ++ [name]
+      end
 
     base_apps =
       apps
-      |> Enum.reduce(children, fn
+      |> Enum.reduce([], fn
         _, {:error, reason} ->
           {:error, {:apps, reason}}
 
@@ -476,7 +481,7 @@ defmodule Mix.Releases.Utils do
     new_acc =
       app.applications
       |> Enum.concat(app.included_applications)
-      |> Enum.reduce([app | acc], fn
+      |> Enum.reduce(acc, fn
         {:error, _} = err, _acc ->
           err
 
@@ -494,7 +499,7 @@ defmodule Mix.Releases.Utils do
                     err
 
                   children ->
-                    Enum.concat(acc, children)
+                    Enum.concat(children, acc)
                 end
 
               {:error, _} = err ->
@@ -516,7 +521,7 @@ defmodule Mix.Releases.Utils do
                     err
 
                   children ->
-                    Enum.concat(acc, children)
+                    Enum.concat(children, acc)
                 end
 
               {:error, _} = err ->
@@ -530,7 +535,7 @@ defmodule Mix.Releases.Utils do
         err
 
       apps ->
-        Enum.uniq(apps)
+        Enum.uniq([app | apps])
     end
   end
 
