@@ -14,7 +14,7 @@ defmodule ConfigTest do
                         dev: %Environment{profile: %Profile{dev_mode: true, include_erts: false}},
                         prod: %Environment{profile: %Profile{dev_mode: false, include_erts: true, strip_debug_info: false}}},
                       releases: %{
-                        standard_app: %Release{version: "0.0.1", applications: [:elixir, :iex, :sasl, :standard_app]}},
+                        standard_app: %Release{version: "0.0.1", applications: [:elixir, :iex, :sasl]}},
                       default_release: :default,
                       default_environment: :dev,
                      } = config
