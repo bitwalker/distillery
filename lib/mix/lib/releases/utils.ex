@@ -107,10 +107,8 @@ defmodule Mix.Releases.Utils do
         "Invalid ERTS path #{Path.expand(path)}\n" <> Enum.join(errors, "\n")}
     end
   end
-
-  def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts) do
-    :ok
-  end
+  def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts),
+    do: :ok
 
   @doc """
   Detects the version of ERTS in the given directory

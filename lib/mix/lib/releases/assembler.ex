@@ -74,7 +74,15 @@ defmodule Mix.Releases.Assembler do
 
   @spec validate_configuration(Release.t) :: :ok | {:error, term}
   def validate_configuration(%Release{version: _, profile: profile}) do
-    Utils.validate_erts(profile.include_erts)
+    with :ok <- Utils.validate_erts(profile.include_erts) do
+      # Warn if not including ERTS when not obviously running in a dev configuration
+      if profile.dev_mode == false and profile.include_erts == false do
+        Logger.notice "IMPORTANT: You have opted to *not* include the Erlang runtime system (ERTS).\n" <>
+          "You must ensure that the version of Erlang this release is built with matches\n" <>
+          "the version the release will be run with once deployed. It will fail to run otherwise."
+      end
+      :ok
+    end
   end
 
   # Applies global configuration options to the release profile
