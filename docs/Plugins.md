@@ -4,6 +4,10 @@ Plugins are how you extend `distillery` itself during release generation. It is 
 to review the module documentation for `Mix.Releases.Plugin` for more detailed information,
 including an example plugin.
 
+Plugins can be defined as either a part of your application code, or in Elixir modules contained
+in `.exs` files under `rel/plugins`. The latter will be automatically imported for you so that you
+can reference them in the configuration.
+
 You add plugins to a release or environment like so:
 
 ```elixir

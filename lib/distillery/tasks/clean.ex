@@ -35,17 +35,15 @@ defmodule Mix.Tasks.Release.Clean do
     # make sure we're compiled too
     Mix.Task.run("compile", [])
 
-    opts = parse_args(args)
-
     # load release configuration
     Logger.debug "Loading configuration.."
     config_path = Path.join([File.cwd!, "rel", "config.exs"])
     config = case File.exists?(config_path) do
                true ->
                  try do
-                   Mix.Releases.Config.read!(config_path)
+                   Config.read!(config_path)
                  rescue
-                   e in [Mix.Releases.Config.LoadError]->
+                   e in [Config.LoadError] ->
                      file = Path.relative_to_cwd(e.file)
                      message = e.error.__struct__.message(e.error)
                      message = String.replace(message, "nofile", file)

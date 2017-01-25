@@ -50,7 +50,11 @@ defmodule Mix.Tasks.Release.Init do
       false -> get_standard_bindings(opts)
     end
     # Create /rel
-    File.mkdir_p!("rel")
+    File.mkdir_p!("rel/plugins")
+    # Generate .gitignore for plugins folder
+    unless File.exists?("rel/plugins/.gitignore") do
+      File.write!("rel/plugins/.gitignore", "*.*\n!*.exs", [:utf8])
+    end
     # Generate config.exs
     {:ok, config} =
       case opts[:template] do
@@ -132,13 +136,13 @@ defmodule Mix.Tasks.Release.Init do
   defp get_common_bindings(opts) do
     no_doc? = Keyword.get(opts, :no_doc, false)
     [no_docs: no_doc?,
-     cookie: get_cookie,
+     cookie: get_cookie(),
      get_cookie: &get_cookie/0]
   end
 
   defp get_cookie do
-    if can_generate_secure_cookie? do
-      generate_secure_cookie
+    if can_generate_secure_cookie?() do
+      generate_secure_cookie()
     else
       # When the :crypto module is unavailable, rather than generating
       # a cookie guessable by a computer, produce this obviously

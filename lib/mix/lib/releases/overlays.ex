@@ -107,21 +107,17 @@ defmodule Mix.Releases.Overlays do
 
   @spec template_str(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template_str, term}}
   def template_str(str, overlay_vars) do
-    try do
-      {:ok, EEx.eval_string(str, overlay_vars)}
-    rescue
-      err in [CompileError] ->
-        {:error, {:template_str, {str, err.description}}}
-    end
+    {:ok, EEx.eval_string(str, overlay_vars)}
+  rescue
+    err in [CompileError] ->
+      {:error, {:template_str, {str, err.description}}}
   end
 
   @spec template_file(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template_file, term}}
   def template_file(path, overlay_vars) do
-    try do
-      {:ok, EEx.eval_file(path, overlay_vars)}
-    rescue
-      e ->
-        {:error, {:template_file, e.__struct__.message(e)}}
-    end
+    {:ok, EEx.eval_file(path, overlay_vars)}
+  rescue
+    e ->
+      {:error, {:template_file, e.__struct__.message(e)}}
   end
 end

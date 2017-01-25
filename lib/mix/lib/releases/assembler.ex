@@ -37,6 +37,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Determines the correct environment to assemble in
+  @spec select_environment(Config.t) :: {:ok, Environment.t} | {:error, :no_environments}
   def select_environment(%Config{selected_environment: :default, default_environment: :default} = c),
     do: select_environment(Map.fetch(c.environments, :default))
   def select_environment(%Config{selected_environment: :default, default_environment: name} = c),
@@ -47,6 +48,7 @@ defmodule Mix.Releases.Assembler do
   def select_environment(_),            do: {:error, :no_environments}
 
   # Determines the correct release to assemble
+  @spec select_release(Config.t) :: {:ok, Release.t} | {:error, :no_releases}
   def select_release(%Config{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
   def select_release(%Config{selected_release: :default, default_release: name} = c),
@@ -57,6 +59,7 @@ defmodule Mix.Releases.Assembler do
   def select_release(_),            do: {:error, :no_releases}
 
   # Applies the environment profile to the release profile.
+  @spec apply_environment(Release.t, Environment.t) :: {:ok, Release.t} | {:error, term}
   def apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
     Logger.info "Building release #{r.name}:#{r.version} using environment #{e.name}"
     env_profile = Map.from_struct(env_profile)
@@ -69,25 +72,35 @@ defmodule Mix.Releases.Assembler do
     {:ok, %{r | :profile => profile}}
   end
 
+  @spec validate_configuration(Release.t) :: :ok | {:error, term}
   def validate_configuration(%Release{version: _, profile: profile}) do
-    Utils.validate_erts(profile.include_erts)    
+    with :ok <- Utils.validate_erts(profile.include_erts) do
+      # Warn if not including ERTS when not obviously running in a dev configuration
+      if profile.dev_mode == false and profile.include_erts == false do
+        Logger.notice "IMPORTANT: You have opted to *not* include the Erlang runtime system (ERTS).\n" <>
+          "You must ensure that the version of Erlang this release is built with matches\n" <>
+          "the version the release will be run with once deployed. It will fail to run otherwise."
+      end
+      :ok
+    end
   end
 
   # Applies global configuration options to the release profile
+  @spec apply_configuration(Release.t, Config.t) :: {:ok, Release.t} | {:error, term}
   def apply_configuration(%Release{version: current_version, profile: profile} = release, %Config{} = config) do
     config_path = case profile.config do
                     p when is_binary(p) -> p
                     _ -> Keyword.get(Mix.Project.config, :config_path)
                   end
-    release = %{release | :profile => %{profile | :config => config_path}}
-    release = check_cookie(release)
+    base_release = %{release | :profile => %{profile | :config => config_path}}
+    release = check_cookie(base_release)
     case Utils.get_apps(release) do
       {:error, _} = err -> err
       release_apps ->
         release = %{release | :applications => release_apps}
         case config.is_upgrade do
           true ->
-            case config.upgrade_from do 
+            case config.upgrade_from do
               :latest ->
                 upfrom = case Utils.get_release_versions(release.profile.output_dir) do
                   [] -> :no_upfrom
@@ -199,31 +212,30 @@ defmodule Mix.Releases.Assembler do
         |> Enum.filter(fn p -> Path.basename(p) in valid_dirs end)
         |> Enum.each(fn p ->
           t = Path.join(target_dir, Path.basename(p))
-          case symlink?(p) do
-            true ->
-              # We need to follow the symlink
-              File.mkdir_p!(t)
-              Path.wildcard(Path.join(p, "*"))
-              |> Enum.each(fn child ->
-                tc = Path.join(t, Path.basename(child))
-                case File.cp_r(child, tc) do
-                  {:ok, _} -> :ok
-                  {:error, reason, file} ->
-                    raise "unable to copy app directory:\n " <>
-                      "#{child} -> #{tc}\n  " <>
-                      "File: #{file}\n  " <>
-                      "Reason: #{reason}"
-                end
-              end)
-            false ->
-              case File.cp_r(p, t) do
+          if symlink?(p) do
+            # We need to follow the symlink
+            File.mkdir_p!(t)
+            Path.wildcard(Path.join(p, "*"))
+            |> Enum.each(fn child ->
+              tc = Path.join(t, Path.basename(child))
+              case File.cp_r(child, tc) do
                 {:ok, _} -> :ok
                 {:error, reason, file} ->
-                  raise "unable to copy app directory:\n  " <>
-                    "#{p} -> #{t}\n  " <>
+                  raise "unable to copy app directory:\n " <>
+                    "#{child} -> #{tc}\n  " <>
                     "File: #{file}\n  " <>
                     "Reason: #{reason}"
               end
+            end)
+          else
+            case File.cp_r(p, t) do
+              {:ok, _} -> :ok
+              {:error, reason, file} ->
+                raise "unable to copy app directory:\n  " <>
+                  "#{p} -> #{t}\n  " <>
+                  "File: #{file}\n  " <>
+                  "Reason: #{reason}"
+            end
           end
         end)
     end
@@ -278,7 +290,14 @@ defmodule Mix.Releases.Assembler do
         relfile = {:release,
                     {'#{release.name}', '#{release.version}'},
                     {:erts, '#{erts_vsn}'},
-                    Enum.map(apps, fn %App{name: name, vsn: vsn, start_type: start_type} ->
+                    apps
+                    |> Enum.with_index
+                    |> Enum.sort_by(fn
+                          {%App{name: :kernel}, _idx} -> -2
+                          {%App{name: :stdlib}, _idx} -> -1
+                          {%App{}, idx}               -> idx
+                       end)
+                    |> Enum.map(fn {%App{name: name, vsn: vsn, start_type: start_type}, _idx} ->
                       case start_type do
                         nil ->
                           {name, '#{vsn}'}
@@ -687,7 +706,7 @@ defmodule Mix.Releases.Assembler do
                      true  -> :code.lib_dir()
                      p     -> String.to_charlist(Path.expand(Path.join(p, "lib")))
                    end
-    options = [{:path, ['#{rel_dir}' | get_code_paths(release)]},
+    options = [{:path, ['#{rel_dir}' | Release.get_code_paths(release)]},
                {:outdir, '#{rel_dir}'},
                {:variables, [{'ERTS_LIB_DIR', erts_lib_dir}]},
                :no_warn_sasl,
@@ -711,14 +730,6 @@ defmodule Mix.Releases.Assembler do
         error = format_systools_error(mod, errors)
         {:error, error}
     end
-  end
-
-  defp get_code_paths(%Release{profile: %Profile{output_dir: output_dir}} = release) do
-    release.applications
-    |> Enum.map(fn %App{name: name, vsn: version} ->
-      lib_dir = Path.join([output_dir, "lib", "#{name}-#{version}", "ebin"])
-      String.to_charlist(lib_dir)
-    end)
   end
 
   # Generates RELEASES

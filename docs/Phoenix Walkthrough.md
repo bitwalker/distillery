@@ -1,5 +1,11 @@
 ## Phoenix Walkthrough
 
+It is recommended that you review the [Advanced Deployment Guide](http://phoenixframework.org/docs/advanced-deployment),
+which covers Phoenix-specific configuration that needs to be provided in order for your application to work within a release.
+The guide currently references Exrm, but it is an almost identical process with Distillery. I would recommend skipping over
+those parts, and focus on what you need to do to prepare your application. The guide below will walk you through everything in
+more detail.
+
 The goal of this guide is to walk you through the basics of deploying
 a simple Phoenix application with Distillery. We are going to build a
 simple Phoenix application from scratch and take it through 4
@@ -40,6 +46,12 @@ options available.
 
 We will need to configure the `prod` environment before we start
 building releases.
+
+*NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure
+that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure
+at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix,
+which is not intended to be packaged in releases. As you won't be doing code reloading in a release
+(at least not with the same mechanism), you must disable this.
 
 *file: config/prod.exs*
 ```elixir
@@ -241,6 +253,7 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
  socket.connect()
 
 let channel = socket.channel("heartbeat:listen", {})
+channel.join()
 channel.on("ping", payload => { console.log(payload.body) })
 ...
 ```

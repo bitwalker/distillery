@@ -60,7 +60,7 @@ you should have a `test.app` file in `_build/<env>/lib/test/ebin` that looks som
 
 If you make code changes to, `test_server` for instance, the following is a simple appup file that will
 load your project's application, and call `code_change/3` on `test_server`. The first
-`"0.0.1"` block is the order of operations for the upgrade, the second one is the order of operations for the
+`"0.1.0"` block is the order of operations for the upgrade, the second one is the order of operations for the
 downgrade (note that they should be in reverse order of the upgrade instructions).
 
 ```erlang

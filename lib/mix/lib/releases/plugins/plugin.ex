@@ -15,8 +15,8 @@ defmodule Mix.Releases.Plugin do
     - `c:after_package/2`
     - `c:after_cleanup/2`
 
-  Currently, there are no default implementations. You are required to
-  implement all callbacks yourself.
+  The default implementation is to pass the original `%Release{}`.
+  You will only need to implement the functions your plugin requires.
 
   When you `use Mix.Releases.Plugin`, the following happens:
 
@@ -113,13 +113,21 @@ defmodule Mix.Releases.Plugin do
   defmacro __using__(_opts) do
     quote do
       @behaviour Mix.Releases.Plugin
-      alias  Mix.Releases.Release
-      alias  Mix.Releases.Logger
+      alias  Mix.Releases.{Logger, Release}
       import Mix.Releases.Logger, only: [debug: 1, info: 1, warn: 1, notice: 1, error: 1]
 
       Module.register_attribute __MODULE__, :name, accumulate: false, persist: true
       Module.register_attribute __MODULE__, :moduledoc, accumulate: false, persist: true
       Module.register_attribute __MODULE__, :shortdoc, accumulate: false, persist: true
+
+      def before_assembly(release), do: release
+      def after_assembly(release), do: release
+      def before_package(release), do: release
+      def after_package(release), do: release
+      def after_cleanup(release, _), do: release
+
+      defoverridable [before_assembly: 1, after_assembly: 1,
+        before_package: 1, after_package: 1, after_cleanup: 2]
     end
   end
 
@@ -155,23 +163,25 @@ defmodule Mix.Releases.Plugin do
 
   @spec call(atom(), Release.t) :: {:ok, term} | {:error, {:plugin_failed, term}}
   defp call(callback, release) do
-    call(release.profile.plugins, callback, release)
+    Enum.map(release.profile.plugins, fn
+        {_p, _opts} = p -> p
+        p when is_atom(p) -> {p, []}
+    end)
+    |> call(callback, release)
   end
   defp call([], _, release), do: {:ok, release}
   defp call([{plugin, opts}|plugins], callback, release) do
-    try do
-      apply_plugin(plugin, callback, release, opts)
-    catch
-      kind, err ->
-        {:error, Exception.format(kind, err, System.stacktrace)}
-    else
-      nil ->
-        call(plugins, callback, release)
-      %Release{} = updated ->
-        call(plugins, callback, updated)
-      result ->
-        {:error, {:plugin_failed, :bad_return_value, result}}
-    end
+    apply_plugin(plugin, callback, release, opts)
+  catch
+    kind, err ->
+      {:error, Exception.format(kind, err, System.stacktrace)}
+  else
+    nil ->
+      call(plugins, callback, release)
+    %Release{} = updated ->
+      call(plugins, callback, updated)
+    result ->
+      {:error, {:plugin_failed, :bad_return_value, result}}
   end
 
   # TODO: remove once the /1 plugins are deprecated
@@ -186,14 +196,12 @@ defmodule Mix.Releases.Plugin do
   @spec run([atom()], atom, [String.t]) :: :ok | {:error, {:plugin_failed, term}}
   defp run([], _, _), do: :ok
   defp run([{plugin, opts}|plugins], callback, args) do
-    try do
-      apply_plugin(plugin, callback, args, opts)
-    catch
-      kind, err ->
-        {:error, Exception.format(kind, err, System.stacktrace)}
-    else
-      _ ->
-        run(plugins, callback, args)
-    end
+    apply_plugin(plugin, callback, args, opts)
+  catch
+    kind, err ->
+      {:error, Exception.format(kind, err, System.stacktrace)}
+  else
+    _ ->
+      run(plugins, callback, args)
   end
 end

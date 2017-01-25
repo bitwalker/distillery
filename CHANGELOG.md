@@ -1,13 +1,20 @@
-## 0.11.0
+## 1.0.0
+
+*NOTE*: This release contains breaking changes!
 
 ## Added
 
 - Link to config helpers package - Andrew Dryga
+- ea3c791 - Allow passing a custom eex template to use for the init task - Justin Schneck
+- Add pre/post upgrade hooks - @spscream
+- Allow passing options to plugins - Michal Muskala
 
 ## Changed
 
 - Default output path for release artifacts is `_build/<env>/rel/<relname>`,
   this can be configured in `rel/config.exs` with `set output_dir: "path"`
+- Allow variables to be used with environment/release macros in config
+- Unpack release prior to executing pre-upgrade scripts
 
 ## Fixed
 
@@ -16,6 +23,17 @@
 - 851a622 - Fix typo in pre_stop hook overlay - Alexander Malaev
 - d5da953 - Make execution of hooks to work on busybox - Alexander Malaev
 - 75e80bf - Add support for hooks directories - Alexander Malaev
+- <multiple> - Fix detection of ERTS_VSN in boot script - Mario Sangiorgio/Paul Schoenfelder
+- 5a420e6 - Fix issue with loading of code paths - Paul Schoenfelder
+- d6bec3a - Fix update instruction for supervisor in appups - Andrew Shu
+- a837cb8 - Fix handling of nil name in release.init for umbrella projects - dmytro@pharosproduction.com
+- 1db006f - Fix archiver when passing path in include_system_libs - Justin Schneck
+- <multiple> - Fix generating cookies with reserved characters - Paul Schoenfelder
+- 2f4c064 - Fix varname typo breaking code_paths - Martin Langhoff
+- 67d9d49 - Various code path fixes - Martin Langhoff
+- 16e2159 - Invalid folders in apps dir should be ignored - Paul Schoenfelder
+- 6bebdb6 - Properly handle symlinks when copying apps - Paul Schoenfelder
+- 8beae24 - Fix missing option in clean task - Paul Schoenfelder
 
 ## 0.10.0
 

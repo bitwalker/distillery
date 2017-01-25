@@ -10,10 +10,14 @@ REL_NAME="<%= release_name %>"
 REL_VSN=$(cat "$RELEASES_DIR"/start_erl.data | cut -d' ' -f2)
 ERTS_VSN=$(cat "$RELEASES_DIR"/start_erl.data | cut -d' ' -f1)
 
+__pid=""
 
 _cleanup() {
-    echo "Shutting down node cleanly.."
-    exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" rpc init stop
+    trap - HUP INT TERM QUIT EXIT USR1 USR2
+    echo ""
+    echo "Shutting down.."
+    "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" rpc init stop
+    wait $__pid
 }
 
 case "$1" in
@@ -24,9 +28,7 @@ case "$1" in
         __pid=$!
 
         wait $__pid
-        __exit_status=$?
-
-        exit $__exit_status
+        exit $?
         ;;
     *)
         exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@"

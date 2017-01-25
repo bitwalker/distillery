@@ -30,12 +30,10 @@ defmodule Mix.Releases.Utils do
   """
   @spec template_path(String.t, Keyword.t) :: {:ok, String.t} | {:error, String.t}
   def template_path(template_path, params \\ []) do
-    try do
-      {:ok, EEx.eval_file(template_path, params)}
-    rescue
-      e ->
-        {:error, e.__struct__.message(e)}
-    end
+    {:ok, EEx.eval_file(template_path, params)}
+  rescue
+    e ->
+      {:error, e.__struct__.message(e)}
   end
 
   @doc """
@@ -96,7 +94,7 @@ defmodule Mix.Releases.Utils do
     end
     lib = case File.exists?(Path.join(path, "lib")) do
       false -> {:error, "Missing lib directory"}
-      true -> :ok      
+      true -> :ok
     end
     errors =
       Enum.filter_map(
@@ -106,13 +104,11 @@ defmodule Mix.Releases.Utils do
     case Enum.empty?(errors) do
       true -> :ok
       false -> {:error ,
-        "Invalid ERTS path #{Path.expand(path)}\n" <> Enum.join(errors, "\n")}    
-    end    
+        "Invalid ERTS path #{Path.expand(path)}\n" <> Enum.join(errors, "\n")}
+    end
   end
-
-  def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts) do
-    :ok
-  end
+  def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts),
+    do: :ok
 
   @doc """
   Detects the version of ERTS in the given directory
@@ -154,7 +150,6 @@ defmodule Mix.Releases.Utils do
       {:error, _} = err -> err
     end
   end
-
 
   @doc """
   Given a path to a release output directory, return a list
@@ -210,7 +205,7 @@ defmodule Mix.Releases.Utils do
       end)
     |> Enum.sort(
       fn {_, {v1type, v1str, v1_commits_since}}, {_, {v2type, v2str, v2_commits_since}} ->
-        case { parse_version(v1str), parse_version(v2str) } do
+        case {parse_version(v1str), parse_version(v2str)} do
           {{:semantic, v1}, {:semantic, v2}} ->
             case Version.compare(v1, v2) do
               :gt -> true
@@ -247,7 +242,7 @@ defmodule Mix.Releases.Utils do
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps} = release) do
     children = get_apps(App.new(name), [])
-    apps = Enum.reduce(apps, children, fn
+    base_apps = Enum.reduce(apps, children, fn
       _, {:error, _} = err ->
         err
       {a, start_type}, acc ->
@@ -272,11 +267,11 @@ defmodule Mix.Releases.Utils do
     # Correct any ERTS libs which should be pulled from the correct
     # ERTS directory, not from the current environment.
     apps = case release.profile.include_erts do
-             true  -> apps
-             false -> apps
+             true  -> base_apps
+             false -> base_apps
              p when is_binary(p) ->
                lib_dir = Path.expand(Path.join(p, "lib"))
-               Enum.reduce(apps, [], fn
+               Enum.reduce(base_apps, [], fn
                  _, {:error, _} = err ->
                    err
                  %App{name: a} = app, acc ->
@@ -404,6 +399,8 @@ defmodule Mix.Releases.Utils do
   end
 
   # Determines if the given application directory is part of the Erlang installation
+  @spec is_erts_lib?(String.t) :: boolean
+  @spec is_erts_lib?(String.t, String.t) :: boolean
   def is_erts_lib?(app_dir), do: is_erts_lib?(app_dir, "#{:code.lib_dir()}")
   def is_erts_lib?(app_dir, lib_dir), do: String.starts_with?(app_dir, lib_dir)
 
