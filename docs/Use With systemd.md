@@ -1,4 +1,4 @@
-# Using Distillery with System D
+# Using Distillery with systemd
 
 The following is an example systemd unit file for a Distillery release:
 
