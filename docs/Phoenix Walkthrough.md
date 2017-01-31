@@ -144,7 +144,7 @@ end
 
 Remove the logo class from our application.css
 
-*file: web/static/css/app.css*
+*file: web/static/css/phoenix.css*
 ```css
 // We remove the following block of css
 .logo {
