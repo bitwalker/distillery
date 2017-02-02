@@ -274,6 +274,9 @@ fi
 # By default it's RELEASE_ROOT_DIR
 if [ -z "$RELEASE_CONFIG_DIR" ]; then
     RELEASE_CONFIG_DIR="$RELEASE_ROOT_DIR"
+    CUSTOM_CONFIG_DIR=""
+else
+    CUSTOM_CONFIG_DIR="true"
 fi
 
 # Make sure directories exist
@@ -528,6 +531,19 @@ case "$1" in
 
         "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
              "unpack_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
+        # install_release expects sys.config to be in the release directory, so
+        # we have to move the processed config there
+        TARGET_SYS_CONFIG_PATH="$ROOTDIR/releases/$TARGET_VERSION/sys.config"
+        # Honor custom config if it exists, otherwise pre-process the release
+        # config
+        if [ $CUSTOM_CONFIG_DIR ]; then
+            if [ -f "$TARGET_SYS_CONFIG_PATH" ] && ! [ -f "$TARGET_SYS_CONFIG_PATH.orig" ]; then
+                mv "$TARGET_SYS_CONFIG_PATH" "$TARGET_SYS_CONFIG_PATH.orig"
+            fi
+            cp "$SYS_CONFIG_PATH" "$TARGET_SYS_CONFIG_PATH"
+        elif [ $REPLACE_OS_VARS ]; then
+            _replace_os_vars "$TARGET_SYS_CONFIG_PATH"
+        fi
 
         _run_hooks_from_dir "$PRE_UPGRADE_HOOKS"
 

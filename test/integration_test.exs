@@ -154,14 +154,15 @@ defmodule IntegrationTest do
                   Path.join([tmpdir, "releases", "0.0.2", "standard_app.tar.gz"]))
           # Boot it, ping it, upgrade it, rpc to verify, then shut it down
           assert File.exists?(bin_path)
-          assert {_output, 0} = System.cmd(bin_path, ["start"])
+          assert {_output, 0} = System.cmd(bin_path, ["start"], env: [{"REPLACE_OS_VARS", "true"}, {"SECRET", "hunter2"}])
           :timer.sleep(1_000) # Required, since starting up takes a sec
           assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
-          assert {output, 0} = System.cmd(bin_path, ["upgrade", "0.0.2"])
+          assert {"<<\"hunter2\">>\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, secret)"])
+          assert {output, 0} = System.cmd(bin_path, ["upgrade", "0.0.2"], env: [{"REPLACE_OS_VARS", "true"}, {"SECRET", "hunter3"}])
           expected = "Made release permanent: \"0.0.2\""
           result = String.contains?(output, expected)
           unless result do
@@ -171,6 +172,7 @@ defmodule IntegrationTest do
           assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
           assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
           assert {"4\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert {"<<\"hunter3\">>\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, secret)"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["stop"])
         rescue
           e ->
