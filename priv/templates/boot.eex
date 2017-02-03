@@ -32,18 +32,18 @@ if uname | grep -q 'Darwin'; then
   # on OSX, best to install coreutils from homebrew or similar
   # to get greadlink
   if command -v greadlink >/dev/null 2>&1; then
-    SCRIPT=$(greadlink -f "$0")
+    SCRIPT="${SCRIPT:-$(greadlink -f "$0")}"
   else
-    SCRIPT=$(my_readlink_f "$0" )
+    SCRIPT="${SCRIPT:-$(my_readlink_f "$0")}"
   fi
 else
-  SCRIPT=$(readlink -f "$0" )
+  SCRIPT="${SCRIPT:-$(readlink -f "$0" )}"
 fi
 
 # Parent directory of this script
-SCRIPT_DIR=$(dirname "${SCRIPT}")
+SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "${SCRIPT}")}"
 # Root directory of all releases
-RELEASE_ROOT_DIR=$(dirname $(dirname ${SCRIPT_DIR}))
+RELEASE_ROOT_DIR="${RELEASE_ROOT_DIR:-$(dirname $(dirname ${SCRIPT_DIR}))}"
 
 # Disable flow control for run_erl
 # Flow control can cause several problems. On Linux, if you
@@ -53,23 +53,23 @@ RELEASE_ROOT_DIR=$(dirname $(dirname ${SCRIPT_DIR}))
 # will hang on writing if ScrollLock is on.
 RUN_ERL_DISABLE_FLOWCNTRL="${RUN_ERL_DISABLE_FLOWCNTRL:-true}"
 # Name of the release
-REL_NAME="<%= release_name %>"
+REL_NAME="${REL_NAME:-<%= release_name %>}"
 # Current version of the release
-REL_VSN="<%= release_version %>"
+REL_VSN="${REL_VSN:-<%= release_version %>}"
 # Current version of ERTS being used
 # If this is not present/unset, it will be detected
-<%= if ((is_binary(include_erts) or include_erts) and not is_nil(erts_vsn)) do %>ERTS_VSN="<%= erts_vsn %>"<% end %>
+<%= if ((is_binary(include_erts) or include_erts) and not is_nil(erts_vsn)) do %>ERTS_VSN="${ERTS_VSN:-<%= erts_vsn %>}"<% end %>
 # VM code loading mode, embedded by default, can also be interactive
 # See http://erlang.org/doc/man/code.html
 CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
 # Path to start_erl.data
-START_ERL_DATA="$RELEASE_ROOT_DIR/releases/start_erl.data"
+START_ERL_DATA="${START_ERL_DATA:-$RELEASE_ROOT_DIR/releases/start_erl.data}"
 # Directory containing the current version of this release
-REL_DIR="$RELEASE_ROOT_DIR/releases/$REL_VSN"
+REL_DIR="${REL_DIR:-$RELEASE_ROOT_DIR/releases/$REL_VSN}"
 # The lib directory for this release
-REL_LIB_DIR="$RELEASE_ROOT_DIR/lib"
+REL_LIB_DIR="${REL_LIB_DIR:-$RELEASE_ROOT_DIR/lib}"
 # Options passed to erl
-ERL_OPTS="<%= release.profile.erl_opts %>"
+ERL_OPTS="${ERL_OPTS:-<%= release.profile.erl_opts %>}"
 # When stdout is piped to a file, this is the directory those files will
 # be stored in. defaults to /log in the release root directory
 
@@ -78,7 +78,7 @@ RELEASE_MUTABLE_DIR="${RELEASE_MUTABLE_DIR:-$RELEASE_ROOT_DIR/var}"
 
 RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_MUTABLE_DIR/log}"
 # A string of extra options to pass to erl, here for plugins
-EXTRA_OPTS=""
+EXTRA_OPTS="${EXTRA_OPTS:-}"
 
 # Pre-start/stop event hook paths
 PRE_START_HOOKS="$REL_DIR/hooks/pre_start.d"
@@ -266,14 +266,14 @@ fi
 
 # If ERTS_VSN is not set, detect it
 if [ -z "$ERTS_VSN" ]; then
-    ERTS_VSN="$(_detect_erts_vsn)"
+    export ERTS_VSN="$(_detect_erts_vsn)"
     echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
 fi
 
 # Allow override of where to read configuration from
 # By default it's RELEASE_ROOT_DIR
 if [ -z "$RELEASE_CONFIG_DIR" ]; then
-    RELEASE_CONFIG_DIR="$RELEASE_ROOT_DIR"
+    export RELEASE_CONFIG_DIR="$RELEASE_ROOT_DIR"
 fi
 
 # Make sure directories exist
@@ -286,9 +286,9 @@ mkdir -p "$RUNNER_LOG_DIR"
 # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
 if [ -z "$VMARGS_PATH" ]; then
     if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
-        VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
+        export VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
     else
-        VMARGS_PATH="$REL_DIR/vm.args"
+        export VMARGS_PATH="$REL_DIR/vm.args"
     fi
 fi
 if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
@@ -296,7 +296,7 @@ if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
         >  "$RELEASE_MUTABLE_DIR/vm.args"
     cat  "$VMARGS_PATH"                              \
         >> "$RELEASE_MUTABLE_DIR/vm.args"
-    VMARGS_PATH=$RELEASE_MUTABLE_DIR/vm.args
+    export VMARGS_PATH=$RELEASE_MUTABLE_DIR/vm.args
 fi
 if [ $REPLACE_OS_VARS ]; then
     _replace_os_vars "$VMARGS_PATH"
@@ -306,16 +306,16 @@ fi
 # Use $RELEASE_CONFIG_DIR/sys.config if exists, otherwise releases/VSN/sys.config
 if [ -z "$SYS_CONFIG_PATH" ]; then
     if [ -f "$RELEASE_CONFIG_DIR/sys.config" ]; then
-        SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
+        export SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
     else
-        SYS_CONFIG_PATH="$REL_DIR/sys.config"
+        export SYS_CONFIG_PATH="$REL_DIR/sys.config"
     fi
 fi
 if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
     (echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead."; \
     cat  "$SYS_CONFIG_PATH")                              \
         > "$RELEASE_MUTABLE_DIR/sys.config"
-    SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
+    export SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
 fi
 if [ $REPLACE_OS_VARS ]; then
     _replace_os_vars "$SYS_CONFIG_PATH"
@@ -323,7 +323,7 @@ fi
 
 # Extract the target node name from node.args
 # Should be `-sname somename` or `-name somename@somehost`
-NAME_ARG=$(egrep '^-s?name' "$VMARGS_PATH" || true)
+export NAME_ARG=$(egrep '^-s?name' "$VMARGS_PATH" || true)
 if [ -z "$NAME_ARG" ]; then
     echo "vm.args needs to have either -name or -sname parameter."
     exit 1
@@ -331,9 +331,9 @@ fi
 
 # Extract the name type and name from the NAME_ARG for REMSH
 # NAME_TYPE should be -name or -sname
-NAME_TYPE="$(echo "$NAME_ARG" | awk '{print $1}')"
+export NAME_TYPE="$(echo "$NAME_ARG" | awk '{print $1}')"
 # NAME will be either `somename` or `somename@somehost`
-NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
+export NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
 
 # Where the pipe will be stored when using `start`
 # This is used so you can attach the running application to the current
