@@ -57,7 +57,7 @@ defmodule MyApp.ReleaseTasks do
     :init.stop()
   end
 
-  def priv_dir(app), do: "#{:code.priv_dir(:myapp)}"
+  def priv_dir(app), do: "#{:code.priv_dir(app)}"
 
   defp run_migrations_for(app) do
     IO.puts "Running migrations for #{app}"
