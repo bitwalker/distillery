@@ -102,3 +102,13 @@ stripped. To fix this, you will need to stop the currently running release and
 extract the tarball over the top of the release root directory, then start the
 release again. To prevent this from happening in the future, set
 `strip_debug_info: false` when using hot upgrades.
+
+## Permissions
+
+One of the things that often catches people off guard are the permissions required by a release, particularly with upgrades.
+The following is a list of things the release handler expects:
+
+- It can read `$HOME/.erlang.cookie` and create it if it doesn't exist
+- It can read/write the directory it's deployed to (write really only applies to upgrades, but it needs to be able to write to `$RELEASE_MUTABLE_DIR` as well, which is the `var` folder by default).
+
+If permissions are wrong, you may see a variety of errors depending on what permissions are off, but ensure the list above is satisfied, and you should be in good shape.
