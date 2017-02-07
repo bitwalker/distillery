@@ -49,7 +49,7 @@ defmodule Distillery.Mixfile do
        "docs/Use With Phoenix.md",
        "docs/Phoenix Walkthrough.md",
        "docs/Upgrades and Downgrades.md",
-       "docs/Use With System D.md",
+       "docs/Use With systemd.md",
        "docs/Common Issues.md",
        "docs/Umbrella Projects.md",
        "docs/Overlays.md",
