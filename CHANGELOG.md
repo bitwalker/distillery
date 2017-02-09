@@ -1,3 +1,36 @@
+## 1.1.1
+
+## Changed
+
+- Ignore deps not used at runtime (#189) (Saša Jurić)
+- Default environment in generated config is `Mix.env`
+- Warn about mismatched ERTS when `include_erts: false`
+
+## Fixed
+
+- Reduce chance of invalid sys.config during boot (#188) (Hugh Watkins)
+- Expose some additional boot script variables so plugins can access them
+
+## 1.1.0
+
+## Added
+
+- `describe` command for the boot script (Paul Schoenfelder)
+- Export DISTILLERY_TASK for hooks/commands (Martin Langhoff)
+- Add `pingpeer` command
+
+## Changed
+
+- Implement default behaviours for plugin callbacks (Justin Schneck)
+- Automatically import plugins from `rel/plugins` (Paul Schoenfelder)
+- Make plugin options optional when using `set plugins`
+- Various documentation fixes, additions, etc.
+
+## Fixed
+
+- #165 - Ensure trapped signals wait for node to completely shut down before exiting (Paul Schoenfelder)
+- #134 - Dependency order issues can cause kernel/stdlib to be undefined
+
 ## 1.0.0
 
 *NOTE*: This release contains breaking changes!
