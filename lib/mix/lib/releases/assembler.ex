@@ -353,6 +353,7 @@ defmodule Mix.Releases.Assembler do
         v2_apps = extract_relfile_apps(v2_rel)
         changed = get_changed_apps(v1_apps, v2_apps)
         added   = get_added_apps(v2_apps, changed)
+        removed = get_removed_apps(v1_apps, v2_apps)
         case generate_appups(changed, output_dir) do
           {:error, _} = err ->
             err
@@ -364,7 +365,7 @@ defmodule Mix.Releases.Assembler do
               [String.to_charlist(upfrom_rel)],
               [String.to_charlist(upfrom_rel)],
               [{:outdir, String.to_charlist(rel_dir)},
-               {:path, get_relup_code_paths(added, changed, output_dir)},
+               {:path, get_relup_code_paths(added, changed, removed, output_dir)},
                :silent,
                :no_warn_sasl]
             )
@@ -437,6 +438,15 @@ defmodule Mix.Releases.Assembler do
     end)
   end
 
+  # Determine the set of apps removed from v1 to v2
+  defp get_removed_apps(a, b) do
+    as = Enum.map(a, fn app -> elem(app, 0) end) |> MapSet.new
+    bs = Enum.map(b, fn app -> elem(app, 0) end) |> MapSet.new
+    MapSet.difference(as, bs)
+    |> MapSet.to_list
+    |> Enum.map(fn n -> {n, elem(List.keyfind(a, n, 0), 1)} end)
+  end
+
   # Generate .appup files for a list of {app, v1, v2}
   defp generate_appups([], _output_dir), do: :ok
   defp generate_appups([{app, v1, v2}|apps], output_dir) do
@@ -488,10 +498,11 @@ defmodule Mix.Releases.Assembler do
 
   # Get a list of code paths containing only those paths which have beams
   # from the two versions in the release being upgraded
-  defp get_relup_code_paths(added, changed, output_dir) do
+  defp get_relup_code_paths(added, changed, removed, output_dir) do
     added_paths   = get_added_relup_code_paths(added, output_dir, [])
     changed_paths = get_changed_relup_code_paths(changed, output_dir, [], [])
-    added_paths ++ changed_paths
+    removed_paths = get_removed_relup_code_paths(removed, output_dir, [])
+    added_paths ++ changed_paths ++ removed_paths
   end
   defp get_changed_relup_code_paths([], _output_dir, v1_paths, v2_paths) do
     v2_paths ++ v1_paths
@@ -511,6 +522,12 @@ defmodule Mix.Releases.Assembler do
     v2_path = Path.join([output_dir, "lib", "#{app}-#{v2}", "ebin"]) |> String.to_charlist
     v2_path_consolidated = Path.join([output_dir, "lib", "#{app}-#{v2}", "consolidated"]) |> String.to_charlist
     get_added_relup_code_paths(apps, output_dir, [v2_path_consolidated, v2_path|paths])
+  end
+  defp get_removed_relup_code_paths([], _output_dir, paths), do: paths
+  defp get_removed_relup_code_paths([{app, v1}|apps], output_dir, paths) do
+    v1_path = Path.join([output_dir, "lib", "#{app}-#{v1}", "ebin"]) |> String.to_charlist
+    v1_path_consolidated = Path.join([output_dir, "lib", "#{app}-#{v1}", "consolidated"]) |> String.to_charlist
+    get_removed_relup_code_paths(apps, output_dir, [v1_path_consolidated, v1_path | paths])
   end
 
   # Generates the nodetool utility
