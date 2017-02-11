@@ -20,7 +20,7 @@ defmodule Distillery.Mixfile do
   defp deps do
     [{:ex_doc, "~> 0.13", only: [:dev]},
      {:excoveralls, "~> 0.6", only: [:dev, :test]},
-     {:credo, github: "bitwalker/credo", branch: "spec-fix", only: [:dev]},
+     {:credo, "~> 0.6", only: [:dev]},
      {:dialyze, "~> 0.2", only: [:dev]}]
   end
 
