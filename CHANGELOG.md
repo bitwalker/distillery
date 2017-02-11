@@ -1,3 +1,9 @@
+## 1.1.2
+
+## Fixed
+
+- Handling of removed applications during hot upgrades
+
 ## 1.1.1
 
 ## Changed
