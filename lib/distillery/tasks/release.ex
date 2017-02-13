@@ -50,7 +50,7 @@ defmodule Mix.Tasks.Release do
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
-  alias Mix.Releases.{Config, Release, Profile, Logger, Assembler, Archiver}
+  alias Mix.Releases.{Config, Release, Profile, Logger, Assembler, Archiver, Errors}
 
   @spec run(OptionParser.argv) :: no_return
   def run(args) do
@@ -76,7 +76,7 @@ defmodule Mix.Tasks.Release do
                  rescue
                    e in [Config.LoadError] ->
                      file = Path.relative_to_cwd(e.file)
-                     message = e.error.__struct__.message(e.error)
+                     message = Exception.message(e)
                      message = String.replace(message, "nofile", file)
                      Logger.error "Failed to load config:\n" <>
                        "    #{message}"
@@ -98,39 +98,46 @@ defmodule Mix.Tasks.Release do
       :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
       :selected_environment => Keyword.fetch!(opts, :selected_environment),
       :selected_release => Keyword.fetch!(opts, :selected_release)}
-    no_tar? = Keyword.get(opts, :no_tar)
+    archive? = not Keyword.get(opts, :no_tar, false)
 
     # build release
     Logger.info "Assembling release.."
-    case {Assembler.assemble(config), no_tar?} do
-      {{:ok, %Release{:name => name} = release}, true} ->
+    do_release(config, archive?: archive?)
+  end
+
+  defp do_release(config, archive?: false) do
+    case Assembler.assemble(config) do
+      {:ok, %Release{name: name} = release} ->
         print_success(release, name)
-      {{:ok, %Release{:name => name, profile: %Profile{:dev_mode => true}} = release}, false} ->
+      {:error, _} = err ->
+        Logger.error Errors.format_error(err)
+    end
+  rescue
+    e ->
+      Logger.error "Release failed: " <>
+        Exception.message(e)
+  end
+  defp do_release(config, archive?: true) do
+    case Assembler.assemble(config) do
+      {:ok, %Release{name: name, profile: %Profile{dev_mode: true}} = release} ->
         Logger.warn "You have set dev_mode to true, skipping archival phase"
         print_success(release, name)
-      {{:ok, %Release{:name => name} = release}, false} ->
+      {:ok, %Release{name: name} = release} ->
         Logger.info "Packaging release.."
         case Archiver.archive(release) do
           {:ok, _archive_path} ->
             print_success(release, name)
-          {:error, reason} when is_binary(reason) ->
-            Logger.error "Problem generating release tarball:\n    " <>
-              reason
-            exit({:shutdown, 1})
-          {:error, reason} ->
-            Logger.error "Problem generating release tarball:\n    " <>
-              "#{inspect reason}"
+          {:error, _} = err ->
+            Logger.error Errors.format_error(err)
             exit({:shutdown, 1})
         end
-      {{:error, reason},_} when is_binary(reason) ->
-        Logger.error "Failed to build release:\n    " <>
-          reason
-        exit({:shutdown, 1})
-      {{:error, reason},_} ->
-        Logger.error "Failed to build release:\n    " <>
-          "#{inspect reason}"
-        exit({:shutdown, 1})
+      {:error, _} = err ->
+        Logger.error Errors.format_error(err)
     end
+  rescue
+    e ->
+      Logger.error "Release failed: " <>
+        Exception.message(e)
   end
 
   @spec print_success(Release.t, atom) :: :ok

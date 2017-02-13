@@ -7,13 +7,7 @@ defmodule IntegrationTest do
   import MixTestHelper
 
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
-  @standard_src_path Path.join([__DIR__, "fixtures", "standard_app", "rel", "standard_app"])
   @standard_output_path Path.join([__DIR__, "fixtures", "standard_app", "_build", "prod", "rel", "standard_app"])
-  @umbrella_app_path Path.join([__DIR__, "fixtures", "umbrella_app"])
-  @umbrella_src_path Path.join([__DIR__, "fixtures", "umbrella_app", "rel", "umbrella"])
-  @umbrella_output_path Path.join([__DIR__, "fixtures", "umbrella_app", "_build", "prod", "rel", "umbrella"])
-  @partial_umbrella_src_path Path.join([__DIR__, "fixtures", "umbrella_app", "rel", "partial_umbrella"])
-  @partial_umbrella_output_path Path.join([__DIR__, "fixtures", "umbrella_app", "_build", "prod", "rel", "partial_umbrella"])
 
   defmacrop with_standard_app(body) do
     quote do
@@ -26,15 +20,6 @@ defmodule IntegrationTest do
       {:ok, _} = mix("deps.compile", ["distillery"])
       {:ok, _} = mix("compile")
       {:ok, _} = mix("release.clean")
-      unquote(body)
-      File.cd!(old_dir)
-    end
-  end
-
-  defmacrop with_umbrella_app(body) do
-    quote do
-      old_dir = File.cwd!
-      File.cd!(@umbrella_app_path)
       unquote(body)
       File.cd!(old_dir)
     end

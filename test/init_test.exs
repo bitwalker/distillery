@@ -9,7 +9,6 @@ defmodule InitTest do
   @init_test_rel_path Path.join([__DIR__, "fixtures", "init_test_app", "rel"])
   @init_test_rel_config_path Path.join([__DIR__, "fixtures", "init_test_app", "rel", "config.exs"])
 
-  @init_test_config_template_path Path.join([__DIR__, "fixtures", "init_test_app", "init_test_config.eex"])
   @init_test_invalid_config_template_path Path.join([__DIR__, "fixtures", "init_test_app", "init_test_config.eex"])
 
   describe "release.init" do

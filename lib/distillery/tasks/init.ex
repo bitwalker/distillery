@@ -73,6 +73,11 @@ defmodule Mix.Tasks.Release.Init do
       "make edits as needed/desired, and then run `mix release` to build the release" <>
       IO.ANSI.reset
     )
+  rescue
+    e in [File.Error] ->
+      Logger.error "Initialization failed:\n" <>
+        "    #{Exception.message(e)}"
+      exit({:shutdown, 1})
   end
 
   @defaults [no_doc: false,

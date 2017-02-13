@@ -57,16 +57,16 @@ defmodule Mix.Releases.Appup do
                     appup = make_appup(v1, v1_path, v1_props, v2, v2_path, v2_props)
                     {:ok, appup}
                   false ->
-                    {:error, {:mismatched_versions, :newer, expected: v2, got: consulted_v2_vsn}}
+                    {:error, {:appups, {:mismatched_versions, [version: :next, expected: v2, got: consulted_v2_vsn]}}}
                 end
-              _ ->
-                {:error, {:invalid_dotapp, v2_dotapp}}
+              {:error, reason} ->
+                {:error, {:appups, :file, {:invalid_dotapp, reason}}}
             end
           false ->
-            {:error, {:mismatched_versions, :older, expected: v1, got: consulted_v1_vsn}}
+            {:error, {:appups, {:mismatched_versions, [version: :previous, expected: v1, got: consulted_v1_vsn]}}}
         end
-      _ ->
-        {:error, {:invalid_dotapp, v1_dotapp}}
+      {:error, reason} ->
+        {:error, {:appups, :file, {:invalid_dotapp, reason}}}
     end
   end
 
@@ -228,5 +228,4 @@ defmodule Mix.Releases.Appup do
     {:value, {:vsn, vsn}} = :lists.keysearch(:vsn, 1, props)
     List.to_string(vsn)
   end
-
 end

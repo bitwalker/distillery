@@ -2,7 +2,6 @@ defmodule OverlayTest do
   use ExUnit.Case
   alias Mix.Releases.Overlays
 
-  @src_dir Path.join([__DIR__, "fixtures", "mock_app", "rel", "mock_app"])
   @output_dir Path.join([__DIR__, "fixtures", "mock_app", "_build", "test", "rel", "mock_app"])
 
   setup_all do
@@ -23,15 +22,15 @@ defmodule OverlayTest do
 
     test "invalid template file produces error" do
       file = Path.join([__DIR__, "fixtures", "mock_app", "invalid_tmpl.eex"])
-      expected = "test/fixtures/mock_app/invalid_tmpl.eex:1: undefined function foo/0"
-      assert {:error, {:template_file, ^expected}} = Overlays.apply(@output_dir, [{:template, file, "invalid_tmpl.txt"}], [])
+      expected = %CompileError{description: "undefined function foo/0", file: file, line: 1}
+      assert {:error, {:template, ^expected}} = Overlays.apply(@output_dir, [{:template, file, "invalid_tmpl.txt"}], [])
     end
 
     test "file system errors are handled" do
       from = Path.join([__DIR__, "fixtures", "mock_app", "nodir"])
       to = "nodir"
       overlay = {:copy, from, to}
-      assert {:error, {:overlay_failed, :enoent, ^from, ^overlay}} = Overlays.apply(@output_dir, [overlay], [])
+      assert {:error, {:overlay_failed, :file, {:enoent, ^from, ^overlay}}} = Overlays.apply(@output_dir, [overlay], [])
     end
   end
 

@@ -161,7 +161,7 @@ defmodule Mix.Releases.Plugin do
   @spec after_cleanup(Release.t, [String.t]) :: :ok | {:error, term}
   def after_cleanup(release, args), do: run(release.profile.plugins, :after_package, args)
 
-  @spec call(atom(), Release.t) :: {:ok, term} | {:error, {:plugin_failed, term}}
+  @spec call(atom(), Release.t) :: {:ok, term} | {:error, {:plugin, term}}
   defp call(callback, release) do
     Enum.map(release.profile.plugins, fn
         {_p, _opts} = p -> p
@@ -172,16 +172,19 @@ defmodule Mix.Releases.Plugin do
   defp call([], _, release), do: {:ok, release}
   defp call([{plugin, opts}|plugins], callback, release) do
     apply_plugin(plugin, callback, release, opts)
+  rescue
+    e ->
+      {:error, {:plugin, e}}
   catch
     kind, err ->
-      {:error, Exception.format(kind, err, System.stacktrace)}
+      {:error, {:plugin, {kind, err}}}
   else
     nil ->
       call(plugins, callback, release)
     %Release{} = updated ->
       call(plugins, callback, updated)
     result ->
-      {:error, {:plugin_failed, :bad_return_value, result}}
+      {:error, {:plugin, {:plugin_failed, :bad_return_value, result}}}
   end
 
   # TODO: remove once the /1 plugins are deprecated
@@ -193,13 +196,16 @@ defmodule Mix.Releases.Plugin do
     end
   end
 
-  @spec run([atom()], atom, [String.t]) :: :ok | {:error, {:plugin_failed, term}}
+  @spec run([atom()], atom, [String.t]) :: :ok | {:error, {:plugin, term}}
   defp run([], _, _), do: :ok
   defp run([{plugin, opts}|plugins], callback, args) do
     apply_plugin(plugin, callback, args, opts)
+  rescue
+    e ->
+      {:error, {:plugin, e}}
   catch
     kind, err ->
-      {:error, Exception.format(kind, err, System.stacktrace)}
+      {:error, {:plugin, {kind, err}}}
   else
     _ ->
       run(plugins, callback, args)

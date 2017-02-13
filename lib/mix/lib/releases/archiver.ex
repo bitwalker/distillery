@@ -23,6 +23,7 @@ defmodule Mix.Releases.Archiver do
   defp make_tar(release) do
     name = "#{release.name}"
     opts = [
+      :silent,
       {:path, ['#{Path.join([release.profile.output_dir, "lib", "*", "ebin"])}']},
       {:dirs, [:include | case release.profile.include_src do
                           true  -> [:src, :c_src]
@@ -44,6 +45,8 @@ defmodule Mix.Releases.Archiver do
     Logger.debug "Writing tarball to #{rel_path}.tar.gz"
     case :systools.make_tar(rel_path, opts) do
       :ok ->
+        :ok
+      {:ok, _mod, []} ->
         :ok
       {:ok, mod, warnings} ->
         {:error, {:tar_generation_warn, mod, warnings}}
@@ -121,11 +124,18 @@ defmodule Mix.Releases.Archiver do
         {:ok, _} <-  File.rm_rf(tmpdir) do
       {:ok, tarfile}
     else
-      {:error, reason} ->
-        {:error, "Failed to create temporary directory `#{inspect reason}`"}
+      {:error, {:archiver, _}} = err ->
+        err
       {:error, reason, file} ->
-        {:error, "Failed to remove #{file} (#{inspect reason})"}
+        {:error, {:archiver, {:file, reason, file}}}
+      {:error, {name, reason}} when is_list(name) ->
+        {:error, {:archiver, {:erl_tar, {name, reason}}}}
+      {:error, _reason} = err ->
+        err
     end
+  catch
+    kind, err ->
+      {:error, {:archiver, Exception.normalize(kind, err, System.stacktrace)}}
   end
 
   # Strips debug info from the release, if so configured
@@ -143,7 +153,7 @@ defmodule Mix.Releases.Archiver do
       {:ok, _} ->
         :ok
       {:error, :beam_lib, reason} ->
-        {:error, "failed to strip release: #{inspect reason}"}
+        {:error, {:archiver, :beam_lib, reason}}
     end
   end
   defp strip_release(%Release{is_upgrade: true, profile: %Profile{strip_debug_info: true, dev_mode: false}}, _strip_path) do

@@ -32,8 +32,7 @@ defmodule Mix.Releases.Utils do
   def template_path(template_path, params \\ []) do
     {:ok, EEx.eval_file(template_path, params)}
   rescue
-    e ->
-      {:error, e.__struct__.message(e)}
+    e -> {:error, {:template, e}}
   end
 
   @doc """
@@ -41,7 +40,13 @@ defmodule Mix.Releases.Utils do
   """
   @spec write_term(String.t, term) :: :ok | {:error, term}
   def write_term(path, term) do
-    :file.write_file('#{path}', :io_lib.fwrite('~p.\n', [term]), [encoding: :utf8])
+    path = String.to_charlist(path)
+    contents = :io_lib.fwrite('~p.\n', [term])
+    case :file.write_file(path, contents, [encoding: :utf8]) do
+      :ok -> :ok
+      {:error, reason} ->
+        {:error, {:write_terms, :file, reason}}
+    end
   end
 
   @doc """
@@ -52,7 +57,11 @@ defmodule Mix.Releases.Utils do
     contents = String.duplicate("~p.\n\n", Enum.count(terms))
        |> String.to_char_list
        |> :io_lib.fwrite(Enum.reverse(terms))
-    :file.write_file('#{path}', contents, [encoding: :utf8])
+    case :file.write_file('#{path}', contents, [encoding: :utf8]) do
+      :ok -> :ok
+      {:error, reason} ->
+        {:error, {:write_terms, :file, reason}}
+    end
   end
 
   @doc """
@@ -63,10 +72,8 @@ defmodule Mix.Releases.Utils do
     case :file.consult(String.to_charlist(path)) do
       {:ok, _} = result ->
         result
-      {:error, {line, type, msg}} ->
-        {:error, "Parse failed - #{path}@#{line} (#{type}): #{msg}"}
       {:error, reason} ->
-        {:error, "Unable to access #{path} (#{reason})"}
+        {:error, {:read_terms, :file, reason}}
     end
   end
 
@@ -81,30 +88,30 @@ defmodule Mix.Releases.Utils do
   If no ERTS path is specified it's fine. Distillery will work out
   the system ERTS
   """
-  @spec validate_erts(String.t | nil | boolean) :: :ok | {:error, String.t}
+  @spec validate_erts(String.t | nil | boolean) :: :ok | {:error, [{:error, term}]}
   def validate_erts(path) when is_binary(path) do
     erts = case Path.join(path, "erts-*") |> Path.wildcard |> Enum.count do
-      0 -> {:error, "Missing erts-* directory"}
+      0 -> {:error, {:invalid_erts, :missing_directory}}
       1 -> :ok
-      _ -> {:error, "Too many erts-* directory"}
+      _ -> {:error, {:invalid_erts, :too_many}}
     end
     bin = case File.exists?(Path.join(path, "bin")) do
-      false -> {:error, "Missing bin directory"}
+      false -> {:error, {:invalid_erts, :missing_bin}}
       true -> :ok
     end
     lib = case File.exists?(Path.join(path, "lib")) do
-      false -> {:error, "Missing lib directory"}
+      false -> {:error, {:invalid_erts, :missing_lib}}
       true -> :ok
     end
     errors =
       Enum.filter_map(
         [erts, bin, lib],
-        fn (x) -> x != :ok end,
-        fn {:error, message} -> message end)
+        fn x -> x != :ok end,
+        fn {:error, _} = err -> err end)
     case Enum.empty?(errors) do
       true -> :ok
-      false -> {:error ,
-        "Invalid ERTS path #{Path.expand(path)}\n" <> Enum.join(errors, "\n")}
+      false ->
+        {:error, errors}
     end
   end
   def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts),
@@ -123,7 +130,7 @@ defmodule Mix.Releases.Utils do
       [<<"erts-", vsn::binary>>] ->
         {:ok, vsn}
       _ ->
-        {:error, "invalid ERTS path, cannot determine version"}
+        {:error, {:invalid_erts, :cannot_determine_version}}
     end
   end
 
@@ -146,8 +153,10 @@ defmodule Mix.Releases.Utils do
                       Path.join(["/tmp", ".tmp_dir#{unique_num}"])
                   end
     case File.mkdir_p(tmpdir_path) do
-      :ok -> {:ok, tmpdir_path}
-      {:error, _} = err -> err
+      :ok ->
+        {:ok, tmpdir_path}
+      {:error, reason} ->
+        {:error, {:mkdir_temp, :file, reason}}
     end
   end
 
@@ -243,8 +252,8 @@ defmodule Mix.Releases.Utils do
   def get_apps(%Release{name: name, applications: apps} = release) do
     children = get_apps(App.new(name), [])
     base_apps = Enum.reduce(apps, children, fn
-      _, {:error, _} = err ->
-        err
+      _, {:error, reason} ->
+        {:error, {:apps, reason}}
       {a, start_type}, acc ->
         cond do
           App.valid_start_type?(start_type) ->
@@ -256,7 +265,7 @@ defmodule Mix.Releases.Utils do
                 get_apps(App.new(a, start_type), acc)
             end
           :else ->
-            {:error, "Invalid start type for #{a}: #{start_type}"}
+            {:error, {:apps, {:invalid_start_type, a, start_type}}}
         end
       a, acc when is_atom(a) ->
         case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
@@ -272,8 +281,10 @@ defmodule Mix.Releases.Utils do
              p when is_binary(p) ->
                lib_dir = Path.expand(Path.join(p, "lib"))
                Enum.reduce(base_apps, [], fn
-                 _, {:error, _} = err ->
+                 _, {:error, {:apps, _}} = err ->
                    err
+                 _, {:error, reason} ->
+                   {:error, {:apps, reason}}
                  %App{name: a} = app, acc ->
                     case is_erts_lib?(app.path) do
                       false ->
@@ -285,9 +296,7 @@ defmodule Mix.Releases.Utils do
                             [%{app | :vsn => corrected_app_vsn,
                                      :path => corrected_app_path} | acc]
                           _ ->
-                            {:error, "You have included a version of ERTS which does not contain a required library\n" <>
-                              "    Required: #{inspect a}\n" <>
-                              "    Search path: #{Path.relative_to_cwd(lib_dir)}"}
+                            {:error, {:apps, {:missing_required_lib, a, lib_dir}}}
                         end
                     end
                end)

@@ -37,7 +37,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Determines the correct environment to assemble in
-  @spec select_environment(Config.t) :: {:ok, Environment.t} | {:error, :no_environments}
+  @spec select_environment(Config.t) :: {:ok, Environment.t} | {:error, {:assembler, :no_environments}}
   def select_environment(%Config{selected_environment: :default, default_environment: :default} = c),
     do: select_environment(Map.fetch(c.environments, :default))
   def select_environment(%Config{selected_environment: :default, default_environment: name} = c),
@@ -45,10 +45,10 @@ defmodule Mix.Releases.Assembler do
   def select_environment(%Config{selected_environment: name} = c),
     do: select_environment(Map.fetch(c.environments, name))
   def select_environment({:ok, _} = e), do: e
-  def select_environment(_),            do: {:error, :no_environments}
+  def select_environment(_),            do: {:error, {:assembler, :missing_environment}}
 
   # Determines the correct release to assemble
-  @spec select_release(Config.t) :: {:ok, Release.t} | {:error, :no_releases}
+  @spec select_release(Config.t) :: {:ok, Release.t} | {:error, {:assembler, :no_releases}}
   def select_release(%Config{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
   def select_release(%Config{selected_release: :default, default_release: name} = c),
@@ -56,7 +56,7 @@ defmodule Mix.Releases.Assembler do
   def select_release(%Config{selected_release: name} = c),
     do: select_release(Map.fetch(c.releases, name))
   def select_release({:ok, _} = r), do: r
-  def select_release(_),            do: {:error, :no_releases}
+  def select_release(_),            do: {:error, {:assembler, :missing_release}}
 
   # Applies the environment profile to the release profile.
   @spec apply_environment(Release.t, Environment.t) :: {:ok, Release.t} | {:error, term}
@@ -116,17 +116,13 @@ defmodule Mix.Releases.Assembler do
                     {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
                 end
               ^current_version ->
-                Logger.error "Upgrade from #{current_version} to #{current_version} failed:\n  " <>
-                  "Upfrom version and current version are the same"
-                {:error, :bad_upgrade_spec}
+                {:error, {:assembler, {:bad_upgrade_spec, :upfrom_is_current, current_version}}}
               version when is_binary(version) ->
                 Logger.debug "Upgrading #{release.name} from #{version} to #{current_version}"
                 upfrom_path = Path.join([release.profile.output_dir, "releases", version])
                 case File.exists?(upfrom_path) do
                   false ->
-                    Logger.error "Upgrade from #{version} to #{current_version} failed:\n  " <>
-                      "#{version} does not exist at #{upfrom_path}"
-                    {:error, :bad_upgrade_spec}
+                    {:error, {:assembler, {:bad_upgrade_spec, :doesnt_exist, version, upfrom_path}}}
                   true ->
                     {:ok, %{release | :is_upgrade => true, :upgrade_from => version}}
                 end
@@ -156,7 +152,7 @@ defmodule Mix.Releases.Assembler do
       {:ok, release}
     catch
       kind, err ->
-        {:error, Exception.format(kind, err, System.stacktrace)}
+        {:error, {:assembler, {kind, err}}}
     end
   end
 
@@ -190,17 +186,13 @@ defmodule Mix.Releases.Assembler do
     case File.ln_s(app_dir, target_dir) do
       :ok -> :ok
       {:error, reason} ->
-        raise "unable to link app directory:\n  " <>
-          "#{app_dir} -> #{target_dir}\n  " <>
-          "Reason: #{reason}"
+        {:error, {:assembler, :file, {:copy_app, app_dir, target_dir, reason}}}
     end
   end
   defp copy_app(app_dir, target_dir, false, include_src?) do
     case File.mkdir_p(target_dir) do
       {:error, reason} ->
-        raise "unable to create app directory:\n  " <>
-          "#{target_dir}\n  " <>
-          "Reason: #{reason}"
+        {:error, {:assembler, :file, {:copy_app, target_dir, reason}}}
       :ok ->
         valid_dirs = cond do
           include_src? ->
@@ -221,24 +213,24 @@ defmodule Mix.Releases.Assembler do
               case File.cp_r(child, tc) do
                 {:ok, _} -> :ok
                 {:error, reason, file} ->
-                  raise "unable to copy app directory:\n " <>
-                    "#{child} -> #{tc}\n  " <>
-                    "File: #{file}\n  " <>
-                    "Reason: #{reason}"
+                  throw {:error, {:assembler, :file, {reason, file}}}
               end
             end)
           else
             case File.cp_r(p, t) do
               {:ok, _} -> :ok
               {:error, reason, file} ->
-                raise "unable to copy app directory:\n  " <>
-                  "#{p} -> #{t}\n  " <>
-                  "File: #{file}\n  " <>
-                  "Reason: #{reason}"
+                throw {:error, {:assembler, :file, {reason, file}}}
             end
           end
         end)
     end
+  rescue
+    e in [File.Error] ->
+      {:error, {:assembler, e}}
+  catch
+    :error, {:assembler, _, _} = err ->
+      {:error, err}
   end
 
   defp remove_symlink_or_dir!(path) do
@@ -251,6 +243,9 @@ defmodule Mix.Releases.Assembler do
         end
     end
     :ok
+  rescue
+    e in [File.Error] ->
+      {:error, {:assembler, e}}
   end
 
   defp symlink?(path) do
@@ -267,7 +262,7 @@ defmodule Mix.Releases.Assembler do
     rel_dir = Path.join([output_dir, "releases", "#{release.version}"])
     case File.mkdir_p(rel_dir) do
       {:error, reason} ->
-        {:error, "failed to create release directory: #{rel_dir}\n  Reason: #{reason}"}
+        {:error, {:assembler, :file, {reason, rel_dir}}}
       :ok ->
         release_file     = Path.join(rel_dir, "#{relname}.rel")
         start_clean_file = Path.join(rel_dir, "start_clean.rel")
@@ -330,7 +325,18 @@ defmodule Mix.Releases.Assembler do
          :ok <- generate_vm_args(release, rel_dir),
          :ok <- generate_sys_config(release, rel_dir),
          :ok <- include_erts(release),
-         :ok <- make_boot_script(release, rel_dir), do: :ok
+         :ok <- make_boot_script(release, rel_dir) do
+      :ok
+    else
+      {:error, {:assembler, _}} = err ->
+        err
+      {:error, {:assembler, _, _}} = err ->
+        err
+      {:error, reason, file} ->
+        {:error, {:assembler, :file, {reason, file}}}
+      {:error, reason} ->
+        {:error, {:assembler, reason}}
+    end
   end
 
   # Generates a relup and .appup for all upgraded applications during upgrade releases
@@ -341,13 +347,11 @@ defmodule Mix.Releases.Assembler do
     v2_rel = Path.join(rel_dir, "#{name}.rel")
     case {File.exists?(v1_rel), File.exists?(v2_rel)} do
       {false, true} ->
-        {:error, "Missing .rel for #{name}:#{upfrom} at #{v1_rel}"}
+        {:error, {:assembler, {:missing_rel, name, upfrom, v1_rel}}}
       {true, false} ->
-        {:error, "Missing .rel for #{name}:#{release.version} at #{v2_rel}"}
+        {:error, {:assembler, {:missing_rel, name, release.version, v2_rel}}}
       {false, false} ->
-        {:error, "Missing .rels\n  " <>
-          "#{name}:#{upfrom} @ #{v1_rel}\n  " <>
-          "#{name}:#{release.version} @ #{v2_rel}"}
+        {:error, {:assembler, {:missing_rels, name, upfrom, release.version, v1_rel, v2_rel}}}
       {true, true} ->
         v1_apps = extract_relfile_apps(v1_rel)
         v2_apps = extract_relfile_apps(v2_rel)
@@ -379,7 +383,7 @@ defmodule Mix.Releases.Assembler do
                 Utils.write_term(Path.join(rel_dir, "relup"), relup)
               {:error, mod, errors} ->
                 error = format_systools_error(mod, errors)
-                {:error, error}
+                {:error, {:assembler, error}}
             end
         end
     end
@@ -392,7 +396,7 @@ defmodule Mix.Releases.Assembler do
     |> Enum.map(fn e -> "    " <> e end)
     |> Enum.join("\n")
     |> String.trim_trailing
-    "\n#{warning}"
+    "#{warning}"
   end
 
   defp format_systools_error(mod, errors) do
@@ -402,16 +406,18 @@ defmodule Mix.Releases.Assembler do
     |> Enum.map(fn e -> "    " <> e end)
     |> Enum.join("\n")
     |> String.trim_trailing
-    "\n#{error}"
+    "#{error}"
   end
 
   # Get a list of applications from the .rel file at the given path
   defp extract_relfile_apps(path) do
     case Utils.read_terms(path) do
-      {:error, err} -> raise err
+      {:error, _} = err ->
+        throw err
       {:ok, [{:release, _rel, _erts, apps}]} ->
         Enum.map(apps, fn {a, v} -> {a, v}; {a, v, _start_type} -> {a, v} end)
-      {:ok, other} -> raise "malformed relfile (#{path}): #{inspect other}"
+      {:ok, other} ->
+        throw {:error, {:assembler, {:malformed_relfile, path, other}}}
     end
   end
 
@@ -474,9 +480,8 @@ defmodule Mix.Releases.Assembler do
           "    Backing up appfile with .bak extension and generating new one.."
         :ok = File.cp!(appup_path, "#{appup_path}.bak")
         case Appup.make(app, v1, v2, v1_path, v2_path) do
-          {:error, reason} ->
-            {:error, "Failed to generate appup for #{app}:\n    " <>
-              inspect(reason)}
+          {:error, _} = err ->
+            err
           {:ok, appup} ->
             :ok = Utils.write_term(appup_path, appup)
             Logger.info "Generated .appup for #{app} #{v1} -> #{v2}"
@@ -485,9 +490,8 @@ defmodule Mix.Releases.Assembler do
       :else ->
         Logger.debug "#{app} requires an appup, but it wasn't provided, one will be generated for you.."
         case Appup.make(app, v1, v2, v1_path, v2_path) do
-          {:error, reason} ->
-            {:error, "Failed to generate appup for #{app}:\n    " <>
-              inspect(reason)}
+          {:error, _} = err ->
+            err
           {:ok, appup} ->
             :ok = Utils.write_term(appup_path, appup)
             Logger.info "Generated .appup for #{app} #{v1} -> #{v2}"
@@ -536,8 +540,14 @@ defmodule Mix.Releases.Assembler do
     with {:ok, node_tool_file} = Utils.template(:nodetool),
          {:ok, release_utils_file} = Utils.template(:release_utils),
          :ok <- File.write(Path.join(bin_dir, "nodetool"), node_tool_file),
-         :ok <- File.write(Path.join(bin_dir, "release_utils.escript"), release_utils_file),
-      do: :ok
+         :ok <- File.write(Path.join(bin_dir, "release_utils.escript"), release_utils_file) do
+      :ok
+    else
+      {:error, {:template, _}} = err ->
+        err
+      {:error, reason} ->
+        {:error, {:assembler, :file, reason}}
+    end
   end
 
   # Generates start_erl.data
@@ -550,7 +560,8 @@ defmodule Mix.Releases.Assembler do
     when is_binary(path) do
     Logger.debug "Generating start_erl.data"
     case Utils.detect_erts_version(path) do
-      {:error, _} = err -> err
+      {:error, _} = err ->
+        err
       {:ok, vsn} ->
         contents = "#{vsn} #{release.version}"
         File.write(Path.join([rel_dir, "..", "start_erl.data"]), contents)
@@ -567,16 +578,30 @@ defmodule Mix.Releases.Assembler do
     Logger.debug "Generating vm.args"
     overlay_vars = rel.profile.overlay_vars
     with {:ok, contents} <- Utils.template("vm.args", overlay_vars),
-         :ok             <- File.write(Path.join(rel_dir, "vm.args"), contents),
-      do: :ok
+         :ok             <- File.write(Path.join(rel_dir, "vm.args"), contents) do
+      :ok
+    else
+      {:error, {:template, _}} = err ->
+        err
+      {:error, reason} ->
+        {:error, {:assembler, :file, reason}}
+    end
   end
   defp generate_vm_args(%Release{profile: %Profile{vm_args: path}} = rel, rel_dir) do
     Logger.debug "Generating vm.args from #{Path.relative_to_cwd(path)}"
     overlay_vars = rel.profile.overlay_vars
     with {:ok, path}      <- Overlays.template_str(path, overlay_vars),
          {:ok, templated} <- Overlays.template_file(path, overlay_vars),
-         :ok              <- File.write(Path.join(rel_dir, "vm.args"), templated),
-      do: :ok
+         :ok              <- File.write(Path.join(rel_dir, "vm.args"), templated) do
+      :ok
+    else
+      {:error, {:template, _}} = err ->
+        err
+      {:error, {:template_str, _}} = err ->
+        err
+      {:error, reason} ->
+        {:error, {:assembler, :file, reason}}
+    end
   end
 
   # Generates sys.config
@@ -585,24 +610,24 @@ defmodule Mix.Releases.Assembler do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
     overlay_vars = rel.profile.overlay_vars
     base_config  = generate_base_config(base_config_path)
-    res = with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
-               {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
-               {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
-               {:ok, sys_config} <- :erl_parse.parse_term(tokens),
-               :ok               <- validate_sys_config(sys_config),
-               merged            <- Mix.Config.merge(base_config, sys_config),
-             do: Utils.write_term(Path.join(rel_dir, "sys.config"), merged)
-    case res do
-      {:error, :invalid_sys_config, reason} ->
-        {:error, "invalid sys.config: #{reason}"}
-      {:error, {_loc, _module, description}, {line, col}} ->
-        {:error, "invalid sys.config at line #{line}, column #{col}: #{inspect description}"}
-      {:error, {_loc, _module, description}, line} ->
-        {:error, "invalid sys.config at line #{line}: #{inspect description}"}
-      {:error, {line, _module, description}} ->
-        {:error, "could not parse sys.config at line #{line}: #{inspect description}"}
-      other ->
-        other
+    with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
+         {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
+         {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
+         {:ok, sys_config} <- :erl_parse.parse_term(tokens),
+         :ok               <- validate_sys_config(sys_config),
+         merged            <- Mix.Config.merge(base_config, sys_config) do
+      Utils.write_term(Path.join(rel_dir, "sys.config"), merged)
+    else
+      {:error, {:template, _}} = err ->
+        err
+      {:error, {:template_str, _}} = err ->
+        err
+      {:error, {:assembler, _}} = err ->
+        err
+      {:error, error_info, _end_loc} when is_tuple(error_info) ->
+        {:error, {:assembler, {:invalid_sys_config, error_info}}}
+      {:error, error_info} when is_tuple(error_info) ->
+        {:error, {:assembler, {:invalid_sys_config, error_info}}}
     end
   end
   defp generate_sys_config(%Release{profile: %Profile{config: config_path}}, rel_dir) do
@@ -637,19 +662,18 @@ defmodule Mix.Releases.Assembler do
           is_config? ->
             :ok
           :else ->
-            {:error, :invalid_sys_config, "must be a list of {:app_name, [{:key, value}]} tuples"}
+            {:error, {:assembler, {:invalid_sys_config, :invalid_terms}}}
         end
       :else ->
-        {:error, :invalid_sys_config, "must be a keyword list"}
+        {:error, {:assembler, {:invalid_sys_config, :invalid_terms}}}
     end
   end
-  defp validate_sys_config(_sys_config), do: {:error, :invalid_sys_config, "must be a keyword list"}
+  defp validate_sys_config(_sys_config), do: {:error, {:assembler, {:invalid_sys_config, :invalid_terms}}}
 
   # Adds ERTS to the release, if so configured
   defp include_erts(%Release{profile: %Profile{include_erts: false}, is_upgrade: false}), do: :ok
   defp include_erts(%Release{profile: %Profile{include_erts: false}, is_upgrade: true}) do
-    {:error, "Hot upgrades will fail when include_erts: false is set,\n" <>
-      "    you need to set include_erts to true or a path if you plan to use them!"}
+    {:error, {:assembler, :erts_missing_for_upgrades}}
   end
   defp include_erts(%Release{profile: %Profile{include_erts: include_erts, output_dir: output_dir}} = release) do
     prefix = case include_erts do
@@ -668,7 +692,7 @@ defmodule Mix.Releases.Assembler do
                          false ->
                            pfx = Path.relative_to_cwd(prefix)
                            maybe_path = Path.relative_to_cwd(Path.expand(Path.join(prefix, "..")))
-                           {:error, "invalid ERTS path, did you mean #{maybe_path} instead of #{pfx}?"}
+                           {:error, {:assembler, {:invalid_erts_path, pfx, maybe_path}}}
                        end
                      {:error, _} = err -> err
                    end
@@ -697,9 +721,9 @@ defmodule Mix.Releases.Assembler do
           :ok
         else
           {:error, reason} ->
-            {:error, "Failed during include_erts: #{inspect reason}"}
+            {:error, {:assembler, :file, {:include_erts, reason}}}
           {:error, reason, file} ->
-            {:error, "Failed to remove file during include_erts: #{inspect reason} #{file}"}
+            {:error, {:assembler, :file, {:include_erts, reason, file}}}
         end
     end
   end
@@ -710,7 +734,8 @@ defmodule Mix.Releases.Assembler do
       true  ->
         case File.rm_rf(path) do
           {:ok, _} -> :ok
-          {:error, _, _} = err -> err
+          {:error, reason, file} ->
+            {:error, {:assembler, :file, {reason, file}}}
         end
     end
   end
@@ -739,13 +764,13 @@ defmodule Mix.Releases.Assembler do
         with :ok <- create_RELEASES(output_dir, Path.join(["releases", "#{release.version}", "#{release.name}.rel"])),
              :ok <- create_start_clean(rel_dir, output_dir, options), do: :ok
       :error ->
-        {:error, {:unknown, release_file}}
+        {:error, {:assembler, {:make_boot_script, {:unknown, release_file}}}}
       {:ok, mod, warnings} ->
         Logger.warn format_systools_warning(mod, warnings)
         :ok
       {:error, mod, errors} ->
         error = format_systools_error(mod, errors)
-        {:error, error}
+        {:error, {:assembler, {:make_boot_script, error}}}
     end
   end
 
@@ -784,10 +809,10 @@ defmodule Mix.Releases.Assembler do
           :ok
         else
           {:error, reason} ->
-            {:error, "Failed during create_start_clean: #{inspect reason}"}
+            {:error, {:assembler, :file, {:start_clean, reason}}}
         end
       :error ->
-        {:error, {:unknown, :create_start_clean}}
+        {:error, {:assembler, {:start_clean, :unknown}}}
       {:ok, _, []} ->
         with :ok <- File.cp(Path.join(rel_dir, "start_clean.boot"),
                             Path.join([output_dir, "bin", "start_clean.boot"])),
@@ -796,14 +821,14 @@ defmodule Mix.Releases.Assembler do
            :ok
         else
           {:error, reason} ->
-            {:error, "Failed during create_start_clean: #{inspect reason}"}
+            {:error, {:assembler, :file, {:start_clean, reason}}}
         end
       {:ok, mod, warnings} ->
         Logger.warn format_systools_warning(mod, warnings)
         :ok
       {:error, mod, errors} ->
         error = format_systools_error(mod, errors)
-        {:error, error}
+        {:error, {:assembler, {:start_clean, error}}}
     end
   end
 

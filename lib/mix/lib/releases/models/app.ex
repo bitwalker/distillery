@@ -34,6 +34,19 @@ defmodule Mix.Releases.App do
   @spec new(atom, start_type | nil) :: nil | __MODULE__.t | {:error, String.t}
   def new(name, start_type)
     when is_atom(name) and start_type in [nil, :permanent, :temporary, :transient, :load, :none] do
+    dep = Enum.find(Mix.Dep.loaded([]), fn %Mix.Dep{app: ^name} -> true; _ -> false end)
+    cond do
+      is_nil(dep) ->
+        do_new(name, start_type)
+      get_in(dep, [:opts, :runtime]) === false ->
+        nil
+      :else ->
+        do_new(name, start_type)
+    end
+  end
+  def new(name, start_type), do: {:error, {:apps, {:invalid_start_type, name, start_type}}}
+
+  defp do_new(name, start_type) do
     _ = Application.load(name)
     case Application.spec(name) do
       nil -> nil
@@ -54,7 +67,6 @@ defmodule Mix.Releases.App do
                     path: path}
     end
   end
-  def new(name, start_type), do: {:error, "Invalid start type for #{name}: #{start_type}"}
 
   @doc """
   Determines if the provided start type is a valid one.

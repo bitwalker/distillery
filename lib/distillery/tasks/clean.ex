@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Release.Clean do
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
-  alias Mix.Releases.{Logger, App, Utils, Plugin, Assembler, Release, Config, Profile}
+  alias Mix.Releases.{Logger, App, Utils, Plugin, Assembler, Release, Config, Profile, Errors}
 
   @spec run(OptionParser.argv) :: no_return
   def run(args) do
@@ -46,7 +46,7 @@ defmodule Mix.Tasks.Release.Clean do
                  rescue
                    e in [Config.LoadError] ->
                      file = Path.relative_to_cwd(e.file)
-                     message = e.error.__struct__.message(e.error)
+                     message = Exception.message(e)
                      message = String.replace(message, "nofile", file)
                      Logger.error "Failed to load config:\n" <>
                        "    #{message}"
@@ -71,8 +71,13 @@ defmodule Mix.Tasks.Release.Clean do
         :else ->
           clean!(config, args)
       end
+    else
+      {:error, _reason} = err ->
+        err
+        |> Errors.format_error
+        |> Logger.error
+        exit({:shutdown, 1})
     end
-
   end
 
   @spec clean_all!(String.t) :: :ok | no_return
@@ -84,6 +89,11 @@ defmodule Mix.Tasks.Release.Clean do
     end
     File.rm_rf!(output_dir)
     Logger.success "Clean successful!"
+  rescue
+    e in [File.Error] ->
+      Logger.error "Unable to clean #{Path.relative_to_cwd(output_dir)}:\n" <>
+        "    #{Exception.message(e)}"
+      exit({:shutdown, 1})
   end
 
   @spec clean!(Mix.Releases.Config.t, [String.t]) :: :ok | no_return
@@ -101,20 +111,29 @@ defmodule Mix.Tasks.Release.Clean do
   @spec clean_release(Release.t, [String.t]) :: :ok | :no_return
   defp clean_release(%Release{profile: %Profile{output_dir: output_dir}} = release, args) do
     # Remove erts
-    erts_paths = Path.wildcard(Path.join(output_dir, "erts-*"))
-    for erts <- erts_paths do
-      File.rm_rf!(erts)
-    end
+    Path.wildcard(Path.join(output_dir, "erts-*"))
+    |> Enum.each(&clean_path/1)
     # Remove libs
-    for %App{name: name, vsn: vsn} <- Utils.get_apps(release) do
-      File.rm_rf!(Path.join([output_dir, "lib", "#{name}-#{vsn}}"]))
-    end
+    release
+    |> Utils.get_apps()
+    |> Enum.map(fn %App{name: name, vsn: vsn} ->
+      clean_path(Path.join([output_dir, "lib", "#{name}-#{vsn}"]))
+    end)
     # Remove releases/start_erl.data
-    File.rm(Path.join([output_dir, "releases", "start_erl.data"]))
+    clean_path(Path.join([output_dir, "releases", "start_erl.data"]))
     # Remove current release version
-    File.rm_rf!(Path.join([output_dir, "releases", "#{release.version}"]))
+    clean_path(Path.join([output_dir, "releases", "#{release.version}"]))
     # Execute plugin callbacks for this release
     Plugin.after_cleanup(release, args)
+  end
+
+  defp clean_path(path) do
+    File.rm_rf!(path)
+  rescue
+    e in [File.Error] ->
+      Logger.error "Unable to clean #{path}:\n" <>
+        "    #{Exception.message(e)}"
+      exit({:shutdown, 1})
   end
 
   @spec parse_args([String.t]) :: Keyword.t | no_return
