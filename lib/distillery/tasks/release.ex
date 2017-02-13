@@ -150,7 +150,7 @@ defmodule Mix.Tasks.Release do
                 upgrade: :boolean, upfrom: :string, name: :string,
                 env: :string, no_warn_missing: :boolean,
                 warnings_as_errors: :boolean]
-    {overrides, _} = OptionParser.parse!(argv, switches)
+    {overrides, _} = OptionParser.parse!(argv, strict: switches)
     verbosity = cond do
       Keyword.get(overrides, :verbose, false) -> :verbose
       Keyword.get(overrides, :quiet, false)   -> :quiet

@@ -119,7 +119,7 @@ defmodule Mix.Tasks.Release.Clean do
 
   @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
-    {overrides, _} = OptionParser.parse!(argv, [
+    {overrides, _} = OptionParser.parse!(argv, strict: [
           implode: :boolean,
           no_confirm: :boolean,
           verbose: :boolean])
