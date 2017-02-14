@@ -1,3 +1,16 @@
+## Unreleased
+
+## Added
+
+- Add the ability to generate "executables (self-extracting archives), 
+  which can be used to build releases which can be used as command-line utilities.
+  See `mix help release` for more info.
+
+## Changed
+
+- All errors are now handled via a single Errors module to unify error handling throughout
+  the project. This should result in better errors everywhere
+
 ## 1.1.2
 
 ## Fixed
