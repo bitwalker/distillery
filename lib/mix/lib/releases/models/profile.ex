@@ -11,6 +11,8 @@ defmodule Mix.Releases.Profile do
     config: nil, # path to a custom config.exs
     sys_config: nil, # path to a custom sys.config
     code_paths: nil, # list of additional code paths to search
+    executable: false, # whether it's an executable release
+    exec_opts: [transient: false], # options for an executable release
     erl_opts: nil, # string to be passed to erl
     dev_mode: nil, # boolean
     include_erts: nil, # boolean | "path/to/erts"

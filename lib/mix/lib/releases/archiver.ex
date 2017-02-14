@@ -16,8 +16,28 @@ defmodule Mix.Releases.Archiver do
     with {:ok, release}  <- Plugin.before_package(release),
          :ok             <- make_tar(release),
          {:ok, tarfile}  <- update_tar(release),
-         {:ok, _}        <- Plugin.after_package(release),
-       do: {:ok, tarfile}
+         {:ok, _}        <- Plugin.after_package(release) do
+      cond do
+        release.profile.executable ->
+          Logger.debug "Generating executable.."
+          tarfile = List.to_string(tarfile)
+          binfile = Path.join([release.profile.output_dir, "bin", "#{release.name}.run"])
+          with {:ok, tar} <- File.read(tarfile),
+               :ok <- File.rm(tarfile),
+               {:ok, header} <- Utils.template(:executable, [release_name: release.name,
+                                                             exec_options: release.profile.exec_opts]),
+               executable = <<header::binary, tar::binary>>,
+               :ok <- File.write(binfile, executable),
+               :ok <- File.chmod(binfile, 0o744) do
+            {:ok, tarfile}
+          else
+            {:error, {:template, _}} = err -> err
+            {:error, reason} -> {:error, {:executable, :file, reason}}
+          end
+        :else ->
+          {:ok, tarfile}
+      end
+    end
   end
 
   defp make_tar(release) do

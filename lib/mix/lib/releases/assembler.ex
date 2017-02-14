@@ -160,8 +160,10 @@ defmodule Mix.Releases.Assembler do
   defp copy_app(app, %Release{profile: %Profile{
                                 output_dir: output_dir,
                                 dev_mode: dev_mode?,
+                                executable: executable?,
                                 include_src: include_src?,
                                 include_erts: include_erts?}}) do
+    dev_mode?   = if(executable?, do: false, else: dev_mode?)
     app_name    = app.name
     app_version = app.vsn
     app_dir     = app.path

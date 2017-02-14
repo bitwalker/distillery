@@ -195,6 +195,9 @@ defmodule Mix.Releases.Errors do
   def format_error({:error, {:tar_generation_error, reason}}) do
     "Release packaging failed unexpectedly: #{inspect reason}"
   end
+  def format_error({:error, {:executable, {mod, reason}}}) do
+    "Failed to generate executable: #{mod.format_error(reason)}"
+  end
   def format_error({:error, {:archiver, {mod, reason}}}) do
     "Failed to archive release: #{mod.format_error(reason)}"
   end

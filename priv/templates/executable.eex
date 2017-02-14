@@ -1,0 +1,29 @@
+#!/bin/sh
+unset CDPATH
+
+# The name of the release being extracted
+__EXEC_REL_NAME="<%= release_name %>"
+# Determines if this script should clean up after execution
+__EXEC_CLEANUP_AFTER="<%= exec_options.transient %>"
+# The directory to which the release contents will be extracted
+__EXEC_TARGET_DIR="./tmp"
+
+mkdir -p "$__EXEC_TARGET_DIR"
+
+# Only extract the release if it hasn't yet been extracted
+if [ ! -d "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME" ]; then
+    mkdir -p "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME"
+    DATA_BEGIN=`awk '/^__DATA_BEGIN__/ {print NR + 1; exit 0; }' $0`
+    tail -n+$DATA_BEGIN $0 | tar -xz -C "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME"
+fi
+
+# Pass arguments to bin/app script
+if [ "$__EXEC_CLEANUP_AFTER" != "true" ]; then
+    exec "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME/bin/$__EXEC_REL_NAME" $@
+else
+    "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME/bin/$__EXEC_REL_NAME" $@
+    _exit_status=$?
+    rm -rf "$__EXEC_TARGET_DIR"
+    exit $_exit_status
+fi
+__DATA_BEGIN__

@@ -7,6 +7,12 @@ defmodule Mix.Tasks.Release do
       # Build a release using defaults
       mix release
 
+      # Build an executable release
+      mix release --executable
+
+      # Build an executable release which will cleanup after itself after it runs
+      mix release --executable --transient
+
       # Build an upgrade release
       mix release --upgrade
 
@@ -92,7 +98,9 @@ defmodule Mix.Tasks.Release do
       :environments => Enum.into(Enum.map(base_config.environments, fn {name, e} ->
         {name, %{e | :profile => %{e.profile |
           :dev_mode => Keyword.get(opts, :dev_mode, e.profile.dev_mode),
-          :erl_opts => Keyword.get(opts, :erl_opts, e.profile.erl_opts)}}}
+          :executable => Keyword.get(opts, :executable, e.profile.executable),
+          :erl_opts => Keyword.get(opts, :erl_opts, e.profile.erl_opts),
+          :exec_opts => Enum.into(Keyword.get(opts, :exec_opts, e.profile.exec_opts), %{})}}}
       end), %{}),
       :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
       :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
@@ -119,7 +127,7 @@ defmodule Mix.Tasks.Release do
   end
   defp do_release(config, archive?: true) do
     case Assembler.assemble(config) do
-      {:ok, %Release{name: name, profile: %Profile{dev_mode: true}} = release} ->
+      {:ok, %Release{name: name, profile: %Profile{dev_mode: true, executable: false}} = release} ->
         Logger.warn "You have set dev_mode to true, skipping archival phase"
         print_success(release, name)
       {:ok, %Release{name: name} = release} ->
@@ -141,8 +149,12 @@ defmodule Mix.Tasks.Release do
   end
 
   @spec print_success(Release.t, atom) :: :ok
-  defp print_success(%Release{profile: %Profile{output_dir: output_dir}}, app) do
+  defp print_success(%Release{profile: %Profile{output_dir: output_dir, executable: executable?}}, app) do
     relative_output_dir = Path.relative_to_cwd(output_dir)
+    app = cond do
+      executable? -> "#{app}.run"
+      :else -> app
+    end
     Logger.success "Release successfully built!\n    " <>
       "You can run it in one of the following ways:\n      " <>
       "Interactive: #{relative_output_dir}/bin/#{app} console\n      " <>
@@ -153,6 +165,7 @@ defmodule Mix.Tasks.Release do
   @spec parse_args(OptionParser.argv) :: Keyword.t | no_return
   defp parse_args(argv) do
     switches = [silent: :boolean, quiet: :boolean, verbose: :boolean,
+                executable: :boolean, transient: :boolean,
                 dev: :boolean, erl: :string, no_tar: :boolean,
                 upgrade: :boolean, upfrom: :string, name: :string,
                 env: :string, no_warn_missing: :boolean,
@@ -188,16 +201,32 @@ defmodule Mix.Tasks.Release do
           _ -> :ok
         end
     end
+    executable? = Keyword.get(overrides, :executable, false)
+    is_upgrade? = Keyword.get(overrides, :upgrade, false)
+    {os_type, _} = :os.type()
+    cond do
+      executable? && is_upgrade? ->
+        Logger.error "You cannot combine --executable with --upgrade"
+        exit({:shutdown, 1})
+      os_type == :win32 ->
+        Logger.error "--executable is not supported on Windows"
+        exit({:shutdown, 1})
+      :else ->
+        :ok
+    end
     # Set warnings_as_errors
     Application.put_env(:distillery, :warnings_as_errors, Keyword.get(overrides, :warnings_as_errors, false))
+    exec_opts = [transient: Keyword.get(overrides, :transient, false)]
     # Return options
     [verbosity: verbosity,
      selected_release: rel,
      selected_environment: env,
      dev_mode: Keyword.get(overrides, :dev),
      erl_opts: Keyword.get(overrides, :erl),
+     executable: executable?,
+     exec_opts: exec_opts,
      no_tar:   Keyword.get(overrides, :no_tar, false),
-     is_upgrade:   Keyword.get(overrides, :upgrade, false),
+     is_upgrade:   is_upgrade?,
      upgrade_from: Keyword.get(overrides, :upfrom, :latest)]
   end
 end
