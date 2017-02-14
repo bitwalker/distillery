@@ -38,7 +38,7 @@ defmodule Mix.Releases.App do
     cond do
       is_nil(dep) ->
         do_new(name, start_type)
-      get_in(dep, [:opts, :runtime]) === false ->
+      Keyword.get(dep.opts, :runtime) === false ->
         nil
       :else ->
         do_new(name, start_type)
