@@ -136,7 +136,7 @@ defmodule Mix.Releases.Errors do
     "    Please open an issue and include the contents of #{file}"
   end
   def format_error({:error, {:assembler, {:make_boot_script, reason}}}) do
-    "Release failed, during start_clean.boot generation:\n" <>
+    "Release failed, during .boot generation:\n" <>
     "    #{reason}"
   end
   def format_error({:error, {:assembler, mod, {:start_clean, reason}}}) do
@@ -185,7 +185,6 @@ defmodule Mix.Releases.Errors do
     "Release failed: #{Exception.format(kind, err, System.stacktrace)}"
   end
   def format_error({:error, {:tar_generation_warn, mod, warnings}}) do
-    IO.inspect {mod, warnings}
     "Release packaging failed due to warnings:\n" <>
     "    #{mod.format_warning(warnings)}"
   end
