@@ -138,7 +138,8 @@ defmodule Mix.Releases.Appup do
 
   defp is_special_process?(exports) do
     Keyword.get(exports, :system_code_change) == 4 ||
-    Keyword.get(exports, :code_change) == 3
+    Keyword.get(exports, :code_change) == 3 ||
+    Keyword.get(exports, :code_change) == 4
   end
 
   defp is_supervisor?(attributes) do
