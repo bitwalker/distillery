@@ -32,6 +32,9 @@ the latter case, in other words:
 # Build a release
 > mix release
 
+# Build an executable release
+> mix release --executable [--transient]
+
 # Build an upgrade release
 > mix release --upgrade
 ```
