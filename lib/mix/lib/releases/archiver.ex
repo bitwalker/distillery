@@ -21,7 +21,7 @@ defmodule Mix.Releases.Archiver do
         release.profile.executable ->
           Logger.debug "Generating executable.."
           tarfile = List.to_string(tarfile)
-          binfile = Path.join([release.profile.output_dir, "bin", "#{release.name}.run"])
+          binfile = Release.archive_path(release)
           with {:ok, tar} <- File.read(tarfile),
                :ok <- File.rm(tarfile),
                {:ok, header} <- Utils.template(:executable, [release_name: release.name,
@@ -41,6 +41,8 @@ defmodule Mix.Releases.Archiver do
   end
 
   defp make_tar(release) do
+    archive_path = Release.archive_path(%{release | :profile =>
+                                           %{release.profile | :executable => false}})
     name = "#{release.name}"
     opts = [
       :silent,
@@ -49,7 +51,7 @@ defmodule Mix.Releases.Archiver do
                           true  -> [:src, :c_src]
                           false -> []
                         end]},
-      {:outdir, '#{Path.join([release.profile.output_dir, "releases", release.version])}'} |
+      {:outdir, '#{Path.dirname(archive_path)}'} |
       case release.profile.include_erts do
         true ->
           path = Path.expand("#{:code.root_dir()}")
@@ -61,7 +63,7 @@ defmodule Mix.Releases.Archiver do
           [{:erts, '#{path}'}]
       end
     ]
-    rel_path = '#{Path.join([release.profile.output_dir, "releases", release.version, name])}'
+    rel_path = '#{String.trim_trailing(archive_path, ".tar.gz")}'
     Logger.debug "Writing tarball to #{rel_path}.tar.gz"
     case :systools.make_tar(rel_path, opts) do
       :ok ->

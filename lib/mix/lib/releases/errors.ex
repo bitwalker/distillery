@@ -79,13 +79,13 @@ defmodule Mix.Releases.Errors do
     "    file: #{Path.relative_to_cwd(file)}\n" <>
     "    overlay: #{inspect overlay}"
   end
-  def format_error({:error, {:assembler, :missing_environment}}) do
+  def format_error({:error, :missing_environment}) do
     "Release failed, unable to load selected environment\n" <>
     "    - Make sure `rel/config.exs` has environments configured\n" <>
     "    - Make sure at least one is set as default OR\n" <>
     "    - Pass --env=<env_name> to `mix release`"
   end
-  def format_error({:error, {:assembler, :missing_release}}) do
+  def format_error({:error, :missing_release}) do
     "Release failed, unable to load selected release\n" <>
     "    - Make sure `rel/config.exs` has at least one release configured\n" <>
     "    - Make sure at least one is set as default OR\n" <>
@@ -233,6 +233,8 @@ defmodule Mix.Releases.Errors do
   end
   def format_error({:error, errors}) when is_list(errors),
     do: format_errors(errors)
-  def format_error({:error, reason}),
-    do: Exception.message(Exception.normalize(:error, reason))
+  def format_error({:error, reason}) do
+    e = Exception.message(Exception.normalize(:error, reason))
+    "#{e}:\n#{Exception.format_stacktrace(System.stacktrace)}"
+  end
 end

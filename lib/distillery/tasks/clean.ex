@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Release.Clean do
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
-  alias Mix.Releases.{Logger, App, Utils, Plugin, Assembler, Release, Config, Profile, Errors}
+  alias Mix.Releases.{Logger, App, Utils, Plugin, Release, Config, Profile, Errors}
 
   @spec run(OptionParser.argv) :: no_return
   def run(args) do
@@ -59,10 +59,10 @@ defmodule Mix.Tasks.Release.Clean do
 
     implode?    = Keyword.get(opts, :implode, false)
     no_confirm? = Keyword.get(opts, :no_confirm, false)
-    with {:ok, environment} <- Assembler.select_environment(config),
-         {:ok, release}     <- Assembler.select_release(config),
-         {:ok, release}     <- Assembler.apply_environment(release, environment),
-         {:ok, release}     <- Assembler.apply_configuration(release, config) do
+    with {:ok, environment} <- Release.select_environment(config),
+         {:ok, release}     <- Release.select_release(config),
+         release            <- Release.apply_environment(release, environment),
+         {:ok, release}     <- Release.apply_configuration(release, config, true) do
       cond do
         implode? && no_confirm? ->
           clean_all!(release.profile.output_dir)

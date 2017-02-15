@@ -74,43 +74,19 @@ defmodule Mix.Tasks.Release do
 
     # load release configuration
     Logger.debug "Loading configuration.."
-    config_path = Path.join([File.cwd!, "rel", "config.exs"])
-    base_config = case File.exists?(config_path) do
-               true ->
-                 try do
-                   Config.read!(config_path)
-                 rescue
-                   e in [Config.LoadError] ->
-                     file = Path.relative_to_cwd(e.file)
-                     message = Exception.message(e)
-                     message = String.replace(message, "nofile", file)
-                     Logger.error "Failed to load config:\n" <>
-                       "    #{message}"
-                     exit({:shutdown, 1})
-                 end
-               false ->
-                 Logger.error "You are missing a release config file. Run the release.init task first"
-                 exit({:shutdown, 1})
-             end
-
-    # Apply override options
-    config = %{base_config |
-      :environments => Enum.into(Enum.map(base_config.environments, fn {name, e} ->
-        {name, %{e | :profile => %{e.profile |
-          :dev_mode => Keyword.get(opts, :dev_mode, e.profile.dev_mode),
-          :executable => Keyword.get(opts, :executable, e.profile.executable),
-          :erl_opts => Keyword.get(opts, :erl_opts, e.profile.erl_opts),
-          :exec_opts => Enum.into(Keyword.get(opts, :exec_opts, e.profile.exec_opts), %{})}}}
-      end), %{}),
-      :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
-      :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
-      :selected_environment => Keyword.fetch!(opts, :selected_environment),
-      :selected_release => Keyword.fetch!(opts, :selected_release)}
-    archive? = not Keyword.get(opts, :no_tar, false)
-
-    # build release
-    Logger.info "Assembling release.."
-    do_release(config, archive?: archive?)
+    case Config.get(opts) do
+      {:error, {:config, :not_found}} ->
+        Logger.error "You are missing a release config file. Run the release.init task first"
+        exit({:shutdown, 1})
+      {:error, {:config, reason}} ->
+        Logger.error "Failed to load config:\n" <>
+          "    #{reason}"
+        exit({:shutdown, 1})
+      {:ok, config} ->
+        archive? = not Keyword.get(opts, :no_tar, false)
+        Logger.info "Assembling release.."
+        do_release(config, archive?: archive?)
+    end
   end
 
   defp do_release(config, archive?: false) do
@@ -123,7 +99,8 @@ defmodule Mix.Tasks.Release do
   rescue
     e ->
       Logger.error "Release failed: " <>
-        Exception.message(e)
+        Exception.message(e) <>
+        "\n#{Exception.format_stacktrace(System.stacktrace)}"
   end
   defp do_release(config, archive?: true) do
     case Assembler.assemble(config) do
@@ -145,7 +122,8 @@ defmodule Mix.Tasks.Release do
   rescue
     e ->
       Logger.error "Release failed: " <>
-        Exception.message(e)
+        Exception.message(e) <>
+        "\n#{Exception.format_stacktrace(System.stacktrace)}"
   end
 
   @spec print_success(Release.t, atom) :: :ok

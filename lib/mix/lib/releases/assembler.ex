@@ -21,11 +21,11 @@ defmodule Mix.Releases.Assembler do
   """
   @spec assemble(Config.t) :: {:ok, Config.t} | {:error, term}
   def assemble(%Config{} = config) do
-    with {:ok, environment} <- select_environment(config),
-         {:ok, release}     <- select_release(config),
-         {:ok, release}     <- apply_environment(release, environment),
+    with {:ok, environment} <- Release.select_environment(config),
+         {:ok, release}     <- Release.select_release(config),
+         release            <- apply_environment(release, environment),
          :ok                <- validate_configuration(release),
-         {:ok, release}     <- apply_configuration(release, config),
+         {:ok, release}     <- Release.apply_configuration(release, config, true),
          :ok                <- File.mkdir_p(release.profile.output_dir),
          {:ok, release}     <- Plugin.before_assembly(release),
          {:ok, release}     <- generate_overlay_vars(release),
@@ -36,100 +36,21 @@ defmodule Mix.Releases.Assembler do
       do: {:ok, release}
   end
 
-  # Determines the correct environment to assemble in
-  @spec select_environment(Config.t) :: {:ok, Environment.t} | {:error, {:assembler, :no_environments}}
-  def select_environment(%Config{selected_environment: :default, default_environment: :default} = c),
-    do: select_environment(Map.fetch(c.environments, :default))
-  def select_environment(%Config{selected_environment: :default, default_environment: name} = c),
-    do: select_environment(Map.fetch(c.environments, name))
-  def select_environment(%Config{selected_environment: name} = c),
-    do: select_environment(Map.fetch(c.environments, name))
-  def select_environment({:ok, _} = e), do: e
-  def select_environment(_),            do: {:error, {:assembler, :missing_environment}}
-
-  # Determines the correct release to assemble
-  @spec select_release(Config.t) :: {:ok, Release.t} | {:error, {:assembler, :no_releases}}
-  def select_release(%Config{selected_release: :default, default_release: :default} = c),
-    do: {:ok, List.first(Map.values(c.releases))}
-  def select_release(%Config{selected_release: :default, default_release: name} = c),
-    do: select_release(Map.fetch(c.releases, name))
-  def select_release(%Config{selected_release: name} = c),
-    do: select_release(Map.fetch(c.releases, name))
-  def select_release({:ok, _} = r), do: r
-  def select_release(_),            do: {:error, {:assembler, :missing_release}}
-
   # Applies the environment profile to the release profile.
   @spec apply_environment(Release.t, Environment.t) :: {:ok, Release.t} | {:error, term}
-  def apply_environment(%Release{profile: rel_profile} = r, %Environment{profile: env_profile} = e) do
+  def apply_environment(%Release{} = r, %Environment{} = e) do
     Logger.info "Building release #{r.name}:#{r.version} using environment #{e.name}"
-    env_profile = Map.from_struct(env_profile)
-    profile = Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
-      case v do
-        ignore when ignore in [nil, []] -> acc
-        _   -> Map.put(acc, k, v)
-      end
-    end)
-    {:ok, %{r | :profile => profile}}
+    Release.apply_environment(r, e)
   end
 
   @spec validate_configuration(Release.t) :: :ok | {:error, term}
-  def validate_configuration(%Release{version: _, profile: profile}) do
-    with :ok <- Utils.validate_erts(profile.include_erts) do
-      # Warn if not including ERTS when not obviously running in a dev configuration
-      if profile.dev_mode == false and profile.include_erts == false do
-        Logger.notice "IMPORTANT: You have opted to *not* include the Erlang runtime system (ERTS).\n" <>
-          "You must ensure that the version of Erlang this release is built with matches\n" <>
-          "the version the release will be run with once deployed. It will fail to run otherwise."
-      end
-      :ok
-    end
-  end
-
-  # Applies global configuration options to the release profile
-  @spec apply_configuration(Release.t, Config.t) :: {:ok, Release.t} | {:error, term}
-  def apply_configuration(%Release{version: current_version, profile: profile} = release, %Config{} = config) do
-    config_path = case profile.config do
-                    p when is_binary(p) -> p
-                    _ -> Keyword.get(Mix.Project.config, :config_path)
-                  end
-    base_release = %{release | :profile => %{profile | :config => config_path}}
-    release = check_cookie(base_release)
-    case Utils.get_apps(release) do
-      {:error, _} = err -> err
-      release_apps ->
-        release = %{release | :applications => release_apps}
-        case config.is_upgrade do
-          true ->
-            case config.upgrade_from do
-              :latest ->
-                upfrom = case Utils.get_release_versions(release.profile.output_dir) do
-                  [] -> :no_upfrom
-                  [^current_version, v|_] -> v
-                  [v|_] -> v
-                end
-                case upfrom do
-                  :no_upfrom ->
-                    Logger.warn "An upgrade was requested, but there are no " <>
-                      "releases to upgrade from, no upgrade will be performed."
-                    {:ok, %{release | :is_upgrade => false, :upgrade_from => nil}}
-                  v ->
-                    {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
-                end
-              ^current_version ->
-                {:error, {:assembler, {:bad_upgrade_spec, :upfrom_is_current, current_version}}}
-              version when is_binary(version) ->
-                Logger.debug "Upgrading #{release.name} from #{version} to #{current_version}"
-                upfrom_path = Path.join([release.profile.output_dir, "releases", version])
-                case File.exists?(upfrom_path) do
-                  false ->
-                    {:error, {:assembler, {:bad_upgrade_spec, :doesnt_exist, version, upfrom_path}}}
-                  true ->
-                    {:ok, %{release | :is_upgrade => true, :upgrade_from => version}}
-                end
-            end
-          false ->
-            {:ok, release}
-        end
+  def validate_configuration(%Release{} = release) do
+    case Release.validate_configuration(release) do
+      {:ok, warning} ->
+        Logger.notice(warning)
+        :ok
+      other ->
+        other
     end
   end
 
@@ -911,25 +832,4 @@ defmodule Mix.Releases.Assembler do
     do: Utils.detect_erts_version(path)
   defp get_erts_version(%Release{profile: %Profile{include_erts: _}}),
     do: {:ok, Utils.erts_version()}
-
-  defp check_cookie(%Release{profile: %Profile{cookie: cookie} = profile} = release) do
-    cond do
-      !cookie ->
-        Logger.warn "Attention! You did not provide a cookie for the erlang distribution protocol in rel/config.exs\n" <>
-          "    For backwards compatibility, the release name will be used as a cookie, which is potentially a security risk!\n" <>
-          "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs.\n" <>
-          "    This will be an error in a future release."
-        %{release | :profile => %{profile | :cookie => release.name}}
-      not is_atom(cookie) ->
-        %{release | :profile => %{profile | :cookie => :"#{cookie}"}}
-      String.contains?(Atom.to_string(cookie), "insecure") ->
-        Logger.warn "Attention! You have an insecure cookie for the erlang distribution protocol in rel/config.exs\n" <>
-          "This is probably because a secure cookie could not be auto-generated.\n" <>
-          "Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs." <>
-        release
-      :else ->
-        release
-    end
-  end
-
 end

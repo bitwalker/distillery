@@ -43,6 +43,43 @@ defmodule Mix.Releases.Config do
     end
   end
 
+  @doc false
+  @spec get() :: __MODULE__.t | {:error, {:config, :not_found | String.t}}
+  @spec get(Keyword.t) :: __MODULE__.t | {:error, {:config, :not_found | String.t}}
+  def get(opts \\ []) do
+    config_path = Path.join([File.cwd!, "rel", "config.exs"])
+    case File.exists?(config_path) do
+      true ->
+        base_config = try do
+          read!(config_path)
+        rescue
+          e in [Config.LoadError] ->
+            file = Path.relative_to_cwd(e.file)
+          message = Exception.message(e)
+          message = String.replace(message, "nofile", file)
+          {:error, {:config, message}}
+        end
+        case base_config do
+          {:error, _} = err -> err
+          _ ->
+            {:ok, %{base_config |
+              :environments => Enum.into(Enum.map(base_config.environments, fn {name, e} ->
+                    {name, %{e | :profile => %{e.profile |
+                                               :dev_mode => Keyword.get(opts, :dev_mode, e.profile.dev_mode),
+                                               :executable => Keyword.get(opts, :executable, e.profile.executable),
+                                               :erl_opts => Keyword.get(opts, :erl_opts, e.profile.erl_opts),
+                                               :exec_opts => Enum.into(Keyword.get(opts, :exec_opts, e.profile.exec_opts), %{})}}}
+                  end), %{}),
+              :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
+              :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
+              :selected_environment => Keyword.fetch!(opts, :selected_environment),
+              :selected_release => Keyword.fetch!(opts, :selected_release)}}
+        end
+      false ->
+        {:error, {:config, :not_found}}
+    end
+  end
+
   @doc """
   Creates a new environment for building releases. Within an
   environment, you can set config options which apply to all
