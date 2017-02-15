@@ -208,7 +208,7 @@ defmodule Mix.Tasks.Release do
       executable? && is_upgrade? ->
         Logger.error "You cannot combine --executable with --upgrade"
         exit({:shutdown, 1})
-      os_type == :win32 ->
+      executable? && os_type == :win32 ->
         Logger.error "--executable is not supported on Windows"
         exit({:shutdown, 1})
       :else ->
