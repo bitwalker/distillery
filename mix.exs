@@ -48,6 +48,7 @@ defmodule Distillery.Mixfile do
        "docs/Walkthrough.md",
        "docs/Use With Phoenix.md",
        "docs/Phoenix Walkthrough.md",
+       "docs/Running Migrations.md",
        "docs/Upgrades and Downgrades.md",
        "docs/Use With systemd.md",
        "docs/Common Issues.md",
