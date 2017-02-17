@@ -43,7 +43,6 @@ defmodule Mix.Releases.Archiver do
   defp make_tar(release) do
     archive_path = Release.archive_path(%{release | :profile =>
                                            %{release.profile | :executable => false}})
-    name = "#{release.name}"
     opts = [
       :silent,
       {:path, ['#{Path.join([release.profile.output_dir, "lib", "*", "ebin"])}']},

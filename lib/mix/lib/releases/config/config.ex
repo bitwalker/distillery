@@ -65,10 +65,10 @@ defmodule Mix.Releases.Config do
             {:ok, %{base_config |
               :environments => Enum.into(Enum.map(base_config.environments, fn {name, e} ->
                     {name, %{e | :profile => %{e.profile |
-                                               :dev_mode => Keyword.get(opts, :dev_mode, e.profile.dev_mode),
-                                               :executable => Keyword.get(opts, :executable, e.profile.executable),
-                                               :erl_opts => Keyword.get(opts, :erl_opts, e.profile.erl_opts),
-                                               :exec_opts => Enum.into(Keyword.get(opts, :exec_opts, e.profile.exec_opts), %{})}}}
+                                               :dev_mode => get_opt(opts, :dev_mode, e.profile.dev_mode),
+                                               :executable => get_opt(opts, :executable, e.profile.executable),
+                                               :erl_opts => get_opt(opts, :erl_opts, e.profile.erl_opts),
+                                               :exec_opts => Enum.into(get_opt(opts, :exec_opts, e.profile.exec_opts), %{})}}}
                   end), %{}),
               :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
               :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
@@ -77,6 +77,13 @@ defmodule Mix.Releases.Config do
         end
       false ->
         {:error, {:config, :not_found}}
+    end
+  end
+  defp get_opt(opts, key, default) do
+    val = Keyword.get(opts, key)
+    cond do
+      is_nil(val) -> default
+      :else -> val
     end
   end
 

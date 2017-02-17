@@ -79,7 +79,6 @@ defmodule Mix.Releases.Release do
       {:ok, config} ->
         with {:ok, env} <- select_environment(config),
              {:ok, rel} <- select_release(config),
-             _ <- IO.inspect({env, rel}),
              rel        <- apply_environment(rel, env),
           do: apply_configuration(rel, config, false)
     end
