@@ -749,6 +749,21 @@ case "$1" in
         $BINDIR/erlexec $@ -extra $ARGS
         exit "$?"
         ;;
+    reload_config)
+        # Reload the running system's configuration
+        _check_cookie
+
+        # Make sure a node IS running
+        if ! nodetool "ping" > /dev/null; then
+            echo "Node is not running!"
+            exit 1
+        fi
+
+        _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
+
+        shift
+        nodetool "reload_config" "$SYS_CONFIG_PATH"
+        ;;
     describe)
         ## Print a summary of information about this release
         echo "$REL_NAME-$REL_VSN\n"
@@ -802,6 +817,7 @@ case "$1" in
             echo "stop                           # stop the $REL_NAME daemon"
             echo "restart                        # restart the $REL_NAME daemon without shutting down the VM"
             echo "reboot                         # restart the $REL_NAME daemon"
+            echo "reload_config                  # reload the current system's configuration from disk"
             echo
             echo "Upgrades"
             echo "======================="

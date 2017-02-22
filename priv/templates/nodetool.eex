@@ -32,6 +32,24 @@ main(Args) ->
             io:format("~p\n", [rpc:call(TargetNode, init, restart, [], 60000)]);
         ["reboot"] ->
             io:format("~p\n", [rpc:call(TargetNode, init, reboot, [], 60000)]);
+        ["reload_config", SysConfigPath] ->
+            case file:consult(SysConfigPath) of
+                {error, Reason} ->
+                    io:format("Unable to parse sys.config: ~p\n", Reason);
+                {ok, [SysConfig]} ->
+                    lists:foreach(fun ({AppName, AppConfig}) ->
+                        io:format("Updating ~p..\n", [AppName]),
+                        lists:foreach(fun ({Key, Value}) ->
+                            io:format("  ~p.~p = ~p\n", [AppName, Key, Value]),
+                            case rpc:call(TargetNode, application, set_env, [AppName, Key, Value, [{persistent, true}]], 60000) of
+                                {badrpc, Reason} ->
+                                    io:format("Unable to set ~p.~p to ~p: ~p\n", [AppName, Key, Value, Reason]);
+                                _ ->
+                                    ok
+                            end
+                        end, AppConfig)
+                    end, SysConfig)
+            end;
         ["rpc", Module, Function] ->
             do_rpc(TargetNode, Module, Function, []);
         ["rpc", Module, Function | RpcArgs] ->
