@@ -81,6 +81,7 @@ RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_MUTABLE_DIR/log}"
 EXTRA_OPTS="${EXTRA_OPTS:-}"
 
 # Pre-start/stop event hook paths
+PRE_CONFIGURE_HOOKS="$REL_DIR/hooks/pre_configure.d"
 PRE_START_HOOKS="$REL_DIR/hooks/pre_start.d"
 POST_START_HOOKS="$REL_DIR/hooks/post_start.d"
 PRE_STOP_HOOKS="$REL_DIR/hooks/pre_stop.d"
@@ -397,6 +398,7 @@ case "$1" in
         RUN_PARAM="$@"
 
         _check_cookie
+        _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
         _run_hooks_from_dir "$PRE_START_HOOKS"
 
         # Set arguments for the heart command
@@ -433,6 +435,7 @@ case "$1" in
 
     restart)
         _check_cookie
+        _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
         _run_hooks_from_dir "$PRE_START_HOOKS"
         ## Restart the VM without exiting the process
         if ! nodetool "restart"; then
@@ -442,6 +445,7 @@ case "$1" in
 
     reboot)
         _check_cookie
+        _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
         _run_hooks_from_dir "$PRE_START_HOOKS"
         ## Restart the VM completely (uses heart to restart it)
         if ! nodetool "reboot"; then
@@ -595,6 +599,7 @@ case "$1" in
         # Start the VM, executing pre_start hook along
         # the way. We can't run the post_start hook because
         # the console will crash with no TTY attached
+        _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
         _run_hooks_from_dir "$PRE_START_HOOKS"
 
         # Build an array of arguments to pass to exec later on
@@ -646,6 +651,7 @@ case "$1" in
         _check_cookie
 
         # Start the VM, executing pre and post start hooks
+        _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
         _run_hooks_from_dir "$PRE_START_HOOKS"
 
         # Build an array of arguments to pass to exec later on
