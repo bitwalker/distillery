@@ -171,6 +171,7 @@ defmodule Mix.Releases.Utils do
       ...> #{__MODULE__}.get_release_versions(output_dir)
       ["0.2.2", "0.2.1-1-d3adb3f", "0.2.1", "0.2.0", "0.1.0"]
   """
+  @valid_version_pattern ~r/^\d+.*$/
   @spec get_release_versions(String.t) :: list(String.t)
   def get_release_versions(output_dir) do
     releases_path = Path.join([output_dir, "releases"])
@@ -179,7 +180,7 @@ defmodule Mix.Releases.Utils do
       true  ->
         releases_path
         |> File.ls!
-        |> Enum.reject(fn entry -> entry in ["RELEASES", "start_erl.data"] end)
+        |> Enum.filter(&Regex.match?(@valid_version_pattern, &1))
         |> sort_versions
     end
   end
