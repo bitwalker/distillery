@@ -159,43 +159,47 @@ _check_cookie() {
     fi
 }
 
+# Private. For setting up the Erlang runtime to use
+_init_erts_config() {
+    if [ -z "$ERTS_VSN" ]; then
+        set +e # temporarily disable so we can display a nice error message to the user
+        __erl="$(which erl)"
+        set -e
+        if [ -z "${__erl}"  ]; then
+            echo 'erlang runtime not found. If erlang is installed check your $PATH. aborting.'
+            exit 1
+        fi
+        export ROOTDIR="$("$__erl" -boot start_clean -eval 'io:format("~s~n", [code:root_dir()]), halt().' -noshell)"
+        export ERTS_VSN="$(_get_erts_vsn)"
+        export ERTS_DIR="$ROOTDIR"/"erts-$ERTS_VSN"
+    else
+        __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
+        if [ -d "$__erts_dir" ]; then
+            export ROOTDIR="$RELEASE_ROOT_DIR"
+            export ERTS_DIR="$__erts_dir"
+        else
+            unset ERTS_VSN
+            _init_erts_config
+        fi
+    fi
+}
+
 # Private. For determining the version of ERTS available to the release
 # This is only ever called if ERTS_VSN is not set
-_detect_erts_vsn() {
-    set +e # temporarily disable so we can display a nice error message to the user
-    __erl="$(which erl)"
-    set -e
-    if [ -z "${__erl}"  ]; then
-        echo 'erlang runtime not found. If erlang is installed check your $PATH. aborting.'
-        exit 1
+_get_erts_vsn() {
+    if [ -z "$ERTS_VSN" ]; then
+        "$ROOTDIR"/bin/erl \
+            -boot start_clean \
+            -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' \
+            -noshell
+    else
+        echo "$ERTS_VSN"
     fi
-    "$__erl" -boot start_clean -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell
 }
 
 # Private. Gets a list of code paths for this release
 _get_code_paths() {
     "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/release_utils.escript" "get_code_paths" "$ROOTDIR" "$ERTS_DIR" "$REL_NAME" "$REL_VSN"
-}
-
-# Private. For setting ERTS_DIR and ROOTDIR
-_find_erts_dir() {
-    __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
-    if [ -d "$__erts_dir" ]; then
-        ERTS_DIR="$__erts_dir";
-        ROOTDIR="$RELEASE_ROOT_DIR"
-    else
-        set +e # temporarily disable so we can display a nice error message to the user
-        __erl="$(which erl)"
-        set -e
-        if [ -z "${__erl}"  ]; then
-          echo 'erlang runtime not found. If erlang is installed check your $PATH. aborting.'
-          exit 1
-        fi
-        code="io:format(\"~s\", [code:root_dir()]), halt()."
-        __erl_root="$("$__erl" -noshell -eval "$code")"
-        ERTS_DIR="$__erl_root/erts-$ERTS_VSN"
-        ROOTDIR="$__erl_root"
-    fi
 }
 
 # Private. Open a shell on a remote node
@@ -265,11 +269,9 @@ if [ -z "$TERM" ]; then
     export TERM=xterm
 fi
 
-# If ERTS_VSN is not set, detect it
-if [ -z "$ERTS_VSN" ]; then
-    export ERTS_VSN="$(_detect_erts_vsn)"
-    echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
-fi
+# Make sure ERTS configuration is set
+_init_erts_config
+echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
 
 # Allow override of where to read configuration from
 # By default it's RELEASE_ROOT_DIR
@@ -344,13 +346,12 @@ PIPE_DIR="${PIPE_DIR:-$RELEASE_MUTABLE_DIR/erl_pipes/$NAME/}"
 # Extract the target cookie
 _load_cookie
 
-_find_erts_dir
 export ROOTDIR="$RELEASE_ROOT_DIR"
 export BINDIR="$ERTS_DIR/bin"
 export EMU="beam"
 export PROGNAME="erl"
 export LD_LIBRARY_PATH="$ERTS_DIR/lib:$LD_LIBRARY_PATH"
-ERTS_LIB_DIR="$ERTS_DIR/../lib"
+export ERTS_LIB_DIR="$ERTS_DIR/../lib"
 CONSOLIDATED_DIR="$ROOTDIR/lib/${REL_NAME}-${REL_VSN}/consolidated"
 
 cd "$ROOTDIR"
