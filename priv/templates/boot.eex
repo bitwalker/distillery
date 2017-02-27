@@ -278,6 +278,13 @@ _init_configs() {
     else
         if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
             export SRC_VMARGS_PATH="$VMARGS_PATH"
+        else
+            if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
+                export VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
+            else
+                export VMARGS_PATH="$REL_DIR/vm.args"
+            fi
+            export SRC_VMARGS_PATH="$VMARGS_PATH"
         fi
     fi
     if [ "$SRC_VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
@@ -302,6 +309,13 @@ _init_configs() {
         export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
     else
         if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
+            export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
+        else
+            if [ -f "$RELEASE_CONFIG_DIR/sys.config" ]; then
+                export SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
+            else
+                export SYS_CONFIG_PATH="$REL_DIR/sys.config"
+            fi
             export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
         fi
     fi
