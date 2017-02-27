@@ -40,7 +40,7 @@ defmodule MyApp.ReleaseTasks do
 
     # Start the Repo(s) for myapp
     IO.puts "Starting repos.."
-    Enum.each(@repos, &apply(&1, :start_link, []))
+    Enum.each(@repos, &(&1.start_link(pool_size: 1)))
 
     # Run migrations
     Enum.each(@repos, &run_migrations_for/1)
