@@ -263,6 +263,58 @@ _run_hooks_from_dir() {
    fi
 }
 
+# Private. Sets config paths for sys.config and vm.args,
+# and ensures that env var replacements are performed
+_init_configs() {
+    # Set VMARGS_PATH, the path to the vm.args file to use
+    # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
+    if [ -z "$VMARGS_PATH" ]; then
+        if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
+            export VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
+        else
+            export VMARGS_PATH="$REL_DIR/vm.args"
+        fi
+        export SRC_VMARGS_PATH="$VMARGS_PATH"
+    else
+        if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
+            export SRC_VMARGS_PATH="$VMARGS_PATH"
+        fi
+    fi
+    if [ "$SRC_VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
+        echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
+            >  "$RELEASE_MUTABLE_DIR/vm.args"
+        cat  "$SRC_VMARGS_PATH"                              \
+            >> "$RELEASE_MUTABLE_DIR/vm.args"
+        export VMARGS_PATH="$RELEASE_MUTABLE_DIR"/vm.args
+    fi
+    if [ $REPLACE_OS_VARS ]; then
+        _replace_os_vars "$VMARGS_PATH"
+    fi
+
+    # Set SYS_CONFIG_PATH, the path to the sys.config file to use
+    # Use $RELEASE_CONFIG_DIR/sys.config if exists, otherwise releases/VSN/sys.config
+    if [ -z "$SYS_CONFIG_PATH" ]; then
+        if [ -f "$RELEASE_CONFIG_DIR/sys.config" ]; then
+            export SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
+        else
+            export SYS_CONFIG_PATH="$REL_DIR/sys.config"
+        fi
+        export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
+    else
+        if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
+            export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
+        fi
+    fi
+    if [ "$SRC_SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
+        (echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead."; \
+        cat  "$SRC_SYS_CONFIG_PATH")                              \
+            > "$RELEASE_MUTABLE_DIR/sys.config"
+        export SYS_CONFIG_PATH="$RELEASE_MUTABLE_DIR"/sys.config
+    fi
+    if [ $REPLACE_OS_VARS ]; then
+        _replace_os_vars "$SYS_CONFIG_PATH"
+    fi
+}
 
 # If TERM is not set, set it to xterm
 if [ -z "$TERM" ]; then
@@ -285,44 +337,8 @@ echo "Files in this directory are regenerated frequently, edits will be lost" \
     > "$RELEASE_MUTABLE_DIR/WARNING_README"
 mkdir -p "$RUNNER_LOG_DIR"
 
-# Set VMARGS_PATH, the path to the vm.args file to use
-# Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
-if [ -z "$VMARGS_PATH" ]; then
-    if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
-        export VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
-    else
-        export VMARGS_PATH="$REL_DIR/vm.args"
-    fi
-fi
-if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
-    echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
-        >  "$RELEASE_MUTABLE_DIR/vm.args"
-    cat  "$VMARGS_PATH"                              \
-        >> "$RELEASE_MUTABLE_DIR/vm.args"
-    export VMARGS_PATH=$RELEASE_MUTABLE_DIR/vm.args
-fi
-if [ $REPLACE_OS_VARS ]; then
-    _replace_os_vars "$VMARGS_PATH"
-fi
-
-# Set SYS_CONFIG_PATH, the path to the sys.config file to use
-# Use $RELEASE_CONFIG_DIR/sys.config if exists, otherwise releases/VSN/sys.config
-if [ -z "$SYS_CONFIG_PATH" ]; then
-    if [ -f "$RELEASE_CONFIG_DIR/sys.config" ]; then
-        export SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
-    else
-        export SYS_CONFIG_PATH="$REL_DIR/sys.config"
-    fi
-fi
-if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
-    (echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead."; \
-    cat  "$SYS_CONFIG_PATH")                              \
-        > "$RELEASE_MUTABLE_DIR/sys.config"
-    export SYS_CONFIG_PATH=$RELEASE_MUTABLE_DIR/sys.config
-fi
-if [ $REPLACE_OS_VARS ]; then
-    _replace_os_vars "$SYS_CONFIG_PATH"
-fi
+# Make sure config paths are setup
+_init_configs
 
 # Extract the target node name from node.args
 # Should be `-sname somename` or `-name somename@somehost`
@@ -534,11 +550,39 @@ case "$1" in
         "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
              "unpack_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
 
+        # Update environment to reflect target version environment
+        REL_VSN="$TARGET_VERSION"
+        REL_DIR="$RELEASE_ROOT_DIR/releases/$TARGET_VERSION"
+
+        # Prepare new configs
+        _init_configs
+        # We have to do some juggling to ensure the correct config is used by the upgrade handler
+        # First, we detect if there was a failed upgrade, so we can start over
+        if [ -f "$REL_DIR/sys.config.bak" ]; then
+            mv "$REL_DIR/sys.config.bak" "$REL_DIR/sys.config"
+        fi
+        if [ -f "$REL_DIR/vm.args.bak" ]; then
+            mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
+        fi
+        # Then, backup the packaged configs
+        cp "$REL_DIR/sys.config" "$REL_DIR/sys.config.bak"
+        cp "$REL_DIR/vm.args" "$REL_DIR/vm.args.bak"
+        # Then, substitute in the prepared configs
+        cp "$SYS_CONFIG_PATH" "$REL_DIR/sys.config"
+        cp "$VMARGS_PATH" "$REL_DIR/vm.args"
+        # Make sure any pre-configuration hooks are run
+        _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
+        # Run any pre-upgrade tasks
         _run_hooks_from_dir "$PRE_UPGRADE_HOOKS"
 
         "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
              "install_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
 
+        # We were successful, clean up the configs
+        mv "$REL_DIR/sys.config.bak" "$REL_DIR/sys.config"
+        mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
+
+        # Run any post-upgrade hooks
         _run_hooks_from_dir "$POST_UPGRADE_HOOKS"
 
         ;;
