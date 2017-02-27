@@ -1,3 +1,9 @@
+## 1.2.2
+
+### Fixed
+
+- Handling of configs during upgrades (#139)
+
 ## 1.2.1
 
 ### Fixed
