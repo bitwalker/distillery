@@ -1,15 +1,30 @@
-## Unreleased
+## 1.2.0
 
 ## Added
 
 - Add the ability to generate "executables (self-extracting archives), 
   which can be used to build releases which can be used as command-line utilities.
   See `mix help release` for more info.
+- Implement `reload_config` command for runtime reconfiguration
+- Implement `pre_configure` hook which is now used prior to any time the configuration
+ will be evaluated to ensure tools like conform are able to do their work first. This
+ is being used in order to facilitate `reload_config`, and potentially other commands like
+ it in the future.
+- Implement simple API for the Release object for use by other libraries.
 
 ## Changed
 
 - All errors are now handled via a single Errors module to unify error handling throughout
   the project. This should result in better errors everywhere
+- Print more readabile usage information from boot script
+- Parse options strictly to prevent unintended mistakes from going unnoticed
+
+## Fixed
+
+- Do a better job of detecting valid release versions
+- Certain environment config options are ignored (#204)
+- Fix win32 executable exit conditions (#202) - Matt Enlow
+- Ensure code_change/4 is detected for special processes
 
 ## 1.1.2
 
