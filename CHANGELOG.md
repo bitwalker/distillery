@@ -1,6 +1,12 @@
+## 1.2.1
+
+### Fixed
+
+- Handling of ERTS detection in boot script
+
 ## 1.2.0
 
-## Added
+### Added
 
 - Add the ability to generate "executables (self-extracting archives), 
   which can be used to build releases which can be used as command-line utilities.
@@ -12,14 +18,14 @@
  it in the future.
 - Implement simple API for the Release object for use by other libraries.
 
-## Changed
+### Changed
 
 - All errors are now handled via a single Errors module to unify error handling throughout
   the project. This should result in better errors everywhere
 - Print more readabile usage information from boot script
 - Parse options strictly to prevent unintended mistakes from going unnoticed
 
-## Fixed
+### Fixed
 
 - Do a better job of detecting valid release versions
 - Certain environment config options are ignored (#204)
@@ -28,39 +34,39 @@
 
 ## 1.1.2
 
-## Fixed
+### Fixed
 
 - Handling of removed applications during hot upgrades
 
 ## 1.1.1
 
-## Changed
+### Changed
 
 - Ignore deps not used at runtime (#189) (Saša Jurić)
 - Default environment in generated config is `Mix.env`
 - Warn about mismatched ERTS when `include_erts: false`
 
-## Fixed
+### Fixed
 
 - Reduce chance of invalid sys.config during boot (#188) (Hugh Watkins)
 - Expose some additional boot script variables so plugins can access them
 
 ## 1.1.0
 
-## Added
+### Added
 
 - `describe` command for the boot script (Paul Schoenfelder)
 - Export DISTILLERY_TASK for hooks/commands (Martin Langhoff)
 - Add `pingpeer` command
 
-## Changed
+### Changed
 
 - Implement default behaviours for plugin callbacks (Justin Schneck)
 - Automatically import plugins from `rel/plugins` (Paul Schoenfelder)
 - Make plugin options optional when using `set plugins`
 - Various documentation fixes, additions, etc.
 
-## Fixed
+### Fixed
 
 - #165 - Ensure trapped signals wait for node to completely shut down before exiting (Paul Schoenfelder)
 - #134 - Dependency order issues can cause kernel/stdlib to be undefined
@@ -69,21 +75,21 @@
 
 *NOTE*: This release contains breaking changes!
 
-## Added
+### Added
 
 - Link to config helpers package - Andrew Dryga
 - ea3c791 - Allow passing a custom eex template to use for the init task - Justin Schneck
 - Add pre/post upgrade hooks - @spscream
 - Allow passing options to plugins - Michal Muskala
 
-## Changed
+### Changed
 
 - Default output path for release artifacts is `_build/<env>/rel/<relname>`,
   this can be configured in `rel/config.exs` with `set output_dir: "path"`
 - Allow variables to be used with environment/release macros in config
 - Unpack release prior to executing pre-upgrade scripts
 
-## Fixed
+### Fixed
 
 - 675f492 - Fix issue with terminal color output not being reset (#126) - Akira Takahashi
 - 9c7fc9f - Accept --name option as documented for release.init - Victor Borja
@@ -104,11 +110,11 @@
 
 ## 0.10.0
 
-## Added
+### Added
 
 - 565bea5 - Erlang distribution cookie made configurable - Thomas Stratmann
 
-## Changed
+### Changed
 
 - You can now override the start type of applications by using
   `set applications: [app: start_type]` in `rel/config.exs`. Previously,
@@ -118,7 +124,7 @@
   be merged over the top of the one that would be generated from `config.exs`, so
   that you can override settings per-environment.
 
-## Fixed
+### Fixed
 
 - 45f7c16 - make sure `$__erl` is not empty. Fixes #70
 - f0304a8 - Document and handle the case of not including ERTS when using hot upgrades - Paul Schoenfelder (HEAD -> master)
