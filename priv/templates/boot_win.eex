@@ -84,18 +84,18 @@
   copy "%rel_dir%\%rel_name%.boot" "%rel_dir%\start.boot" >nul
 )
 
-@if "%1"=="install" @goto install
-@if "%1"=="uninstall" @goto uninstall
-@if "%1"=="start" @goto start
-@if "%1"=="stop" @goto stop
-@if "%1"=="restart" @call :stop && @goto start
-@if "%1"=="upgrade" @goto relup
-@if "%1"=="downgrade" @goto relup
-@if "%1"=="console" @goto console
-@if "%1"=="ping" @goto ping
-@if "%1"=="list" @goto list
-@if "%1"=="attach" @goto attach
-@if "%1"=="" @goto usage
+@if %1=="install" @goto install
+@if %1=="uninstall" @goto uninstall
+@if %1=="start" @goto start
+@if %1=="stop" @goto stop
+@if %1=="restart" @call :stop && @goto start
+@if %1=="upgrade" @goto relup
+@if %1=="downgrade" @goto relup
+@if %1=="console" @goto console
+@if %1=="ping" @goto ping
+@if %1=="list" @goto list
+@if %1=="attach" @goto attach
+@if %1=="" @goto usage
 @echo Unknown command: %1
 
 @goto :eof
@@ -188,13 +188,21 @@
 :: Install the release as a Windows service
 :: or install the specified version passed as argument
 :install
-set args=%erl_opts% -setcookie %cookie% ++ -rootdir \"%rootdir%\"
-set start_erl=%erts_dir%\bin\start_erl.exe
-set description=Erlang node %node_name% in %rootdir%
+@set args=%erl_opts% -setcookie %cookie% ++ ^
+       -rootdir "%rootdir%" ^
+       -reldir "%release_root_dir%\releases"
+@echo reldir is %release_root_dir%\releases
+@set start_erl=%erts_dir%\bin\start_erl.exe
+@set description=Erlang node %node_name% in %rootdir%
 @if "" == "%2" (
   :: Install the service
-  %erlsrv% add %service_name% %node_type% "%node_name%" -c "%description%" ^
-            -w "%rootdir%" -m "%start_erl%" -args "%args%" -args_file "%vm_args%" ^
+  %erlsrv% add %service_name% ^
+            -c "%description%" ^
+            %node_type% "%node_name%" ^
+            -w "%rootdir%\var" ^
+            -m "%start_erl%" ^
+            -args "%args%" ^
+            -debugtype new ^
             -stopaction "init:stop()."
 ) else (
   :: relup and reldown
@@ -221,9 +229,8 @@ set description=Erlang node %node_name% in %rootdir%
 :: Relup and reldown
 :relup
 @if "" == "%2" (
-  echo Missing package argument
-  echo Usage: %rel_name% %1 {package base name}
-  echo NOTE {package base name} MUST NOT include the .tar.gz suffix
+  echo Missing version argument
+  echo Usage: %rel_name% %1 {version}
   set ERRORLEVEL=1
   exit /b %ERRORLEVEL%
 )
@@ -251,6 +258,10 @@ set description=Erlang node %node_name% in %rootdir%
 
 :: Attach to a running node
 :attach
-@start "%node_name% attach" %werl% -boot "%clean_boot_script%" ^
-       -remsh %node_name% %node_type% console -setcookie %cookie%
+@call :ping
+@if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+@set id=remsh%RANDOM%-%node_name%
+@start "%node_name% attach" %werl% -hidden -noshell -boot "%clean_boot_script%" ^
+       -user Elixir.IEx.CLI %node_type% %id% -setcookie %cookie% ^
+       -extra --no-halt +iex -%node_type% %id% --cookie %cookie% --remsh %node_name%
 @goto :eof
