@@ -14,26 +14,49 @@
 :: * usage - display available commands
 
 :: Set variables that describe the release
-@set rel_name=<%= rel_name %>
-@set rel_vsn=<%= rel_vsn %>
+@set rel_name=<%= release_name %>
+@set rel_vsn=<%= release_version %>
 @set erts_vsn=<%= erts_vsn %>
 @set erl_opts=<%= erl_opts %>
 
 :: Discover the release root directory from the directory
 :: of this script
 @set script_dir=%~dp0
-@for %%A in ("%script_dir%\..") do @(
+@for %%A in ("%script_dir%\..\..") do @(
   set release_root_dir=%%~fA
 )
 @set rel_dir=%release_root_dir%\releases\%rel_vsn%
+@echo rel_dir is %rel_dir%
+
+@if "%RELEASE_MUTABLE_DIR%"=="" (
+  set mutable_dir=%release_root_dir%\var
+) else (
+  set mutable_dir=%RELEASE_MUTABLE_DIR
+)
+::@echo mutable_dir is %mutable_dir%
+
+@if "%RELEASE_CONFIG_DIR%"=="" (
+  set config_dir=%release_root_dir%
+) else (
+  set config_dir=%RELEASE_CONFIG_DIR%
+)
+::@echo config_dir is %config_dir%
+
+@set log_dir=%mutable_dir%\log
+::@echo log_dir is %log_dir%
+
+:: Create directories which don't exist
+@if not exist %mutable_dir% mkdir %mutable_dir%
+@if not exist %config_dir% mkdir %config_dir%
+@if not exist %log_dir% mkdir %log_dir%
 
 @call :find_erts_dir
 @call :find_sys_config
+@call :find_vm_args
 @call :set_boot_script_var
 
 @set service_name=%rel_name%_%rel_vsn%
 @set bindir=%erts_dir%\bin
-@set vm_args=%rel_dir%\vm.args
 @set progname=erl.exe
 @set clean_boot_script=%release_root_dir%\bin\start_clean
 @set erlsrv="%bindir%\erlsrv.exe"
@@ -73,50 +96,73 @@
 @if "%1"=="list" @goto list
 @if "%1"=="attach" @goto attach
 @if "%1"=="" @goto usage
-@echo Unknown command: "%1"
+@echo Unknown command: %1
 
 @goto :eof
 
 :: Find the ERTS dir
 :find_erts_dir
-@set possible_erts_dir=%release_root_dir%\erts-%erts_vsn%
-@if exist "%possible_erts_dir%" (
-  call :set_erts_dir_from_default
+@if "%erts_vsn%"=="" (
+  call :use_system_erts
 ) else (
-  call :set_erts_dir_from_erl
+  call :use_bundled_erts
 )
 @goto :eof
 
-:: Set the ERTS dir from the passed in erts_vsn
-:set_erts_dir_from_default
-@set erts_dir=%possible_erts_dir%
+:: Load system ERTS info
+:use_system_erts
+@for /f "delims=" %%i in ('where erl') do set system_erl="%%i"
+@if %system_erl%=="" (
+  echo failed to locate the Erlang Runtime System!
+  exit 1
+)
+@set system_root_dir_cmd=%system_erl% -noshell -eval "io:format(\"~s\", [filename:nativename(code:root_dir())])." -s init stop
+@for /f "delims=" %%i in (`%%system_root_dir_cmd%%`) do set system_root=%%i
+@set system_erts_vsn_cmd=%system_erl% -noshell -eval "Ver=erlang:system_info(version),io:format(\"~s\", [Ver])" -s init stop
+@for /f "delims=" %%i in (`%%system_erts_vsn_cmd%%`) do set system_erts_vsn=%%i
+@set erl=%system_erl%
+@set erts_vsn=%system_erts_vsn%
+@set rootdir=%system_root%
+@set erts_dir=%rootdir%\erts-%erts_vsn%
+@goto :eof
+
+:: Load bundled ERTS info
+:use_bundled_erts
+@set erts_dir=%release_root_dir%\erts-%erts_vsn%
+@set erl=%erts_dir%\bin\erl
 @set rootdir=%release_root_dir%
-@goto :eof
-
-:: Set the ERTS dir from erl
-:set_erts_dir_from_erl
-@for /f "delims=" %%i in ('where erl') do @(
-  set erl=%%i
-)
-@set dir_cmd="%erl%" -noshell -eval "io:format(\"~s\", [filename:nativename(code:root_dir())])." -s init stop
-@for /f %%i in ('%%dir_cmd%%') do @(
-  set erl_root=%%i
-)
-@set erts_dir=%erl_root%\erts-%erts_vsn%
-@set rootdir=%erl_root%
 @goto :eof
 
 :: Find the sys.config file
 :find_sys_config
-@set possible_sys=%rel_dir%\sys.config
+@set possible_sys=%release_config_dir%\sys.config
 @if exist %possible_sys% (
-  set sys_config=-config "%possible_sys%"
+  set sys_config_src=%possible_sys%
+) else (
+  set sys_config_src=%rel_dir%\sys.config
 )
+@set sys_config_target=%config_dir%\sys.config
+:: Replace environment variables
+@powershell -command "$content = get-content %sys_config_src%; [regex]::matches($content, '\${[\w\d_-]+}') | foreach { $content = $content.Replace($_.value, [System.Environment]::GetEnvironmentVariable($_.value)) }; out-file -filepath %sys_config_target% -inputobject $content -encoding ascii" 
+@set sys_config=%sys_config_target%
+@goto :eof
+
+:find_vm_args
+@set possible_vmargs=%release_config_dir%\vm.args
+@if exist %possible_vmargs% (
+  set vmargs_src=%possible_vmargs%
+) else (
+  set vmargs_src=%rel_dir%\vm.args
+)
+@set vmargs_target=%config_dir%\vm.args
+:: Replace environment variables
+@powershell -command "$content = get-content %vmargs_src%; [regex]::matches($content, '\${[\w\d_-]+}') | foreach { $content = $content.Replace($_.value, [System.Environment]::GetEnvironmentVariable($_.value)) }; out-file -filepath %vmargs_target% -inputobject $content -encoding ascii" 
+@set vm_args=%vmargs_target%
 @goto :eof
 
 :: set boot_script variable
 :set_boot_script_var
-@if exist "%rel_dir%\%rel_name%.boot" (
+@if exist %rel_dir%\%rel_name%.boot (
   set boot_script=%rel_dir%\%rel_name%
 ) else (
   set boot_script=%rel_dir%\start
@@ -148,7 +194,7 @@ set description=Erlang node %node_name% in %rootdir%
 @if "" == "%2" (
   :: Install the service
   %erlsrv% add %service_name% %node_type% "%node_name%" -c "%description%" ^
-            -w "%rootdir%" -m "%start_erl%" -args "%args%" ^
+            -w "%rootdir%" -m "%start_erl%" -args "%args%" -args_file "%vm_args%" ^
             -stopaction "init:stop()."
 ) else (
   :: relup and reldown
@@ -186,8 +232,11 @@ set description=Erlang node %node_name% in %rootdir%
 
 :: Start a console
 :console
-@start "%rel_name% console" %werl% -boot "%boot_script%" %sys_config%  ^
-       -args_file "%vm_args%"
+@start "%rel_name% console" %werl% -boot "%boot_script%" ^
+       -config "%sys_config%"  ^
+       -args_file "%vm_args%" ^
+       -user Elixir.IEx.CLI ^
+       -extra --no-halt +iex
 @goto :eof
 
 :: Ping the running node
