@@ -131,7 +131,11 @@ defmodule Mix.Tasks.Release do
     relative_output_dir = Path.relative_to_cwd(output_dir)
     app = cond do
       executable? -> "#{app}.run"
-      :else -> app
+      :else ->
+        case :os.type() do
+          {:win32,_} -> "#{app}.bat"
+          {:unix,_}  -> "#{app}"
+        end
     end
     Logger.success "Release successfully built!\n    " <>
       "You can run it in one of the following ways:\n      " <>

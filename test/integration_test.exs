@@ -6,6 +6,7 @@ defmodule IntegrationTest do
   alias Mix.Releases.Utils
   import MixTestHelper
 
+  @newline Utils.newline()
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
   @standard_output_path Path.join([__DIR__, "fixtures", "standard_app", "_build", "prod", "rel", "standard_app"])
 
@@ -54,9 +55,9 @@ defmodule IntegrationTest do
           assert File.exists?(bin_path)
           assert {_output, 0} = System.cmd(bin_path, ["start"])
           :timer.sleep(1_000) # Required, since starting up takes a sec
-          assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
-          assert {"2\n", 0}    = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
-          assert {"ok\n", 0}   = System.cmd(bin_path, ["stop"])
+          assert {"pong" <> @newline, 0} = System.cmd(bin_path, ["ping"])
+          assert {"2" <> @newline, 0}    = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert {"ok" <> @newline, 0}   = System.cmd(bin_path, ["stop"])
         rescue
           e ->
             _ = System.cmd(bin_path, ["stop"])
@@ -141,11 +142,11 @@ defmodule IntegrationTest do
           assert File.exists?(bin_path)
           assert {_output, 0} = System.cmd(bin_path, ["start"])
           :timer.sleep(1_000) # Required, since starting up takes a sec
-          assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
+          assert {"pong" <> @newline, 0} = System.cmd(bin_path, ["ping"])
+          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
+          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
+          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
+          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
           assert {output, 0} = System.cmd(bin_path, ["upgrade", "0.0.2"])
           expected = "Made release permanent: \"0.0.2\""
           result = String.contains?(output, expected)
@@ -153,10 +154,10 @@ defmodule IntegrationTest do
             IO.inspect({:result, expected: expected, in: output})
           end
           assert true = result
-          assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
-          assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
-          assert {"4\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["stop"])
+          assert {"{ok,2}" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
+          assert {"{ok,2}" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
+          assert {"4" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["stop"])
         rescue
           e ->
             _ = System.cmd(bin_path, ["stop"])

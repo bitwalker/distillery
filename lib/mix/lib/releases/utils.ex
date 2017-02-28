@@ -414,4 +414,12 @@ defmodule Mix.Releases.Utils do
   def is_erts_lib?(app_dir), do: is_erts_lib?(app_dir, "#{:code.lib_dir()}")
   def is_erts_lib?(app_dir, lib_dir), do: String.starts_with?(app_dir, lib_dir)
 
+  @doc false
+  def newline() do
+    case :os.type() do
+      {:win32, _} -> "\r\n"
+      {:unix, _}  -> "\n"
+    end
+  end
+
 end
