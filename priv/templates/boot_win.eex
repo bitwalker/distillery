@@ -89,12 +89,13 @@
 @if %1=="start" @goto start
 @if %1=="stop" @goto stop
 @if %1=="restart" @call :stop && @goto start
-@if %1=="upgrade" @goto relup
-@if %1=="downgrade" @goto relup
+@if %1=="upgrade" @goto upgrade
+@if %1=="downgrade" @goto upgrade
 @if %1=="console" @goto console
 @if %1=="ping" @goto ping
-@if %1=="list" @goto list
-@if %1=="attach" @goto attach
+@if %1=="describe" @goto describe
+@if %1=="attach" @goto remote_console
+@if %1=="remote_console" @goto remote_console
 @if %1=="" @goto usage
 @echo Unknown command: %1
 
@@ -182,8 +183,42 @@
 
 :: Display usage information
 :usage
-@echo usage: %~n0 ^(install^|uninstall^|start^|stop^|restart^|upgrade^|downgrade^|console^|ping^|list^|attach^)
+@echo Usage: %~n0 ^<task^>
+@echo.
+@echo Service Control
+@echo =====================
+@echo install                             # installs the release as a service
+@echo uninstall                           # uninstalls the release service
+@echo start                               # starts the service
+@echo start_boot                          # not implemented
+@echo foreground                          # not implemented
+@echo console                             # run the release in a local shell
+@echo console_clean                       # run the release in a local shell
+@echo stop                                # stops the service
+@echo restart                             # restarts the release service
+@echo reboot                              # not implemented
+@echo reload_config                       # not implemented
+@echo.
+@echo Upgrades
+@echo =====================
+@echo upgrade ^<version^>                   # upgrade the current release service
+@echo downgrade ^<version^>                 # downgrade the current release service
+@echo.
+@echo Utilities
+@echo =====================
+@echo attach                              # alias for remote_console on Windows
+@echo remote_console                      # open a remote console connected to the release
+@echo pid                                 # not implemented
+@echo ping                                # ping the current release service
+@echo pingpeer ^<peer^>                     # not implemented
+@echo escript ^<file^>                      # not implemented
+@echo rpc ^<mod^> ^<fun^> ^[^<args..^>^]          # not implemented
+@echo rpcterms ^<mod^> ^<fun^> ^[^<expr^>^]       # not implemented
+@echo eval ^<expr^>                         # not implemented
+@echo command ^<mod^> ^<fun^> ^[^<args..^>^]      # not implemented
+@echo describe                            # list details about the release
 @goto :eof
+
 
 :: Install the release as a Windows service
 :: or install the specified version passed as argument
@@ -206,7 +241,7 @@
             -stopaction "init:stop()."
 ) else (
   :: relup and reldown
-  goto relup
+  goto upgrade
 )
 @goto :eof
 
@@ -226,8 +261,8 @@
 @%erlsrv% stop %service_name%
 @goto :eof
 
-:: Relup and reldown
-:relup
+:: Upgrade this release
+:upgrade
 @if "" == "%2" (
   echo Missing version argument
   echo Usage: %rel_name% %1 {version}
@@ -251,13 +286,13 @@
 @%escript% %nodetool% ping %node_type% "%node_name%" -setcookie "%cookie%"
 @goto :eof
 
-:: List installed Erlang services
-:list
+:: Describe this release
+:describe
 @%erlsrv% list %service_name%
 @goto :eof
 
-:: Attach to a running node
-:attach
+:: Remote shell to a running node
+:remote_console
 @call :ping
 @if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
 @set id=remsh%RANDOM%-%node_name%
