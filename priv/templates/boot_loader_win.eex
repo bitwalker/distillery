@@ -7,4 +7,4 @@
 @set rel_name=<%= release_name %>
 @set rel_vsn=<%= release_version %>
 @set boot_script=%release_root_dir%\releases\%rel_vsn%\%rel_name%.bat
-@%boot_script% "%1"
+@%boot_script% %*
