@@ -28,7 +28,7 @@ defmodule IntegrationTest do
 
   describe "standard application" do
     @tag :expensive
-    @tag timeout: 120_000 # 2m
+    @tag timeout: 60_000 * 5 # 5m
     test "can build release and start it" do
       with_standard_app do
         # Build release
@@ -53,16 +53,34 @@ defmodule IntegrationTest do
           tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
           assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
           assert File.exists?(bin_path)
+          case :os.type() do
+            {:win32,_} ->
+              assert {_output, 0} = System.cmd(bin_path, ["install"])
+            _ ->
+              :ok
+          end
           assert {_output, 0} = System.cmd(bin_path, ["start"])
           :timer.sleep(1_000) # Required, since starting up takes a sec
-          assert {"pong" <> @newline, 0} = System.cmd(bin_path, ["ping"])
-          assert {"2" <> @newline, 0}    = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
-          assert {"ok" <> @newline, 0}   = System.cmd(bin_path, ["stop"])
+          assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
+          assert {"2\n", 0}    = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          case :os.type() do
+            {:win32,_} ->
+              assert {output, 0} = System.cmd(bin_path, ["stop"])
+              assert String.contains?(output, "stopped")
+              assert {_output, 0} = System.cmd(bin_path, ["uninstall"])
+            _ ->
+              assert {"ok\n", 0} = System.cmd(bin_path, ["stop"])
+          end
         rescue
           e ->
             _ = System.cmd(bin_path, ["stop"])
-            fields = Map.from_struct(e)
-            reraise(e.__struct__, Enum.into(fields, []), System.stacktrace)
+            case :os.type() do
+              {:win32,_} ->
+                _ = System.cmd(bin_path, ["uninstall"])
+              _ ->
+                :ok
+            end
+            reraise e, System.stacktrace
         after
           File.rm_rf!(tmpdir)
           :ok
@@ -71,7 +89,7 @@ defmodule IntegrationTest do
     end
 
     @tag :expensive
-    @tag timeout: 120_000 # 2m
+    @tag timeout: 60_000 * 5 # 5m
     test "can build and deploy hot upgrade" do
       with_standard_app do
         # Build v1 release
@@ -140,13 +158,19 @@ defmodule IntegrationTest do
                   Path.join([tmpdir, "releases", "0.0.2", "standard_app.tar.gz"]))
           # Boot it, ping it, upgrade it, rpc to verify, then shut it down
           assert File.exists?(bin_path)
+          case :os.type() do
+            {:win32,_} ->
+              assert {_output,0} = System.cmd(bin_path, ["install"])
+            _ ->
+              :ok
+          end
           assert {_output, 0} = System.cmd(bin_path, ["start"])
           :timer.sleep(1_000) # Required, since starting up takes a sec
-          assert {"pong" <> @newline, 0} = System.cmd(bin_path, ["ping"])
-          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
-          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
-          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
-          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
+          assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
+          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
+          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
+          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
+          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
           assert {output, 0} = System.cmd(bin_path, ["upgrade", "0.0.2"])
           expected = "Made release permanent: \"0.0.2\""
           result = String.contains?(output, expected)
@@ -154,15 +178,23 @@ defmodule IntegrationTest do
             IO.inspect({:result, expected: expected, in: output})
           end
           assert true = result
-          assert {"{ok,2}" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
-          assert {"{ok,2}" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
-          assert {"4" <> @newline, 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
-          assert {"ok" <> @newline, 0} = System.cmd(bin_path, ["stop"])
+          assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
+          assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
+          assert {"4\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          case :os.type() do
+            {:win32,_} ->
+              assert {output, 0} = System.cmd(bin_path, ["stop"])
+              assert String.contains?(output, "stopped")
+              assert {_,0} = System.cmd(bin_path, ["uninstall"])
+            _ ->
+              assert {"ok\n", 0} = System.cmd(bin_path, ["stop"])
+              :ok
+          end
         rescue
           e ->
             _ = System.cmd(bin_path, ["stop"])
-            fields = Map.from_struct(e)
-            reraise(e.__struct__, Enum.into(fields, []), System.stacktrace)
+            _ = System.cmd(bin_path, ["uninstall"])
+            reraise e, System.stacktrace
         after
           File.rm_rf!(tmpdir)
           clean_up_standard_app!()
