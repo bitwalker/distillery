@@ -145,7 +145,7 @@ defmodule Mix.Tasks.Release do
     switches = [silent: :boolean, quiet: :boolean, verbose: :boolean,
                 executable: :boolean, transient: :boolean,
                 dev: :boolean, erl: :string, no_tar: :boolean,
-                upgrade: :boolean, upfrom: :string, name: :string,
+                upgrade: :boolean, upfrom: :string, name: :string, profile: :string,
                 env: :string, no_warn_missing: :boolean,
                 warnings_as_errors: :boolean]
     {overrides, _} = OptionParser.parse!(argv, strict: switches)
