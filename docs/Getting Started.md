@@ -89,7 +89,7 @@ Given the description of a release (the `.rel`) and it's boot script, a release 
 
 ## Releases and Hot Upgrades
 
-The use of releases enables of of the Erlang VM's most powerful features - the ability to upgrade the system while it's running.
+The use of releases enables one of the Erlang VM's most powerful features - the ability to upgrade the system while it's running.
 When generating upgrades, in addition to the `.rel`, `.script`, and `.boot` files, upgrades also require the definition of `.appup` files,
 which describe how to upgrade from one version of an application to the next. Each application which has changed must have a `.appup` defined, or it will not be upgraded. This file is high-level and relatively easy to write. It is used to generate a `.relup` file, which is a low-level description of how the entire release will be upgraded (or downgraded) from one version to another; similar to how the `.script` corresponds to the `.rel` file.
 
