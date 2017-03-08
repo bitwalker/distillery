@@ -1,3 +1,17 @@
+## 1.3
+
+### Added
+
+- Preliminary Windows support, feedback is welcome!
+
+### Changed
+
+- Only write `start_erl.data` when detecting ERTS
+
+### Fixed
+
+- #212 - missing profile option for release task
+
 ## 1.2.2
 
 ### Fixed
