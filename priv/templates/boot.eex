@@ -172,6 +172,8 @@ _init_erts_config() {
         export ROOTDIR="$("$__erl" -boot start_clean -eval 'io:format("~s~n", [code:root_dir()]), halt().' -noshell)"
         export ERTS_VSN="$(_get_erts_vsn)"
         export ERTS_DIR="$ROOTDIR"/"erts-$ERTS_VSN"
+        # Update start_erl.data
+        echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
     else
         __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
         if [ -d "$__erts_dir" ]; then
@@ -337,7 +339,6 @@ fi
 
 # Make sure ERTS configuration is set
 _init_erts_config
-echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
 
 # Allow override of where to read configuration from
 # By default it's RELEASE_ROOT_DIR
