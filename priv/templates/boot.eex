@@ -737,6 +737,7 @@ case "$1" in
         __bg_pid=$!
         _run_hooks_from_dir "$POST_START_HOOKS"
         wait $__bg_pid
+        _run_hooks_from_dir "$POST_STOP_HOOKS"
         ;;
     rpc)
         _check_cookie

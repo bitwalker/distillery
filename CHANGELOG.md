@@ -11,6 +11,7 @@
 ### Fixed
 
 - #212 - missing profile option for release task
+- #214 - run post_stop hooks after foreground exit
 
 ## 1.2.2
 
