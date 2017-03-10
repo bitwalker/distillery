@@ -41,6 +41,7 @@ end
 release :<%= Keyword.get(release, :release_name) %> do
   set version: "0.1.0"
   set applications: [
+    :runtime_tools,
 <%= Enum.map(Keyword.get(release, :release_applications), fn {app, start_type} ->
     "    #{app}: :#{start_type}"
     end) |> Enum.join(",\n") %>
@@ -48,5 +49,8 @@ release :<%= Keyword.get(release, :release_name) %> do
 end<% else %>
 release :<%= Keyword.get(release, :release_name) %> do
   set version: current_version(:<%= Keyword.get(release, :release_name)%>)
+  set applications: [
+    :runtime_tools
+  ]
 end<% end %>
 <% end %>
