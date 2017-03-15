@@ -72,3 +72,22 @@ You may also provide your own config directory where your custom `vm.args`, `sys
 configuration files will be loaded from, by setting `RELEASE_CONFIG_DIR=path/to/files`. By default this will be set
 to the root directory of the release, i.e. the folder to which you extracted the tarball. If `vm.args` or `sys.config`
 cannot be found in `RELEASE_CONFIG_DIR`, it will fall back to using the ones under the `releases/<version>` directory.
+
+## run\_erl
+
+The `run_erl` command is responsible for running a release on Unix systems,
+capturing STDERR and STDOUT so that all output can be logged as well as
+allowing monitoring and remote debugging of a running release.
+
+Several environment variables are useful in configuring `run_erl`, for
+example to customize logging output.  To specify environment variables to
+apply to `run_erl`, you can add a line like
+`set run_erl_env: "RUN_ERL_LOG_MAXSIZE=10000000 RUN_ERL_LOG_GENERATIONS=10"`
+in your release configuration.
+
+This configuration can also be specified in the `RUN_ERL_ENV`
+environment variable at the time of running `mix release`.
+
+For a complete list of environment variables respected by `run_erl`, see
+[here](http://erlang.org/doc/man/run_erl.html).
+

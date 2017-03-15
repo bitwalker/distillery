@@ -14,6 +14,7 @@ defmodule Mix.Releases.Profile do
     executable: false, # whether it's an executable release
     exec_opts: [transient: false], # options for an executable release
     erl_opts: nil, # string to be passed to erl
+    run_erl_env: nil, # string to be passed to run_erl
     dev_mode: nil, # boolean
     include_erts: nil, # boolean | "path/to/erts"
     include_src: nil, # boolean
@@ -47,6 +48,7 @@ defmodule Mix.Releases.Profile do
       sys_config: nil | String.t,
       code_paths: nil | [String.t],
       erl_opts: nil | String.t,
+      run_erl_env: nil | String.t,
       dev_mode: nil | boolean,
       include_erts: nil | boolean | String.t,
       include_src: nil | boolean,
