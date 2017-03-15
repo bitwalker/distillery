@@ -20,6 +20,7 @@ defmodule Mix.Releases.Release do
     profile: %Profile{
       code_paths: [],
       erl_opts: "",
+      run_erl_env: "",
       exec_opts: [transient: false],
       dev_mode: false,
       include_erts: true,

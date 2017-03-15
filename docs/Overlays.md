@@ -36,6 +36,7 @@ Currently, the following overlay vars are provided out of the box by Distillery:
   - include_src: Is source code being included in the release
   - include_system_libs: Are system libraries being included in the release
   - erl_opts: The string of options which will be passed to `erl` when running the release
+  - run_erl_env: The string of environment variable assignments which will be applied to `run_erl` when running the release
   - erts_vsn: The current ERTS version
   - output_dir: The release output directory
 ```

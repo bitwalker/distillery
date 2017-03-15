@@ -112,6 +112,8 @@ and environments.
         be hot upgraded. Only use this if you need it.
     - erl_opts (string);
         a string of Erlang VM options to be passed along to erl
+    - run_erl_env (string);
+        a string of environment variables to be applied to run_erl
     - commands (keyword list of names to paths);
         Commands are extensions to the boot script which will run like any
         other boot script command, i.e. foreground, and are implemented

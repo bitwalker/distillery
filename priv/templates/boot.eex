@@ -70,6 +70,8 @@ REL_DIR="${REL_DIR:-$RELEASE_ROOT_DIR/releases/$REL_VSN}"
 REL_LIB_DIR="${REL_LIB_DIR:-$RELEASE_ROOT_DIR/lib}"
 # Options passed to erl
 ERL_OPTS="${ERL_OPTS:-<%= release.profile.erl_opts %>}"
+# Environment variables for run_erl
+RUN_ERL_ENV="${RUN_ERL_ENV:-<%= release.profile.run_erl_env %>}"
 # When stdout is piped to a file, this is the directory those files will
 # be stored in. defaults to /log in the release root directory
 
@@ -444,7 +446,7 @@ case "$1" in
         mkdir -p "$PIPE_DIR"
 
 
-        "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
+        env $RUN_ERL_ENV "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
                           "$(_start_command)"
 
         _run_hooks_from_dir "$POST_START_HOOKS"
@@ -828,13 +830,14 @@ case "$1" in
     describe)
         ## Print a summary of information about this release
         echo "$REL_NAME-$REL_VSN\n"
-        echo "erts:       $ERTS_VSN"
-        echo "path:       $REL_DIR"
-        echo "sys.config: $SYS_CONFIG_PATH"
-        echo "vm.args:    $VMARGS_PATH"
-        echo "name:       $NAME"
-        echo "cookie:     $COOKIE"
-        echo "erl_opts:   ${ERL_OPTS:-none provided}"
+        echo "erts:        $ERTS_VSN"
+        echo "path:        $REL_DIR"
+        echo "sys.config:  $SYS_CONFIG_PATH"
+        echo "vm.args:     $VMARGS_PATH"
+        echo "name:        $NAME"
+        echo "cookie:      $COOKIE"
+        echo "erl_opts:    ${ERL_OPTS:-none provided}"
+        echo "run_erl_env: ${RUN_ERL_ENV:-none provided}"
         echo ""
         echo "hooks:"
         __has_hooks=0
