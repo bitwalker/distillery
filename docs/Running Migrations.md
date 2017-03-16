@@ -24,6 +24,10 @@ defmodule MyApp.ReleaseTasks do
     :postgrex,
     :ecto
   ]
+  
+  @myapps [
+    :myapp
+  ]
 
   @repos [
     MyApp.Repo
@@ -43,7 +47,7 @@ defmodule MyApp.ReleaseTasks do
     Enum.each(@repos, &(&1.start_link(pool_size: 1)))
 
     # Run migrations
-    Enum.each(@repos, &run_migrations_for/1)
+    Enum.each(@myapps, &run_migrations_for/1)
 
     # Run the seed script if it exists
     seed_script = Path.join([priv_dir(:myapp), "repo", "seeds.exs"])
@@ -61,7 +65,7 @@ defmodule MyApp.ReleaseTasks do
 
   defp run_migrations_for(app) do
     IO.puts "Running migrations for #{app}"
-    Ecto.Migrator.run(app, migrations_path(app), :up, all: true)
+    Ecto.Migrator.run(MyApp.Repo, migrations_path(app), :up, all: true)
   end
 
   defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])
