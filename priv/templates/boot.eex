@@ -131,7 +131,7 @@ escript() {
     shift; scriptpath="$1"; shift
     export RELEASE_ROOT_DIR
 
-    "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@
+    "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" "$@"
 }
 
 # Private. Load target cookie, either from vm.args or $HOME/.cookie
@@ -496,7 +496,7 @@ case "$1" in
     escript)
         _check_cookie
         ## Run an escript under the node's environment
-        if ! escript $@; then
+        if ! escript "$@"; then
             exit 1
         fi
         ;;
