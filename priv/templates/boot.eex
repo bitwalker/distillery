@@ -120,7 +120,7 @@ nodetool() {
     command="$1"; shift
     name=${PEERNAME:-$NAME}
     "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$name" \
-                            -setcookie "$COOKIE" "$command" $@
+                            -setcookie "$COOKIE" "$command" "$@"
 }
 
 
@@ -752,7 +752,7 @@ case "$1" in
 
         shift
 
-        nodetool rpc $@
+        nodetool rpc "$@"
         ;;
     rpcterms)
         _check_cookie
@@ -765,7 +765,7 @@ case "$1" in
 
         shift
 
-        nodetool rpcterms $@
+        nodetool rpcterms "$@"
         ;;
     eval)
         _check_cookie
