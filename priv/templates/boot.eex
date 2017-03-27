@@ -274,64 +274,46 @@ _init_configs() {
     # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
     if [ -z "$VMARGS_PATH" ]; then
         if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
-            export VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
+            export SRC_VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
         else
-            export VMARGS_PATH="$REL_DIR/vm.args"
+            export SRC_VMARGS_PATH="$REL_DIR/vm.args"
         fi
-        export SRC_VMARGS_PATH="$VMARGS_PATH"
     else
-        if [ "$VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
-            export SRC_VMARGS_PATH="$VMARGS_PATH"
-        else
-            if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
-                export VMARGS_PATH="$RELEASE_CONFIG_DIR/vm.args"
-            else
-                export VMARGS_PATH="$REL_DIR/vm.args"
-            fi
-            export SRC_VMARGS_PATH="$VMARGS_PATH"
-        fi
+        export SRC_VMARGS_PATH="$VMARGS_PATH"
     fi
     if [ "$SRC_VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
         echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
             >  "$RELEASE_MUTABLE_DIR/vm.args"
         cat  "$SRC_VMARGS_PATH"                              \
             >> "$RELEASE_MUTABLE_DIR/vm.args"
-        export VMARGS_PATH="$RELEASE_MUTABLE_DIR"/vm.args
+        export DEST_VMARGS_PATH="$RELEASE_MUTABLE_DIR"/vm.args
     fi
     if [ $REPLACE_OS_VARS ]; then
-        _replace_os_vars "$VMARGS_PATH"
+        _replace_os_vars "$DEST_VMARGS_PATH"
     fi
+    export VMARGS_PATH="${VMARGS_PATH:-$DEST_VMARGS_PATH}"
 
     # Set SYS_CONFIG_PATH, the path to the sys.config file to use
     # Use $RELEASE_CONFIG_DIR/sys.config if exists, otherwise releases/VSN/sys.config
     if [ -z "$SYS_CONFIG_PATH" ]; then
         if [ -f "$RELEASE_CONFIG_DIR/sys.config" ]; then
-            export SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
+            export SRC_SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
         else
-            export SYS_CONFIG_PATH="$REL_DIR/sys.config"
+            export SRC_SYS_CONFIG_PATH="$REL_DIR/sys.config"
         fi
-        export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
     else
-        if [ "$SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
-            export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
-        else
-            if [ -f "$RELEASE_CONFIG_DIR/sys.config" ]; then
-                export SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
-            else
-                export SYS_CONFIG_PATH="$REL_DIR/sys.config"
-            fi
-            export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
-        fi
+        export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
     fi
     if [ "$SRC_SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
         (echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead."; \
         cat  "$SRC_SYS_CONFIG_PATH")                              \
             > "$RELEASE_MUTABLE_DIR/sys.config"
-        export SYS_CONFIG_PATH="$RELEASE_MUTABLE_DIR"/sys.config
+        export DEST_SYS_CONFIG_PATH="$RELEASE_MUTABLE_DIR"/sys.config
     fi
     if [ $REPLACE_OS_VARS ]; then
-        _replace_os_vars "$SYS_CONFIG_PATH"
+        _replace_os_vars "$DEST_SYS_CONFIG_PATH"
     fi
+    export SYS_CONFIG_PATH="${SYS_CONFIG_PATH:-$DEST_SYS_CONFIG_PATH}"
 }
 
 # If TERM is not set, set it to xterm
