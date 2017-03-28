@@ -554,6 +554,24 @@ case "$1" in
         REL_DIR="$RELEASE_ROOT_DIR/releases/$TARGET_VERSION"
 
         # Prepare new configs
+        if [ "$SRC_VMARGS_PATH" == "$RELEASE_MUTABLE_DIR/vm.args" ]; then
+            unset VMARGS_PATH
+        else
+            if [ "$SRC_VMARGS_PATH" == "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/vm.args" ]; then
+                unset VMARGS_PATH
+            else
+                export VMARGS_PATH="$SRC_VMARGS_PATH"
+            fi
+        fi
+        if [ "$SRC_SYS_CONFIG_PATH" == "$RELEASE_MUTABLE_DIR/sys.config" ]; then
+            unset SYS_CONFIG_PATH
+        else
+            if [ "$SRC_SYS_CONFIG_PATH" == "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/sys.config" ]; then
+                unset SYS_CONFIG_PATH
+            else
+                export SYS_CONFIG_PATH="$SRC_SYS_CONFIG_PATH"
+            fi
+        fi
         _init_configs
         # We have to do some juggling to ensure the correct config is used by the upgrade handler
         # First, we detect if there was a failed upgrade, so we can start over
