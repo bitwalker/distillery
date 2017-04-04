@@ -85,7 +85,7 @@ This boot script looks like so (it is heavily truncated here for our demonstrati
 
 As you can see, the boot script is full of low-level instructions which describe precisely how the VM, and the applications contained in the release, will be loaded and started. Every time you run `erl` or `mix` or `iex`, a boot script like the one above is used to boot the Erlang VM.
 
-Given the description of a release (the `.rel`) and it's boot script, a release is packaged by gathering all of the compiled `.beam` files required by the applications contained in the release, the target ERTS, and supporting files (`sys.config` for application configuration, `vm.args` for VM configuration, and a shell script used to set up the environment and run the release) - into a gzipped tarball for easy deployment.
+Given the description of a release (the `.rel`) and its boot script, a release is packaged by gathering all of the compiled `.beam` files required by the applications contained in the release, the target ERTS, and supporting files (`sys.config` for application configuration, `vm.args` for VM configuration, and a shell script used to set up the environment and run the release) - into a gzipped tarball for easy deployment.
 
 ## Releases and Hot Upgrades
 
