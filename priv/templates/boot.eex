@@ -554,19 +554,19 @@ case "$1" in
         REL_DIR="$RELEASE_ROOT_DIR/releases/$TARGET_VERSION"
 
         # Prepare new configs
-        if [ "$SRC_VMARGS_PATH" == "$RELEASE_MUTABLE_DIR/vm.args" ]; then
+        if [ "$SRC_VMARGS_PATH" = "$RELEASE_MUTABLE_DIR/vm.args" ]; then
             unset VMARGS_PATH
         else
-            if [ "$SRC_VMARGS_PATH" == "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/vm.args" ]; then
+            if [ "$SRC_VMARGS_PATH" = "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/vm.args" ]; then
                 unset VMARGS_PATH
             else
                 export VMARGS_PATH="$SRC_VMARGS_PATH"
             fi
         fi
-        if [ "$SRC_SYS_CONFIG_PATH" == "$RELEASE_MUTABLE_DIR/sys.config" ]; then
+        if [ "$SRC_SYS_CONFIG_PATH" = "$RELEASE_MUTABLE_DIR/sys.config" ]; then
             unset SYS_CONFIG_PATH
         else
-            if [ "$SRC_SYS_CONFIG_PATH" == "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/sys.config" ]; then
+            if [ "$SRC_SYS_CONFIG_PATH" = "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/sys.config" ]; then
                 unset SYS_CONFIG_PATH
             else
                 export SYS_CONFIG_PATH="$SRC_SYS_CONFIG_PATH"
