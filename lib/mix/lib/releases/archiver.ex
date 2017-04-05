@@ -145,14 +145,17 @@ defmodule Mix.Releases.Archiver do
         {:ok, _} <-  File.rm_rf(tmpdir) do
       {:ok, tarfile}
     else
-      {:error, {:archiver, _}} = err ->
-        err
-      {:error, reason, file} ->
-        {:error, {:archiver, {:file, reason, file}}}
-      {:error, {name, reason}} when is_list(name) ->
-        {:error, {:archiver, {:erl_tar, {name, reason}}}}
-      {:error, _reason} = err ->
-        err
+      err ->
+        case err do
+          {:error, {:archiver, _}} ->
+            err
+          {:error, reason, file} ->
+            {:error, {:archiver, {:file, reason, file}}}
+          {:error, {name, reason}} when is_list(name) ->
+            {:error, {:archiver, {:erl_tar, {name, reason}}}}
+          {:error, _reason} ->
+            err
+        end
     end
   catch
     kind, err ->
