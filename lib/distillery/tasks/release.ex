@@ -95,12 +95,14 @@ defmodule Mix.Tasks.Release do
         print_success(release, name)
       {:error, _} = err ->
         Logger.error Errors.format_error(err)
+        exit({:shutdown, 1})
     end
   rescue
     e ->
       Logger.error "Release failed: " <>
         Exception.message(e) <>
         "\n#{Exception.format_stacktrace(System.stacktrace)}"
+      exit({:shutdown, 1})
   end
   defp do_release(config, archive?: true) do
     case Assembler.assemble(config) do
@@ -118,12 +120,14 @@ defmodule Mix.Tasks.Release do
         end
       {:error, _} = err ->
         Logger.error Errors.format_error(err)
+        exit({:shutdown, 1})
     end
   rescue
     e ->
       Logger.error "Release failed: " <>
         Exception.message(e) <>
         "\n#{Exception.format_stacktrace(System.stacktrace)}"
+      exit({:shutdown, 1})
   end
 
   @spec print_success(Release.t, atom) :: :ok
