@@ -1,5 +1,6 @@
 Code.require_file("rel/sample_app_plugin.ex")
 Code.require_file("rel/release_plugin.ex")
+Code.require_file("rel/another_release_plugin.ex")
 
 use Mix.Releases.Config,
     # This sets the default release built by `mix release`
@@ -40,5 +41,6 @@ end
 release :standard_app do
   set version: "0.0.1"
   plugin SampleApp.ReleasePlugin
+  plugin SampleApp.AnotherReleasePlugin
 end
 
