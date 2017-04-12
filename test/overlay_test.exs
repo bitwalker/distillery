@@ -1,6 +1,6 @@
 defmodule OverlayTest do
   use ExUnit.Case
-  alias Mix.Releases.Overlays
+  alias Mix.Releases.{Utils,Overlays}
 
   @output_dir Path.join([__DIR__, "fixtures", "mock_app", "_build", "test", "rel", "mock_app"])
 
@@ -106,7 +106,7 @@ defmodule OverlayTest do
                    false -> ""
                  end
       assert created?
-      assert "hi from release (template)!\n" = contents
+      assert "hi from release (template)!#{Utils.newline()}" == contents
       assert {:ok, ["template.txt"]} = result
     end
   end

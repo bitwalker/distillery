@@ -181,8 +181,11 @@ defmodule Mix.Releases.Errors do
     "Release failed during assembly:\n" <>
       "    #{Exception.message(e)}"
   end
-  def format_error({:error, {:assembler, {kind, err}}}) do
-    "Release failed: #{Exception.format(kind, err, System.stacktrace)}"
+  def format_error({:error, {:assembler, {:error, reason}}}) do
+    "Release failed: #{Exception.format(:error, reason, System.stacktrace)}"
+  end
+  def format_error({:error, {:assembler, {area, err}}}) when is_map(err) do
+    "Release failed (#{area}): #{Exception.message(err)}"
   end
   def format_error({:error, {:tar_generation_warn, mod, warnings}}) do
     "Release packaging failed due to warnings:\n" <>
