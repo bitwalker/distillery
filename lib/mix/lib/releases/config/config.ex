@@ -146,11 +146,14 @@ defmodule Mix.Releases.Config do
 
   @doc """
   Adds a plugin to the environment or release definition it is part of.
+  Plugins will be called in the order they are defined. In the example
+  below `MyApp.ReleasePlugin` will be called, then `MyApp.MigratePlugin`
 
   ## Usage
 
       release :myapp do
         plugin MyApp.ReleasePlugin
+        plugin MyApp.MigratePlugin
       end
 
   """
