@@ -863,7 +863,7 @@ case "$1" in
         exit 0
         ;;
     *)
-        __command_path="$REL_DIR/commands/$1"
+        __command_path="$REL_DIR/commands/$1.sh"
         if [ -f "$__command_path" ]; then
             _check_cookie
             . "$__command_path"
