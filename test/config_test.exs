@@ -45,7 +45,7 @@ defmodule ConfigTest do
         Mix.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
       end)
       prod_plugin = [{SampleApp.ProdPlugin, [some: :config]}]
-      rel_plugin = [{SampleApp.ReleasePlugin, []}]
+      rel_plugin = [{SampleApp.ReleasePlugin, []}, {SampleApp.AnotherReleasePlugin, []}]
       assert %Config{environments: %{
                         dev: %Environment{profile: %Profile{plugins: []}},
                         prod: %Environment{profile: %Profile{plugins: ^prod_plugin}}},
