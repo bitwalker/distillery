@@ -33,6 +33,17 @@ Executes an escript. By default this function takes the first argument passed to
 script as the escript path, use the `set` builtin to reset the arguments to provide your
 own. It uses `$1` to set the escript path, and `$@` to pass arguments to that escript.
 
+### run_hooks()
+
+Executes the hook for one of the following phases:
+
+- pre_configure
+- pre_start/post_start
+- pre_stop/post_stop
+- pre_upgrade/post_upgrade
+
+It uses `$1` as the phase name to use, e.g. `run_hooks pre_configure`.
+
 ## Environment Variables
 
 Most all of these should be considered read-only, but those which you can manipulate
