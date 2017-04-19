@@ -128,7 +128,7 @@ nodetool() {
 # Run an escript in the node's environment
 # Use like `escript "path/to/escript"`
 escript() {
-    shift; scriptpath="$1"; shift
+    scriptpath="$1"; shift
     export RELEASE_ROOT_DIR
 
     "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" "$@"
