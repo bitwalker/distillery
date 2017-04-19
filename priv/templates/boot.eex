@@ -376,9 +376,9 @@ fi
 
 # Extract the name type and name from the NAME_ARG for REMSH
 # NAME_TYPE should be -name or -sname
-export NAME_TYPE="$(echo "$NAME_ARG" | awk '{print $1}')"
+export NAME_TYPE="$(echo "$NAME_ARG" | awk '{print $1}' | tail -n 1)"
 # NAME will be either `somename` or `somename@somehost`
-export NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
+export NAME="$(echo "$NAME_ARG" | awk '{print $2}' | tail -n 1)"
 
 # Where the pipe will be stored when using `start`
 # This is used so you can attach the running application to the current
