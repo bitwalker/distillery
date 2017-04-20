@@ -198,7 +198,7 @@ _init_erts_config() {
             echo 'erlang runtime not found. If erlang is installed check your $PATH. aborting.'
             exit 1
         fi
-        export ROOTDIR="$("$__erl" -boot start_clean -eval 'io:format("~s~n", [code:root_dir()]), halt().' -noshell)"
+        export ROOTDIR="$("$__erl" -eval 'io:format("~s~n", [code:root_dir()]), halt().' -noshell)"
         export ERTS_VSN="$(_get_erts_vsn)"
         export ERTS_DIR="$ROOTDIR"/"erts-$ERTS_VSN"
         # Update start_erl.data
@@ -220,7 +220,6 @@ _init_erts_config() {
 _get_erts_vsn() {
     if [ -z "$ERTS_VSN" ]; then
         "$ROOTDIR"/bin/erl \
-            -boot start_clean \
             -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' \
             -noshell
     else
