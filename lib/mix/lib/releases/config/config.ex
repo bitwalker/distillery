@@ -426,6 +426,9 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.post_upgrade_hooks) and not is_binary(profile.post_upgrade_hooks) ->
           raise ArgumentError,
             "expected :post_upgrade_hooks to be nil or a path string, but got: #{inspect profile.post_upgrade_hooks}"
+        not is_binary(profile.signal_handler) ->
+          raise ArgumentError,
+            "expected :signal_handler a string, but got: #{inspect profile.signal_handler}"
         :else ->
           true
       end

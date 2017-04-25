@@ -38,7 +38,8 @@ defmodule Mix.Releases.Profile do
     pre_stop_hooks: nil, # path or nil
     post_stop_hooks: nil, # path or nil
     pre_upgrade_hooks: nil, # path or nil
-    post_upgrade_hooks: nil # path or nil
+    post_upgrade_hooks: nil, # path or nil
+    signal_handler: "rpc init stop" # command to execute on signal
 
     @type t :: %__MODULE__{
       output_dir: nil | String.t,
@@ -72,6 +73,7 @@ defmodule Mix.Releases.Profile do
       pre_stop_hooks: nil | String.t,
       post_stop_hooks: nil | String.t,
       pre_upgrade_hooks: nil | String.t,
-      post_upgrade_hooks: nil | String.t
+      post_upgrade_hooks: nil | String.t,
+      signal_handler: String.t
     }
 end

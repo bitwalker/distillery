@@ -236,7 +236,9 @@ defmodule Mix.Releases.Assembler do
     boot_path       = Path.join(rel_dir, "#{name}.sh")
     bootloader_win_path = Path.join(bin_dir, "#{name}.bat")
     boot_win_path       = Path.join(rel_dir, "#{name}.bat")
-    template_params = release.profile.overlay_vars
+    template_params = [
+      {:signal_handler, release.profile.signal_handler} | release.profile.overlay_vars
+    ]
 
     with :ok <- File.mkdir_p(bin_dir),
          :ok <- generate_nodetool(bin_dir),
@@ -820,6 +822,7 @@ defmodule Mix.Releases.Assembler do
                 is_upgrade: release.is_upgrade,
                 upgrade_from: release.upgrade_from,
                 dev_mode: release.profile.dev_mode,
+                signal_handler: release.profile.signal_handler,
                 include_erts: release.profile.include_erts,
                 include_src: release.profile.include_src,
                 include_system_libs: release.profile.include_system_libs,

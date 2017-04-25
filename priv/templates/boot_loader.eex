@@ -16,7 +16,7 @@ _cleanup() {
     trap - HUP INT TERM QUIT EXIT USR1 USR2
     echo ""
     echo "Shutting down.."
-    "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" rpc init stop
+    "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" <%= signal_handler %>
     wait $__pid
 }
 

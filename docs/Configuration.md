@@ -154,3 +154,6 @@ and environments.
         A path to a directory with hooks which will be executed prior to stopping a release
     - post_stop_hooks (path);
         A path to a directory with hooks which will be executed after stopping a release
+    - signal_handler (string)
+        A command which is executed when a HUP INT TERM QUIT EXIT USR1 or USR2 signal is sent
+        to the process. Defaults to `rpc init stop`.
