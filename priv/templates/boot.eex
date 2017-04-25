@@ -816,6 +816,8 @@ case "$1" in
 
         _check_cookie
 
+        run_hooks pre_configure
+
         shift
         MODULE="$1"; shift
         FUNCTION="$1"; shift
