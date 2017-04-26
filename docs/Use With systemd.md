@@ -14,7 +14,7 @@ The following is an example systemd unit file for a Distillery release:
 		ExecStart=/home/appuser/myapp/bin/myapp start
 		ExecStop=/home/appuser/myapp/bin/myapp stop
 		Restart=on-failure
-		RemainAfterExit=yes
+		Type=forking
 		RestartSec=5
 		Environment=PORT=8080
 		Environment=LANG=en_US.UTF-8
