@@ -4,20 +4,20 @@ set -e
 
 # Set VERBOSE to enable verbose logging of the boot script
 #VERBOSE=true
-if [ ! -z $DEBUG_BOOT ]; then
+if [ ! -z "$DEBUG_BOOT" ]; then
     set -x
 fi;
 
 my_readlink_f() {
     TARGET_FILE="$1"
-    cd $(dirname "$TARGET_FILE")
+    cd "$(dirname "$TARGET_FILE")"
     TARGET_FILE=$(basename "$TARGET_FILE")
 
     # Iterate down a (possible) chain of symlinks
     while [ -L "$TARGET_FILE" ]
     do
         TARGET_FILE=$(readlink "$TARGET_FILE")
-        cd $(dirname "$TARGET_FILE")
+        cd "$(dirname "$TARGET_FILE")"
         TARGET_FILE=$(basename "$TARGET_FILE")
     done
     # Compute the canonicalized name by finding the physical path
@@ -43,7 +43,7 @@ fi
 # Parent directory of this script
 SCRIPT_DIR="${SCRIPT_DIR:-$(dirname "${SCRIPT}")}"
 # Root directory of all releases
-RELEASE_ROOT_DIR="${RELEASE_ROOT_DIR:-$(dirname $(dirname ${SCRIPT_DIR}))}"
+RELEASE_ROOT_DIR="${RELEASE_ROOT_DIR:-$(dirname "$(dirname "${SCRIPT_DIR}")")}"
 
 # Disable flow control for run_erl
 # Flow control can cause several problems. On Linux, if you
@@ -106,7 +106,7 @@ get_pid() {
 # Generate a unique nodename
 gen_nodename() {
     id="longname$(gen_id)-${NAME}"
-    "$BINDIR/erl" -boot start_clean -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host]), halt()' -noshell ${NAME_TYPE} $id
+    "$BINDIR/erl" -boot start_clean -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host]), halt()' -noshell "${NAME_TYPE}" "$id"
 }
 
 # Generate a random id
@@ -183,7 +183,7 @@ _check_cookie() {
     fi
     # Die if cookie is still not set, as connecting via distribution will fail
     if [ -z "$COOKIE" ]; then
-        printf "a secret cookie must be provided in one of the following ways:\n  - with vm.args using the -setcookie parameter,\n  or\n  by writing the cookie to '$DEFAULT_COOKIE_FILE', with permissions set to 0400"
+        printf "a secret cookie must be provided in one of the following ways:\n  - with vm.args using the -setcookie parameter,\n  or\n  by writing the cookie to '%s', with permissions set to 0400", "$DEFAULT_COOKIE_FILE"
         exit 1
     fi
 }
@@ -198,9 +198,11 @@ _init_erts_config() {
             echo 'erlang runtime not found. If erlang is installed check your $PATH. aborting.'
             exit 1
         fi
-        export ROOTDIR="$("$__erl" -eval 'io:format("~s~n", [code:root_dir()]), halt().' -noshell)"
-        export ERTS_VSN="$(_get_erts_vsn)"
-        export ERTS_DIR="$ROOTDIR"/"erts-$ERTS_VSN"
+        export ROOTDIR
+        ROOTDIR="$("$__erl" -eval 'io:format("~s~n", [code:root_dir()]), halt().' -noshell)"
+        export ERTS_VN
+        ERTS_VSN="$(_get_erts_vsn)"
+        export ERTS_DIR="$ROOTDIR/erts-$ERTS_VSN"
         # Update start_erl.data
         echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
     else
@@ -246,16 +248,16 @@ _rem_sh() {
         exec "$BINDIR/erl" \
             -hidden \
             -boot start_clean -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-            -kernel net_ticktime $TICKTIME \
+            -kernel net_ticktime "$TICKTIME" \
             "$NAME_TYPE" "$id" -remsh "$NAME" -setcookie "$COOKIE"
     else
         __code_paths=$(_get_code_paths)
         exec "$BINDIR/erl" \
             -pa "$CONSOLIDATED_DIR" \
-            ${__code_paths} \
+            "${__code_paths}" \
             -hidden -noshell \
             -boot start_clean -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-            -kernel net_ticktime $TICKTIME \
+            -kernel net_ticktime "$TICKTIME" \
             -user Elixir.IEx.CLI "$NAME_TYPE" "$id" -setcookie "$COOKIE" \
             -extra --no-halt +iex -"$NAME_TYPE" "$id" --cookie "$COOKIE" --remsh "$NAME"
     fi
@@ -314,7 +316,7 @@ _init_configs() {
             >> "$RELEASE_MUTABLE_DIR/vm.args"
         export DEST_VMARGS_PATH="$RELEASE_MUTABLE_DIR"/vm.args
     fi
-    if [ $REPLACE_OS_VARS ]; then
+    if [ ! -z "$REPLACE_OS_VARS" ]; then
         _replace_os_vars "$DEST_VMARGS_PATH"
     fi
     export VMARGS_PATH="${VMARGS_PATH:-$DEST_VMARGS_PATH}"
@@ -336,7 +338,7 @@ _init_configs() {
             > "$RELEASE_MUTABLE_DIR/sys.config"
         export DEST_SYS_CONFIG_PATH="$RELEASE_MUTABLE_DIR"/sys.config
     fi
-    if [ $REPLACE_OS_VARS ]; then
+    if [ ! -z "$REPLACE_OS_VARS" ]; then
         _replace_os_vars "$DEST_SYS_CONFIG_PATH"
     fi
     export SYS_CONFIG_PATH="${SYS_CONFIG_PATH:-$DEST_SYS_CONFIG_PATH}"
@@ -367,7 +369,8 @@ _init_configs
 
 # Extract the target node name from node.args
 # Should be `-sname somename` or `-name somename@somehost`
-export NAME_ARG="$(egrep '^-s?name' "$VMARGS_PATH" || true)"
+export NAME_ARG
+NAME_ARG="$(grep -E '^-s?name' "$VMARGS_PATH" || true)"
 if [ -z "$NAME_ARG" ]; then
     echo "vm.args needs to have either -name or -sname parameter."
     exit 1
@@ -375,9 +378,11 @@ fi
 
 # Extract the name type and name from the NAME_ARG for REMSH
 # NAME_TYPE should be -name or -sname
-export NAME_TYPE="$(echo "$NAME_ARG" | awk '{print $1}' | tail -n 1)"
+export NAME_TYPE
+NAME_TYPE="$(echo "$NAME_ARG" | awk '{print $1}' | tail -n 1)"
 # NAME will be either `somename` or `somename@somehost`
-export NAME="$(echo "$NAME_ARG" | awk '{print $2}' | tail -n 1)"
+export NAME
+NAME="$(echo "$NAME_ARG" | awk '{print $2}' | tail -n 1)"
 
 # Where the pipe will be stored when using `start`
 # This is used so you can attach the running application to the current
@@ -436,8 +441,8 @@ case "$1" in
                 HEART_OPTION="start_boot"
                 ;;
         esac
-        ARGS="$@"
-        RUN_PARAM="$@"
+        ARGS="$*"
+        RUN_PARAM="$*"
 
         _check_cookie
         run_hooks pre_configure
@@ -454,7 +459,7 @@ case "$1" in
         mkdir -p "$PIPE_DIR"
 
 
-        env $RUN_ERL_ENV "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
+        env "$RUN_ERL_ENV" "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
                           "$(_start_command)"
 
         run_hooks post_start
@@ -468,7 +473,7 @@ case "$1" in
         if ! nodetool "stop"; then
             exit 1
         fi
-        while $(kill -s 0 "$PID" 2>/dev/null);
+        while kill -s 0 "$PID" 2>/dev/null;
         do
             sleep 1
         done
@@ -680,7 +685,7 @@ case "$1" in
         export PROGNAME
 
         # Store passed arguments since they will be erased by `set`
-        ARGS="$@"
+        ARGS="$*"
 
         _check_cookie
 
@@ -697,17 +702,17 @@ case "$1" in
             -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
             -env ERL_LIBS "$REL_LIB_DIR" \
             -pa "$CONSOLIDATED_DIR" \
-            ${EXTRA_CODE_PATHS} \
+            "${EXTRA_CODE_PATHS}" \
             -args_file "$VMARGS_PATH" \
             -config "$SYS_CONFIG_PATH" \
             -mode "$CODE_LOADING_MODE" \
-            ${ERL_OPTS} \
+            "${ERL_OPTS}" \
             -user Elixir.IEx.CLI \
             -extra --no-halt +iex
 
         # Dump environment info for logging purposes
-        if [ ! -z $VERBOSE ]; then
-            echo "Exec: $@" -- ${1+$ARGS} ${EXTRA_OPTS}
+        if [ ! -z "$VERBOSE" ]; then
+            echo "Exec: $*" -- "${1+$ARGS}" "${EXTRA_OPTS}"
             echo "Root: $ROOTDIR"
 
             # Log the startup
@@ -716,7 +721,7 @@ case "$1" in
 
         logger -t "$REL_NAME[$$]" "Starting up"
 
-        exec "$@" -- ${1+$ARGS} ${EXTRA_OPTS}
+        exec "$@" -- "${1+$ARGS}" "${EXTRA_OPTS}"
         ;;
 
     foreground)
@@ -734,7 +739,7 @@ case "$1" in
         export PROGNAME
 
         # Store passed arguments since they will be erased by `set`
-        ARGS="$@"
+        ARGS="$*"
 
         _check_cookie
 
@@ -744,7 +749,7 @@ case "$1" in
 
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
-        set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
+        set -- "$BINDIR/erlexec" "$FOREGROUNDOPTIONS" \
             -boot "$REL_DIR/$BOOTFILE" \
             -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
             -env ERL_LIBS "$REL_LIB_DIR" \
@@ -752,16 +757,16 @@ case "$1" in
             -args_file "$VMARGS_PATH" \
             -config "$SYS_CONFIG_PATH" \
             -mode "$CODE_LOADING_MODE" \
-            ${ERL_OPTS} \
-            -extra ${EXTRA_OPTS}
+            "${ERL_OPTS}" \
+            -extra "${EXTRA_OPTS}"
 
         # Dump environment info for logging purposes
-        if [ ! -z $VERBOSE ]; then
-            echo "Exec: $@" -- ${1+$ARGS}
+        if [ ! -z "$VERBOSE" ]; then
+            echo "Exec: $*" -- "${1+$ARGS}"
             echo "Root: $ROOTDIR"
         fi;
 
-        "$@" -- ${1+$ARGS} &
+        "$@" -- "${1+$ARGS}" &
         __bg_pid=$!
         run_hooks post_start
         wait $__bg_pid
@@ -803,7 +808,7 @@ case "$1" in
         fi
 
         shift
-        nodetool "eval" $@
+        nodetool "eval" "$@"
         ;;
     command)
         # Execute as command-line utility
@@ -821,7 +826,7 @@ case "$1" in
         FUNCTION="$1"; shift
 
         # Save extra arguments
-        ARGS="$@"
+        ARGS=$*
 
         # Build arguments for erlexec
         __code_paths=$(_get_code_paths)
@@ -831,11 +836,11 @@ case "$1" in
         set -- "$@" -noshell
         set -- "$@" -boot start_clean
         set -- "$@" -pa "$CONSOLIDATED_DIR"
-        set -- "$@" ${__code_paths}
+        set -- "$@" "${__code_paths}"
         set -- "$@" -s "$MODULE" "$FUNCTION"
 
 
-        $BINDIR/erlexec $@ -extra $ARGS
+        "$BINDIR"/erlexec "$@" -extra "$ARGS"
         exit "$?"
         ;;
     reload_config)
