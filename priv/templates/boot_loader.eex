@@ -3,7 +3,7 @@ set -e
 
 unset CDPATH
 
-SCRIPT_DIR="$(cd $(dirname "$0") && pwd -P)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 RELEASES_DIR="$RELEASE_ROOT_DIR/releases"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
@@ -24,7 +24,7 @@ case "$1" in
     foreground)
         trap '_cleanup' HUP INT TERM QUIT EXIT USR1 USR2
 
-        "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" $@ &
+        "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@" &
         __pid=$!
 
         wait $__pid
