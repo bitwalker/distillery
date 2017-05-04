@@ -541,14 +541,17 @@ defmodule Mix.Releases.Assembler do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
     overlay_vars = rel.profile.overlay_vars
     base_config  = generate_base_config(base_config_path)
-    with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
-         {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
-         {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
-         {:ok, sys_config} <- :erl_parse.parse_term(tokens),
-         :ok               <- validate_sys_config(sys_config),
-         merged            <- Mix.Config.merge(base_config, sys_config) do
-      Utils.write_term(Path.join(rel_dir, "sys.config"), merged)
-    else
+    res = with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
+               {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
+               {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
+               {:ok, sys_config} <- :erl_parse.parse_term(tokens),
+               :ok               <- validate_sys_config(sys_config),
+               merged            <- Mix.Config.merge(base_config, sys_config) do
+            Utils.write_term(Path.join(rel_dir, "sys.config"), merged)
+          end
+    case res do
+      :ok ->
+        :ok
       {:error, {:template, _}} = err ->
         err
       {:error, {:template_str, _}} = err ->
