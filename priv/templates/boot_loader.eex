@@ -14,10 +14,13 @@ __pid=""
 
 _cleanup() {
     trap - HUP INT TERM QUIT EXIT USR1 USR2
-    echo ""
-    echo "Shutting down.."
-    "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" rpc init stop
-    wait $__pid
+    set +e
+    if "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" rpc init stop >/dev/null; then
+        wait $__pid
+        exit $?
+    else
+        exit 0
+    fi
 }
 
 case "$1" in

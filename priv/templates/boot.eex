@@ -749,7 +749,7 @@ case "$1" in
 
         # Build an array of arguments to pass to exec later on
         # Build it here because this command will be used for logging.
-        set -- "$BINDIR/erlexec" "$FOREGROUNDOPTIONS" \
+        set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
             -boot "$REL_DIR/$BOOTFILE" \
             -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
             -env ERL_LIBS "$REL_LIB_DIR" \
@@ -770,7 +770,9 @@ case "$1" in
         __bg_pid=$!
         run_hooks post_start
         wait $__bg_pid
+        __exit_code=$?
         run_hooks post_stop
+        exit $__exit_code
         ;;
     rpc)
         _check_cookie
