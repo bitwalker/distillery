@@ -459,7 +459,7 @@ case "$1" in
         mkdir -p "$PIPE_DIR"
 
 
-        env "$RUN_ERL_ENV" "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
+        env $RUN_ERL_ENV "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
                           "$(_start_command)"
 
         run_hooks post_start
