@@ -68,7 +68,7 @@ defmodule Mix.Releases.Config do
                                                :dev_mode => get_opt(opts, :dev_mode, e.profile.dev_mode),
                                                :executable => get_opt(opts, :executable, e.profile.executable),
                                                :erl_opts => get_opt(opts, :erl_opts, e.profile.erl_opts),
-                                               :run_erl_env => get_opt(opts, :erl_opts, e.profile.run_erl_env),
+                                               :run_erl_env => get_opt(opts, :run_erl_env, e.profile.run_erl_env),
                                                :exec_opts => Enum.into(get_opt(opts, :exec_opts, e.profile.exec_opts), %{})}}}
                   end), %{}),
               :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
