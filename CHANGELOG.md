@@ -1,3 +1,18 @@
+## 1.4
+
+### Changed
+
+- `command` now automatically stops after command finishes executing
+- `pre_configure` hook now runs prior to `command`
+- Improved signal handling to return correct exit status codes
+
+
+### Fixed
+
+- Handling of `run_erl_env` is fixed
+- Various potential bugs reported by shellcheck in boot scripts
+- Compilation was broken on 1.3, it is now fixed
+
 ## 1.3
 
 ### Added
