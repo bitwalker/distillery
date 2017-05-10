@@ -834,7 +834,6 @@ case "$1" in
 
         # Build arguments for erlexec
         __code_paths=$(_get_code_paths)
-        set -- "$ERL_OPTS"
         [ "$SYS_CONFIG_PATH" ] && set -- "$@" -config "$SYS_CONFIG_PATH"
         set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
         set -- "$@" -noshell
@@ -844,7 +843,7 @@ case "$1" in
         set -- "$@" -s "$MODULE" "$FUNCTION"
 
 
-        "$BINDIR"/erlexec "$@" -extra "$ARGS"
+        "$BINDIR"/erlexec "$@" -s init stop $ERL_OPTS -extra $ARGS
         exit "$?"
         ;;
     reload_config)
