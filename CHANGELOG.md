@@ -1,3 +1,11 @@
+## 1.5
+
+### Added
+
+- Add new option for environments - `included_configs` - which is
+  a list of paths. Each each path represents an individual config file
+  to be merged into `sys.config` when the application is started.
+
 ## 1.4
 
 ### Changed
@@ -44,7 +52,7 @@
 
 ### Added
 
-- Add the ability to generate "executables (self-extracting archives), 
+- Add the ability to generate "executables (self-extracting archives),
   which can be used to build releases which can be used as command-line utilities.
   See `mix help release` for more info.
 - Implement `reload_config` command for runtime reconfiguration

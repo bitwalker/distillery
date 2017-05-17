@@ -19,6 +19,7 @@ defmodule Mix.Releases.Profile do
     include_erts: nil, # boolean | "path/to/erts"
     include_src: nil, # boolean
     include_system_libs: nil, # boolean | "path/to/libs"
+    included_configs: [], # list of path representing additional config files
     strip_debug_info: nil, # boolean
     plugins: [], # list of module names
     overlay_vars: [], # keyword list
@@ -53,6 +54,7 @@ defmodule Mix.Releases.Profile do
       include_erts: nil | boolean | String.t,
       include_src: nil | boolean,
       include_system_libs: nil | boolean | String.t,
+      included_configs: [String.t],
       strip_debug_info: nil | boolean,
       plugins: [module()],
       overlay_vars: nil | Keyword.t,
