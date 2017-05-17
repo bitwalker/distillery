@@ -106,6 +106,12 @@ and environments.
     - include_system_libs (boolean | string);
         should system libs be included in the release,
         a path to system libs to be included can also be provided
+    - included_configs (path list);
+        The syntax of sys.config allows pointing out to other .config files.
+        These paths will be written to sys.config during the release phase
+        and their content read during the application startup.
+        (Useful in scenarios such as deploying to multiple machines, where each machine maintains one or two local config files)
+        NOTE: It is recommended to use absolute paths.
     - strip_debug_info (boolean);
         should debugging info be stripped from BEAM files in the release
         CAUTION: This setting will result in releases which cannot
