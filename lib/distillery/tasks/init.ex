@@ -141,35 +141,7 @@ defmodule Mix.Tasks.Release.Init do
   defp get_common_bindings(opts) do
     no_doc? = Keyword.get(opts, :no_doc, false)
     [no_docs: no_doc?,
-     cookie: get_cookie(),
-     get_cookie: &get_cookie/0]
-  end
-
-  defp get_cookie do
-    if can_generate_secure_cookie?() do
-      generate_secure_cookie()
-    else
-      # When the :crypto module is unavailable, rather than generating
-      # a cookie guessable by a computer, produce this obviously
-      # insecure cookie. A warning will be emitted every time
-      # it is used (i.e. when vm.args is being generated with it).
-      :"insecure_cookie_in_distillery_config"
-    end
-  end
-
-  defp can_generate_secure_cookie? do
-    case Code.ensure_loaded(:crypto) do
-      {:module, :crypto} -> true
-      _ -> false
-    end
-  end
-
-  defp generate_secure_cookie do
-    Stream.unfold(nil, fn _ -> {:crypto.strong_rand_bytes(1), nil} end)
-    |> Stream.filter(fn b -> b >= "!" && b <= "~" end)
-    |> Stream.reject(fn b -> Enum.member?(["-", "+", "'", "\"", "\\", "#"], b) end) # special when erlexec parses vm.args
-    |> Enum.take(64)
-    |> Enum.join
-    |> String.to_atom
+     cookie: Distillery.Cookies.get,
+     get_cookie: &Distillery.Cookies.get/0]
   end
 end
