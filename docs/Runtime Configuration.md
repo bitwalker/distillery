@@ -12,7 +12,9 @@ there are caveats which apply:
 - Related to the above, it is not possible to use Mix tasks, generally speaking, you
   can include the `:mix` application in a release, but whether it works is uncertain at
   best, due to the fact that Mix is designed to be used in conjunction with the Mix project
-  structure, and with a `mix.exs` available. Neither of which are true in releases.
+  structure, and with a `mix.exs` available. Neither of which are true in releases. There is ongoing
+  work on making this possible, but at this time it is a caveat. Look into [Custom Commands](https://hexdocs.pm/distillery/custom-commands.html)
+  in the meantime.
 - With Mix projects, your configuration is evaluated at runtime, so you can use
   functions such as `System.get_env/1` to conditionally change configuration
   based on the runtime environment. With releases, `config.exs` is evaluated at
@@ -23,20 +25,27 @@ there are caveats which apply:
 
 ### Configuration Conventions
 
-It is a common convention within the Elixir community to handle a `{:system, "VAR"}` tuple
-which indicates to the application being configured that it should use `System.get_env/1` to
-fetch that configuration value. This convention can be expanded to also accept a `{:system, "VAR", default}`
-tuple so that you can provide sane defaults if the variable is not set in the environment.
+**NOTE:** It is no longer recommended to use the `{:system, "VAR"}` convention, as it has inconsitent
+use in the community, and instead we'd rather push people towards an approach which works every time,
+rather than only sometimes.
 
-This convention is so valuable, that I've provided a `Config` module below, which you can drop into
-your application, and use in place of `Application.get_env/2`, and it will seamlessly handle both of the
-conventions above for you. I've used it now in a number of applications, and have found it to make
-my life much easier. I have considered making it a library on Hex, or adding it to `distillery`, but
-it is so simple, that a simple gist seems more useful.
+Instead the recommend approach to configuration is as follows:
 
-See [config.ex](https://gist.github.com/bitwalker/a4f73b33aea43951fe19b242d06da7b9) for the implementation.
+- Provide default configuration in `config/config.exs`
+- Provide configuration values known in advance for a given environment in `config/<env>.exs`
+- For any runtime configuration, either set those values in the Application `start/2` callback, prior
+to starting your supervisor tree, or in the `init/1` callbacks of individual supervisors/workers in your application.
+You can use Elixir code to load configuration from wherever, and validate it closest to where it's used. It is recommended
+that you create your own `Config` module which boxes up common validation/loading logic so that you can easily get config
+values at runtime without cluttering up your `start/2` or `init/1` callbacks.
 
-If you still want to use it as Hex package, take look at [confex](https://hex.pm/packages/confex).
+The above approach works for both release and deploy-source deployments, and so works the same everywhere. In addition,
+it keeps configuration close to where it's cared about, and enables you to pick up configuration changes when you restart
+parts of the application without needing to restart the whole release.
+
+If you have dependencies which require runtime configuration, you can place them in `included_applications` and start them
+as part of your supervisor tree, or with `Application.ensure_all_started(:app)` after configuring them. The former is recommended,
+but the latter works as well.
 
 ### Configuration Tools
 

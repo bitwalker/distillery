@@ -21,6 +21,7 @@ defmodule Distillery.Mixfile do
     [{:ex_doc, "~> 0.13", only: [:dev]},
      {:excoveralls, "~> 0.6", only: [:dev, :test]},
      {:credo, "~> 0.6", only: [:dev]},
+     {:propcheck, "~> 0.0.1", only: :test},
      {:dialyze, "~> 0.2", only: [:dev]}]
   end
 
@@ -30,10 +31,10 @@ defmodule Distillery.Mixfile do
     """
   end
   defp package do
-    [ files: ["lib", "priv", "mix.exs", "README.md", "LICENSE.md"],
-      maintainers: ["Paul Schoenfelder"],
-      licenses: ["MIT"],
-      links: %{"Github": "https://github.com/bitwalker/distillery"}]
+    [files: ["lib", "priv", "mix.exs", "README.md", "LICENSE.md"],
+     maintainers: ["Paul Schoenfelder"],
+     licenses: ["MIT"],
+     links: %{"Github": "https://github.com/bitwalker/distillery"}]
   end
   defp aliases do
     ["compile-check": "do compile, credo --strict"]
