@@ -590,7 +590,7 @@ defmodule Mix.Releases.Assembler do
   defp append_included_configs(config, []), do: config
   defp append_included_configs(config, included_configs)
        when is_list(included_configs) do
-    included_configs = Enum.map(included_configs, &:erlang.binary_to_list/1)
+    included_configs = Enum.map(included_configs, &String.to_charlist/1)
     config ++ included_configs
   end
   defp append_included_configs(_config, _) do

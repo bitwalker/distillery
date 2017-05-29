@@ -2,9 +2,8 @@
 
 ### Added
 
-- Add new option for environments - `included_configs` - which is
-  a list of paths. Each each path represents an individual config file
-  to be merged into `sys.config` when the application is started.
+- Introduced new configuration option `included_configs`, which is a list of paths pointing to additional config files to be merged into `sys.config` at runtime.
+
 
 ## 1.4
 
