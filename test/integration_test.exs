@@ -49,6 +49,7 @@ defmodule IntegrationTest do
         # Boot it, ping it, and shut it down
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
         bin_path = Path.join([tmpdir, "bin", "standard_app"])
+
         try do
           tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
           assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
@@ -59,10 +60,17 @@ defmodule IntegrationTest do
             _ ->
               :ok
           end
+
+          :ok = create_additional_config_file(tmpdir)
+
           assert {_output, 0} = System.cmd(bin_path, ["start"])
           :timer.sleep(1_000) # Required, since starting up takes a sec
           assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
           assert {"2\n", 0}    = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+
+          # Additional config items should exist
+          assert {"bar\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, foo)"])
+
           case :os.type() do
             {:win32,_} ->
               assert {output, 0} = System.cmd(bin_path, ["stop"])
@@ -164,6 +172,7 @@ defmodule IntegrationTest do
             _ ->
               :ok
           end
+          :ok = create_additional_config_file(tmpdir)
           assert {_output, 0} = System.cmd(bin_path, ["start"])
           :timer.sleep(1_000) # Required, since starting up takes a sec
           assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
@@ -202,6 +211,15 @@ defmodule IntegrationTest do
         end
       end
     end
+  end
+
+  # Create a configuration file inside the release directory
+  defp create_additional_config_file(directory) do
+      extra_config_path = Path.join([directory, "extra.config"])
+      extra_config = "[{standard_app, [{foo, bar}]}]."
+      file = File.open!(extra_config_path, [:write, :utf8])
+      IO.puts(file, extra_config)
+      File.close(file)
   end
 
   defp clean_up_standard_app! do

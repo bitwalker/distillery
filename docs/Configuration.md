@@ -106,6 +106,15 @@ and environments.
     - include_system_libs (boolean | string);
         should system libs be included in the release,
         a path to system libs to be included can also be provided
+    - included_configs (path list);
+        Erlang allows sys.config to include other .config files. Distillery supports
+        this feature via `included_configs`. This option expects a list of paths to include,
+        where each path will be read at runtime when the release boots and
+        the configuration settings it contains will take precedence over the configs
+        that came before it.
+        All such includes will have precedence over the default configuration
+        generated with the release.
+        NOTE: It is recommended to use absolute paths.
     - strip_debug_info (boolean);
         should debugging info be stripped from BEAM files in the release
         CAUTION: This setting will result in releases which cannot

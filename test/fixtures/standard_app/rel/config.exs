@@ -28,6 +28,7 @@ environment :prod do
   set strip_debug_info: false
   set include_erts: true
   set include_src: false
+  set included_configs: ["extra.config"]
   set cookie: :"*GU1?EY8/~,K!9*Ohazv{O9<Ao@)pMFFKjs/q=$HlMo~q=s!~,O8!DIs0PT(v&;="
   set run_erl_env: "RUN_ERL_LOG_MAXSIZE=100000 RUN_ERL_LOG_GENERATIONS=5"
   plugin SampleApp.ProdPlugin, some: :config

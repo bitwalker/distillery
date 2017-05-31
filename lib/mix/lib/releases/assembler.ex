@@ -546,8 +546,9 @@ defmodule Mix.Releases.Assembler do
                {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
                {:ok, sys_config} <- :erl_parse.parse_term(tokens),
                :ok               <- validate_sys_config(sys_config),
-               merged            <- Mix.Config.merge(base_config, sys_config) do
-            Utils.write_term(Path.join(rel_dir, "sys.config"), merged)
+               merged            <- Mix.Config.merge(base_config, sys_config),
+               final             <- append_included_configs(merged, rel.profile.included_configs) do
+            Utils.write_term(Path.join(rel_dir, "sys.config"), final)
           end
     case res do
       :ok ->
@@ -564,9 +565,11 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:invalid_sys_config, error_info}}}
     end
   end
-  defp generate_sys_config(%Release{profile: %Profile{config: config_path}}, rel_dir) do
+  defp generate_sys_config(%Release{profile: %Profile{config: config_path, included_configs: included_configs}}, rel_dir) do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
-    config = generate_base_config(config_path)
+    config = config_path
+             |> generate_base_config()
+             |> append_included_configs(included_configs)
     Utils.write_term(Path.join(rel_dir, "sys.config"), config)
   end
 
@@ -581,6 +584,17 @@ defmodule Mix.Releases.Assembler do
           _   -> config
         end
     end
+  end
+
+  # Extend the config with the paths of additional config files
+  defp append_included_configs(config, []), do: config
+  defp append_included_configs(config, included_configs)
+       when is_list(included_configs) do
+    included_configs = Enum.map(included_configs, &String.to_charlist/1)
+    config ++ included_configs
+  end
+  defp append_included_configs(_config, _) do
+    raise "`included_configs` must be a list of paths"
   end
 
   defp validate_sys_config(sys_config) when is_list(sys_config) do
