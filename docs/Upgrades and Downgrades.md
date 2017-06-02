@@ -16,6 +16,12 @@ and installed. ERTS must be packaged in the release in order for hot upgrades/do
 
 ## A bit about upgrades
 
+**NOTE**: You *cannot* perform upgrades from within the `_build` directory - you must deploy the tarballs
+as described in the Walkthrough document. Hot upgrades/downgrades mutate the release directory, and some of
+the files which are required for building releases will be missing if you do a build after upgrading a release
+there, resulting in errors when you attempt to upgrade/downgrade from that release. Always deploy to another
+local directory (for example, `/tmp`) first.
+
 When building upgrade releases, Distillery will ensure that all modified
 applications have appups generated for them. Appups are what tell `:systools` how
 to generate the `relup` file, which are low-level instructions for the release handler,
