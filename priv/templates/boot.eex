@@ -655,6 +655,13 @@ case "$1" in
         ;;
 
     console|console_clean|console_boot)
+        # By default, iex will be used to startup shell.
+        ENABLE_IEX_OPTS="-user Elixir.IEx.CLI -extra --no-halt +iex"
+
+        if [ ! -z "$USE_ERL_SHELL" ]; then
+            ENABLE_IEX_OPTS=""
+        fi
+
         # .boot file typically just $REL_NAME (ie, the app name)
         # however, for debugging, sometimes start_clean.boot is useful.
         # For e.g. 'setup', one may even want to name another boot script.
@@ -707,8 +714,7 @@ case "$1" in
             -config "$SYS_CONFIG_PATH" \
             -mode "$CODE_LOADING_MODE" \
             ${ERL_OPTS} \
-            -user Elixir.IEx.CLI \
-            -extra --no-halt +iex
+            ${ENABLE_IEX_OPTS}
 
         # Dump environment info for logging purposes
         if [ ! -z "$VERBOSE" ]; then
