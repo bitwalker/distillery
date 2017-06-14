@@ -613,11 +613,11 @@ case "$1" in
             mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
         fi
         # Then, backup the packaged configs
-        cp "$REL_DIR/sys.config" "$REL_DIR/sys.config.bak"
-        cp "$REL_DIR/vm.args" "$REL_DIR/vm.args.bak"
+        cp -a "$REL_DIR/sys.config" "$REL_DIR/sys.config.bak"
+        cp -a "$REL_DIR/vm.args" "$REL_DIR/vm.args.bak"
         # Then, substitute in the prepared configs
-        cp "$SYS_CONFIG_PATH" "$REL_DIR/sys.config"
-        cp "$VMARGS_PATH" "$REL_DIR/vm.args"
+        cp -a "$SYS_CONFIG_PATH" "$REL_DIR/sys.config"
+        cp -a "$VMARGS_PATH" "$REL_DIR/vm.args"
         # Make sure any pre-configuration hooks are run
         run_hooks pre_configure
         # Run any pre-upgrade tasks
