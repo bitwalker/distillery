@@ -14,7 +14,7 @@ mkdir -p "$__EXEC_TARGET_DIR"
 if [ ! -d "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME" ]; then
     mkdir -p "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME"
     DATA_BEGIN=`awk '/^__DATA_BEGIN__/ {print NR + 1; exit 0; }' $0`
-    tail -n+$DATA_BEGIN $0 | tar -xz -C "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME"
+    tail -n+$DATA_BEGIN $0 | tar -xzf - -C "$__EXEC_TARGET_DIR/$__EXEC_REL_NAME"
 fi
 
 # Pass arguments to bin/app script
