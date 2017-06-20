@@ -729,7 +729,7 @@ case "$1" in
         # or other supervision services
 
         [ -f "$REL_DIR/$REL_NAME.boot" ] && BOOTFILE="$REL_NAME" || BOOTFILE=start
-        FOREGROUNDOPTIONS="-noshell -noinput +Bd"
+        FOREGROUNDOPTIONS="-noshell -noinput +Bi"
 
         # Setup beam-required vars
         EMU=beam
