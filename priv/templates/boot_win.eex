@@ -341,7 +341,7 @@ if exists "%rel_dir%\vm.args.bak" do (
 :: Start a console
 :console
 @call :pre_configure_hooks
-@call :pre_start hooks
+@call :pre_start_hooks
 @start "%rel_name% console" %werl% -boot "%boot_script%" ^
        -config "%sys_config%"  ^
        -args_file "%vm_args%" ^
@@ -355,7 +355,7 @@ if exists "%rel_dir%\vm.args.bak" do (
 @call :pre_start_hooks
 @set EMU=beam
 @set PROGNAME=%~n0
-@start /B "%erl%" -noshell -noinput +Bd ^
+@start "" /B "%erl%" -noshell -noinput +Bd ^
        -boot "%boot_script%" ^
        -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
        -env ERL_LIBS "%release_root_dir%\lib%" ^
