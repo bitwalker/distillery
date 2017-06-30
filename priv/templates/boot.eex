@@ -123,8 +123,6 @@ nodetool() {
                             -setcookie "$COOKIE" "$command" "$@"
 }
 
-
-
 # Run an escript in the node's environment
 # Use like `escript "path/to/escript"`
 escript() {
@@ -372,9 +370,7 @@ CONSOLIDATED_DIR="$ROOTDIR/lib/${REL_NAME}-${REL_VSN}/consolidated"
 
 # Allow override of where to read configuration from
 # By default it's RELEASE_ROOT_DIR
-if [ -z "$RELEASE_CONFIG_DIR" ]; then
-    export RELEASE_CONFIG_DIR="$RELEASE_ROOT_DIR"
-fi
+export RELEASE_CONFIG_DIR="${RELEASE_CONFIG_DIR:-$RELEASE_ROOT_DIR}"
 
 # Make sure directories exist
 mkdir -p "$RELEASE_MUTABLE_DIR"
