@@ -298,6 +298,11 @@ _run_hooks_from_dir() {
 # Private. Sets config paths for sys.config and vm.args,
 # and ensures that env var replacements are performed
 _init_configs() {
+    # If a preconfigure hook calls back to the boot script, do not
+    # try to init the configs again, as it will result in an infinite loop
+    if [ ! -z "$DISTILLERY_PRECONFIGURE" ]; then
+        return 0
+    fi
     # Set VMARGS_PATH, the path to the vm.args file to use
     # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
     if [ -z "$VMARGS_PATH" ]; then
@@ -342,6 +347,11 @@ _init_configs() {
         _replace_os_vars "$DEST_SYS_CONFIG_PATH"
     fi
     export SYS_CONFIG_PATH="${SYS_CONFIG_PATH:-$DEST_SYS_CONFIG_PATH}"
+
+    export DISTILLERY_PRECONFIGURE=true
+    run_hooks pre_configure
+    unset DISTILLERY_PRECONFIGURE
+    return 0
 }
 
 # If TERM is not set, set it to xterm
@@ -351,6 +361,14 @@ fi
 
 # Make sure ERTS configuration is set
 _init_erts_config
+
+export ROOTDIR="$RELEASE_ROOT_DIR"
+export BINDIR="$ERTS_DIR/bin"
+export LD_LIBRARY_PATH="$ERTS_DIR/lib:$LD_LIBRARY_PATH"
+export ERTS_LIB_DIR="$ERTS_DIR/../lib"
+export EMU="beam"
+export PROGNAME="erl"
+CONSOLIDATED_DIR="$ROOTDIR/lib/${REL_NAME}-${REL_VSN}/consolidated"
 
 # Allow override of where to read configuration from
 # By default it's RELEASE_ROOT_DIR
@@ -392,14 +410,6 @@ PIPE_DIR="${PIPE_DIR:-$RELEASE_MUTABLE_DIR/erl_pipes/$NAME/}"
 # Extract the target cookie
 _load_cookie
 
-export ROOTDIR="$RELEASE_ROOT_DIR"
-export BINDIR="$ERTS_DIR/bin"
-export EMU="beam"
-export PROGNAME="erl"
-export LD_LIBRARY_PATH="$ERTS_DIR/lib:$LD_LIBRARY_PATH"
-export ERTS_LIB_DIR="$ERTS_DIR/../lib"
-CONSOLIDATED_DIR="$ROOTDIR/lib/${REL_NAME}-${REL_VSN}/consolidated"
-
 cd "$ROOTDIR"
 
 # User can specify an sname without @hostname
@@ -421,13 +431,8 @@ export DISTILLERY_TASK="$1"
 case "$1" in
     start|start_boot)
 
-        # Make sure there is not already a node running
-        #RES=`$NODETOOL ping`
-        #if [ "$RES" = "pong" ]; then
-        #    echo "Node is already running!"
-        #    exit 1
-        #fi
-        # Save this for later.
+        _check_cookie
+
         CMD=$1
         case "$1" in
             start)
@@ -444,8 +449,6 @@ case "$1" in
         ARGS="$*"
         RUN_PARAM="$*"
 
-        _check_cookie
-        run_hooks pre_configure
         run_hooks pre_start
 
         # Set arguments for the heart command
@@ -482,7 +485,6 @@ case "$1" in
 
     restart)
         _check_cookie
-        run_hooks pre_configure
         run_hooks pre_start
         ## Restart the VM without exiting the process
         if ! nodetool "restart"; then
@@ -492,7 +494,6 @@ case "$1" in
 
     reboot)
         _check_cookie
-        run_hooks pre_configure
         run_hooks pre_start
         ## Restart the VM completely (uses heart to restart it)
         if ! nodetool "reboot"; then
@@ -618,8 +619,7 @@ case "$1" in
         # Then, substitute in the prepared configs
         cp -a "$SYS_CONFIG_PATH" "$REL_DIR/sys.config"
         cp -a "$VMARGS_PATH" "$REL_DIR/vm.args"
-        # Make sure any pre-configuration hooks are run
-        run_hooks pre_configure
+
         # Run any pre-upgrade tasks
         run_hooks pre_upgrade
 
@@ -655,6 +655,8 @@ case "$1" in
         ;;
 
     console|console_clean|console_boot)
+        _check_cookie
+
         # .boot file typically just $REL_NAME (ie, the app name)
         # however, for debugging, sometimes start_clean.boot is useful.
         # For e.g. 'setup', one may even want to name another boot script.
@@ -687,12 +689,9 @@ case "$1" in
         # Store passed arguments since they will be erased by `set`
         ARGS="$*"
 
-        _check_cookie
-
         # Start the VM, executing pre_start hook along
         # the way. We can't run the post_start hook because
         # the console will crash with no TTY attached
-        run_hooks pre_configure
         run_hooks pre_start
 
         # Build an array of arguments to pass to exec later on
@@ -725,6 +724,8 @@ case "$1" in
         ;;
 
     foreground)
+        _check_cookie
+
         # start up the release in the foreground for use by runit
         # or other supervision services
 
@@ -741,10 +742,7 @@ case "$1" in
         # Store passed arguments since they will be erased by `set`
         ARGS="$*"
 
-        _check_cookie
-
         # Start the VM, executing pre and post start hooks
-        run_hooks pre_configure
         run_hooks pre_start
 
         # Build an array of arguments to pass to exec later on
@@ -822,8 +820,6 @@ case "$1" in
         #     {:ok, _} = Application.ensure_all_started(:your_app)
 
         _check_cookie
-
-        run_hooks pre_configure
 
         shift
         MODULE="$1"; shift
