@@ -39,13 +39,13 @@ differences from the standard Distillery walk-through; namely the
 
 *file: config/prod.exs*
 ```elixir
-config :phoenix_distillery, PhoenixDistillery.Endpoint,
+config :myapp, MyApp.Endpoint,
   http: [port: {:system, "PORT"}],
   url: [host: "localhost", port: {:system, "PORT"}], # This is critical for ensuring web-sockets properly authorize.
   cache_static_manifest: "priv/static/manifest.json",
   server: true,
   root: ".",
-  version: Mix.Project.config[:version]
+  version: Application.spec(:myapp, :vsn)
 ```
 
 Let's discuss each of these options.

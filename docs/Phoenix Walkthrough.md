@@ -61,7 +61,7 @@ config :phoenix_distillery, PhoenixDistillery.Endpoint,
   cache_static_manifest: "priv/static/manifest.json",
   server: true,
   root: ".",
-  version: Mix.Project.config[:version]
+  version: Application.spec(:phoenix_distillery, :vsn)
 ```
 
 Let's discuss each of these options.
