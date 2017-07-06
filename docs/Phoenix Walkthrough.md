@@ -30,7 +30,7 @@ Next we will install distillery in our `mix.exs`
 ```elixir
   defp deps do
     [ ...,
-     {:distillery, "~> MAJ.MIN"},
+     {:distillery, "~> 1.4", runtime: false},
       ...,
     ]
   end
