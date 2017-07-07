@@ -20,7 +20,7 @@ Distillery requires Elixir 1.3 or greater. It works with Erlang 18+.
 
 ```elixir
 defp deps do
-  [{:distillery, "~> 1.4"}]
+  [{:distillery, "~> 1.4", runtime: false}]
 end
 ```
 
