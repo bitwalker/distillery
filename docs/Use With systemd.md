@@ -7,18 +7,18 @@ The following is an example systemd unit file for a Distillery release:
 		After=network.target
 
 		[Service]
-		Type=simple
+		Type=forking
 		User=appuser
 		Group=appuser
 		WorkingDirectory=/home/appuser/myapp
 		ExecStart=/home/appuser/myapp/bin/myapp start
 		ExecStop=/home/appuser/myapp/bin/myapp stop
 		Restart=on-failure
-		Type=forking
 		RestartSec=5
 		Environment=PORT=8080
 		Environment=LANG=en_US.UTF-8
 		SyslogIdentifier=myapp
+		RemainAfterExit=yes
 
 		[Install]
 		WantedBy=multi-user.target
