@@ -2,6 +2,8 @@
 ::
 :: Check the :usage section for information about what this script provides
 
+@echo off
+
 :: Set variables that describe the release
 @set rel_name=<%= release_name %>
 @set rel_vsn=<%= release_version %>
@@ -115,8 +117,8 @@
 @if %taskname%=="command" @goto command
 @if %taskname%=="describe" @goto describe
 @if %taskname%=="" @goto usage
-@if exist "%command_dir%\%taskname%" (
-  @"%command_dir%\%taskname%" %*
+@if exist "%command_dir%\%taskname%.bat" (
+  @"%command_dir%\%taskname%.bat" %*
 ) else (
   @echo Unknown command: %taskname%
 )
