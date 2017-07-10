@@ -243,7 +243,7 @@
 @echo.
 @echo Custom Commands
 @echo ======================
-@for %%i in (%command_dir%\*.d\*.bat) do (
+@for %%i in (%command_dir%\*.bat) do (
   echo %%~ni
 )
 @goto :eof
@@ -495,12 +495,12 @@ if exists "%rel_dir%\vm.args.bak" do (
 @echo Extra Opts          %erl_opts%
 @echo.
 @echo Hooks:
-@for %%i in (%hook_dir%\*.d\*.bat) do (
+@for %%i in (%hook_dir%\*.bat) do (
   echo %%i
 )
 @echo.
 @echo Commands:
-@for %%i in (%command_dir%\*.d\*.bat) do (
+@for %%i in (%command_dir%\*.bat) do (
   echo %%i
 )
 @endlocal
