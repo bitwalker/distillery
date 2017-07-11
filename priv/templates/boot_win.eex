@@ -114,7 +114,7 @@
 @if %taskname%=="rpc" @goto rpc
 @if %taskname%=="rpcterms" @goto rpcterms
 @if %taskname%=="eval" @goto eval
-@if %taskname%=="command" call :command %*
+@if %taskname%=="command" call :command %* & exit/b
 @if %taskname%=="describe" @goto describe
 @if %taskname%=="" @goto usage
 @if exist "%command_dir%\%taskname%.bat" (
