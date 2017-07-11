@@ -448,6 +448,7 @@ set function=%2
 set command_args=%3
 
 %erl% -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
+       -config %sys_config%
        -hidden -noshell -boot start_clean ^
        -pa "%consolidated_dir%" ^
        -s %module% %function% -s init stop ^
