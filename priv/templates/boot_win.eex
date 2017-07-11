@@ -118,7 +118,9 @@
 @if %taskname%=="describe" @goto describe
 @if %taskname%=="" @goto usage
 @if exist "%command_dir%\%taskname%.bat" (
+  pushd %release_root_dir%
   @"%command_dir%\%taskname%.bat" %*
+  popd
 ) else (
   @echo Unknown command: %taskname%
 )
@@ -448,7 +450,7 @@ set function=%2
 set command_args=%3
 
 %erl% -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
-       -config %sys_config%
+       -config %sys_config% ^
        -hidden -noshell -boot start_clean ^
        -pa "%consolidated_dir%" ^
        -s %module% %function% -s init stop ^

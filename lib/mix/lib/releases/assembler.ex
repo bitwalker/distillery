@@ -809,6 +809,9 @@ defmodule Mix.Releases.Assembler do
       {:copy, release.profile.post_upgrade_hooks, "#{hooks_dir}/post_upgrade.d"},
       {:mkdir, "releases/<%= release_version %>/commands"} |
       Enum.map(release.profile.commands, fn {name, path} ->
+        {:copy, path, "releases/<%= release_version %>/commands/#{name}.sh"}
+      end) ++ #Hack. This allows for .bat stuff to be run on windows (instead of just forcing .sh)
+      Enum.map(release.profile.commands, fn {name, path} ->
         {:copy, path, "releases/<%= release_version %>/commands/#{name}.bat"}
       end)
     ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
