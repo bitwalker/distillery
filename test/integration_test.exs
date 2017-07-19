@@ -62,8 +62,23 @@ defmodule IntegrationTest do
 
           :ok = create_additional_config_file(tmpdir)
 
-          assert {_output, 0} = System.cmd(bin_path, ["start"])
-          :timer.sleep(1_000) # Required, since starting up takes a sec
+          assert {output, 0} = System.cmd(bin_path, ["start"])
+          # Wait for VM to start
+          Enum.reduce(1..5, :ping, fn
+            5, :ping ->
+              IO.puts output
+              :ping
+            _, :ping ->
+              case System.cmd(bin_path, ["ping"]) do
+                {"pong\n", 0} ->
+                  :ok
+                _ ->
+                  :timer.sleep(1_000)
+                  :ping
+              end
+            _, :ok ->
+              :ok
+          end)
           assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
           assert {"2\n", 0}    = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
 
@@ -172,8 +187,23 @@ defmodule IntegrationTest do
               :ok
           end
           :ok = create_additional_config_file(tmpdir)
-          assert {_output, 0} = System.cmd(bin_path, ["start"])
-          :timer.sleep(1_000) # Required, since starting up takes a sec
+          assert {output, 0} = System.cmd(bin_path, ["start"])
+          # Wait for VM to start
+          Enum.reduce(1..5, :ping, fn
+            5, :ping ->
+              IO.puts output
+              :ping
+            _, :ping ->
+              case System.cmd(bin_path, ["ping"]) do
+                {"pong\n", 0} ->
+                  :ok
+                _ ->
+                  :timer.sleep(1_000)
+                  :ping
+              end
+            _, :ok ->
+              :ok
+          end)
           assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
