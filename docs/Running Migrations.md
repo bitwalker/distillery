@@ -21,6 +21,8 @@ The following code is an example of a module which will run your Ecto migrations
 defmodule MyApp.ReleaseTasks do
 
   @start_apps [
+    :crypto,
+    :ssl,
     :postgrex,
     :ecto
   ]
