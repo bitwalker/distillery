@@ -110,6 +110,8 @@ defmodule Mix.Releases.Archiver do
             {'#{Path.join(["releases", release.version, "start_clean.boot"])}',
              '#{Path.join([output_dir, "releases", release.version, "start_clean.boot"])}'},
             {'bin', '#{Path.join(output_dir, "bin")}'},
+            {'#{Path.join(["releases", release.version, "libexec"])}',
+             '#{Path.join([output_dir, "releases", release.version, "libexec"])}'},
             {'#{Path.join(["lib", "#{release.name}-#{release.version}", "consolidated"])}',
              '#{Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])}'}] ++
             case release.is_upgrade do

@@ -230,7 +230,7 @@ defmodule Mix.Releases.Assembler do
   # Creates the .boot files, nodetool, vm.args, sys.config, start_erl.data, and includes ERTS into
   # the release if so configured
   defp write_binfile(release, rel_dir) do
-    name    = "#{release.name}"
+    name = "#{release.name}"
     bin_dir         = Path.join(release.profile.output_dir, "bin")
     bootloader_path = Path.join(bin_dir, name)
     boot_path       = Path.join(rel_dir, "#{name}.sh")
@@ -784,6 +784,7 @@ defmodule Mix.Releases.Assembler do
     Logger.debug "Applying overlays"
     overlay_vars = release.profile.overlay_vars
     hooks_dir = "releases/<%= release_version %>/hooks"
+    libexec_source = Path.join("#{:code.priv_dir(:distillery)}", "libexec")
     hook_overlays = [
       {:mkdir, hooks_dir},
       {:mkdir, "#{hooks_dir}/pre_configure.d"},
@@ -807,6 +808,7 @@ defmodule Mix.Releases.Assembler do
       {:copy, release.profile.post_stop_hooks, "#{hooks_dir}/post_stop.d"},
       {:copy, release.profile.pre_upgrade_hooks, "#{hooks_dir}/pre_upgrade.d"},
       {:copy, release.profile.post_upgrade_hooks, "#{hooks_dir}/post_upgrade.d"},
+      {:copy, libexec_source, "releases/<%= release_version %>/libexec"},
       {:mkdir, "releases/<%= release_version %>/commands"} |
       Enum.map(release.profile.commands, fn {name, path} ->
         {:copy, path, "releases/<%= release_version %>/commands/#{name}.sh"}
