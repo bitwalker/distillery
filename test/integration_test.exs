@@ -6,7 +6,6 @@ defmodule IntegrationTest do
   alias Mix.Releases.Utils
   import MixTestHelper
 
-  @newline Utils.newline()
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
   @standard_output_path Path.join([__DIR__, "fixtures", "standard_app", "_build", "prod", "rel", "standard_app"])
 
@@ -55,7 +54,7 @@ defmodule IntegrationTest do
           assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
           assert File.exists?(bin_path)
           case :os.type() do
-            {:win32,_} ->
+            {:win32, _} ->
               assert {_output, 0} = System.cmd(bin_path, ["install"])
             _ ->
               :ok
@@ -72,7 +71,7 @@ defmodule IntegrationTest do
           assert {"bar\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, foo)"])
 
           case :os.type() do
-            {:win32,_} ->
+            {:win32, _} ->
               assert {output, 0} = System.cmd(bin_path, ["stop"])
               assert String.contains?(output, "stopped")
               assert {_output, 0} = System.cmd(bin_path, ["uninstall"])
@@ -83,7 +82,7 @@ defmodule IntegrationTest do
           e ->
             _ = System.cmd(bin_path, ["stop"])
             case :os.type() do
-              {:win32,_} ->
+              {:win32, _} ->
                 _ = System.cmd(bin_path, ["uninstall"])
               _ ->
                 :ok
@@ -167,8 +166,8 @@ defmodule IntegrationTest do
           # Boot it, ping it, upgrade it, rpc to verify, then shut it down
           assert File.exists?(bin_path)
           case :os.type() do
-            {:win32,_} ->
-              assert {_output,0} = System.cmd(bin_path, ["install"])
+            {:win32, _} ->
+              assert {_output, 0} = System.cmd(bin_path, ["install"])
             _ ->
               :ok
           end
@@ -181,20 +180,15 @@ defmodule IntegrationTest do
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
           assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
           assert {output, 0} = System.cmd(bin_path, ["upgrade", "0.0.2"])
-          expected = "Made release permanent: \"0.0.2\""
-          result = String.contains?(output, expected)
-          unless result do
-            IO.inspect({:result, expected: expected, in: output})
-          end
-          assert true = result
+          assert output =~ "Made release permanent: \"0.0.2\""
           assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
           assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
           assert {"4\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
           case :os.type() do
-            {:win32,_} ->
+            {:win32, _} ->
               assert {output, 0} = System.cmd(bin_path, ["stop"])
               assert String.contains?(output, "stopped")
-              assert {_,0} = System.cmd(bin_path, ["uninstall"])
+              assert {_, 0} = System.cmd(bin_path, ["uninstall"])
             _ ->
               assert {"ok\n", 0} = System.cmd(bin_path, ["stop"])
               :ok
