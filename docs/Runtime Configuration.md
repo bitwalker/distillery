@@ -43,9 +43,35 @@ The above approach works for both release and deploy-source deployments, and so 
 it keeps configuration close to where it's cared about, and enables you to pick up configuration changes when you restart
 parts of the application without needing to restart the whole release.
 
-If you have dependencies which require runtime configuration, you can place them in `included_applications` and start them
-as part of your supervisor tree, or with `Application.ensure_all_started(:app)` after configuring them. The former is recommended,
-but the latter works as well.
+### Configuring Dependencies
+
+If you have dependencies which require runtime configuration, you should add them to `included_applications` and start them
+as part of your supervisor tree, as shown below.
+
+```elixir
+defmodule MyApplication do
+  use Application
+
+  def start(_type, _args) do
+    import Supervisor.Spec
+
+    # Do your configuration here
+    Application.put_env(:some_dep, :some_key, some_val)
+
+    children = [
+      # You need to replace `:some_dep` here with the name of the module
+      # containing `:some_dep`'s application module. For example, our application
+      # is called `:myapp`, but our application module is `MyApplication`, so we would
+      # use `MyApplication` in the supervisor specification here, not `:myapp`.
+      # You can easily determine this by looking at the `mix.exs` of the dependency, or the
+      # `.app` file in an Erlang application.
+      supervisor(:some_dep, [:normal, []], function: :start),
+      ...
+    ]
+    Supervisor.start_link(children, opts)
+  end
+end
+```
 
 ### Configuration Tools
 
