@@ -25,20 +25,48 @@ defmodule IntegrationTest do
     end
   end
 
+  defp run_cmd(command, args) when is_list(args) do
+    case System.cmd(command, args) do
+      {output, 0} ->
+        if System.get_env("VERBOSE_TESTS") do
+          IO.puts(output)
+        end
+        {:ok, output}
+      {output, non_zero_exit} ->
+        IO.puts(output)
+        {:error, non_zero_exit, output}
+    end
+  end
+
+  # Wait for VM and application to start
+  defp wait_for_app(bin_path) do
+    do_wait_for_app(bin_path, 5)
+  end
+  defp do_wait_for_app(bin_path, i) do
+    case System.cmd(bin_path, ["ping"]) do
+      {"pong\n", 0} ->
+        :ok
+      {_output, _exit_code} when i > 0 ->
+        if System.get_env("VERBOSE_TESTS") do
+          IO.puts "Waiting for app.."
+        end
+        :timer.sleep(1_000)
+        do_wait_for_app(bin_path, i - 1)
+      {output, _exit_code} ->
+        if System.get_env("VERBOSE_TESTS") do
+          IO.puts(output)
+        end
+        :timeout
+    end
+  end
+
   describe "standard application" do
     @tag :expensive
     @tag timeout: 60_000 * 5 # 5m
     test "can build release and start it" do
       with_standard_app do
         # Build release
-        result = mix("release", ["--verbose", "--env=prod"])
-        r = case result do
-          {:ok, output} -> {:ok, output}
-          {:error, _code, output} ->
-            IO.puts(output)
-            :error
-        end
-        assert {:ok, output} = r
+        assert {:ok, output} = mix("release", ["--verbose", "--env=prod"])
         for callback <- ~w(before_assembly after_assembly before_package after_package) do
           assert output =~ "Prod Plugin - #{callback}"
         end
@@ -55,50 +83,34 @@ defmodule IntegrationTest do
           assert File.exists?(bin_path)
           case :os.type() do
             {:win32, _} ->
-              assert {_output, 0} = System.cmd(bin_path, ["install"])
+              assert {:ok, _} = run_cmd(bin_path, ["install"])
             _ ->
               :ok
           end
 
           :ok = create_additional_config_file(tmpdir)
 
-          assert {output, 0} = System.cmd(bin_path, ["start"])
-          # Wait for VM to start
-          Enum.reduce(1..5, :ping, fn
-            5, :ping ->
-              IO.puts output
-              :ping
-            _, :ping ->
-              case System.cmd(bin_path, ["ping"]) do
-                {"pong\n", 0} ->
-                  :ok
-                _ ->
-                  :timer.sleep(1_000)
-                  :ping
-              end
-            _, :ok ->
-              :ok
-          end)
-          assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
-          assert {"2\n", 0}    = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert {:ok, _} = run_cmd(bin_path, ["start"])
+          assert :ok = wait_for_app(bin_path)
+          assert {:ok, "2\n"}    = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
 
           # Additional config items should exist
-          assert {"bar\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, foo)"])
+          assert {:ok, "bar\n"} = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, foo)"])
 
           case :os.type() do
             {:win32, _} ->
-              assert {output, 0} = System.cmd(bin_path, ["stop"])
-              assert String.contains?(output, "stopped")
-              assert {_output, 0} = System.cmd(bin_path, ["uninstall"])
+              assert {:ok, output} = run_cmd(bin_path, ["stop"])
+              assert output =~ "stopped"
+              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
             _ ->
-              assert {"ok\n", 0} = System.cmd(bin_path, ["stop"])
+              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
           end
         rescue
           e ->
-            _ = System.cmd(bin_path, ["stop"])
+            run_cmd(bin_path, ["stop"])
             case :os.type() do
               {:win32, _} ->
-                _ = System.cmd(bin_path, ["uninstall"])
+                run_cmd(bin_path, ["uninstall"])
               _ ->
                 :ok
             end
@@ -115,14 +127,7 @@ defmodule IntegrationTest do
     test "can build and deploy hot upgrade" do
       with_standard_app do
         # Build v1 release
-        result = mix("release", ["--verbose", "--env=prod"])
-        r = case result do
-              {:ok, output} -> {:ok, output}
-              {:error, _code, output} ->
-                IO.puts(output)
-                :error
-            end
-        assert {:ok, _output} = r
+        assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
         # Update config for v2
         project_config_path = Path.join(@standard_app_path, "mix.exs")
         project = File.read!(project_config_path)
@@ -159,15 +164,8 @@ defmodule IntegrationTest do
         File.write!(a_mod_path, new_a_mod)
         File.write!(b_mod_path, new_b_mod)
         # Build v2 release
-        {:ok, _} = mix("compile")
-        result = mix("release", ["--verbose", "--env=prod", "--upgrade"])
-        r = case result do
-              {:ok, output} -> {:ok, output}
-              {:error, _code, output} ->
-                IO.puts(output)
-                :error
-            end
-        assert {:ok, _} = r
+        assert {:ok, _} = mix("compile")
+        assert {:ok, _} = mix("release", ["--verbose", "--env=prod", "--upgrade"])
         assert ["0.0.2", "0.0.1"] == Utils.get_release_versions(@standard_output_path)
         # Deploy it
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
@@ -177,56 +175,45 @@ defmodule IntegrationTest do
           assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
           File.mkdir_p!(Path.join([tmpdir, "releases", "0.0.2"]))
           File.cp!(Path.join([@standard_output_path, "releases", "0.0.2", "standard_app.tar.gz"]),
-                  Path.join([tmpdir, "releases", "0.0.2", "standard_app.tar.gz"]))
+                   Path.join([tmpdir, "releases", "0.0.2", "standard_app.tar.gz"]))
           # Boot it, ping it, upgrade it, rpc to verify, then shut it down
           assert File.exists?(bin_path)
           case :os.type() do
             {:win32, _} ->
-              assert {_output, 0} = System.cmd(bin_path, ["install"])
+              assert {:ok, _} = run_cmd(bin_path, ["install"])
             _ ->
               :ok
           end
           :ok = create_additional_config_file(tmpdir)
-          assert {output, 0} = System.cmd(bin_path, ["start"])
-          # Wait for VM to start
-          Enum.reduce(1..5, :ping, fn
-            5, :ping ->
-              IO.puts output
-              :ping
-            _, :ping ->
-              case System.cmd(bin_path, ["ping"]) do
-                {"pong\n", 0} ->
-                  :ok
-                _ ->
-                  :timer.sleep(1_000)
-                  :ping
-              end
-            _, :ok ->
-              :ok
-          end)
-          assert {"pong\n", 0} = System.cmd(bin_path, ["ping"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
-          assert {"ok\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
-          assert {output, 0} = System.cmd(bin_path, ["upgrade", "0.0.2"])
+          assert {:ok, _} = run_cmd(bin_path, ["start"])
+          assert :ok = wait_for_app(bin_path)
+          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
+          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
+          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
+          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
+          assert {:ok, output} = run_cmd(bin_path, ["upgrade", "0.0.2"])
           assert output =~ "Made release permanent: \"0.0.2\""
-          assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
-          assert {"{ok,2}\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
-          assert {"4\n", 0} = System.cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert {:ok, "{ok,2}\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
+          assert {:ok, "{ok,2}\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
+          assert {:ok, "4\n"} = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
           case :os.type() do
             {:win32, _} ->
-              assert {output, 0} = System.cmd(bin_path, ["stop"])
-              assert String.contains?(output, "stopped")
-              assert {_, 0} = System.cmd(bin_path, ["uninstall"])
+              assert {:ok, output} = run_cmd(bin_path, ["stop"])
+              assert output =~ "stopped"
+              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
             _ ->
-              assert {"ok\n", 0} = System.cmd(bin_path, ["stop"])
+              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
               :ok
           end
         rescue
           e ->
-            _ = System.cmd(bin_path, ["stop"])
-            _ = System.cmd(bin_path, ["uninstall"])
+            run_cmd(bin_path, ["stop"])
+            case :os.type() do
+              {:win32, _} ->
+                run_cmd(bin_path, ["uninstall"])
+              _ ->
+                :ok
+            end
             reraise e, System.stacktrace
         after
           File.rm_rf!(tmpdir)
