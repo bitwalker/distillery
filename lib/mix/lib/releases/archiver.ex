@@ -46,10 +46,7 @@ defmodule Mix.Releases.Archiver do
     opts = [
       :silent,
       {:path, ['#{Path.join([release.profile.output_dir, "lib", "*", "ebin"])}']},
-      {:dirs, [:include | case release.profile.include_src do
-                          true  -> [:src, :c_src]
-                          false -> []
-                        end]},
+      {:dirs, [:include | if release.profile.include_src do [:src, :c_src] else [] end]},
       {:outdir, '#{Path.dirname(archive_path)}'} |
       case release.profile.include_erts do
         true ->
@@ -114,12 +111,11 @@ defmodule Mix.Releases.Archiver do
              '#{Path.join([output_dir, "releases", release.version, "libexec"])}'},
             {'#{Path.join(["lib", "#{release.name}-#{release.version}", "consolidated"])}',
              '#{Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])}'}] ++
-            case release.is_upgrade do
-              true ->
-                [{'#{Path.join(["releases", release.version, "relup"])}',
-                  '#{Path.join([output_dir, "releases", release.version, "relup"])}'}]
-              false ->
-                []
+            if release.is_upgrade do
+              [{'#{Path.join(["releases", release.version, "relup"])}',
+                '#{Path.join([output_dir, "releases", release.version, "relup"])}'}]
+            else
+              []
             end ++
             case release.profile.include_erts do
               false ->
@@ -200,5 +196,4 @@ defmodule Mix.Releases.Archiver do
     :ok
   end
   defp strip_release(_, _), do: :ok
-
 end
