@@ -40,7 +40,7 @@ defmodule IntegrationTest do
 
   # Wait for VM and application to start
   defp wait_for_app(bin_path) do
-    do_wait_for_app(bin_path, 5)
+    do_wait_for_app(bin_path, 10)
   end
   defp do_wait_for_app(bin_path, i) do
     case System.cmd(bin_path, ["ping"]) do
