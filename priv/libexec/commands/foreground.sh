@@ -4,6 +4,7 @@
 ## standard out is routed to the current terminal session.
 
 set -e
+set -m
 
 require_cookie
 
