@@ -9,7 +9,7 @@ defmodule Mix.Releases.Appup do
   @type change :: {:advanced, [term]}
   @type dep_mods :: [module]
 
-  @type appup_ver :: char_list
+  @type appup_ver :: charlist
   @type instruction :: {:add_module, module} |
                         {:delete_module, module} |
                         {:update, module, :supervisor | change} |

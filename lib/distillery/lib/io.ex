@@ -23,7 +23,7 @@ defmodule Distillery.IO do
   @spec confirm(String.t, String.t, Regex.t) :: boolean
   def confirm(message, prompt, answer_pattern) do
     IO.puts IO.ANSI.yellow
-    answer = IO.gets("#{message} #{prompt}") |> String.rstrip(?\n)
+    answer = IO.gets("#{message} #{prompt}") |> String.trim_trailing("\n")
     IO.puts IO.ANSI.reset
     answer =~ answer_pattern
   end

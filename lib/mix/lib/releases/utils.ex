@@ -55,7 +55,7 @@ defmodule Mix.Releases.Utils do
   @spec write_terms(String.t, [term]) :: :ok | {:error, term}
   def write_terms(path, terms) when is_list(terms) do
     contents = String.duplicate("~p.\n\n", Enum.count(terms))
-       |> String.to_char_list
+       |> String.to_charlist
        |> :io_lib.fwrite(Enum.reverse(terms))
     case :file.write_file('#{path}', contents, [encoding: :utf8]) do
       :ok -> :ok
@@ -104,10 +104,9 @@ defmodule Mix.Releases.Utils do
       true -> :ok
     end
     errors =
-      Enum.filter_map(
-        [erts, bin, lib],
-        fn x -> x != :ok end,
-        fn {:error, _} = err -> err end)
+      [erts, bin, lib]
+      |> Enum.filter(fn x -> x != :ok end)
+      |> Enum.map(fn {:error, _} = err -> err end)
     case Enum.empty?(errors) do
       true -> :ok
       false ->

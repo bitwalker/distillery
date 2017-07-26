@@ -81,8 +81,9 @@ defmodule Mix.Releases.App do
   # of this application.
   defp get_dependencies(name) do
     Mix.Dep.loaded_by_name([name], [])
-    |> Enum.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
-    |> Enum.filter_map(&include_dep?/1, &map_dep/1)
+    |> Stream.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
+    |> Stream.filter(&include_dep?/1)
+    |> Enum.map(&map_dep/1)
   rescue
     Mix.Error -> # This is a top-level app
       cond do
@@ -93,14 +94,16 @@ defmodule Mix.Releases.App do
             File.exists?(app_path) ->
               Mix.Project.in_project(name, app_path, fn mixfile ->
                 mixfile.project[:deps]
-                |> Enum.filter_map(&include_dep?/1, &map_dep/1)
+                |> Stream.filter(&include_dep?/1)
+                |> Enum.map(&map_dep/1)
               end)
             :else ->
               []
           end
         :else ->
           Mix.Project.config[:deps]
-          |> Enum.filter_map(&include_dep?/1, &map_dep/1)
+          |> Stream.filter(&include_dep?/1)
+          |> Enum.map(&map_dep/1)
       end
   end
 
