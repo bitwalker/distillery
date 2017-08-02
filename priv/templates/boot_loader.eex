@@ -15,9 +15,12 @@ if [ ! -z "$DEBUG_BOOT" ]; then
     set -x
 fi
 
-# If TERM is not set, set it to xterm
-if [ -z "$TERM" ]; then
-    export TERM=xterm
+# Ensure TERM is set to something usable
+# for remote shells. The only time we'll
+# override this value is if it is set to "dumb"
+export TERM="${TERM:-xterm}"
+if [ "$TERM" = "dumb" ]; then
+    TERM=xterm
 fi
 
 # Include helpers, if the current release version supports it
