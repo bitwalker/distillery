@@ -28,10 +28,11 @@ is_function_defined() {
     if [ -z "$2" ]; then
         fail "No function name was provided to is_function_defined, please report this issue on the tracker!"
     fi
-    erl -eval "io:format(\"~p~n\", [erlang:function_exported($1, $2, 0)]), halt()" \
+    erl -eval "code:ensure_modules_loaded(['$1']), io:format(\"~p~n\", [erlang:function_exported('$1', $2, 0)]), halt()" \
         -noshell \
         -boot start_clean \
-        -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
+        -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
+        -pa "$CONSOLIDATED_DIR" \
         ${__code_paths}
 }
 
