@@ -7,6 +7,26 @@ you in a minor version.
 
 ## Functions
 
+### fail()
+
+Logs an error message and exits with a non-zero status code.
+
+### notice()
+
+Logs a warning message
+
+### success()
+
+Logs a success message
+
+### info()
+
+Logs an informational message
+
+### require_live_node()
+
+Ensures the release is already running and fails with an appropriate error if not.
+
 ### get_pid()
 
 Gets the pid of the running node. Expects that the node has already been started.
@@ -33,14 +53,38 @@ Executes an escript. By default this function takes the first argument passed to
 script as the escript path, use the `set` builtin to reset the arguments to provide your
 own. It uses `$1` to set the escript path, and `$@` to pass arguments to that escript.
 
+### erl()
+
+Invokes `erl` just like you would from the command line.
+
+### elixir()
+
+Invokes `elixir` just like you would from the command line.
+
+### iex()
+
+Invokes `iex` just like you would from the command line.
+
+### otp_vsn()
+
+Echoes the current OTP version
+
+### erts_vsn()
+
+Echoes the current ERTS version
+
+### erts_root()
+
+Echoes the current root directory of ERTS
+
 ### run_hooks()
 
 Executes the hook for one of the following phases:
 
-- pre_configure
-- pre_start/post_start
-- pre_stop/post_stop
-- pre_upgrade/post_upgrade
+- `pre/post_configure`
+- `pre/post_start`
+- `pre/post_stop`
+- `pre/post_upgrade`
 
 It uses `$1` as the phase name to use, e.g. `run_hooks pre_configure`.
 

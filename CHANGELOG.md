@@ -3,6 +3,23 @@
 ### Added
 
 - Introduced new configuration option `included_configs`, which is a list of paths pointing to additional config files to be merged into `sys.config` at runtime.
+- Support for Elixir 1.5
+- Added `elixir` and `iex` helper functions for custom commands and hooks
+
+### Changed
+
+- The boot script architecture has been completely re-written
+  - Support for OTP 20's new signal handler
+  - Boot script is now broken up into smaller components for easier maintenance
+  - Each command lives in it's own script now, using the same basic infra as custom commands
+  - Improved documentation
+- `pre_configure` is now run prior to any config initialization to provide an opportunity to set up the environment.
+
+### Fixed
+
+- Various documentation improvements
+- Fix handling of dumb terminals (#298)
+- Fix handling of consolidation path (#307)
 
 
 ## 1.4
