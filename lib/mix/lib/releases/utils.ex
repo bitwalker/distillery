@@ -54,9 +54,10 @@ defmodule Mix.Releases.Utils do
   """
   @spec write_terms(String.t, [term]) :: :ok | {:error, term}
   def write_terms(path, terms) when is_list(terms) do
-    contents = String.duplicate("~p.\n\n", Enum.count(terms))
-       |> String.to_charlist
-       |> :io_lib.fwrite(Enum.reverse(terms))
+    contents =
+      String.duplicate("~p.\n\n", Enum.count(terms))
+      |> String.to_charlist
+      |> :io_lib.fwrite(Enum.reverse(terms))
     case :file.write_file('#{path}', contents, [encoding: :utf8]) do
       :ok -> :ok
       {:error, reason} ->
@@ -90,27 +91,30 @@ defmodule Mix.Releases.Utils do
   """
   @spec validate_erts(String.t | nil | boolean) :: :ok | {:error, [{:error, term}]}
   def validate_erts(path) when is_binary(path) do
-    erts = case Path.join(path, "erts-*") |> Path.wildcard |> Enum.count do
-      0 -> {:error, {:invalid_erts, :missing_directory}}
-      1 -> :ok
-      _ -> {:error, {:invalid_erts, :too_many}}
-    end
-    bin = case File.exists?(Path.join(path, "bin")) do
-      false -> {:error, {:invalid_erts, :missing_bin}}
-      true -> :ok
-    end
-    lib = case File.exists?(Path.join(path, "lib")) do
-      false -> {:error, {:invalid_erts, :missing_lib}}
-      true -> :ok
-    end
+    erts =
+      case Path.join(path, "erts-*") |> Path.wildcard |> Enum.count do
+        0 -> {:error, {:invalid_erts, :missing_directory}}
+        1 -> :ok
+        _ -> {:error, {:invalid_erts, :too_many}}
+      end
+    bin =
+      case File.exists?(Path.join(path, "bin")) do
+        false -> {:error, {:invalid_erts, :missing_bin}}
+        true -> :ok
+      end
+    lib =
+      case File.exists?(Path.join(path, "lib")) do
+        false -> {:error, {:invalid_erts, :missing_lib}}
+        true -> :ok
+      end
     errors =
       [erts, bin, lib]
       |> Enum.filter(fn x -> x != :ok end)
       |> Enum.map(fn {:error, _} = err -> err end)
-    case Enum.empty?(errors) do
-      true -> :ok
-      false ->
-        {:error, errors}
+    if Enum.empty?(errors) do
+      :ok
+    else
+      {:error, errors}
     end
   end
   def validate_erts(include_erts) when is_nil(include_erts) or is_boolean(include_erts),
@@ -121,10 +125,12 @@ defmodule Mix.Releases.Utils do
   """
   @spec detect_erts_version(String.t) :: {:ok, Stringt} | {:error, term}
   def detect_erts_version(path) when is_binary(path) do
-    entries = Path.expand(path)
-    |> Path.join("erts-*")
-    |> Path.wildcard
-    |> Enum.map(&Path.basename/1)
+    entries =
+      path
+      |> Path.expand
+      |> Path.join("erts-*")
+      |> Path.wildcard
+      |> Enum.map(&Path.basename/1)
     case entries do
       [<<"erts-", vsn::binary>>] ->
         {:ok, vsn}
@@ -145,12 +151,13 @@ defmodule Mix.Releases.Utils do
   def insecure_mkdir_temp() do
     :rand.seed(:exs64)
     unique_num = :rand.uniform(1_000_000_000)
-    tmpdir_path = case :erlang.system_info(:system_architecture) do
-                    'win32' ->
-                      Path.join(["./tmp", ".tmp_dir#{unique_num}"])
-                    _ ->
-                      Path.join(["/tmp", ".tmp_dir#{unique_num}"])
-                  end
+    tmpdir_path =
+      case :erlang.system_info(:system_architecture) do
+        'win32' ->
+          Path.join(["./tmp", ".tmp_dir#{unique_num}"])
+        _ ->
+          Path.join(["/tmp", ".tmp_dir#{unique_num}"])
+      end
     case File.mkdir_p(tmpdir_path) do
       :ok ->
         {:ok, tmpdir_path}
@@ -174,13 +181,13 @@ defmodule Mix.Releases.Utils do
   @spec get_release_versions(String.t) :: list(String.t)
   def get_release_versions(output_dir) do
     releases_path = Path.join([output_dir, "releases"])
-    case File.exists?(releases_path) do
-      false -> []
-      true  ->
-        releases_path
-        |> File.ls!
-        |> Enum.filter(&Regex.match?(@valid_version_pattern, &1))
-        |> sort_versions
+    if File.exists?(releases_path) do
+      releases_path
+      |> File.ls!
+      |> Enum.filter(&Regex.match?(@valid_version_pattern, &1))
+      |> sort_versions
+    else
+      []
     end
   end
 
@@ -203,15 +210,16 @@ defmodule Mix.Releases.Utils do
   def sort_versions(versions) do
     versions
     |> Enum.map(fn ver ->
-        # Special handling for git-describe versions
-        compared = case Regex.named_captures(@git_describe_pattern, ver) do
+      # Special handling for git-describe versions
+      compared =
+        case Regex.named_captures(@git_describe_pattern, ver) do
           nil ->
             {:standard, ver, nil}
           %{"ver" => version, "commits" => n, "sha" => sha} ->
             {:describe, <<version::binary, ?+, n::binary, ?-, sha::binary>>, String.to_integer(n)}
         end
-        {ver, compared}
-      end)
+      {ver, compared}
+    end)
     |> Enum.sort(
       fn {_, {v1type, v1str, v1_commits_since}}, {_, {v2type, v2str, v2_commits_since}} ->
         case {parse_version(v1str), parse_version(v2str)} do
@@ -227,7 +235,7 @@ defmodule Mix.Releases.Utils do
                     v1_commits_since > v2_commits_since
                 end
               :lt -> false
-            end;
+            end
           {{_, v1}, {_, v2}} ->
             v1 >  v2
         end
@@ -251,56 +259,57 @@ defmodule Mix.Releases.Utils do
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps} = release) do
     children = get_apps(App.new(name), [])
-    base_apps = Enum.reduce(apps, children, fn
-      _, {:error, reason} ->
-        {:error, {:apps, reason}}
-      {a, start_type}, acc ->
-        cond do
-          App.valid_start_type?(start_type) ->
-            case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
-              true  ->
+    base_apps =
+      Enum.reduce(apps, children, fn
+        _, {:error, reason} ->
+          {:error, {:apps, reason}}
+        {a, start_type}, acc ->
+          cond do
+            App.valid_start_type?(start_type) ->
+              if Enum.any?(acc, fn %App{name: app} -> a == app end) do
                 # Override start type
                 Enum.map(acc, fn %App{name: ^a} = app -> %{app | start_type: start_type}; app -> app end)
-              false ->
+              else
                 get_apps(App.new(a, start_type), acc)
-            end
-          :else ->
-            {:error, {:apps, {:invalid_start_type, a, start_type}}}
-        end
-      a, acc when is_atom(a) ->
-        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
-          true  -> acc
-          false -> get_apps(App.new(a), acc)
-        end
-    end)
+              end
+            :else ->
+              {:error, {:apps, {:invalid_start_type, a, start_type}}}
+          end
+        a, acc when is_atom(a) ->
+          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
+            acc
+          else
+            get_apps(App.new(a), acc)
+          end
+      end)
     # Correct any ERTS libs which should be pulled from the correct
     # ERTS directory, not from the current environment.
-    apps = case release.profile.include_erts do
-             true  -> base_apps
-             false -> base_apps
-             p when is_binary(p) ->
-               lib_dir = Path.expand(Path.join(p, "lib"))
-               Enum.reduce(base_apps, [], fn
-                 _, {:error, {:apps, _}} = err ->
-                   err
-                 _, {:error, reason} ->
-                   {:error, {:apps, reason}}
-                 %App{name: a} = app, acc ->
-                    case is_erts_lib?(app.path) do
-                      false ->
-                        [app|acc]
-                      true ->
-                        case Path.wildcard(Path.join(lib_dir, "#{a}-*")) do
-                          [corrected_app_path|_] ->
-                            [_, corrected_app_vsn] = String.split(Path.basename(corrected_app_path), "-", trim: true)
-                            [%{app | :vsn => corrected_app_vsn,
-                                     :path => corrected_app_path} | acc]
-                          _ ->
-                            {:error, {:apps, {:missing_required_lib, a, lib_dir}}}
-                        end
-                    end
-               end)
-           end
+    apps =
+      case release.profile.include_erts do
+        true  -> base_apps
+        false -> base_apps
+        p when is_binary(p) ->
+          lib_dir = Path.expand(Path.join(p, "lib"))
+          Enum.reduce(base_apps, [], fn
+            _, {:error, {:apps, _}} = err ->
+              err
+            _, {:error, reason} ->
+              {:error, {:apps, reason}}
+            %App{name: a} = app, acc ->
+              if is_erts_lib?(app.path) do
+                case Path.wildcard(Path.join(lib_dir, "#{a}-*")) do
+                  [corrected_app_path|_] ->
+                    [_, corrected_app_vsn] = String.split(Path.basename(corrected_app_path), "-", trim: true)
+                    [%{app | :vsn => corrected_app_vsn,
+                              :path => corrected_app_path} | acc]
+                  _ ->
+                    {:error, {:apps, {:missing_required_lib, a, lib_dir}}}
+                end
+              else
+                [app|acc]
+              end
+          end)
+      end
     case apps do
       {:error, _} = err ->
         err
@@ -308,22 +317,23 @@ defmodule Mix.Releases.Utils do
         apps = Enum.reverse(apps)
         # Accumulate all unhandled deps, and see if they are present in the list
         # of applications, if so they can be ignored, if not, warn about them
-        unhandled = Enum.flat_map(apps, fn %App{unhandled_deps: unhandled} ->
-          unhandled
-        end) |> MapSet.new
-        handled = Enum.flat_map(apps, fn %App{name: a} = app ->
-          Enum.concat([a | app.applications], app.included_applications)
-        end) |> Enum.uniq |> MapSet.new
+        unhandled =
+          apps
+          |> Enum.flat_map(fn %App{} = app -> app.unhandled_deps end)
+          |> MapSet.new
+        handled =
+          apps
+          |> Enum.flat_map(fn %App{name: a} = app -> Enum.concat([a | app.applications], app.included_applications) end)
+          |> Enum.uniq
+          |> MapSet.new
         ignore_missing = Application.get_env(:distillery, :no_warn_missing, [])
         missing = MapSet.to_list(MapSet.difference(unhandled, handled))
-        missing = case ignore_missing do
-                    false  -> missing
-                    true   -> []
-                    ignore ->
-                      Enum.filter(missing, fn
-                        a -> not Enum.member?(ignore, a)
-                      end)
-                  end
+        missing =
+          case ignore_missing do
+            false  -> missing
+            true   -> []
+            ignore -> Enum.reject(missing, &Enum.member?(ignore, &1))
+          end
         case missing do
           [] -> :ok
           _ ->
@@ -363,47 +373,54 @@ defmodule Mix.Releases.Utils do
   defp get_apps(nil, acc), do: Enum.uniq(acc)
   defp get_apps({:error, _} = err, _acc), do: err
   defp get_apps(%App{} = app, acc) do
-    new_acc = app.applications
-    |> Enum.concat(app.included_applications)
-    |> Enum.reduce([app|acc], fn
-      {:error, _} = err, _acc ->
-        err
-      {a, load_type}, acc ->
-        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
-          true -> acc
-          false ->
+    new_acc =
+      app.applications
+      |> Enum.concat(app.included_applications)
+      |> Enum.reduce([app|acc], fn
+        {:error, _} = err, _acc ->
+          err
+        {a, load_type}, acc ->
+          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
+            acc
+          else
             case App.new(a, load_type) do
               nil ->
                 acc
               %App{} = app ->
                 case get_apps(app, acc) do
-                  {:error, _} = err -> err
-                  children -> Enum.concat(acc, children)
+                  {:error, _} = err ->
+                    err
+                  children ->
+                    Enum.concat(acc, children)
                 end
               {:error, _} = err ->
                 err
             end
-        end
-      a, acc ->
-        case Enum.any?(acc, fn %App{name: ^a} -> true; _ -> false end) do
-          true -> acc
-          false ->
+          end
+        a, acc ->
+          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
+            acc
+          else
             case App.new(a) do
               nil ->
                 acc
               %App{} = app ->
                 case get_apps(app, acc) do
-                  {:error, _} = err -> err
-                  children -> Enum.concat(acc, children)
+                  {:error, _} = err ->
+                    err
+                  children ->
+                    Enum.concat(acc, children)
                 end
               {:error, _} = err ->
                 err
             end
-        end
-    end)
+          end
+      end)
     case new_acc do
-      {:error, _} = err -> err
-      apps -> Enum.uniq(apps)
+      {:error, _} = err ->
+        err
+      apps ->
+        Enum.uniq(apps)
     end
   end
 
@@ -414,11 +431,11 @@ defmodule Mix.Releases.Utils do
   def is_erts_lib?(app_dir, lib_dir), do: String.starts_with?(app_dir, lib_dir)
 
   @doc false
+  @spec newline() :: String.t
   def newline() do
     case :os.type() do
       {:win32, _} -> "\r\n"
       {:unix, _}  -> "\n"
     end
   end
-
 end
