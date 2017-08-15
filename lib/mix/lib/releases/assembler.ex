@@ -787,6 +787,7 @@ defmodule Mix.Releases.Assembler do
     hook_overlays = [
       {:mkdir, hooks_dir},
       {:mkdir, "#{hooks_dir}/pre_configure.d"},
+      {:mkdir, "#{hooks_dir}/post_configure.d"},
       {:mkdir, "#{hooks_dir}/pre_start.d"},
       {:mkdir, "#{hooks_dir}/post_start.d"},
       {:mkdir, "#{hooks_dir}/pre_stop.d"},
@@ -794,6 +795,7 @@ defmodule Mix.Releases.Assembler do
       {:mkdir, "#{hooks_dir}/pre_upgrade.d"},
       {:mkdir, "#{hooks_dir}/post_upgrade.d"},
       {:copy, release.profile.pre_configure_hook, "#{hooks_dir}/pre_configure.d/00_pre_configure_hook.sh"},
+      {:copy, release.profile.post_configure_hook, "#{hooks_dir}/post_configure.d/00_post_configure_hook.sh"},
       {:copy, release.profile.pre_start_hook, "#{hooks_dir}/pre_start.d/00_pre_start_hook.sh"},
       {:copy, release.profile.post_start_hook, "#{hooks_dir}/post_start.d/00_post_start_hook.sh"},
       {:copy, release.profile.pre_stop_hook, "#{hooks_dir}/pre_stop.d/00_pre_stop_hook.sh"},
@@ -801,6 +803,7 @@ defmodule Mix.Releases.Assembler do
       {:copy, release.profile.pre_upgrade_hook, "#{hooks_dir}/pre_upgrade.d/00_pre_upgrade_hook.sh"},
       {:copy, release.profile.post_upgrade_hook, "#{hooks_dir}/post_upgrade.d/00_post_upgrade_hook.sh"},
       {:copy, release.profile.pre_configure_hooks, "#{hooks_dir}/pre_configure.d"},
+      {:copy, release.profile.post_configure_hooks, "#{hooks_dir}/post_configure.d"},
       {:copy, release.profile.pre_start_hooks, "#{hooks_dir}/pre_start.d"},
       {:copy, release.profile.post_start_hooks, "#{hooks_dir}/post_start.d"},
       {:copy, release.profile.pre_stop_hooks, "#{hooks_dir}/pre_stop.d"},

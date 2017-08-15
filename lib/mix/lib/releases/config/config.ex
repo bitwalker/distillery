@@ -387,6 +387,9 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.pre_configure_hook) and not is_binary(profile.pre_configure_hook) ->
           raise ArgumentError,
             "expected :pre_configure_hook to be nil or a path string, but got: #{inspect profile.pre_configure_hook}"
+        not is_nil(profile.post_configure_hook) and not is_binary(profile.post_configure_hook) ->
+          raise ArgumentError,
+            "expected :post_configure_hook to be nil or a path string, but got: #{inspect profile.post_configure_hook}"
         not is_nil(profile.pre_start_hook) and not is_binary(profile.pre_start_hook) ->
           raise ArgumentError,
             "expected :pre_start_hook to be nil or a path string, but got: #{inspect profile.pre_start_hook}"
@@ -408,6 +411,9 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.pre_configure_hooks) and not is_binary(profile.pre_configure_hooks) ->
           raise ArgumentError,
             "expected :pre_configure_hooks to be nil or a path string, but got: #{inspect profile.pre_configure_hooks}"
+        not is_nil(profile.post_configure_hooks) and not is_binary(profile.post_configure_hooks) ->
+          raise ArgumentError,
+            "expected :post_configure_hooks to be nil or a path string, but got: #{inspect profile.post_configure_hooks}"
         not is_nil(profile.pre_start_hooks) and not is_binary(profile.pre_start_hooks) ->
           raise ArgumentError,
             "expected :pre_start_hooks to be nil or a path string, but got: #{inspect profile.pre_start_hooks}"

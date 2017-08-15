@@ -40,6 +40,9 @@ run_hooks() {
         pre_configure)
             _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
             ;;
+        post_configure)
+            _run_hooks_from_dir "$POST_CONFIGURE_HOOKS"
+            ;;
         pre_start)
             _run_hooks_from_dir "$PRE_START_HOOKS"
             ;;

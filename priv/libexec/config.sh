@@ -9,6 +9,13 @@ configure_release() {
     if [ ! -z "$DISTILLERY_PRECONFIGURE" ]; then
         return 0
     fi
+
+    # Need to ensure pre_configure is run here, but
+    # prevent recursion if the hook calls back to the boot script
+    export DISTILLERY_PRECONFIGURE=true
+    run_hooks pre_configure
+    unset DISTILLERY_PRECONFIGURE
+
     # Set VMARGS_PATH, the path to the vm.args file to use
     # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
     if [ -z "$VMARGS_PATH" ]; then
@@ -54,10 +61,10 @@ configure_release() {
     fi
     export SYS_CONFIG_PATH="${SYS_CONFIG_PATH:-$DEST_SYS_CONFIG_PATH}"
 
-    # Need to ensure pre_configure is run here, but
+    # Need to ensure post_configure is run here, but
     # prevent recursion if the hook calls back to the boot script
     export DISTILLERY_PRECONFIGURE=true
-    run_hooks pre_configure
+    run_hooks post_configure
     unset DISTILLERY_PRECONFIGURE
 
     # Set up the node based on the new configuration
