@@ -63,10 +63,9 @@ defmodule Mix.Releases.Assembler do
         copy_app(app, release)
       end
       # Copy consolidated .beams
-      build_path = Mix.Project.build_path(Mix.Project.config)
+      consolidated_src = Mix.Project.consolidation_path
       consolidated_dest = Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])
       File.mkdir_p!(consolidated_dest)
-      consolidated_src = Path.join(build_path, "consolidated")
       if File.exists?(consolidated_src) do
         {:ok, _} = File.cp_r(consolidated_src, consolidated_dest)
       end
