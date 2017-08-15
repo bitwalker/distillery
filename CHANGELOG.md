@@ -1,5 +1,12 @@
 ## 1.5
 
+**IMPORTANT**: Distillery now requires that Bash be installed on the target system.
+It turns out that this had been an implied dependency due to some of the features used
+in the old script, but since it used `/bin/sh` in it's shebang, most platforms used Bash
+automatically anyway. Those platforms which alias `/bin/sh` to something not Bash, such as
+Ubuntu, were broken in some ways. This dependency on a specific shell's behaviour is now
+explicit rather than implicit.
+
 ### Added
 
 - Introduced new configuration option `included_configs`, which is a list of paths pointing to additional config files to be merged into `sys.config` at runtime.
