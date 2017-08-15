@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -e
+
+unset CDPATH
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+REL_NAME="${REL_NAME:-<%= release_name %>}"
+
+IS_TTY=false
+if [ -t 1 ]; then
+    if which tput >/dev/null; then
+        IS_TTY=true
+    fi
+fi
+if [ "$IS_TTY" = "true" ]; then
+    txtrst=$(tput sgr0)             # Reset
+    txtbld=$(tput bold)             # Bold
+    bldred=${txtbld}$(tput setaf 1) # Red
+else
+    txtrst=
+    txtbld=
+    bldred=
+fi
+
+if ! which bash >/dev/null ; then
+    message="Bash is required to run this release. Please ensure that it is installed."
+    printf "${bldred}%s${txtrst}\n" "$message"
+    exit 1
+else
+    exec "${SCRIPT_DIR}/${REL_NAME}_loader.sh" "$@"
+fi

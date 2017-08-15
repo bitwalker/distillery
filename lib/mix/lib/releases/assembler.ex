@@ -231,7 +231,8 @@ defmodule Mix.Releases.Assembler do
   defp write_binfile(release, rel_dir) do
     name = "#{release.name}"
     bin_dir         = Path.join(release.profile.output_dir, "bin")
-    bootloader_path = Path.join(bin_dir, name)
+    bootcheck_path  = Path.join(bin_dir, name)
+    bootloader_path = Path.join(bin_dir, "#{name}_loader.sh")
     boot_path       = Path.join(rel_dir, "#{name}.sh")
     bootloader_win_path = Path.join(bin_dir, "#{name}.bat")
     boot_win_path       = Path.join(rel_dir, "#{name}.bat")
@@ -239,14 +240,17 @@ defmodule Mix.Releases.Assembler do
 
     with :ok <- File.mkdir_p(bin_dir),
          :ok <- generate_nodetool(bin_dir),
+         {:ok, bootcheck_contents} <- Utils.template(:boot_check, template_params),
          {:ok, bootloader_contents} <- Utils.template(:boot_loader, template_params),
          {:ok, bootloader_win_contents} <- Utils.template(:boot_loader_win, template_params),
          {:ok, boot_contents} <- Utils.template(:boot, template_params),
          {:ok, boot_win_contents} <- Utils.template(:boot_win, template_params),
+         :ok <- File.write(bootcheck_path, bootcheck_contents),
          :ok <- File.write(bootloader_path, bootloader_contents),
          :ok <- File.write(bootloader_win_path, bootloader_win_contents),
          :ok <- File.write(boot_path, boot_contents),
          :ok <- File.write(boot_win_path, boot_win_contents),
+         :ok <- File.chmod(bootcheck_path, 0o777),
          :ok <- File.chmod(bootloader_path, 0o777),
          :ok <- File.chmod(bootloader_win_path, 0o777),
          :ok <- File.chmod!(boot_path, 0o777),
