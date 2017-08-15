@@ -38,3 +38,8 @@ notice() {
 success() {
     printf "${bldgrn}%s${txtrst}\n" "${*}"
 }
+
+# Log an informational message
+info() {
+    printf "%s\n" "${*}"
+}
