@@ -1,6 +1,11 @@
 # Using Distillery with systemd
 
-The following is an example systemd unit file for a Distillery release:
+Here are three general approaches to running a Distillery release with Systemd:
+#### 1. Run app as daemon using `start` and a `forking` Systemd service *with* pidfile
+* Systemd can automatically restart your app if it crashes
+* You'll need to generate a pidfile for your app. The [pid_file](https://github.com/OvermindDL1/pid_file) package makes this quite simple.
+* Logs will be written to the `/logs` directory in your release
+
 
 		[Unit]
 		Description=My App
@@ -13,41 +18,72 @@ The following is an example systemd unit file for a Distillery release:
 		WorkingDirectory=/home/appuser/myapp
 		ExecStart=/home/appuser/myapp/bin/myapp start
 		ExecStop=/home/appuser/myapp/bin/myapp stop
+		PIDFile=/home/appuser/myapp/myapp.pid
 		Restart=on-failure
 		RestartSec=5
 		Environment=PORT=8080
 		Environment=LANG=en_US.UTF-8
 		SyslogIdentifier=myapp
-		RemainAfterExit=yes
+		RemainAfterExit=no
+
+		[Install]
+		WantedBy=multi-user.target
+		
+
+#### 2. Run app as daemon using `start` and a `forking` Systemd service *without* pidfile
+* Systemd will attempt (and probably fail) to guess your apps pid. Without the correct pid it will be unable to automatically restart your app if it crashes
+* No need for pidfiles
+* Logs will be written to the `/logs` directory in your release
+
+		[Unit]
+		Description=My App
+		After=network.target
+
+		[Service]
+		Type=*forking*
+		User=appuser
+		Group=appuser
+		WorkingDirectory=/home/appuser/myapp
+		ExecStart=/home/appuser/myapp/bin/myapp start
+		ExecStop=/home/appuser/myapp/bin/myapp stop
+		Restart=on-failure
+		RestartSec=5
+		Environment=PORT=8080
+		Environment=LANG=en_US.UTF-8
+		SyslogIdentifier=myapp
+		RemainAfterExit=no
 
 		[Install]
 		WantedBy=multi-user.target
 
-It's important that you have `RemainAfterExit=yes` set, or you will get an error trying to start
-the service.
 
-The following is an example systemd unit file for a Distillery release using foreground:
+#### 3. Run app in `foreground` using a `simple` Systemd configuration
+* Systemd can automatically restart your app if it crashes
+* No need for pidfiles or pid-detection
+* Logging is handled by systemd
 
-                [Unit]
-                Description=My App
-                After=network.target
+		[Unit]
+		Description=My App
+		After=network.target
 
-                [Service]
-                Type=simple
-                User=appuser
-                Group=appuser
-                WorkingDirectory=/home/appuser/myapp
-                ExecStart=/home/appuser/myapp/bin/myapp foreground
-                Restart=on-failure
-                KillMode=process
-                SuccessExitStatus=143
-                TimeoutSec=10
-                RestartSec=5
-                Environment=PORT=8080
-                Environment=LANG=en_US.UTF-8
-                SyslogIdentifier=myapp
+		[Service]
+		Type=simple
+		User=appuser
+		Group=appuser
+		WorkingDirectory=/home/appuser/myapp
+		ExecStart=/home/appuser/myapp/bin/myapp foreground
+		ExecStop=/home/appuser/myapp/bin/myapp stop
+		Restart=on-failure
+		RestartSec=5
+		Environment=PORT=8080
+		Environment=LANG=en_US.UTF-8
+		SyslogIdentifier=myapp
+		RemainAfterExit=no
 
-                [Install]
-                WantedBy=multi-user.target
+		[Install]
+		WantedBy=multi-user.target
+
+		
+Reportedly, if you get an error starting the service you may need to set `RemainAfterExit=yes`. While this may resove the issue it will prevent Systemd from restarting your app if it crashes.
 
 For a more explanatory guide on using Distillery with systemd, see [here](http://mfeckie.github.io/Phoenix-In-Production-With-Systemd/) and foreground, see [here](https://elixirforum.com/t/distillery-node-is-not-running-and-non-zero-exit-code/3834)
