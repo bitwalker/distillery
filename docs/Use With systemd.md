@@ -40,7 +40,7 @@ Here are three general approaches to running a Distillery release with Systemd:
 		After=network.target
 
 		[Service]
-		Type=*forking*
+		Type=forking
 		User=appuser
 		Group=appuser
 		WorkingDirectory=/home/appuser/myapp
