@@ -2,7 +2,7 @@ defmodule Distillery.Cookies.Test do
   use ExUnit.Case, async: true
   use PropCheck
 
-  @tag timeout: 180_000
+  @tag timeout: 60_000 * 5
   property "generated cookies are always valid", [:noshrink, :quiet] do
     numtests(100, forall c <- Distillery.Cookies.generate() do
       is_valid_cookie(c)
