@@ -1,4 +1,4 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash --posix
 
 # Attaches to the release console as started via `start`
 # NOTE: This is not a remote console, it's the shell of the running node,

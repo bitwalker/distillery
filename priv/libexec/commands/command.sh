@@ -1,4 +1,4 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash --posix
 
 # Execute as command-line utility
 #

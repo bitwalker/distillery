@@ -1,4 +1,4 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash --posix
 
 # Like `rpc`, but parses the third argument as an Erlang term
 

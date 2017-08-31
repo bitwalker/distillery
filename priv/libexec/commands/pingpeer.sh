@@ -1,4 +1,4 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash --posix
 
 ## This command is like `ping`, but is used to
 ## ping a neighboring node. It requires a single

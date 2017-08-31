@@ -1,4 +1,4 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash --posix
 
 ## This command starts the release interactively, i.e. it boots to a shell
 

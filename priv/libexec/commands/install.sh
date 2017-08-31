@@ -1,4 +1,4 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash --posix
 
 ## This command is used to install upgrades/downgrades.
 ## It takes two arguments, the type of install (i.e. upgrade/downgrade),
