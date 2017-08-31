@@ -12,11 +12,11 @@ if [ -t 1 ]; then
 fi
 
 if [ "$IS_TTY" = "true" ]; then
-    txtrst=$(tput sgr0)             # Reset
-    txtbld=$(tput bold)             # Bold
-    bldred=${txtbld}$(tput setaf 1) # Red
-    bldgrn=${txtbld}$(tput setaf 2) # Green
-    bldylw=${txtbld}$(tput setaf 3) # Yellow
+    txtrst=$(tput sgr0 || echo "\e[0m")              # Reset
+    txtbld=$(tput bold || echo "\e[1m")              # Bold
+    bldred=${txtbld}$(tput setaf 1 || echo "\e[31m") # Red
+    bldgrn=${txtbld}$(tput setaf 2 || echo "\e[32m") # Green
+    bldylw=${txtbld}$(tput setaf 3 || echo "\e[33m") # Yellow
 else
     txtrst=
     txtbld=

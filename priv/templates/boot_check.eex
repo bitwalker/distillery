@@ -14,9 +14,9 @@ if [ -t 1 ]; then
     fi
 fi
 if [ "$IS_TTY" = "true" ]; then
-    txtrst=$(tput sgr0)             # Reset
-    txtbld=$(tput bold)             # Bold
-    bldred=${txtbld}$(tput setaf 1) # Red
+    txtrst=$(tput sgr0 || echo "\e[0m")              # Reset
+    txtbld=$(tput bold || echo "\e[1m")              # Bold
+    bldred=${txtbld}$(tput setaf 1 || echo "\e[31m") # Red
 else
     txtrst=
     txtbld=
