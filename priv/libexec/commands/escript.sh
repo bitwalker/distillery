@@ -1,4 +1,6 @@
-#!/usr/bin/env bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## This command is used to execute an escript using the release ERTS
 

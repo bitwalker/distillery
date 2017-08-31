@@ -1,4 +1,6 @@
-#!/usr/bin/env bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## Evaluate some Erlang code against the running node
 

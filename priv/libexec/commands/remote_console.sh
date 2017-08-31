@@ -1,4 +1,6 @@
-#!/usr/bin/env bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## Connect a remote shell to a running node
 

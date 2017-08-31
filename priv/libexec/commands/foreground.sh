@@ -1,4 +1,6 @@
-#!/usr/bin/env bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## This command starts the release in the foreground, i.e.
 ## standard out is routed to the current terminal session.
