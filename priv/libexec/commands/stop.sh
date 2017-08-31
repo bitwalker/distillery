@@ -1,4 +1,6 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## Stops a daemon started via `start`
 

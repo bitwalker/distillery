@@ -1,4 +1,6 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## Reloads the running system's configuration
 

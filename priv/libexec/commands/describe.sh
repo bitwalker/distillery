@@ -1,4 +1,6 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## Print a summary of information about this release
 

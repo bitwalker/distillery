@@ -1,4 +1,6 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## This command sends a "ping" to the running node.
 ## If the node is not running, or cannot be reached,

@@ -1,4 +1,6 @@
-#!/bin/bash --posix
+#!/usr/bin/env bash
+
+set -o posix
 
 ## This command unpacks a specific version of a release.
 ## This does NOT install the version.
