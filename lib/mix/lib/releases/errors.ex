@@ -160,6 +160,11 @@ defmodule Mix.Releases.Errors do
     "Failed to copy application: #{mod.format_error(reason)}\n" <>
       "    target dir: #{Path.relative_to_cwd(target_dir)}"
   end
+  def format_error({:error, {:assembler, mod, {:copy_consolidated, src_dir, target_dir, reason}}}) do
+    "Failed to copy consolidated protocols: #{mod.format_error(reason)}\n" <>
+      "    src dir: #{Path.relative_to_cwd(src_dir)}\n" <>
+      "    target dir: #{Path.relative_to_cwd(target_dir)}"
+  end
   def format_error({:error, {:assembler, mod, {:include_erts, reason, file}}}) do
     "Failed to include ERTS: #{mod.format_error(reason)}\n" <>
     "    file: #{Path.relative_to_cwd(file)}"

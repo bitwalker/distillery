@@ -62,17 +62,36 @@ defmodule Mix.Releases.Assembler do
       for app <- release.applications do
         copy_app(app, release)
       end
-      # Copy consolidated .beams
-      consolidated_src = Mix.Project.consolidation_path
-      consolidated_dest = Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])
-      File.mkdir_p!(consolidated_dest)
-      if File.exists?(consolidated_src) do
-        {:ok, _} = File.cp_r(consolidated_src, consolidated_dest)
+      case copy_consolidated(release) do
+        :ok ->
+          {:ok, release}
+        {:error, _} = err ->
+          err
       end
-      {:ok, release}
     catch
       kind, err ->
         {:error, {:assembler, {kind, err}}}
+    end
+  end
+
+  # Copy consolidated .beams
+  defp copy_consolidated(%Release{profile: %Profile{dev_mode: true}}) do
+    :ok
+  end
+  defp copy_consolidated(%Release{name: name, version: version, profile: profile}) do
+    src = Mix.Project.consolidation_path()
+    dest = Path.join([profile.output_dir, "lib", "#{name}-#{version}", "consolidated"])
+    remove_symlink_or_dir!(dest)
+    File.mkdir_p!(dest)
+    if File.exists?(src) do
+      case File.cp_r(src, dest) do
+        {:ok, _} ->
+          :ok
+        {:error, reason} ->
+          {:error, {:assembler, :file, {:copy_consolidated, src, dest, reason}}}
+      end
+    else
+      :ok
     end
   end
 
