@@ -42,14 +42,17 @@ if [ ! -z "$VERBOSE" ]; then
     echo "Root: $ROOTDIR"
 fi;
 
-"$@" -- "${1+$ARGS}" &
-__bg_pid=$!
-if [ "$OTP_VER" -ge 20 ]; then
-    # After running post_start, brining process back to foreground
-    # so the OTP break handler is used
+post_start_fg() {
+    sleep 2
     run_hooks post_start
-    fg
+}
+
+if [ "$OTP_VER" -ge 20 ]; then
+    post_start_fg &
+    exec "$@" -- "${1+$ARGS}"
 else
+    "$@" -- "${1+$ARGS}" &
+    __bg_pid=$!
     run_hooks post_start
     wait $__bg_pid
     __exit_code=$?
