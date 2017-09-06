@@ -38,6 +38,8 @@ gen_id() {
 
 ## Run hooks for one of the configured startup phases
 run_hooks() {
+    _old_erl_libs="${ERL_LIBS:-}"
+    export ERL_LIBS="$ERTS_LIB_DIR:$REL_LIB_DIR:$CONSOLIDATED_DIR"
     case $1 in
         pre_configure)
             _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
@@ -64,6 +66,7 @@ run_hooks() {
             _run_hooks_from_dir "$POST_UPGRADE_HOOKS"
             ;;
     esac
+    ERL_LIBS="$_old_erl_libs"
 }
 
 # Private. Run hooks from directory.
