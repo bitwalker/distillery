@@ -7,7 +7,7 @@ set -e
 whereis_erts_bin() {
     if [ -z "$ERTS_VSN" ]; then
         set +e
-        __erts_bin="$(dirname "$(command -v erl)")"
+        __erts_bin="$(dirname "$(type -P erl)")"
         set -e
         echo "$__erts_bin"
     else
