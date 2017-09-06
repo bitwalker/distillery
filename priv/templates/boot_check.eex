@@ -14,7 +14,7 @@ fi
 
 IS_TTY=false
 if [ -t 1 ]; then
-    if which tput >/dev/null; then
+    if command -v tput >/dev/null; then
         IS_TTY=true
     fi
 fi
@@ -28,7 +28,7 @@ else
     bldred=
 fi
 
-if ! which bash >/dev/null ; then
+if ! command -v bash >/dev/null ; then
     message="Bash is required to run this release. Please ensure that it is installed."
     printf "${bldred}%s${txtrst}\n" "$message"
     exit 1

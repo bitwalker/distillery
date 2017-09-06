@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 
 set -o posix
-
 set -e
 
 # Echoes the path to the current ERTS binaries, e.g. erl
 whereis_erts_bin() {
     if [ -z "$ERTS_VSN" ]; then
         set +e
-        __erts_bin="$(dirname "$(which erl)")"
+        __erts_bin="$(dirname "$(command -v erl)")"
         set -e
         echo "$__erts_bin"
     else

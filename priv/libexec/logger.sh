@@ -6,7 +6,7 @@ set -e
 
 IS_TTY=false
 if [ -t 1 ]; then
-    if which tput >/dev/null; then
+    if command -v tput >/dev/null; then
         IS_TTY=true
     fi
 fi
