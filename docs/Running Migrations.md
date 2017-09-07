@@ -26,19 +26,20 @@ defmodule MyApp.ReleaseTasks do
     :postgrex,
     :ecto
   ]
-  
-  @myapps [
-    :myapp
-  ]
 
-  @repos [
-    MyApp.Repo
-  ]
+  def myapp do
+    {:ok, app} = Application.get_application(__MODULE__)
+    app
+  end
+
+  def repos, do: Application.get_env(myapp(), :ecto_repos, [])
 
   def seed do
-    IO.puts "Loading myapp.."
+    me = myapp()
+
+    IO.puts "Loading #{me}.."
     # Load the code for myapp, but don't start it
-    :ok = Application.load(:myapp)
+    :ok = Application.load(me)
 
     IO.puts "Starting dependencies.."
     # Start apps necessary for executing migrations
@@ -46,10 +47,10 @@ defmodule MyApp.ReleaseTasks do
 
     # Start the Repo(s) for myapp
     IO.puts "Starting repos.."
-    Enum.each(@repos, &(&1.start_link(pool_size: 1)))
+    Enum.each(repos(), &(&1.start_link(pool_size: 1)))
 
     # Run migrations
-    Enum.each(@myapps, &run_migrations_for/1)
+    migrate()
 
     # Run the seed script if it exists
     seed_script = Path.join([priv_dir(:myapp), "repo", "seeds.exs"])
@@ -63,11 +64,14 @@ defmodule MyApp.ReleaseTasks do
     :init.stop()
   end
 
+  def migrate, do: Enum.each(repos(), &run_migrations_for/1)
+
   def priv_dir(app), do: "#{:code.priv_dir(app)}"
 
-  defp run_migrations_for(app) do
+  defp run_migrations_for(repo) do
+    app = Keyword.get(repo.config, :otp_app)
     IO.puts "Running migrations for #{app}"
-    Ecto.Migrator.run(MyApp.Repo, migrations_path(app), :up, all: true)
+    Ecto.Migrator.run(repo, migrations_path(app), :up, all: true)
   end
 
   defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])
