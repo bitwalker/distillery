@@ -15,7 +15,7 @@ whereis_erts_bin() {
         if [ -d "$__erts_dir" ]; then
             echo "$__erts_dir/bin"
         else
-            unset ERTS_VSN
+            ERTS_VSN=
             whereis_erts_bin
         fi
     fi
