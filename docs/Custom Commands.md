@@ -27,7 +27,7 @@ end
 And the command script under `rel/commands/echo`:
 
 ```shell
-echo "$2"
+echo "$1"
 ```
 
 When you build your release, you can then call your command like so:
