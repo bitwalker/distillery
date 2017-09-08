@@ -27,10 +27,7 @@ defmodule MyApp.ReleaseTasks do
     :ecto
   ]
 
-  def myapp do
-    {:ok, app} = Application.get_application(__MODULE__)
-    app
-  end
+  def myapp, do: Application.get_application(__MODULE__)
 
   def repos, do: Application.get_env(myapp(), :ecto_repos, [])
 
@@ -53,7 +50,7 @@ defmodule MyApp.ReleaseTasks do
     migrate()
 
     # Run the seed script if it exists
-    seed_script = Path.join([priv_dir(:myapp), "repo", "seeds.exs"])
+    seed_script = seed_path(myapp())
     if File.exists?(seed_script) do
       IO.puts "Running seed script.."
       Code.eval_file(seed_script)
