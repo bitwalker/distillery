@@ -49,12 +49,8 @@ defmodule MyApp.ReleaseTasks do
     # Run migrations
     migrate()
 
-    # Run the seed script if it exists
-    seed_script = seed_path(myapp())
-    if File.exists?(seed_script) do
-      IO.puts "Running seed script.."
-      Code.eval_file(seed_script)
-    end
+    # Run seed script
+    Enum.each(repos(), &run_seeds_for/1)
 
     # Signal shutdown
     IO.puts "Success!"
@@ -71,9 +67,18 @@ defmodule MyApp.ReleaseTasks do
     Ecto.Migrator.run(repo, migrations_path(repo), :up, all: true)
   end
 
-  defp seed_path(app), do: Path.join([priv_dir(app), "repo", "seeds.exs"])
+  def run_seeds_for(repo) do
+    # Run the seed script if it exists
+    seed_script = seeds_path(repo)
+    if File.exists?(seed_script) do
+      IO.puts "Running seed script.."
+      Code.eval_file(seed_script)
+    end
+  end
 
   def migrations_path(repo), do: priv_path_for(repo, "migrations")
+
+  def seeds_path(repo), do: priv_path_for(repo, "seeds.exs")
 
   def priv_path_for(repo, filename) do
     app = Keyword.get(repo.config, :otp_app)
