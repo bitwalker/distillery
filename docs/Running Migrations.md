@@ -49,12 +49,8 @@ defmodule MyApp.ReleaseTasks do
     # Run migrations
     migrate()
 
-    # Run the seed script if it exists
-    seed_script = seed_path(myapp())
-    if File.exists?(seed_script) do
-      IO.puts "Running seed script.."
-      Code.eval_file(seed_script)
-    end
+    # Run seed script
+    Enum.each(repos(), &run_seeds_for/1)
 
     # Signal shutdown
     IO.puts "Success!"
@@ -68,12 +64,27 @@ defmodule MyApp.ReleaseTasks do
   defp run_migrations_for(repo) do
     app = Keyword.get(repo.config, :otp_app)
     IO.puts "Running migrations for #{app}"
-    Ecto.Migrator.run(repo, migrations_path(app), :up, all: true)
+    Ecto.Migrator.run(repo, migrations_path(repo), :up, all: true)
   end
 
-  defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])
-  defp seed_path(app), do: Path.join([priv_dir(app), "repo", "seeds.exs"])
+  def run_seeds_for(repo) do
+    # Run the seed script if it exists
+    seed_script = seeds_path(repo)
+    if File.exists?(seed_script) do
+      IO.puts "Running seed script.."
+      Code.eval_file(seed_script)
+    end
+  end
 
+  def migrations_path(repo), do: priv_path_for(repo, "migrations")
+
+  def seeds_path(repo), do: priv_path_for(repo, "seeds.exs")
+
+  def priv_path_for(repo, filename) do
+    app = Keyword.get(repo.config, :otp_app)
+    repo_underscore = repo |> Module.split |> List.last |> Macro.underscore
+    Path.join([priv_dir(app), repo_underscore, filename])
+  end
 end
 ```
 
