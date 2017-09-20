@@ -711,7 +711,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates .boot script
-  defp make_boot_script(%Release{profile: %Profile{output_dir: output_dir}} = release, rel_dir) do
+  defp make_boot_script(%Release{profile: %Profile{output_dir: output_dir, boot_opts: boot_opts}} = release, rel_dir) do
     Logger.debug "Generating boot script"
     erts_lib_dir = case release.profile.include_erts do
                      false -> :code.lib_dir()
@@ -723,7 +723,7 @@ defmodule Mix.Releases.Assembler do
                {:variables, [{'ERTS_LIB_DIR', erts_lib_dir}]},
                :no_warn_sasl,
                :no_module_tests,
-               :silent]
+               :silent] ++ boot_opts
     rel_name = '#{release.name}'
     release_file = Path.join(rel_dir, "#{release.name}.rel")
     case :systools.make_script(rel_name, options) do

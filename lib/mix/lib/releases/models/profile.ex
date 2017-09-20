@@ -11,6 +11,7 @@ defmodule Mix.Releases.Profile do
     config: nil, # path to a custom config.exs
     sys_config: nil, # path to a custom sys.config
     code_paths: nil, # list of additional code paths to search
+    boot_opts: [], # options passed to :systools.make_script/2 for boot scripts
     executable: false, # whether it's an executable release
     exec_opts: [transient: false], # options for an executable release
     erl_opts: nil, # string to be passed to erl
@@ -50,6 +51,7 @@ defmodule Mix.Releases.Profile do
       config: nil | String.t,
       sys_config: nil | String.t,
       code_paths: nil | [String.t],
+      boot_opts: [Keyword.t],
       erl_opts: nil | String.t,
       run_erl_env: nil | String.t,
       dev_mode: nil | boolean,
