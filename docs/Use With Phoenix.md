@@ -70,7 +70,7 @@ steps:
 1. `MIX_ENV=prod mix phoenix.digest` To compress and tag your assets
     for proper caching. More detail can be found in the
     [Phoenix Mix Task Guide](http://www.phoenixframework.org/docs/mix-tasks#section--mix-phoenix-digest-)
-1. `mix release --env=prod` To actually generate a release for a
+1. `MIX_ENV=prod mix release` To actually generate a release for a
     production environment
 
 There are some optional flags available to you as well:
@@ -84,7 +84,7 @@ There are some optional flags available to you as well:
 See `mix help release` for a description of all flags.
 
 As an example, building the release for the `prod` environment using
-`mix release --env=prod` looks like this:
+`MIX_ENV=prod mix release` looks like this:
 
 ```
 ==> Assembling release..
@@ -93,9 +93,9 @@ As an example, building the release for the `prod` environment using
 ==> Packaging release..
 ==> Release successfully built!
     You can run it in one of the following ways:
-        Interactive: _build/dev/rel/myapp/bin/myapp console
-        Foreground: _build/dev/rel/myapp/bin/myapp foreground
-        Daemon: _build/dev/rel/myapp/bin/myapp start
+        Interactive: _build/prod/rel/myapp/bin/myapp console
+        Foreground: _build/prod/rel/myapp/bin/myapp foreground
+        Daemon: _build/prod/rel/myapp/bin/myapp start
 ```
 
 At this point, you can run your release using one of the three
