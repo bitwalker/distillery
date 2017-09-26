@@ -95,8 +95,10 @@ Place the following shell script at `rel/commands/migrate.sh`:
 ```bash
 #!/bin/sh
 
-bin/myapp command Elixir.MyApp.ReleaseTasks seed
+$RELEASE_ROOT_DIR/bin/myapp command Elixir.MyApp.ReleaseTasks seed
 ```
+
+For more info on shell variables look at the [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html#environment-variables).
 
 ## Tying it all together
 
