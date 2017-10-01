@@ -32,7 +32,7 @@ If you are new to releases, please review the [documentation](https://hexdocs.pm
 
 If you have questions or want to discuss Distillery, releases, or other deployment
 related topics, a good starting point is the Deployment section of ElixirForum, which
-can be found [here](https://elixirforum.com/c/prominent-topics/deployment).
+can be found [here](https://elixirforum.com/c/dedicated-sections/deployment).
 
 I can often be found in IRC on freenode, in the `#elixir-lang` channel, and there is
 also an [Elixir Slack channel](https://elixir-slackin.herokuapp.com) as well, though I don't frequent that myself, there are
