@@ -85,7 +85,7 @@ Before we modify our app at all, we will generate a release with the
 current state. We will generate a release. Our release command is 3
 separate commands which I have linked with `&&`:
 
-`./node_modules/brunch/bin/brunch b -p && MIX_ENV=prod mix do phoenix.digest, release --env=prod`
+`cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod`
 
 1. `./node_modules/brunch/bin/brunch b -p` builds your assets in
    production mode. More detail can be found in the
@@ -167,7 +167,7 @@ Remove the following line from our application layout.
 
 Next we build an upgrade release with the following command:
 
-`./node_modules/brunch/bin/brunch b -p && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
+`cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
 
 This is the same command as in version 0.0.1 with the exception of
 `--upgrade`. The upgrade flag tells Distillery to build an
@@ -277,7 +277,7 @@ just as we did with 0.0.2. So we will generate a release, copy the
 0.0.3 tarball into a new release directory under `local_deploy`, and
 upgrade the application.
 
-1. `./node_modules/brunch/bin/brunch b -p && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
+1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
 1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
 
@@ -326,7 +326,7 @@ just as we did with 0.0.3. Generate a release, copy the 0.0.4 tarball
 into a new release directory under `local_deploy`, and upgrade the
 application.
 
-1. `./node_modules/brunch/bin/brunch b -p && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
+1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
 1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
 
