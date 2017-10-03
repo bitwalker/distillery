@@ -2,6 +2,8 @@
 ::
 :: Check the :usage section for information about what this script provides
 
+@echo off
+
 :: Set variables that describe the release
 @set rel_name=<%= release_name %>
 @set rel_vsn=<%= release_version %>
@@ -112,11 +114,13 @@
 @if %taskname%=="rpc" @goto rpc
 @if %taskname%=="rpcterms" @goto rpcterms
 @if %taskname%=="eval" @goto eval
-@if %taskname%=="command" @goto command
+@if %taskname%=="command" call :command %* & exit/b
 @if %taskname%=="describe" @goto describe
 @if %taskname%=="" @goto usage
-@if exist "%command_dir%\%taskname%" (
-  @"%command_dir%\%taskname%" %*
+@if exist "%command_dir%\%taskname%.bat" (
+  pushd %release_root_dir%
+  @"%command_dir%\%taskname%.bat" %*
+  popd
 ) else (
   @echo Unknown command: %taskname%
 )
@@ -241,7 +245,7 @@
 @echo.
 @echo Custom Commands
 @echo ======================
-@for %%i in (%command_dir%\*.d\*.bat) do (
+@for %%i in (%command_dir%\*.bat) do (
   echo %%~ni
 )
 @goto :eof
@@ -438,15 +442,22 @@ if exists "%rel_dir%\vm.args.bak" do (
 
 :: Execute a command in a clean Erlang VM
 :command
-@for /f "tokens=1-2*" %%a in ("%args%") do (
-  @set module=%%a
-  @set function=%%b
-  @set command_args=%%c
-)
-@%erl% -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
+rem @for /f "tokens=1-2*" %%a in ("%args%") do (
+rem @set module=%%a
+rem @set function=%%b
+rem @set command_args=%%c
+rem )
+shift
+
+set module=%1
+set function=%2
+set command_args=%3
+
+%erl% -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
+       -config %sys_config% ^
        -hidden -noshell -boot start_clean ^
        -pa "%consolidated_dir%" ^
-       -s %module% %function% -s init stop
+       -s %module% %function% -s init stop ^
        -extra %command_args%
 @goto :eof
 
@@ -498,12 +509,12 @@ if exists "%rel_dir%\vm.args.bak" do (
 @echo Extra Opts          %erl_opts%
 @echo.
 @echo Hooks:
-@for %%i in (%hook_dir%\*.d\*.bat) do (
+@for %%i in (%hook_dir%\*.bat) do (
   echo %%i
 )
 @echo.
 @echo Commands:
-@for %%i in (%command_dir%\*.d\*.bat) do (
+@for %%i in (%command_dir%\*.bat) do (
   echo %%i
 )
 @endlocal
