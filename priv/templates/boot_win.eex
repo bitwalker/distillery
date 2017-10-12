@@ -250,7 +250,7 @@
 :: or install the specified version passed as argument
 :install
 @setlocal EnableDelayedExpansion
-@set service_args=%erl_opts% -setcookie "!cookie!" ++ ^
+@set service_args=%erl_opts% -setcookie "!cookie!" -pa "%consolidated_dir%" ++ ^
        -rootdir "%rootdir%" ^
        -reldir "%release_root_dir%\releases"
 @set start_erl=%erts_dir%\bin\start_erl.exe
