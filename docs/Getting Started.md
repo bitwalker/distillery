@@ -156,7 +156,7 @@ The key differences from above being that we've explicitly set the version (as `
 and explicitly set the applications to include in the release. As demonstrated above, you can also control the start type of an application in the release,
 such as loading, but not starting an application you need to dynamically configure before use at runtime. The `applications` setting is used to override
 any automatically determined information about a release, so in the case of the `:foo` release we originally defined, we could use the setting to override
-the start type for one of it's dependencies if we so desire.
+the start type for one of its dependencies if we so desire.
 
 ## VM Configuration
 
