@@ -1,10 +1,11 @@
 :: Discover the current release directory from the directory
 :: of this script and the start_erl.data file
-@set script_dir=%~dp0
-@for %%A in ("%script_dir%\..") do @(
+@echo off
+set script_dir=%~dp0
+for %%A in ("%script_dir%\..") do (
   set release_root_dir=%%~fA
 )
-@set rel_name=<%= release_name %>
-@set rel_vsn=<%= release_version %>
-@set boot_script=%release_root_dir%\releases\%rel_vsn%\%rel_name%.bat
-@%boot_script% %*
+set rel_name=<%= release_name %>
+set rel_vsn=<%= release_version %>
+set boot_script=%release_root_dir%\releases\%rel_vsn%\%rel_name%.bat
+%boot_script% %*
