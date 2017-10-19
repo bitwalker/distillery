@@ -222,6 +222,64 @@ defmodule IntegrationTest do
         end
       end
     end
+
+    @tag :expensive
+    @tag timeout: 60_000 * 5 # 5m
+    test "when installation directory contains a space" do
+      with_standard_app do
+        # Build v1 release
+        assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
+
+        # Untar the release into a path that contains a space character then
+        # try to run it.
+        assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
+        tmpdir = Path.join(tmpdir, "dir with space/")
+        bin_path = Path.join([tmpdir, "bin", "standard_app"])
+
+        try do
+          tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
+          assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
+          assert File.exists?(bin_path)
+          case :os.type() do
+            {:win32, _} ->
+              assert {:ok, _} = run_cmd(bin_path, ["install"])
+            _ ->
+              :ok
+          end
+
+          :ok = create_additional_config_file(tmpdir)
+
+          assert {:ok, _} = run_cmd(bin_path, ["start"])
+          assert :ok = wait_for_app(bin_path)
+          assert {:ok, "2\n"}    = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+
+          # Additional config items should exist
+          assert {:ok, "bar\n"} = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, foo)"])
+
+          case :os.type() do
+            {:win32, _} ->
+              assert {:ok, output} = run_cmd(bin_path, ["stop"])
+              assert output =~ "stopped"
+              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
+            _ ->
+              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
+          end
+        rescue
+          e ->
+            run_cmd(bin_path, ["stop"])
+            case :os.type() do
+              {:win32, _} ->
+                run_cmd(bin_path, ["uninstall"])
+              _ ->
+                :ok
+            end
+            reraise e, System.stacktrace
+        after
+          File.rm_rf!(tmpdir)
+          :ok
+        end
+      end
+    end
   end
 
   # Create a configuration file inside the release directory
