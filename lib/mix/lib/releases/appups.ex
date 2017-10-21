@@ -153,22 +153,32 @@ defmodule Mix.Releases.Appup do
   end
 
   # supervisor
-  defp generate_instruction_advanced(m, true, _is_special, _dep_mods, _), do: {:update, m, :supervisor}
+  defp generate_instruction_advanced(m, true, _is_special, _dep_mods, _) do
+    {:update, m, :supervisor}
+  end
   # special process (i.e. exports code_change/3 or system_code_change/4)
-  defp generate_instruction_advanced(m, _is_sup, true, [], false),        do: {:update, m, {:advanced, []}}
+  defp generate_instruction_advanced(m, _is_sup, true, [], false) do
+    {:update, m, {:advanced, []}}
+  end
   defp generate_instruction_advanced(m, _is_sup, true, [], true) do
     {:update, m, {:advanced, []}, :soft_purge, :soft_purge, []}
   end
-  defp generate_instruction_advanced(m, _is_sup, true, dep_mods, false),  do: {:update, m, {:advanced, []}, dep_mods}
+  defp generate_instruction_advanced(m, _is_sup, true, dep_mods, false) do
+    {:update, m, {:advanced, []}, dep_mods}
+  end
   defp generate_instruction_advanced(m, _is_sup, true, dep_mods, true) do
     {:update, m, {:advanced, []}, :soft_purge, :soft_purge, dep_mods}
   end
   # non-special process (i.e. neither code_change/3 nor system_code_change/4 are exported)
-  defp generate_instruction_advanced(m, _is_sup, false, [], false),       do: {:load_module, m}
+  defp generate_instruction_advanced(m, _is_sup, false, [], false) do
+    {:load_module, m}
+  end
   defp generate_instruction_advanced(m, _is_sup, false, [], true) do
     {:load_module, m, :soft_purge, :soft_purge, []}
   end
-  defp generate_instruction_advanced(m, _is_sup, false, dep_mods, false), do: {:load_module, m, dep_mods}
+  defp generate_instruction_advanced(m, _is_sup, false, dep_mods, false) do
+    {:load_module, m, dep_mods}
+  end
   defp generate_instruction_advanced(m, _is_sup, false, dep_mods, true) do
     {:load_module, m, :soft_purge, :soft_purge, dep_mods}
   end

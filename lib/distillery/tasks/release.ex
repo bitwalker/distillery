@@ -19,9 +19,6 @@ defmodule Mix.Tasks.Release do
       # Build an upgrade release from a specific version
       mix release --upgrade --upfrom=0.1.0
 
-      # Build an upgrade release using soft purge
-      mix release --upgrade --soft-purge
-
       # Build a specific release
       mix release --name=myapp
 
