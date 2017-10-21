@@ -33,7 +33,8 @@ defmodule Mix.Releases.Release do
       overlays: [],
       commands: [],
       overrides: []
-    }
+    },
+    env: nil
 
   @type t :: %__MODULE__{
     name: atom(),
@@ -42,7 +43,8 @@ defmodule Mix.Releases.Release do
     is_upgrade: boolean,
     upgrade_from: nil | String.t,
     resolved_overlays: [Overlays.overlay],
-    profile: Profile.t
+    profile: Profile.t,
+    env: atom()
   }
 
   @doc """
@@ -126,7 +128,7 @@ defmodule Mix.Releases.Release do
   # Applies the environment settings to a release
   @doc false
   @spec apply_environment(__MODULE__.t, Environment.t) :: Release.t
-  def apply_environment(%__MODULE__{profile: rel_profile} = r, %Environment{profile: env_profile}) do
+  def apply_environment(%__MODULE__{profile: rel_profile} = r, %Environment{profile: env_profile, name: env_name}) do
     env_profile = Map.from_struct(env_profile)
     profile = Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
       case v do
@@ -134,7 +136,7 @@ defmodule Mix.Releases.Release do
         _   -> Map.put(acc, k, v)
       end
     end)
-    %{r | :profile => profile}
+    %{r | :env => env_name, :profile => profile}
   end
 
   @doc false
