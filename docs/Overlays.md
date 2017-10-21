@@ -31,6 +31,7 @@ Currently, the following overlay vars are provided out of the box by Distillery:
   - release_version: Version of the release being built
   - is_upgrade: Is this release an upgrade release
   - upgrade_from: The version of the release being upgraded from, nil if not an upgrade.
+  - soft_purge: Is this appup using soft purge when upgrade
   - dev_mode: Is this release being built in dev mode
   - include_erts: Is ERTS being included in the release
   - include_src: Is source code being included in the release

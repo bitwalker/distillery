@@ -21,7 +21,25 @@ defmodule AppupTest do
                   {:delete_module, Test.ServerC},
                   {:update, Test.Server, {:advanced, []}, []},
                   {:update, Test.Supervisor, :supervisor}]}]}}
-    assert ^expected = Appup.make(:test, "0.1.0", "0.2.0", @v1_path, @v2_path)
+    assert ^expected = Appup.make(:test, "0.1.0", "0.2.0", @v1_path, @v2_path, false)
+  end
+
+  test "v1 -> v2 soft_purge" do
+    # Add ServerB and ServerC gen_servers, update Server to reference ServerB,
+    # and ServerB will reference ServerC
+    expected = {:ok,
+            {'0.2.0',
+             [{'0.1.0', [
+                  {:add_module, Test.ServerB},
+                  {:add_module, Test.ServerC},
+                  {:update, Test.Server, {:advanced, []}, :soft_purge, :soft_purge, []},
+                  {:update, Test.Supervisor, :supervisor}]}],
+             [{'0.1.0', [
+                  {:delete_module, Test.ServerB},
+                  {:delete_module, Test.ServerC},
+                  {:update, Test.Server, {:advanced, []}, :soft_purge, :soft_purge, []},
+                  {:update, Test.Supervisor, :supervisor}]}]}}
+    assert ^expected = Appup.make(:test, "0.1.0", "0.2.0", @v1_path, @v2_path, true)
   end
 
   test "v2 -> v3" do
@@ -37,7 +55,23 @@ defmodule AppupTest do
                       {:update, Test.Server, {:advanced, []}, []},
                       {:update, Test.ServerB, {:advanced, []}, []},
                       {:update, Test.ServerC, {:advanced, []}, []}]}]}}
-    assert ^expected = Appup.make(:test, "0.2.0", "0.3.0", @v2_path, @v3_path)
+    assert ^expected = Appup.make(:test, "0.2.0", "0.3.0", @v2_path, @v3_path, false)
+  end
+
+  test "v2 -> v3 soft_purge" do
+    # Server changes to reference ServerC, and ServerC changes to reference ServerB,
+    # ServerB changes to no references
+    expected = {:ok,
+                {'0.3.0',
+                 [{'0.2.0', [
+                      {:update, Test.Server, {:advanced, []}, :soft_purge, :soft_purge, []},
+                      {:update, Test.ServerB, {:advanced, []}, :soft_purge, :soft_purge, []},
+                      {:update, Test.ServerC, {:advanced, []}, :soft_purge, :soft_purge, []}]}],
+                 [{'0.2.0', [
+                      {:update, Test.Server, {:advanced, []}, :soft_purge, :soft_purge, []},
+                      {:update, Test.ServerB, {:advanced, []}, :soft_purge, :soft_purge, []},
+                      {:update, Test.ServerC, {:advanced, []}, :soft_purge, :soft_purge, []}]}]}}
+    assert ^expected = Appup.make(:test, "0.2.0", "0.3.0", @v2_path, @v3_path, true)
   end
 
 end

@@ -8,13 +8,17 @@ defmodule Mix.Releases.Appup do
   @type path_str :: String.t
   @type change :: {:advanced, [term]}
   @type dep_mods :: [module]
+  @type purge :: :soft_purge | :brutal_purge
 
   @type appup_ver :: charlist
   @type instruction :: {:add_module, module} |
                         {:delete_module, module} |
                         {:update, module, :supervisor | change} |
                         {:update, module, change, dep_mods} |
-                        {:load_module, module}
+                        {:update, module, change, purge, purge, dep_mods} |
+                        {:load_module, module} |
+                        {:load_module, module, dep_mods} |
+                        {:load_module, module, purge, purge, dep_mods}
   @type upgrade_instructions :: [{appup_ver, instruction}]
   @type downgrade_instructions :: [{appup_ver, instruction}]
   @type appup :: {appup_ver, upgrade_instructions, downgrade_instructions}
@@ -31,8 +35,8 @@ defmodule Mix.Releases.Appup do
       - v2_path: the path to the v2 artifacts (_build/prod/lib/<app>)
 
   """
-  @spec make(app, version_str, version_str, path_str, path_str) :: {:ok, appup} | {:error, term}
-  def make(application, v1, v2, v1_path, v2_path) do
+  @spec make(app, version_str, version_str, path_str, path_str, boolean) :: {:ok, appup} | {:error, term}
+  def make(application, v1, v2, v1_path, v2_path, soft_purge) do
     v1_dotapp =
       v1_path
       |> Path.join("/ebin/")
@@ -54,7 +58,7 @@ defmodule Mix.Releases.Appup do
                 consulted_v2_vsn = vsn(v2_props)
                 case consulted_v2_vsn === v2 do
                   true ->
-                    appup = make_appup(v1, v1_path, v1_props, v2, v2_path, v2_props)
+                    appup = make_appup(v1, v1_path, v1_props, v2, v2_path, v2_props, soft_purge)
                     {:ok, appup}
                   false ->
                     {:error, {:appups, {:mismatched_versions, [version: :next, expected: v2, got: consulted_v2_vsn]}}}
@@ -70,7 +74,7 @@ defmodule Mix.Releases.Appup do
     end
   end
 
-  defp make_appup(v1, v1_path, _v1_props, v2, v2_path, _v2_props) do
+  defp make_appup(v1, v1_path, _v1_props, v2, v2_path, _v2_props, soft_purge) do
     v1 = String.to_charlist(v1)
     v2 = String.to_charlist(v2)
     v1_path = String.to_charlist(Path.join(v1_path, "ebin"))
@@ -80,13 +84,13 @@ defmodule Mix.Releases.Appup do
 
     {v2, # New version
       [{v1, # Upgrade instructions from version v1
-        generate_instructions(:added, added) ++
-        generate_instructions(:changed, changed) ++
-        generate_instructions(:deleted, deleted)}],
+        generate_instructions(:added, added, soft_purge) ++
+        generate_instructions(:changed, changed, soft_purge) ++
+        generate_instructions(:deleted, deleted, soft_purge)}],
       [{v1, # Downgrade instructions to version v1
-        generate_instructions(:deleted, added) ++
-        generate_instructions(:changed, changed) ++
-        generate_instructions(:added, deleted)}]}
+        generate_instructions(:deleted, added, soft_purge) ++
+        generate_instructions(:changed, changed, soft_purge) ++
+        generate_instructions(:added, deleted, soft_purge)}]}
   end
 
   # For modules which have changed, we must make sure
@@ -97,18 +101,18 @@ defmodule Mix.Releases.Appup do
   # we perform a best-effort topological sort of the modules
   # involved, such that an optimal ordering of the instructions
   # is generated
-  defp generate_instructions(:changed, files) do
+  defp generate_instructions(:changed, files, soft_purge) do
     files
-    |> Enum.map(&generate_instruction(:changed, &1))
+    |> Enum.map(&generate_instruction(:changed, &1, soft_purge))
     |> topological_sort
   end
-  defp generate_instructions(type, files) do
-    Enum.map(files, &generate_instruction(type, &1))
+  defp generate_instructions(type, files, soft_purge) do
+    Enum.map(files, &generate_instruction(type, &1, soft_purge))
   end
 
-  defp generate_instruction(:added, file),   do: {:add_module, module_name(file)}
-  defp generate_instruction(:deleted, file), do: {:delete_module, module_name(file)}
-  defp generate_instruction(:changed, {v1_file, v2_file}) do
+  defp generate_instruction(:added, file, _),   do: {:add_module, module_name(file)}
+  defp generate_instruction(:deleted, file, _), do: {:delete_module, module_name(file)}
+  defp generate_instruction(:changed, {v1_file, v2_file}, soft_purge) do
     module_name     = module_name(v1_file)
     attributes      = beam_attributes(v1_file)
     exports         = beam_exports(v1_file)
@@ -118,7 +122,7 @@ defmodule Mix.Releases.Appup do
     depends_on = imports
       |> Enum.map(fn {m,_f,_a} -> m end)
       |> Enum.uniq
-    generate_instruction_advanced(module_name, is_supervisor, is_special_proc, depends_on)
+    generate_instruction_advanced(module_name, is_supervisor, is_special_proc, depends_on, soft_purge)
   end
 
   defp beam_attributes(file) do
@@ -149,13 +153,25 @@ defmodule Mix.Releases.Appup do
   end
 
   # supervisor
-  defp generate_instruction_advanced(m, true, _is_special, _dep_mods), do: {:update, m, :supervisor}
+  defp generate_instruction_advanced(m, true, _is_special, _dep_mods, _), do: {:update, m, :supervisor}
   # special process (i.e. exports code_change/3 or system_code_change/4)
-  defp generate_instruction_advanced(m, _is_sup, true, []),       do: {:update, m, {:advanced, []}}
-  defp generate_instruction_advanced(m, _is_sup, true, dep_mods), do: {:update, m, {:advanced, []}, dep_mods}
+  defp generate_instruction_advanced(m, _is_sup, true, [], false),        do: {:update, m, {:advanced, []}}
+  defp generate_instruction_advanced(m, _is_sup, true, [], true) do
+    {:update, m, {:advanced, []}, :soft_purge, :soft_purge, []}
+  end
+  defp generate_instruction_advanced(m, _is_sup, true, dep_mods, false),  do: {:update, m, {:advanced, []}, dep_mods}
+  defp generate_instruction_advanced(m, _is_sup, true, dep_mods, true) do
+    {:update, m, {:advanced, []}, :soft_purge, :soft_purge, dep_mods}
+  end
   # non-special process (i.e. neither code_change/3 nor system_code_change/4 are exported)
-  defp generate_instruction_advanced(m, _is_sup, false, []),       do: {:load_module, m}
-  defp generate_instruction_advanced(m, _is_sup, false, dep_mods), do: {:load_module, m, dep_mods}
+  defp generate_instruction_advanced(m, _is_sup, false, [], false),       do: {:load_module, m}
+  defp generate_instruction_advanced(m, _is_sup, false, [], true) do
+    {:load_module, m, :soft_purge, :soft_purge, []}
+  end
+  defp generate_instruction_advanced(m, _is_sup, false, dep_mods, false), do: {:load_module, m, dep_mods}
+  defp generate_instruction_advanced(m, _is_sup, false, dep_mods, true) do
+    {:load_module, m, :soft_purge, :soft_purge, dep_mods}
+  end
 
   # This "topological" sort is not truly topological, since module dependencies
   # are represented as a directed, cyclic graph, and it is not actually
@@ -177,8 +193,12 @@ defmodule Mix.Releases.Appup do
       {:load_module, _} = i -> i
       {:update, m, type, deps} ->
         {:update, m, type, Enum.filter(deps, fn ^m -> false; d -> d in mods end)}
+      {:update, m, pre_purge, post_purge, type, deps} ->
+        {:update, m, pre_purge, post_purge, type, Enum.filter(deps, fn ^m -> false; d -> d in mods end)}
       {:load_module, m, deps} ->
         {:load_module, m, Enum.filter(deps, fn ^m -> false; d -> d in mods end)}
+      {:load_module, m, pre_purge, post_purge, deps} ->
+        {:load_module, m, pre_purge, post_purge, Enum.filter(deps, fn ^m -> false; d -> d in mods end)}
     end)
   end
   defp do_sort_instructions(_, {:update, a, _}, {:update, b, _}),        do: a > b
@@ -219,7 +239,9 @@ defmodule Mix.Releases.Appup do
   defp extract_deps({:update, _, deps}) when is_list(deps), do: deps
   defp extract_deps({:update, _, _}),                       do: []
   defp extract_deps({:update, _, _, deps}),                 do: deps
+  defp extract_deps({:update, _, _, _, _, deps}),           do: deps
   defp extract_deps({:load_module, _, deps}),               do: deps
+  defp extract_deps({:load_module, _, _, _, deps}),         do: deps
 
   defp module_name(file) do
     Keyword.fetch!(:beam_lib.info(file), :module)

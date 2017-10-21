@@ -89,3 +89,4 @@ more.
 
 To generate an upgrade release, you'll need to pass `--upgrade` to `mix release`. To generate an upgrade from an arbitrary
 version you've previously built, pass `--upfrom=<version>`. Distillery will look for the appup in the ebin of your current build.
+If you want soft purge during the upgrade/downgrade, you could use `--soft-purge`.

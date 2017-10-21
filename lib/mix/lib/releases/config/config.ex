@@ -13,7 +13,8 @@ defmodule Mix.Releases.Config do
             selected_release: :default,
             selected_environment: :default,
             is_upgrade: false,
-            upgrade_from: :latest # the version to upgrade from (if applicable)
+            upgrade_from: :latest, # the version to upgrade from (if applicable)
+            soft_purge: false
 
   @type t :: %__MODULE__{
     environments: Map.t,
@@ -23,7 +24,8 @@ defmodule Mix.Releases.Config do
     selected_release: atom(),
     selected_environment: atom(),
     is_upgrade: boolean(),
-    upgrade_from: :latest | String.t
+    upgrade_from: :latest | String.t,
+    soft_purge: boolean()
   }
 
   defmacro __using__(opts) do
@@ -73,6 +75,7 @@ defmodule Mix.Releases.Config do
                   end), %{}),
               :is_upgrade => Keyword.fetch!(opts, :is_upgrade),
               :upgrade_from => Keyword.fetch!(opts, :upgrade_from),
+              :soft_purge => Keyword.fetch!(opts, :soft_purge),
               :selected_environment => Keyword.fetch!(opts, :selected_environment),
               :selected_release => Keyword.fetch!(opts, :selected_release)}}
         end
