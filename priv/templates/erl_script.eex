@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-SCRIPT_DIR=`dirname $0`
-ROOTDIR=`cd $SCRIPT_DIR/../../ && pwd`
+SCRIPT_DIR=`dirname "$0"`
+ROOTDIR=`cd "$SCRIPT_DIR"/../../ && pwd`
 BINDIR=$ROOTDIR/erts-<%= erts_vsn %>/bin
 EMU=beam
 PROGNAME=`echo $0 | sed 's/.*\\///'`
