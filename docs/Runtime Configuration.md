@@ -25,7 +25,7 @@ there are caveats which apply:
 
 ### Configuration Conventions
 
-**NOTE:** It is no longer recommended to use the `{:system, "VAR"}` convention, as it has inconsitent
+**NOTE:** It is no longer recommended to use the `{:system, "VAR"}` convention, as it has inconsistent
 use in the community, and instead we'd rather push people towards an approach which works every time,
 rather than only sometimes.
 
