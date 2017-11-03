@@ -227,13 +227,7 @@ defmodule Mix.Releases.Assembler do
                     {'#{release.name}', '#{release.version}'},
                     {:erts, '#{erts_vsn}'},
                     apps
-                    |> Enum.with_index
-                    |> Enum.sort_by(fn
-                          {%App{name: :kernel}, _idx} -> -2
-                          {%App{name: :stdlib}, _idx} -> -1
-                          {%App{}, idx}               -> idx
-                       end)
-                    |> Enum.map(fn {%App{name: name, vsn: vsn, start_type: start_type}, _idx} ->
+                    |> Enum.map(fn %App{name: name, vsn: vsn, start_type: start_type} ->
                       case start_type do
                         nil ->
                           {name, '#{vsn}'}
