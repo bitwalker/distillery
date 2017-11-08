@@ -36,14 +36,14 @@ Distillery also creates `rel/config.exs`, which is the configuration file you wi
 to configure Distillery and your releases. Depending on your project type, it will create
 an appropriate default release configuration, along with two environments, `:dev` and `:prod`,
 with typical configuration for those two environments. You can leave this configuration untouched,
-or modify it as desired. We will look at this file and discuss it's contents briefly, check out
+or modify it as desired. We will look at this file and discuss its contents briefly, check out
 [Configuration](https://hexdocs.pm/distillery/configuration.html) for more information on this file
 and available settings.
 
 To initialize Distillery, just run `mix release.init`.
 
 **NOTE**: In this walkthrough, we're making the assumption that this is a non-umbrella application,
-though there is no significant differences, see [Umbrella Projects](https://hexdocs.pm/distillery/umbrella-projects.html)
+though there are no significant differences, see [Umbrella Projects](https://hexdocs.pm/distillery/umbrella-projects.html)
 for more details on configuration specific to that setup.
 
 ## Configuring your release
@@ -226,7 +226,7 @@ You will now have a new tarball in `_build/prod/rel/<name>/releases/<upgrade_ver
 ## Deploying an upgrade
 
 *Important*: This part is very straightforward with an important
-caveat: Once you have deployed an upgrades, if you make a mistake in,
+caveat: Once you have deployed an upgrade, if you make a mistake in,
 say version X (eg, version X has a bug that is detected in
 production), you cannot "redeploy" a new release with the same version
 number (X). If you try to do so, you will discover that your

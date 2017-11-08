@@ -7,7 +7,7 @@ within the Elixir community, I will distinguish between them here.
 
 #### Release
 
-A release is a package of your application's .beam files, including it's dependencies .beam files,
+A release is a package of your application's .beam files, including its dependencies .beam files,
 a sys.config, a vm.args, a boot script, and various utilities and metadata files for managing the
 release once it is installed. A release may also contain a copy of ERTS (the Erlang Runtime System).
 
