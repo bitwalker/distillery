@@ -2,7 +2,7 @@
 
 **IMPORTANT**: Distillery now requires that Bash be installed on the target system.
 It turns out that this had been an implied dependency due to some of the features used
-in the old script, but since it used `/bin/sh` in it's shebang, most platforms used Bash
+in the old script, but since it used `/bin/sh` in its shebang, most platforms used Bash
 automatically anyway. Those platforms which alias `/bin/sh` to something not Bash, such as
 Ubuntu, were broken in some ways. This dependency on a specific shell's behaviour is now
 explicit rather than implicit.
@@ -18,7 +18,7 @@ explicit rather than implicit.
 - The boot script architecture has been completely re-written
   - Support for OTP 20's new signal handler
   - Boot script is now broken up into smaller components for easier maintenance
-  - Each command lives in it's own script now, using the same basic infra as custom commands
+  - Each command lives in its own script now, using the same basic infra as custom commands
   - Improved documentation
 - `pre_configure` is now run prior to any config initialization to provide an opportunity to set up the environment.
 
