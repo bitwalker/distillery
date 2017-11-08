@@ -27,25 +27,11 @@ defmodule MyApp.ReleaseTasks do
     :ecto
   ]
 
-  def myapp, do: Application.get_application(__MODULE__)
+  def myapp, do: :myapp
 
   def repos, do: Application.get_env(myapp(), :ecto_repos, [])
 
   def seed do
-    me = myapp()
-
-    IO.puts "Loading #{me}.."
-    # Load the code for myapp, but don't start it
-    :ok = Application.load(me)
-
-    IO.puts "Starting dependencies.."
-    # Start apps necessary for executing migrations
-    Enum.each(@start_apps, &Application.ensure_all_started/1)
-
-    # Start the Repo(s) for myapp
-    IO.puts "Starting repos.."
-    Enum.each(repos(), &(&1.start_link(pool_size: 1)))
-
     # Run migrations
     migrate()
 
@@ -57,7 +43,26 @@ defmodule MyApp.ReleaseTasks do
     :init.stop()
   end
 
-  def migrate, do: Enum.each(repos(), &run_migrations_for/1)
+  defp prepare do
+    me = myapp()
+    
+    IO.puts "Loading #{me}.."
+    # Load the code for myapp, but don't start it
+    :ok = Application.load(me)
+
+    IO.puts "Starting dependencies.."
+    # Start apps necessary for executing migrations
+    Enum.each(@start_apps, &Application.ensure_all_started/1)
+
+    # Start the Repo(s) for myapp
+    IO.puts "Starting repos.."
+    Enum.each(repos(), &(&1.start_link(pool_size: 1)))
+  end
+
+  def migrate do
+    prepare()
+    Enum.each(repos(), &run_migrations_for/1)
+  end
 
   def priv_dir(app), do: "#{:code.priv_dir(app)}"
 
