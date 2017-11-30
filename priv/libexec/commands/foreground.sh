@@ -47,7 +47,7 @@ post_start_fg() {
     run_hooks post_start
 }
 
-if [ "$OTP_VER" -ge 20 ]; then
+if [ ! -z "$OTP_VER" ] && [ "$OTP_VER" -ge 20 ]; then
     post_start_fg &
     exec "$@" -- "${1+$ARGS}"
 else
