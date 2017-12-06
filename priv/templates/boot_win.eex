@@ -316,10 +316,10 @@ if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
 set rel_vsn=%target_version%
 set rel_dir=%release_root_dir\releases\%target_version%
 :: TODO: init_configs
-if exists "%rel_dir%\sys.config.bak" do (
+if exist "%rel_dir%\sys.config.bak" do (
   move /Y "%rel_dir%\sys.config.bak" "%rel_dir%\sys.config"
 )
-if exists "%rel_dir%\vm.args.bak" do (
+if exist "%rel_dir%\vm.args.bak" do (
   move /Y "%rel_dir%\vm.args.bak" "%rel_dir%\vm.args"
 )
 copy /B /Y "%rel_dir%/sys.config" "%rel_dir%\sys.config.bak"
