@@ -309,7 +309,7 @@ if "" == "%args%" (
 set source_version=%rel_vsn%
 set target_version=%args%
 :: Unpack
-%escript% "%root_dir%\bin\release_utils.escript" ^
+%escript% "%release_root_dir%\bin\release_utils.escript" ^
     unpack_release %rel_name% "%node_type%" "%node_name%" "!cookie!" "%target_version%"
 if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
 :: Update env
