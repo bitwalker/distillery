@@ -467,7 +467,7 @@ if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 set get_pid_cmd=%escript% %nodetool% eval %node_type% %node_name% -setcookie "!cookie!" "erlang:list_to_integer(os:getpid())."
 for /f "usebackq delims=" %%i in (`%%get_pid_cmd%%`) do set pid=%%i
-endlocal
+endlocal & set pid=%pid%
 goto :eof
 
 :: Reload the running configuration
