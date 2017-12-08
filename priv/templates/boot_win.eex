@@ -167,7 +167,7 @@ if exist %possible_sys% (
 )
 set sys_config_target=%config_dir%\sys.config
 :: Replace environment variables
-powershell -command "$content = get-content %sys_config_src%; [regex]::matches($content, '\${[\w\d_-]+}') | foreach { $content = $content.Replace($_.value, [System.Environment]::GetEnvironmentVariable($_.value)) }; out-file -filepath %sys_config_target% -inputobject $content -encoding ascii" 
+powershell -command "$content = get-content %sys_config_src%; [regex]::matches($content, '\${[\w\d_-]+}') | foreach { $content = $content.Replace($_.value, [System.Environment]::GetEnvironmentVariable($_.value)) }; out-file -filepath %sys_config_target% -inputobject $content -encoding ascii"
 set sys_config=%sys_config_target%
 goto :eof
 
@@ -180,7 +180,7 @@ if exist %possible_vmargs% (
 )
 set vmargs_target=%config_dir%\vm.args
 :: Replace environment variables
-powershell -command "$content = get-content %vmargs_src%; [regex]::matches($content, '\${[\w\d_-]+}') | foreach { $content = $content.Replace($_.value, [System.Environment]::GetEnvironmentVariable($_.value)) }; out-file -filepath %vmargs_target% -inputobject $content -encoding ascii" 
+powershell -command "$content = get-content %vmargs_src%; [regex]::matches($content, '\${[\w\d_-]+}') | foreach { $content = $content.Replace($_.value, [System.Environment]::GetEnvironmentVariable($_.value)) }; out-file -filepath %vmargs_target% -inputobject $content -encoding ascii"
 set vm_args=%vmargs_target%
 goto :eof
 
