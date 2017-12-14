@@ -379,7 +379,7 @@ if %ERRORLEVEL% geq 1 (
   :: Process has shutdown
   call :post_stop_hooks
 ) else (
-  sleep 5
+  timeout /T 5 /nobreak > nul
   goto :wait_for_exit
 )
 goto :eof
