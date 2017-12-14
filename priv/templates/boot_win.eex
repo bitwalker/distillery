@@ -374,7 +374,7 @@ call :set_pid
 call :post_start_hooks
 
 :wait_for_exit
-tasklist /FI "PID eq %pid%" | find /I "erl.exe"
+tasklist /FI "PID eq %pid%" | find /I "erl.exe" > nul
 if %ERRORLEVEL% geq 1 (
   :: Process has shutdown
   call :post_stop_hooks
