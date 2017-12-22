@@ -41,5 +41,18 @@ defmodule InitTest do
       {:ok, _} = File.rm_rf(@init_test_rel_path)
       File.cd!(old_dir)
     end
+
+    test "creates an example rel/config.exs with custom commands" do
+      old_dir = File.cwd!
+      File.cd!(@init_test_app_path)
+      {:ok, _} = File.rm_rf(@init_test_rel_path)
+      refute File.exists?(@init_test_rel_path)
+      refute File.exists?(@init_test_rel_config_path)
+      {:ok, _} = mix("release.init", ["--command=somecommand:path/to/file", "--command=cmd:path/to/cmdfile"])
+      assert File.exists?(@init_test_rel_path)
+      assert File.exists?(@init_test_rel_config_path)
+      {:ok, _} = File.rm_rf(@init_test_rel_path)
+      File.cd!(old_dir)
+    end
   end
 end

@@ -26,6 +26,9 @@ defmodule Mix.Tasks.Release.Init do
       # invalid characters replaced or stripped out.
       mix release.init --name foobar
 
+      # Initializes releases with custom commands.
+      mix release.init --command cmd:path/to/file --command anothercmd:path/to/anotherfile
+
       # Use a custom template for generating the release config.
       mix release.init --template path/to/template
 
@@ -83,14 +86,16 @@ defmodule Mix.Tasks.Release.Init do
   @defaults [no_doc: false,
              release_per_app: false,
              name: nil,
-             template: nil]
+             template: nil,
+             command: nil]
   @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
     {overrides, _} = OptionParser.parse!(argv,
       strict: [no_doc: :boolean,
                release_per_app: :boolean,
                name: :string,
-               template: :string])
+               template: :string,
+               command: :keep])
     Keyword.merge(@defaults, overrides)
   end
 
@@ -142,6 +147,28 @@ defmodule Mix.Tasks.Release.Init do
     no_doc? = Keyword.get(opts, :no_doc, false)
     [no_docs: no_doc?,
      cookie: Distillery.Cookies.get,
-     get_cookie: &Distillery.Cookies.get/0]
+     get_cookie: &Distillery.Cookies.get/0,
+     commands: resolve_commands(opts)]
+  end
+
+  @spec resolve_commands(Keyword.t) :: Keyword.t
+  defp resolve_commands(opts) do
+    opts
+    |> Keyword.get_values(:command)
+    |> Enum.filter(& &1)
+    |> Enum.map(&parse_command/1)
+  end
+
+  @spec parse_command(String.t) :: tuple
+  defp parse_command(str) do
+    case String.split(str, ":") do
+      [command, path] -> {command, path}
+      _ -> Mix.raise """
+        #{str} isn't in the correct format.
+
+        Expected usage:
+        $ mix release.init --command <command>:<path>
+        """
+    end
   end
 end

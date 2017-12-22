@@ -57,6 +57,11 @@ release :<%= Keyword.get(release, :release_name) %> do
   set version: current_version(:<%= Keyword.get(release, :release_name)%>)
   set applications: [
     :runtime_tools
-  ]
+  ]<%= if commands && commands != [] do %>
+  set commands: [
+<%= Enum.map(commands, fn({command, path}) ->
+"    #{command}: \"#{path}\""
+  end) |> Enum.join(",\n") %>
+  ]<% end %>
 end<% end %>
 <% end %>
