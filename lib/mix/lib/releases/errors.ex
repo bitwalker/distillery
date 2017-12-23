@@ -6,7 +6,7 @@ defmodule Mix.Releases.Errors do
   This expects a list of `{:error, _}` tuples, and will convert them
   to a single String at the end.
   """
-  @spec format_error(list(term())) :: String.t
+  @spec format_errors(list(term())) :: String.t
   def format_errors([err]), do: format_error(err)
   def format_errors(errs) when is_list(errs) do
     format_errors(errs, "Multiple errors detected:\n")
@@ -57,7 +57,7 @@ defmodule Mix.Releases.Errors do
   end
   def format_error({:error, {:appups, {:mismatched_versions, meta}}}) do
     "Invalid appup specification, mismatched versions found:\n" <>
-     Enum.join(Enum.map(meta, fn {k,v} -> "    #{k}: #{v}" end), "\n")
+     Enum.join(Enum.map(meta, fn {k, v} -> "    #{k}: #{v}" end), "\n")
   end
   def format_error({:error, {:plugin, {:plugin_failed, :bad_return_value, value}}}) do
     "Plugin failed: invalid result returned\n" <>
@@ -112,7 +112,7 @@ defmodule Mix.Releases.Errors do
     "    path: #{Path.relative_to_cwd(path)}\n" <>
     "    contents: #{inspect rel}"
   end
-  def format_error({:error, {:assembler, {:invalid_sys_config, {{line,col}, mod, err}}}}) do
+  def format_error({:error, {:assembler, {:invalid_sys_config, {{line, col}, mod, err}}}}) do
     "Could not parse sys.config starting at #{line}:#{col}:\n" <>
       "    #{mod.format_error(err)}"
   end
