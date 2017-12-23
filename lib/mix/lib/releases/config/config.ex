@@ -305,6 +305,10 @@ defmodule Mix.Releases.Config do
     e -> reraise(LoadError, [file: file, error: e], System.stacktrace)
   end
 
+  @doc """
+  Validates a `%Config{}` struct.
+  If the struct is not valid, an `ArgumentError` is raised. If valid, returns `true`.
+  """
   @spec validate!(__MODULE__.t) :: true | no_return
   def validate!(%__MODULE__{:releases => []}) do
     raise ArgumentError,
