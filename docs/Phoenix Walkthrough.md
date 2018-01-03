@@ -81,7 +81,7 @@ $ MIX_ENV=prod mix compile
 $ cd assets
 $ node node_modules/brunch/bin/brunch build --production
 $ cd ..
-$ mix phoenix.digest
+$ mix phx.digest
 ```
 
 The above commands are not unique to Distillery, they are required by Phoenix to
@@ -115,7 +115,7 @@ Phoenix application.
 
 *NOTE* The above commands can be combined into one quick command as 
 ```
-$ cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod
+$ cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod
 ```
 
 *NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure
@@ -133,7 +133,7 @@ above commands we used:
 1. `./node_modules/brunch/bin/brunch b -p` builds your assets in
    production mode. More detail can be found in the
    [Phoenix Static Asset Guide](http://www.phoenixframework.org/docs/static-assets)
-1. `MIX_ENV=prod mix phoenix.digest` To compress and tag your assets
+1. `MIX_ENV=prod mix phx.digest` To compress and tag your assets
     for proper caching. More detail can be found in the
     [Phoenix Mix Task Guide](http://www.phoenixframework.org/docs/mix-tasks#section--mix-phoenix-digest-)
 1. `MIX_ENV=prod mix release --env=prod` To actually generate a release for a
@@ -186,7 +186,7 @@ end
 
 Remove the logo class from our application.css
 
-*file: web/static/css/phoenix.css*
+*file: assets/css/phoenix.css*
 ```css
 // We remove the following block of css
 .logo {
@@ -202,14 +202,14 @@ Remove the logo class from our application.css
 
 Remove the following line from our application layout.
 
-*file: web/templates/layout/app.html.eex*
+*file: lib/phoenix_distillery_web/templates/layout/app.html.eex*
 ```html
 <span class="logo"></span>
 ```
 
 Next we build an upgrade release with the following command:
 
-`cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
+`cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
 
 This is the same command as in version 0.0.1 with the exception of
 `--upgrade`. The upgrade flag tells Distillery to build an
@@ -241,7 +241,7 @@ connect on page load and display these numbers in the console.
 First we need to create a channel on the server responsible for
 emitting even numbers:
 
-*new file:   web/channels/heartbeat_channel.ex*
+*new file:   lib/phoenix_distillery_web/channels/heartbeat_channel.ex*
 ```elixir
 defmodule PhoenixDistillery.HeartbeatChannel do
   use Phoenix.Channel
@@ -269,7 +269,7 @@ Now we need to modify the default `user_socket` to reference the
 `HeartbeatChannel` we just created. The only defined channel should be
 `heartbeat:*`
 
-*file: web/channels/user_socket.ex*
+*file: lib/phoenix_distillery_web/channels/user_socket.ex*
 ```elixir
 defmodule PhoenixDistillery.UserSocket do
    use Phoenix.Socket
@@ -282,13 +282,13 @@ end
 Now we need to enable the default socket and tell it how to handle our
 heartbeat message:
 
-*file: web/static/js/app.js*
+*file: priv/static/js/app.js*
 ```javascript
 import "deps/phoenix_html/web/static/js/phoenix_html"
 import socket from "./socket"
 ```
 
-*file: web/static/js/socket.js*
+*file: priv/static/js/socket.js*
 ```javascript
 ...
 let socket = new Socket("/socket", {params: {token: window.userToken}})
@@ -319,7 +319,7 @@ just as we did with 0.0.2. So we will generate a release, copy the
 0.0.3 tarball into a new release directory under `local_deploy`, and
 upgrade the application.
 
-1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
+1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
 1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
 
@@ -348,7 +348,7 @@ end
 
 Next update the `HeartbeatChannel` to emit numbers incremented by one:
 
-*new file:   web/channels/heartbeat_channel.ex*
+*new file:   lib/phoenix_distillery_web/channels/heartbeat_channel.ex*
 ```elixir
 defmodule PhoenixDistillery.HeartbeatChannel do
   ...
@@ -368,7 +368,7 @@ just as we did with 0.0.3. Generate a release, copy the 0.0.4 tarball
 into a new release directory under `local_deploy`, and upgrade the
 application.
 
-1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod --upgrade`
+1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
 1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
 
