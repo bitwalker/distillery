@@ -1,30 +1,28 @@
 ## Phoenix Walkthrough
 
 It is recommended that you review the [Advanced Deployment Guide](http://phoenixframework.org/docs/advanced-deployment),
-which covers Phoenix-specific configuration that needs to be provided in order for your application to work within a release.
-The guide currently references Exrm, but it is an almost identical process with Distillery. I would recommend skipping over
-those parts, and focus on what you need to do to prepare your application. The guide below will walk you through everything in
-more detail.
+which covers Phoenix specific configurations that need to be provided in order for your application to work within a release.
+The guide below will walk you through a working example of using Distillery with a Phoenix 1.3 application to create a release.
 
 The goal of this guide is to walk you through the basics of deploying
 a simple Phoenix application with Distillery. We are going to build a
-simple Phoenix application from scratch and take it through 4
+simple Phoenix, 1.3, application from scratch and take it through 4
 releases. 1 main release, and 3 hot upgrade releases.
 
 **NOTE** At this time this guide does not cover
 [Ecto](https://github.com/elixir-ecto/ecto)'s use in releases. This
 will be added at a later time.
 
-### First Steps
+### Create Phoenix App with Distillery
 
-First off we will create a new Phoenix app (without Ecto) using `mix
-phoenix.new --no-ecto phoenix_distillery`. Go ahead and fetch
-dependencies when prompted by the mix task.
+First off we will create a new Phoenix app (without Ecto) and then change into the 
+newly created directory with the following commands:
+```
+$ mix phx.new --no-ecto phoenix_distillery
+$ cd phoenix_distillery
+```
 
-Don't forget to run an `npm install` from within your project
-directory in order to install brunch and its dependencies!
-
-Next we will install distillery in our `mix.exs`
+Next we will add Distillery to the deps function of our `mix.exs` file.
 
 *file: mix.exs*
 ```elixir
@@ -36,26 +34,21 @@ Next we will install distillery in our `mix.exs`
   end
 ```
 
-Execute a `mix do deps.get, compile` and you are ready to continue.
-
 ### Distillery Configuration
 
-To initialize Distillery, run `mix release.init`. Please refer to the
-Distillery walkthrough for a detailed look at the configuration
-options available.
+First let's modify the Phoenix `config/prod.exs` file. Change this section of text:
 
-We will need to configure the `prod` environment before we start
-building releases.
+```
+config :phx_distillery, PhxDistilleryWeb.Endpoint,
+  load_from_system_env: true,
+  url: [host: "example.com", port: 80],
+  cache_static_manifest: "priv/static/cache_manifest.json"
+```
 
-*NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure
-that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure
-at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix,
-which is not intended to be packaged in releases. As you won't be doing code reloading in a release
-(at least not with the same mechanism), you must disable this.
+to the following: 
 
-*file: config/prod.exs*
-```elixir
-config :phoenix_distillery, PhoenixDistillery.Endpoint,
+```
+config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
   http: [port: {:system, "PORT"}],
   url: [host: "localhost", port: {:system, "PORT"}], # This is critical for ensuring web-sockets properly authorize.
   cache_static_manifest: "priv/static/manifest.json",
@@ -64,8 +57,7 @@ config :phoenix_distillery, PhoenixDistillery.Endpoint,
   version: Application.spec(:phoenix_distillery, :vsn)
 ```
 
-Let's discuss each of these options.
-
+Let's discuss these options.
 - `server` configures the endpoint to boot the
   [Cowboy](https://github.com/ninenines/cowboy) application http
   endpoint on start.
@@ -73,19 +65,70 @@ Let's discuss each of these options.
 - `version` ensures that the asset cache will be busted on *versioned*
   application upgrades (more on this later)
 
-**NOTE** We are telling our release to use ENV variables by providing
+**NOTE** We are telling our release to use an ENV variable (PORT) by providing
 the tuple `{:system, "PORT"}` to the port option. Your release will
 not start properly if the `PORT` variable is not available to it on
 the production machine/in the production environment.
 
+### Building a Release 
+
+Now we have the Phoenix app created with Distillery and our configuration all ready
+for building a release. Execute the following commands: 
+
+```
+$ mix deps.get --only prod
+$ MIX_ENV=prod mix compile
+$ cd assets
+$ node node_modules/brunch/bin/brunch build --production
+$ cd ..
+$ mix phoenix.digest
+```
+
+The above commands are not unique to Distillery, they are required by Phoenix to
+build a production release and get all the static files in order. 
+
+#### Distillery Release
+
+The following initializes Distillery for the project:
+```
+$ mix release.init
+```
+
+The above command will create the file `rel/config.exs` in addition to an 
+empty directory `rel/plugins/`. Please refer to the
+Distillery [walkthrough](https://github.com/bitwalker/distillery/blob/master/docs/Walkthrough.md)
+for a detailed look at the configuration options available.
+
+To build the release the following command is executed: 
+
+```
+$ MIX_ENV=prod mix release
+```
+
+To run your execute the following command: 
+```
+$ PORT=4001 _build/dev/rel/phoenix_new/bin/phoenix_new foreground
+```
+
+You should be able to go to [localhost:4001](localhost:4001) and load the default
+Phoenix application.
+
+*NOTE* The above commands can be combined into one quick command as 
+```
+$ cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod
+```
+
+*NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure
+that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure
+at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix,
+which is not intended to be packaged in releases. As you won't be doing code reloading in a release
+(at least not with the same mechanism), you must disable this.
+
 
 ### Version 0.0.1
 
-Before we modify our app at all, we will generate a release with the
-current state. We will generate a release. Our release command is 3
-separate commands which I have linked with `&&`:
-
-`cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phoenix.digest, release --env=prod`
+If you followed the above you will have generated a working release. A few notes on some of the
+above commands we used: 
 
 1. `./node_modules/brunch/bin/brunch b -p` builds your assets in
    production mode. More detail can be found in the
@@ -96,14 +139,13 @@ separate commands which I have linked with `&&`:
 1. `MIX_ENV=prod mix release --env=prod` To actually generate a release for a
     production environment
 
+You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is 
+supposed to be interactive with features such as live code reload and automatic `brunch` asset
+recompilation and extra logging. While great for development, it comes at at a performance cost
+and you would not want to run a production Phoenix applicaiton in dev mode. 
 
-**NOTE**: Q: Why are we building a prod release? A: It does not make
-much sense to build a dev release with a Phoenix project; `dev` mode
-is supposed to be interactive with features such as live reload and
-automatic `brunch` asset recompilation. In order to turn off these
-features to build a release of the `dev` environment you might as well
-just use your `prod` configuration.
 
+#### Take that Release Anywhere
 
 Create a new directory somewhere on your machine called `local_deploy`
 and copy the release tarball you just created into it. Your command
@@ -117,12 +159,12 @@ Now `cd` into `local_deploy` and extract the tarball with:
 
 Your application is ready to be started up with the following command:
 
-`PORT=4000 ./bin/phoenix_distillery start`
+`PORT=4001 ./bin/phoenix_distillery start`
 
 Notice that we are explicitly setting the `PORT` environment variable
 in this shell session.
 
-If all has gone well, you should be able to open `localhost:4000` in
+If all has gone well, you should be able to open `localhost:4001` in
 your browser and see the default Phoenix landing page in all its
 glory.
 
