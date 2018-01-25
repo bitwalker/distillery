@@ -138,7 +138,7 @@ goto :eof
 for /f "delims=" %%i in ('where erl') do set system_erl="%%i"
 if %system_erl%=="" (
   echo failed to locate the Erlang Runtime System!
-  exit 1
+  exit /b 1
 )
 set system_root_dir_cmd=%system_erl% -noshell -eval "io:format(\"~s\", [filename:nativename(code:root_dir())])." -s init stop
 for /f "delims=" %%i in (`%%system_root_dir_cmd%%`) do set system_root=%%i
@@ -311,7 +311,7 @@ set target_version=%args%
 :: Unpack
 %escript% "%release_root_dir%\bin\release_utils.escript" ^
     unpack_release %rel_name% "%node_type%" "%node_name%" "!cookie!" "%target_version%"
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 :: Update env
 set rel_vsn=%target_version%
 set rel_dir=%release_root_dir\releases\%target_version%
@@ -333,7 +333,7 @@ call :pre_upgrade_hooks
 :: Perform upgrade
 %escript% "%rootdir%/bin/release_utils.escript" ^
     install_release "%rel_name%" "%node_type%" "%node_name%" "!cookie!" "%target_version%"
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 :: Cleanup
 move /Y "%rel_dir%\sys.config.bak" "%rel_dir%\sys.config"
 move /Y "%rel_dir%\vm.args.bak" "%rel_dir%\vm.args"
@@ -397,7 +397,7 @@ goto :eof
 setlocal EnableDelayedExpansion
 if "%args"=="" (
   echo "Peer name is required!"
-  exit 1
+  exit /b 1
 ) else (
   %escript% %nodetool% ping %node_type% "%args%" -setcookie "!cookie!"
 )
@@ -412,7 +412,7 @@ goto :eof
 :: Execute an RPC command
 :rpc
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 %escript% %nodetool% rpc %node_type% %node_name% -setcookie "!cookie!" %args%
 endlocal
@@ -422,7 +422,7 @@ goto :eof
 :: in the form of an Erlang expression
 :rpcterms
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 %escript% %nodetool% rpcterms %node_type% %node_name% -setcookie "!cookie!" %args%
 endlocal
@@ -431,7 +431,7 @@ goto :eof
 :: Eval an expression on the running node
 :eval
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 %escript% %nodetool% eval %node_type% %node_name% -setcookie "!cookie!" !args!
 endlocal
@@ -455,7 +455,7 @@ goto :eof
 :: Get the process id of the running node
 :pid
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 %escript% %nodetool% eval %node_type% %node_name% -setcookie "!cookie!" "erlang:list_to_integer(os:getpid())."
 endlocal
@@ -463,7 +463,7 @@ goto :eof
 
 :set_pid
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 set get_pid_cmd=%escript% %nodetool% eval %node_type% %node_name% -setcookie "!cookie!" "erlang:list_to_integer(os:getpid())."
 for /f "usebackq delims=" %%i in (`%%get_pid_cmd%%`) do set pid=%%i
@@ -473,7 +473,7 @@ goto :eof
 :: Reload the running configuration
 :reload_config
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 call :pre_configure_hooks
 call :post_configure_hooks
 setlocal EnableDelayedExpansion
@@ -514,7 +514,7 @@ goto :eof
 :: Remote shell to a running node
 :remote_console
 call :ping
-if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 set id=remsh%RANDOM%-%node_name%
 start "%node_name% attach" %werl% -hidden -noshell -boot "%clean_boot_script%" ^
@@ -528,7 +528,7 @@ goto :eof
 for /r "%hook_dir%\%1.d" %%f in (*.bat) do (
   echo Running %1 hook: %%f
   %%f
-  if %ERRORLEVEL% GEQ 1 exit %ERRORLEVEL%
+  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 )
 goto :eof
 
