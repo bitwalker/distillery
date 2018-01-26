@@ -830,7 +830,11 @@ defmodule Mix.Releases.Assembler do
       {:copy, libexec_source, "releases/<%= release_version %>/libexec"},
       {:mkdir, "releases/<%= release_version %>/commands"} |
       Enum.map(release.profile.commands, fn {name, path} ->
-        {:copy, path, "releases/<%= release_version %>/commands/#{name}.sh"}
+        ext = case Path.extname(path) do
+          "" -> ".sh"
+          other -> other
+        end
+        {:copy, path, "releases/<%= release_version %>/commands/#{name}#{ext}"}
       end)
     ] |> Enum.filter(fn {:copy, nil, _} -> false; _ -> true end)
 

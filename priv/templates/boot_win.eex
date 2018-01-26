@@ -83,7 +83,7 @@ setlocal EnableDelayedExpansion
 :parse_args
 set param=%1
 if "!param!"=="" goto :args_parsed
-if "!args!"=="" (
+if "!largs!"=="" (
   set largs=%param%
 ) else (
   set largs=%largs% %param%
@@ -117,8 +117,8 @@ if %taskname%=="eval" goto eval
 if %taskname%=="command" goto command
 if %taskname%=="describe" goto describe
 if %taskname%=="" goto usage
-if exist "%command_dir%\%taskname%" (
-  "%command_dir%\%taskname%" %*
+if exist "%command_dir%\%taskname%.bat" (
+  "%command_dir%\%taskname%.bat" %*
 ) else (
   echo Unknown command: %taskname%
 )
@@ -243,7 +243,7 @@ echo describe                            # list details about the release
 echo.
 echo Custom Commands
 echo ======================
-for %%i in (%command_dir%\*.d\*.bat) do (
+for %%i in (%command_dir%\*.bat) do (
   echo %%~ni
 )
 goto :eof
@@ -440,16 +440,19 @@ goto :eof
 
 :: Execute a command in a clean Erlang VM
 :command
+setlocal EnableDelayedExpansion
 for /f "tokens=1-2*" %%a in ("%args%") do (
   set module=%%a
   set function=%%b
   set command_args=%%c
 )
 %erl% -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
+       -config %sys_config% ^
        -hidden -noshell -boot start_clean ^
        -pa "%consolidated_dir%" ^
-       -s %module% %function% -s init stop
+       -s %module% %function% -s init stop ^
        -extra %command_args%
+endlocal
 goto :eof
 
 :: Get the process id of the running node
@@ -505,7 +508,7 @@ for %%i in (%hook_dir%\*.d\*.bat) do (
 )
 echo.
 echo Commands:
-for %%i in (%command_dir%\*.d\*.bat) do (
+for %%i in (%command_dir%\*.bat) do (
   echo %%i
 )
 endlocal
