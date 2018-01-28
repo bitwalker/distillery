@@ -19,12 +19,12 @@ a release is a `.rel` file, which looks something like this:
           {sasl,"3.0.2"}]}.
 ```
 
-The second element of the release tuple, is another tuple which describes the release name and version, the third element is a tuple which
-describes the version of ERTS (the Erlang Runtime System) which this release is targeting, and finally, a list of the applications
-and versions of those applications, which are required to run the release.
+The second element of the release tuple is another tuple which describes the release name and version. The third element is a tuple which
+describes the version of ERTS (the Erlang Runtime System) which the release is targeting. The final element is a list of the applications
+and versions of those applications which are required to run the release.
 
 This `.rel` file is used to generate a boot script (which has a `.script` extension) and a compiled form of it
-(which has the `.boot` extension), which the Erlang Runtime System uses to boot the VM, very similar to how an OS is booted.
+(which has the `.boot` extension), which the Erlang Runtime System uses to boot the VM (very similar to how an OS is booted).
 This boot script looks like so (it is heavily truncated here for our demonstration):
 
 ```erlang
@@ -112,7 +112,7 @@ of the task before using it.
 
 ## Configuration
 
-The file you generated above, `rel/config.exs` contains the configuration of any releases you may wish to define, like so:
+The file you generated above, `rel/config.exs`, contains the configuration of any releases you may wish to define, like so:
 
 ```elixir
 use Mix.Releases.Config,
@@ -137,9 +137,9 @@ release :foo do
 end
 ```
 
-Above, we've defined two "environments", and one release. An environment is configuration specific to a particular target environment,
+Here we've defined two "environments", and one release. An environment is configuration specific to a particular target environment,
 for some this might mean different configs for `test`, `staging`, and `prod`; for others, it might mean different architectures or devices. It
-is flexible enough to support either, but out of the box it is set up to work with the current Mix environment, i.e. `MIX_ENV=prod` will use
+is flexible enough to support either, but out of the box it is set up to work with the current Mix environment, e.g. `MIX_ENV=prod` will use
 the `:prod` environment defined above.
 
 The release we defined above is expected to match up to an actual `:foo` application, which should be the current Mix project. If we were working
