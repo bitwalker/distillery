@@ -39,7 +39,7 @@ configure_release() {
     if [ ! -z "$REPLACE_OS_VARS" ]; then
         _replace_os_vars "$DEST_VMARGS_PATH"
     fi
-    export VMARGS_PATH="${VMARGS_PATH:-$DEST_VMARGS_PATH}"
+    export VMARGS_PATH="${DEST_VMARGS_PATH:-$VMARGS_PATH}"
 
     # Set SYS_CONFIG_PATH, the path to the sys.config file to use
     # Use $RELEASE_CONFIG_DIR/sys.config if exists, otherwise releases/VSN/sys.config
