@@ -41,5 +41,24 @@ defmodule InitTest do
       {:ok, _} = File.rm_rf(@init_test_rel_path)
       File.cd!(old_dir)
     end
+
+    test "creates rel/config.exs with sanitized release name" do
+      old_dir = File.cwd!
+      init_test_app_path = Path.join([__DIR__, "fixtures", "init_test.umbrella"])
+      init_test_rel_path = Path.join([__DIR__, "fixtures", "init_test.umbrella", "rel"])
+      init_test_rel_config_path = Path.join([__DIR__, "fixtures", "init_test.umbrella", "rel", "config.exs"])
+
+      File.cd!(init_test_app_path)
+      {:ok, _} = File.rm_rf(init_test_rel_path)
+      refute File.exists?(init_test_rel_path)
+      refute File.exists?(init_test_rel_config_path)
+      {:ok, _} = mix("release.init")
+      assert File.exists?(init_test_rel_path)
+      assert File.exists?(init_test_rel_config_path)
+      config = Mix.Releases.Config.read!(init_test_rel_config_path)
+      assert config.releases[:init_test_umbrella]
+      {:ok, _} = File.rm_rf(init_test_rel_path)
+      File.cd!(old_dir)
+    end
   end
 end

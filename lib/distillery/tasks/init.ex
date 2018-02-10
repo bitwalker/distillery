@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Release.Init do
   alias Mix.Releases.{Utils, Logger}
 
   @spec run(OptionParser.argv) :: no_return
-  def run(args) do
+  def run(args) do    
     # make sure loadpaths are updated
     Mix.Task.run("loadpaths", [])
     # make sure we're compiled too
@@ -117,7 +117,7 @@ defmodule Mix.Tasks.Release.Init do
        end)]
       ++ get_common_bindings(opts)
     else
-      release_name_from_cwd = String.replace(Path.basename(File.cwd!), "-", "_")
+      release_name_from_cwd = Regex.replace(~r/[^_A-Za-z0-9]+/, Path.basename(File.cwd!), "_")
       release_name = Keyword.get(opts, :name, release_name_from_cwd) || release_name_from_cwd
       [releases: [
          [release_name: String.to_atom(release_name),
