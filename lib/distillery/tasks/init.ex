@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Release.Init do
   alias Mix.Releases.{Utils, Logger}
 
   @spec run(OptionParser.argv) :: no_return
-  def run(args) do    
+  def run(args) do
     # make sure loadpaths are updated
     Mix.Task.run("loadpaths", [])
     # make sure we're compiled too
