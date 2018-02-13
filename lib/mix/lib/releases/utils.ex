@@ -457,7 +457,6 @@ defmodule Mix.Releases.Utils do
   def to_underscore(text) do
     text
     |> String.replace(~r/[^_A-Za-z0-9]+/, "_")
-    |> String.replace("-", "_")
     |> String.downcase()
   end
 end
