@@ -438,4 +438,26 @@ defmodule Mix.Releases.Utils do
       {:unix, _}  -> "\n"
     end
   end
+
+  @doc """
+  Sanitizes text allowing only letters, digits separated by underscore
+
+  ## Examples
+
+      iex> #{__MODULE__}.to_underscore("project.name")
+      "project_name"
+      
+      iex> #{__MODULE__}.to_underscore("project name")
+      "project_name"
+
+      iex> #{__MODULE__}.to_underscore("project-name")
+      "project_name"
+  """
+  @spec to_underscore(String.t) :: String.t
+  def to_underscore(text) do
+    text
+    |> String.replace(~r/[^_A-Za-z0-9]+/, "_")
+    |> String.replace(~r/-/, "_")
+    |> String.downcase()
+  end
 end
