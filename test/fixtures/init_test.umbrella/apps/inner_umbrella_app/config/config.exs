@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :init_test_app, key: :value
+#     config :inner_umbrella_app, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:init_test_app, :key)
+#     Application.get_env(:inner_umbrella_app, :key)
 #
 # You can also configure a 3rd-party app:
 #

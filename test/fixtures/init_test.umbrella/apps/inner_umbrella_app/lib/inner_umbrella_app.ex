@@ -1,6 +1,6 @@
-defmodule InitTestApp do
+defmodule InnerUmbrellaApp do
   @moduledoc """
-  Documentation for InitTestApp.
+  Documentation for InnerUmbrellaApp.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule InitTestApp do
 
   ## Examples
 
-      iex> InitTestApp.hello
+      iex> InnerUmbrellaApp.hello
       :world
 
   """

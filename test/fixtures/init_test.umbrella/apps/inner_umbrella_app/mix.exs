@@ -1,9 +1,9 @@
-defmodule InitTestApp.Mixfile do
+defmodule InnerUmbrellaApp.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :init_test_app,
+      app: :inner_umbrella_app,
       version: "0.1.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -19,7 +19,7 @@ defmodule InitTestApp.Mixfile do
   def application do
     [
       extra_applications: [:logger],
-      mod: {InitTestApp.Application, []}
+      mod: {InnerUmbrellaApp.Application, []}
     ]
   end
 
