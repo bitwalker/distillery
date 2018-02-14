@@ -59,6 +59,9 @@ else
     SCRIPT="${SCRIPT:-$(readlink -f "$0" )}"
 fi
 
+export ESCRIPT_NAME
+ESCRIPT_NAME="${ESCRIPT_NAME:-$SCRIPT}"
+
 # Parent directory of this script
 SCRIPT_DIR="$(dirname "${SCRIPT}")"
 # Root directory of all releases
