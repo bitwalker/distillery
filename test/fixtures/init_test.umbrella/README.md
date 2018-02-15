@@ -1,4 +1,0 @@
-# InitTestUmbrella
-
-**TODO: Add description**
-

@@ -5,6 +5,7 @@ defmodule InitTest do
 
   import MixTestHelper
 
+  @fixtures_path Path.join([__DIR__, "fixtures"])
   @init_test_app_path Path.join([__DIR__, "fixtures", "init_test_app"])
   @init_test_rel_path Path.join([__DIR__, "fixtures", "init_test_app", "rel"])
   @init_test_rel_config_path Path.join([__DIR__, "fixtures", "init_test_app", "rel", "config.exs"])
@@ -45,19 +46,26 @@ defmodule InitTest do
     test "creates rel/config.exs with sanitized release name" do
       old_dir = File.cwd!
       init_test_app_path = Path.join([__DIR__, "fixtures", "init_test.umbrella"])
-      init_test_rel_path = Path.join([__DIR__, "fixtures", "init_test.umbrella", "rel"])
-      init_test_rel_config_path = Path.join([__DIR__, "fixtures", "init_test.umbrella", "rel", "config.exs"])
-
+      # Rename project to include invalid character
+      File.cd!(@fixtures_path)
+      {:ok, _} = mix("new", ["init_test_umbrella", "--umbrella"])
+      System.cmd("mv", ["init_test_umbrella", "init_test.umbrella"])
+      assert File.exists?(init_test_app_path)
+      # Add distillery as dependency
       File.cd!(init_test_app_path)
-      {:ok, _} = File.rm_rf(init_test_rel_path)
-      refute File.exists?(init_test_rel_path)
-      refute File.exists?(init_test_rel_config_path)
+      body = File.read!("mix.exs")
+      body_with_distillery =
+        String.replace(
+          body,
+          "defp deps do\n    []\n  end",
+          "defp deps do\n    [{:distillery, path: \"../../../.\"}]\n  end"
+        )
+
+      File.write!("mix.exs", body_with_distillery)
+      # Build release
       {:ok, _} = mix("release.init")
-      assert File.exists?(init_test_rel_path)
-      assert File.exists?(init_test_rel_config_path)
-      config = Mix.Releases.Config.read!(init_test_rel_config_path)
-      assert config.releases[:init_test_umbrella]
-      {:ok, _} = File.rm_rf(init_test_rel_path)
+      {:ok, _} = mix("release")
+      {:ok, _} = File.rm_rf(init_test_app_path)
       File.cd!(old_dir)
     end
   end
