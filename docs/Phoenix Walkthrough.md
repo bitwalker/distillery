@@ -141,8 +141,8 @@ above commands we used:
 
 You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is 
 supposed to be interactive with features such as live code reload and automatic `brunch` asset
-recompilation and extra logging. While great for development, it comes at at a performance cost
-and you would not want to run a production Phoenix applicaiton in dev mode. 
+recompilation and extra logging. While great for development, it comes at a performance cost
+and you would not want to run a production Phoenix application in dev mode. 
 
 
 #### Take that Release Anywhere
