@@ -16,6 +16,7 @@ defmodule Mix.Releases.Release do
     output_dir: nil,
     is_upgrade: false,
     upgrade_from: :latest,
+    soft_purge: false,
     resolved_overlays: [],
     profile: %Profile{
       code_paths: [],
@@ -42,6 +43,7 @@ defmodule Mix.Releases.Release do
     applications: list(atom | {atom, App.start_type} | App.t),
     is_upgrade: boolean,
     upgrade_from: nil | String.t,
+    soft_purge: boolean,
     resolved_overlays: [Overlays.overlay],
     profile: Profile.t,
     env: atom()
@@ -76,7 +78,8 @@ defmodule Mix.Releases.Release do
       selected_environment: env,
       selected_release: name,
       is_upgrade: Keyword.get(opts, :is_upgrade, false),
-      upgrade_from: Keyword.get(opts, :upgrade_from, false)
+      upgrade_from: Keyword.get(opts, :upgrade_from, false),
+      soft_purge: Keyword.get(opts, :soft_purge, false)
     ]
     case Config.get(Keyword.merge(default_opts, opts)) do
       {:error, _} = err -> err
@@ -186,7 +189,7 @@ defmodule Mix.Releases.Release do
                     end
                     {:ok, %{release | :is_upgrade => false, :upgrade_from => nil}}
                   v ->
-                    {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
+                    {:ok, %{release | :is_upgrade => true, :upgrade_from => v, :soft_purge => config.soft_purge}}
                 end
               ^current_version ->
                 {:error, {:assembler, {:bad_upgrade_spec, :upfrom_is_current, current_version}}}
@@ -197,7 +200,7 @@ defmodule Mix.Releases.Release do
                   false ->
                     {:error, {:assembler, {:bad_upgrade_spec, :doesnt_exist, version, upfrom_path}}}
                   true ->
-                    {:ok, %{release | :is_upgrade => true, :upgrade_from => version}}
+                    {:ok, %{release | :is_upgrade => true, :upgrade_from => version, :soft_purge => config.soft_purge}}
                 end
             end
           false ->

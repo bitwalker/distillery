@@ -155,7 +155,7 @@ defmodule Mix.Tasks.Release do
                 dev: :boolean, erl: :string, run_erl_env: :string, no_tar: :boolean,
                 upgrade: :boolean, upfrom: :string, name: :string, profile: :string,
                 env: :string, no_warn_missing: :boolean,
-                warnings_as_errors: :boolean]
+                warnings_as_errors: :boolean, soft_purge: :boolean]
     {overrides, _} = OptionParser.parse!(argv, strict: switches)
     verbosity = cond do
       Keyword.get(overrides, :verbose, false) -> :verbose
@@ -189,6 +189,7 @@ defmodule Mix.Tasks.Release do
     end
     executable? = Keyword.get(overrides, :executable, false)
     is_upgrade? = Keyword.get(overrides, :upgrade, false)
+    soft_purge? = Keyword.get(overrides, :soft_purge, false)
     {os_type, _} = :os.type()
     cond do
       executable? && is_upgrade? ->
@@ -214,6 +215,7 @@ defmodule Mix.Tasks.Release do
      exec_opts: exec_opts,
      no_tar:   Keyword.get(overrides, :no_tar, false),
      is_upgrade:   is_upgrade?,
-     upgrade_from: Keyword.get(overrides, :upfrom, :latest)]
+     upgrade_from: Keyword.get(overrides, :upfrom, :latest),
+     soft_purge: soft_purge?]
   end
 end

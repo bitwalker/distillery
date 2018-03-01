@@ -288,7 +288,8 @@ defmodule Mix.Releases.Assembler do
 
   # Generates a relup and .appup for all upgraded applications during upgrade releases
   defp generate_relup(%Release{is_upgrade: false}, _rel_dir), do: :ok
-  defp generate_relup(%Release{name: name, upgrade_from: upfrom, profile: %Profile{output_dir: output_dir}} = release, rel_dir) do
+  defp generate_relup(%Release{name: name, upgrade_from: upfrom, soft_purge: soft_purge,
+                               profile: %Profile{output_dir: output_dir}} = release, rel_dir) do
     Logger.debug "Generating relup for #{name}"
     v1_rel = Path.join([output_dir, "releases", upfrom, "#{name}.rel"])
     v2_rel = Path.join(rel_dir, "#{name}.rel")
@@ -305,7 +306,7 @@ defmodule Mix.Releases.Assembler do
         changed = get_changed_apps(v1_apps, v2_apps)
         added   = get_added_apps(v2_apps, changed)
         removed = get_removed_apps(v1_apps, v2_apps)
-        case generate_appups(changed, output_dir) do
+        case generate_appups(changed, output_dir, soft_purge) do
           {:error, _} = err ->
             err
           :ok ->
@@ -401,8 +402,8 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generate .appup files for a list of {app, v1, v2}
-  defp generate_appups([], _output_dir), do: :ok
-  defp generate_appups([{app, v1, v2}|apps], output_dir) do
+  defp generate_appups([], _output_dir, _), do: :ok
+  defp generate_appups([{app, v1, v2}|apps], output_dir, soft_purge) do
     v1_path       = Path.join([output_dir, "lib", "#{app}-#{v1}"])
     v2_path       = Path.join([output_dir, "lib", "#{app}-#{v2}"])
     appup_path    = Path.join([v2_path, "ebin", "#{app}.appup"])
@@ -421,28 +422,28 @@ defmodule Mix.Releases.Assembler do
     cond do
       appup_exists? && appup_valid? ->
         Logger.debug "#{app} requires an appup, and one was provided, skipping generation.."
-        generate_appups(apps, output_dir)
+        generate_appups(apps, output_dir, soft_purge)
       appup_exists? ->
         Logger.warn "#{app} has an appup file, but it is invalid for this release,\n" <>
           "    Backing up appfile with .bak extension and generating new one.."
         :ok = File.cp!(appup_path, "#{appup_path}.bak")
-        case Appup.make(app, v1, v2, v1_path, v2_path) do
+        case Appup.make(app, v1, v2, v1_path, v2_path, soft_purge) do
           {:error, _} = err ->
             err
           {:ok, appup} ->
             :ok = Utils.write_term(appup_path, appup)
             Logger.info "Generated .appup for #{app} #{v1} -> #{v2}"
-            generate_appups(apps, output_dir)
+            generate_appups(apps, output_dir, soft_purge)
         end
       :else ->
         Logger.debug "#{app} requires an appup, but it wasn't provided, one will be generated for you.."
-        case Appup.make(app, v1, v2, v1_path, v2_path) do
+        case Appup.make(app, v1, v2, v1_path, v2_path, soft_purge) do
           {:error, _} = err ->
             err
           {:ok, appup} ->
             :ok = Utils.write_term(appup_path, appup)
             Logger.info "Generated .appup for #{app} #{v1} -> #{v2}"
-            generate_appups(apps, output_dir)
+            generate_appups(apps, output_dir, soft_purge)
         end
     end
   end
