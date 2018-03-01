@@ -53,7 +53,7 @@ defmodule Mix.Tasks.Release.Init do
     File.mkdir_p!("rel/plugins")
     # Generate .gitignore for plugins folder
     unless File.exists?("rel/plugins/.gitignore") do
-      File.write!("rel/plugins/.gitignore", "*.*\n!*.exs", [:utf8])
+      File.write!("rel/plugins/.gitignore", "*.*\n!*.exs\n!.gitignore", [:utf8])
     end
     # Generate config.exs
     {:ok, config} =
