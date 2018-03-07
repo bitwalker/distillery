@@ -1,27 +1,9 @@
 # Runtime Configuration
 
-## config.exs & sys.config
-
-There are differences in how you approach runtime configuration of your application
-when using releases vs regular Mix projects. You still use your `config.exs`, but
-there are caveats which apply:
-
-- With releases, at runtime there is no longer any Mix project information, as your
-  application is indistinguishable from any other Erlang application. This means your
-  application should never use anything from the `Mix.*` namespace.
-- Related to the above, it is not possible to use Mix tasks, generally speaking, you
-  can include the `:mix` application in a release, but whether it works is uncertain at
-  best, due to the fact that Mix is designed to be used in conjunction with the Mix project
-  structure, and with a `mix.exs` available. Neither of which are true in releases. There is ongoing
-  work on making this possible, but at this time it is a caveat. Look into [Custom Commands](https://hexdocs.pm/distillery/custom-commands.html)
-  in the meantime.
-- With Mix projects, your configuration is evaluated at runtime, so you can use
-  functions such as `System.get_env/1` to conditionally change configuration
-  based on the runtime environment. With releases, `config.exs` is evaluated at
-  build time, and converted to a `sys.config` file. Using functions like
-  `System.get_env/1` will result in incorrect configuration. Instead, you must configure
-  your application so that if you need to fetch environment information at runtime, you
-  can do so. See the Configuration Conventions section below for more information.
+**IMPORTANT:** As of the time this document has changed, Distillery now supports `config.exs` natively. 
+You can configure your application the same way you normally would and can mostly ignore the parts below
+about what does/doesn't work in `config.exs`. I would still pay attention to the parts about approaching
+configuration more generally (i.e. conventions) because that is still important information.
 
 ### Configuration Conventions
 
@@ -45,7 +27,7 @@ parts of the application without needing to restart the whole release.
 
 ### Configuring Dependencies
 
-If you have dependencies which require runtime configuration, you should add them to `included_applications` and start them
+If you have dependencies which require runtime configuration and you cannot use `config.exs` to do so, you should add them to `included_applications` and start them
 as part of your supervisor tree, as shown below.
 
 ```elixir
