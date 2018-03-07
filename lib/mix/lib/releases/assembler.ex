@@ -558,8 +558,13 @@ defmodule Mix.Releases.Assembler do
       base_config_path
       |> Mix.Releases.Config.Providers.Elixir.read_quoted!()
       |> Macro.to_string
-      |> Code.format_string!
-    case File.write(Path.join(rel_dir, "config.exs"), merged) do
+    formatted =
+      if function_exported?(Code, :format_string!, 1) do
+        apply(Code, :format_string!, [merged])
+      else
+        merged
+      end
+    case File.write(Path.join(rel_dir, "config.exs"), formatted) do
       :ok ->
         Utils.write_term(Path.join(rel_dir, "sys.config"), [{:sasl, [errlog_type: :error]}])
         :ok
