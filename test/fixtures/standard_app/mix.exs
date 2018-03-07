@@ -28,6 +28,6 @@ defmodule StandardApp.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:distillery, path: "../../../.", runtime: false}]
+    [{:distillery, path: "../../../."}]
   end
 end

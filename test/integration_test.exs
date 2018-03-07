@@ -285,10 +285,8 @@ defmodule IntegrationTest do
   # Create a configuration file inside the release directory
   defp create_additional_config_file(directory) do
       extra_config_path = Path.join([directory, "extra.config"])
-      extra_config = "[{standard_app, [{foo, bar}]}]."
-      file = File.open!(extra_config_path, [:write, :utf8])
-      IO.puts(file, extra_config)
-      File.close(file)
+      Mix.Releases.Utils.write_term(extra_config_path, [standard_app: [foo: :bar]])
+      :ok
   end
 
   defp clean_up_standard_app! do
