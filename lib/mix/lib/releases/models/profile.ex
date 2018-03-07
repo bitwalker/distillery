@@ -20,6 +20,7 @@ defmodule Mix.Releases.Profile do
     include_src: nil, # boolean
     include_system_libs: nil, # boolean | "path/to/libs"
     included_configs: [], # list of path representing additional config files
+    config_providers: [], # list of modules or tuple of module/args for custom config providers
     strip_debug_info: nil, # boolean
     plugins: [], # list of module names
     overlay_vars: [], # keyword list
@@ -57,6 +58,7 @@ defmodule Mix.Releases.Profile do
       include_src: nil | boolean,
       include_system_libs: nil | boolean | String.t,
       included_configs: [String.t],
+      config_providers: [module() | {module(), [term]}],
       strip_debug_info: nil | boolean,
       plugins: [module()],
       overlay_vars: nil | Keyword.t,

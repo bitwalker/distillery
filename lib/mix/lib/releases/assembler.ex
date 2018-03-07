@@ -270,6 +270,7 @@ defmodule Mix.Releases.Assembler do
          :ok <- File.chmod!(boot_win_path, 0o777),
          :ok <- generate_start_erl_data(release, rel_dir),
          :ok <- generate_vm_args(release, rel_dir),
+         :ok <- generate_config_exs(release, rel_dir),
          :ok <- generate_sys_config(release, rel_dir),
          :ok <- include_erts(release),
          :ok <- make_boot_script(release, rel_dir) do
@@ -551,12 +552,28 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
+  defp generate_config_exs(%Release{profile: %Profile{config: base_config_path}}, rel_dir) do
+    Logger.debug "Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}"
+    merged =
+      base_config_path
+      |> Mix.Releases.Config.Providers.Elixir.read_quoted!()
+      |> Macro.to_string
+      |> Code.format_string!
+    case File.write(Path.join(rel_dir, "config.exs"), merged) do
+      :ok ->
+        Utils.write_term(Path.join(rel_dir, "sys.config"), [{:sasl, [errlog_type: :error]}])
+        :ok
+      {:error, reason} ->
+        {:error, {:assembler, :file, reason}}
+    end
+  end
+
   # Generates sys.config
-  defp generate_sys_config(%Release{profile: %Profile{config: base_config_path, sys_config: config_path}} = rel, rel_dir)
+  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir)
     when is_binary(config_path) do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
     overlay_vars = rel.profile.overlay_vars
-    base_config  = generate_base_config(base_config_path)
+    base_config  = [{:sasl, [errlog_type: :error]}]
     res = with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
                {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
                {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
@@ -581,25 +598,11 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:invalid_sys_config, error_info}}}
     end
   end
-  defp generate_sys_config(%Release{profile: %Profile{config: config_path, included_configs: included_configs}}, rel_dir) do
-    Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
-    config = config_path
-             |> generate_base_config()
+  defp generate_sys_config(%Release{profile: %Profile{included_configs: included_configs}}, rel_dir) do
+    Logger.debug "Generating default sys.config with included_configs applied"
+    config = [{:sasl, [errlog_type: :error]}]
              |> append_included_configs(included_configs)
     Utils.write_term(Path.join(rel_dir, "sys.config"), config)
-  end
-
-  defp generate_base_config(base_config_path) do
-    config = Mix.Config.read!(base_config_path)
-    case Keyword.get(config, :sasl) do
-      nil ->
-        Keyword.put(config, :sasl, [errlog_type: :error])
-      sasl ->
-        case Keyword.get(sasl, :errlog_type) do
-          nil -> put_in(config, [:sasl, :errlog_type], :error)
-          _   -> config
-        end
-    end
   end
 
   # Extend the config with the paths of additional config files
@@ -720,12 +723,15 @@ defmodule Mix.Releases.Assembler do
                :silent]
     rel_name = '#{release.name}'
     release_file = Path.join(rel_dir, "#{release.name}.rel")
+    script_path = Path.join([rel_dir, "#{release.name}.script"])
     case :systools.make_script(rel_name, options) do
       :ok ->
-        with :ok <- create_RELEASES(output_dir, Path.join(["releases", "#{release.version}", "#{release.name}.rel"])),
+        with :ok <- extend_script(release, script_path),
+             :ok <- create_RELEASES(output_dir, Path.join(["releases", "#{release.version}", "#{release.name}.rel"])),
              :ok <- create_start_clean(rel_dir, output_dir, options), do: :ok
       {:ok, _, []} ->
-        with :ok <- create_RELEASES(output_dir, Path.join(["releases", "#{release.version}", "#{release.name}.rel"])),
+        with :ok <- extend_script(release, script_path),
+             :ok <- create_RELEASES(output_dir, Path.join(["releases", "#{release.version}", "#{release.name}.rel"])),
              :ok <- create_start_clean(rel_dir, output_dir, options), do: :ok
       :error ->
         {:error, {:assembler, {:make_boot_script, {:unknown, release_file}}}}
@@ -735,6 +741,32 @@ defmodule Mix.Releases.Assembler do
       {:error, mod, errors} ->
         error = format_systools_error(mod, errors)
         {:error, {:assembler, {:make_boot_script, error}}}
+    end
+  end
+
+  # Extend boot script instructions
+  defp extend_script(%Release{profile: %Profile{config_providers: providers}}, script_path) do
+    providers = [
+      {Mix.Releases.Config.Providers.Elixir, [Path.join("var", "config.exs")]}
+      | providers
+    ]
+    extras = [
+      # Applies the config hook for executing config.exs on boot
+      {:apply, {Mix.Releases.Config.Provider, :init, [providers]}}
+    ]
+    with {:ok, [{:script, {_relname, _relvsn} = header, ixns}]} <- Utils.read_terms(script_path),
+         {before_elixir, [elixir | after_elixir]} <- Enum.split_while(ixns, fn
+            {:apply, {:application, :start_boot, [:elixir | _]}} -> false
+            _ -> true
+          end),
+         extended_script = {:script, header, before_elixir ++ [elixir | extras] ++ after_elixir},
+         :ok <- Utils.write_term(script_path, extended_script),
+         boot_path = Path.join(Path.dirname(script_path), Path.basename(script_path, ".script") <> ".boot"),
+         :ok <- File.write(boot_path, :erlang.term_to_binary(extended_script)) do
+      :ok
+    else
+      {:error, reason} ->
+        {:error, {:assembler, {:make_boot_script, reason}}}
     end
   end
 

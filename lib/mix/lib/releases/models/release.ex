@@ -9,7 +9,9 @@ defmodule Mix.Releases.Release do
     applications: [
       :elixir, # required for elixir apps
       :iex, # included so the elixir shell works
-      :sasl # required for upgrades
+      :sasl, # required for upgrades
+      {:mix, :load},
+      {:distillery, :load}
       # can also use `app_name: type`, as in `some_dep: load`,
       # to only load the application, not start it
     ],
@@ -27,6 +29,7 @@ defmodule Mix.Releases.Release do
       include_src: false,
       include_system_libs: true,
       included_configs: [],
+      config_providers: [],
       strip_debug_info: false,
       plugins: [],
       overlay_vars: [],

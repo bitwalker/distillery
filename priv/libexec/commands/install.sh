@@ -44,9 +44,21 @@ else
         export SYS_CONFIG_PATH="$SRC_SYS_CONFIG_PATH"
     fi
 fi
+if [ "$SRC_CONFIG_EXS_PATH" = "$RELEASE_MUTABLE_DIR/config.exs" ]; then
+    unset CONFIG_EXS_PATH
+else
+    if [ "$SRC_CONFIG_EXS_PATH" = "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/config.exs" ]; then
+        unset CONFIG_EXS_PATH
+    else
+        export CONFIG_EXS_PATH="$SRC_CONFIG_EXS_PATH"
+    fi
+fi
 configure_release
 # We have to do some juggling to ensure the correct config is used by the upgrade handler
 # First, we detect if there was a failed upgrade, so we can start over
+if [ -f "$REL_DIR/config.exs.bak" ]; then
+    mv "$REL_DIR/config.exs.bak" "$REL_DIR/config.exs"
+fi
 if [ -f "$REL_DIR/sys.config.bak" ]; then
     mv "$REL_DIR/sys.config.bak" "$REL_DIR/sys.config"
 fi
@@ -54,9 +66,11 @@ if [ -f "$REL_DIR/vm.args.bak" ]; then
     mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
 fi
 # Then, backup the packaged configs
+cp -a "$REL_DIR/config.exs" "$REL_DIR/config.exs.bak"
 cp -a "$REL_DIR/sys.config" "$REL_DIR/sys.config.bak"
 cp -a "$REL_DIR/vm.args" "$REL_DIR/vm.args.bak"
 # Then, substitute in the prepared configs
+cp -a "$CONFIG_EXS_PATH" "$REL_DIR/config.exs"
 cp -a "$SYS_CONFIG_PATH" "$REL_DIR/sys.config"
 cp -a "$VMARGS_PATH" "$REL_DIR/vm.args"
 
@@ -67,6 +81,7 @@ run_hooks pre_upgrade
         "install_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
 
 # We were successful, clean up the configs
+mv "$REL_DIR/config.exs.bak" "$REL_DIR/config.exs"
 mv "$REL_DIR/sys.config.bak" "$REL_DIR/sys.config"
 mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
 

@@ -63,6 +63,23 @@ configure_release() {
     fi
     export SYS_CONFIG_PATH="${SYS_CONFIG_PATH:-$DEST_SYS_CONFIG_PATH}"
 
+    if [ -z "CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
+        if [ -f "$RELEASE_CONFIG_DIR/config.exs" ]; then
+            export SRC_CONFIG_EXS_PATH="$RELEASE_CONFIG_DIR/config.exs"
+        else
+            export SRC_CONFIG_EXS_PATH="$REL_DIR/config.exs"
+        fi
+    else
+        export SRC_CONFIG_EXS_PATH="$CONFIG_EXS_PATH"
+    fi
+    if [ "$SRC_CONFIG_EXS_PATH" != "$RELEASE_MUTABLE_DIR/config.exs" ]; then
+        (echo "# Generated - edit/create $RELEASE_CONFIG_DIR/config.exs instead."; \
+         cat "$SRC_CONFIG_EXS_PATH") \
+            > "$RELEASE_MUTABLE_DIR/config.exs"
+         export DEST_CONFIG_EXS_PATH="$RELEASE_MUTABLE_DIR"/config.exs
+    fi
+    export CONFIG_EXS_PATH="${CONFIG_EXS_PATH:-$DEST_CONFIG_EXS_PATH}"
+
     # Need to ensure post_configure is run here, but
     # prevent recursion if the hook calls back to the boot script
     export DISTILLERY_PRECONFIGURE=true
