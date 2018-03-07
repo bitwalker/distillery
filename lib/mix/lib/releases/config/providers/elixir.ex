@@ -52,20 +52,18 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   defp merge_imports([], acc, _file, _loaded_paths) do
     {:__block__, [], Enum.reverse(acc)}
   end
-  defp merge_imports([{:import_config, env, [path]} | block], acc, file, loaded_paths) when is_binary(path) do
+  defp merge_imports([{:import_config, _, [path]} | block], acc, file, loaded_paths) when is_binary(path) do
     path = Path.join(Path.dirname(file), Path.relative_to(path, file))
     {{:__block__, _, quoted}, new_loaded_paths} = do_read_quoted!(path, loaded_paths)
-    line = Keyword.get(env, :line, 1)
     new_acc =
       quoted
       |> Enum.reject(fn {:use, _, [{:__aliases__, _, [:Mix, :Config]}]} -> true; _ -> false end)
-      |> Enum.map(fn {item, env, args} -> {item, Keyword.put(env, :line, Keyword.get(env, :line, 1) + line), args} end)
       |> Enum.reverse
       |> Enum.concat(acc)
     merge_imports(block, new_acc, file, new_loaded_paths)
   end
-  defp merge_imports([{:import_config, env, [path_expr]} = item | block], acc, file, loaded_paths) do
     case eval_path(path_expr) do
+  defp merge_imports([{:import_config, _, [path_expr]} = item | block], acc, file, loaded_paths) do
       nil ->
         err = "Invalid use of import_config. Only static paths and interpolation with Mix.env are allowed\n" <>
           "  Expected: import_config \"path/to/config.exs\" # or \"path/to/\#{Mix.env}.exs\"\n" <>
@@ -74,11 +72,9 @@ defmodule Mix.Releases.Config.Providers.Elixir do
       path ->
         path = Path.join(Path.dirname(file), Path.relative_to(path, file))
         {{:__block__, _, quoted}, new_loaded_paths} = do_read_quoted!(path, loaded_paths)
-        line = Keyword.get(env, :line, 1)
         new_acc =
           quoted
           |> Enum.reject(fn {:use, _, [{:__aliases__, _, [:Mix, :Config]}]} -> true; _ -> false end)
-          |> Enum.map(fn {item, env, args} -> {item, Keyword.put(env, :line, Keyword.get(env, :line, 1) + line), args} end)
           |> Enum.reverse
           |> Enum.concat(acc)
         merge_imports(block, new_acc, file, new_loaded_paths)
