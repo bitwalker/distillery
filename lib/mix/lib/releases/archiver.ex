@@ -94,6 +94,8 @@ defmodule Mix.Releases.Archiver do
             '#{Path.join([output_dir, "releases", release.version, "vm.args"])}'},
             {'#{Path.join(["releases", release.version, "sys.config"])}',
             '#{Path.join([output_dir, "releases", release.version, "sys.config"])}'},
+            {'#{Path.join(["releases", release.version, "config.exs"])}',
+             '#{Path.join([output_dir, "releases", release.version, "config.exs"])}'},
             {'#{Path.join(["releases", release.version, name <> ".sh"])}',
             '#{Path.join([output_dir, "releases", release.version, name <> ".sh"])}'},
             {'#{Path.join(["releases", release.version, name <> ".bat"])}',
