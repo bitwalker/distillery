@@ -573,7 +573,7 @@ defmodule Mix.Releases.Assembler do
     when is_binary(config_path) do
     Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
     overlay_vars = rel.profile.overlay_vars
-    base_config  = [{:sasl, [errlog_type: :error]}]
+    base_config  = [{:sasl, [errlog_type: :error]}, {:distillery, [config_providers: rel.profile.config_providers]}]
     res = with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
                {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
                {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
@@ -598,9 +598,9 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:invalid_sys_config, error_info}}}
     end
   end
-  defp generate_sys_config(%Release{profile: %Profile{included_configs: included_configs}}, rel_dir) do
+  defp generate_sys_config(%Release{profile: %Profile{included_configs: included_configs}} = rel, rel_dir) do
     Logger.debug "Generating default sys.config with included_configs applied"
-    config = [{:sasl, [errlog_type: :error]}]
+    config = [{:sasl, [errlog_type: :error]}, {:distillery, [config_providers: rel.profile.config_providers]}]
              |> append_included_configs(included_configs)
     Utils.write_term(Path.join(rel_dir, "sys.config"), config)
   end
@@ -746,10 +746,6 @@ defmodule Mix.Releases.Assembler do
 
   # Extend boot script instructions
   defp extend_script(%Release{profile: %Profile{config_providers: providers}}, script_path) do
-    providers = [
-      {Mix.Releases.Config.Providers.Elixir, [Path.join("var", "config.exs")]}
-      | providers
-    ]
     extras = [
       # Applies the config hook for executing config.exs on boot
       {:apply, {Mix.Releases.Config.Provider, :init, [providers]}}

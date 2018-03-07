@@ -37,18 +37,40 @@ main(Args) ->
                 {error, Reason} ->
                     io:format("Unable to parse sys.config: ~p\n", Reason);
                 {ok, [SysConfig]} ->
-                    lists:foreach(fun ({AppName, AppConfig}) ->
-                        io:format("Updating ~p..\n", [AppName]),
-                        lists:foreach(fun ({Key, Value}) ->
-                            io:format("  ~p.~p = ~p\n", [AppName, Key, Value]),
-                            case rpc:call(TargetNode, application, set_env, [AppName, Key, Value, [{persistent, true}]], 60000) of
-                                {badrpc, Reason} ->
-                                    io:format("Unable to set ~p.~p to ~p: ~p\n", [AppName, Key, Value, Reason]);
+                    case rpc:call(TargetNode, application_controller, prep_config_change, [], 60000) of
+                        {badrpc, Reason} ->
+                            io:format("Unable to prepare config change: ~p\n", [Reason]);
+                        OldEnv ->
+                            lists:foreach(fun ({AppName, AppConfig}) ->
+                                io:format("Updating ~p..\n", [AppName]),
+                                lists:foreach(fun ({Key, Value}) ->
+                                    io:format("  ~p.~p = ~p\n", [AppName, Key, Value]),
+                                    case rpc:call(TargetNode, application, set_env, [AppName, Key, Value, [{persistent, true}]], 60000) of
+                                        {badrpc, Reason} ->
+                                            io:format("Unable to set ~p.~p to ~p: ~p\n", [AppName, Key, Value, Reason]);
+                                        _ ->
+                                            ok
+                                    end
+                                end, AppConfig)
+                            end, SysConfig),
+                            case lists:keyfind(distillery, 1, SysConfig) of
+                                {distillery, Opts} ->
+                                    case lists:keyfind(config_providers, 1, Opts) of
+                                        {config_providers, Providers} when is_list(Providers) ->
+                                            case rpc:call(TargetNode, 'Elixir.Mix.Releases.Config.Provider', init, [Providers], infinity) of
+                                                {badrpc, Reason} ->
+                                                    io:format("Unable to update config providers: ~p\n", [Reason]);
+                                                _ ->
+                                                    ok
+                                            end;
+                                        _ ->
+                                            ok
+                                    end;
                                 _ ->
                                     ok
-                            end
-                        end, AppConfig)
-                    end, SysConfig)
+                            end,
+                            _ = rpc:call(TargetNode, application_controller, config_change, [OldEnv], 60000)
+                    end
             end;
         ["rpc", Module, Function] ->
             do_rpc(TargetNode, Module, Function, []);

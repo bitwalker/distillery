@@ -38,6 +38,13 @@ defmodule Mix.Releases.Config.Provider do
 
   @doc false
   def init(providers) when is_list(providers) do
+    # If called later, reset the table
+    case :ets.info(__MODULE__, :size) do
+      :undefined ->
+        :ok
+      _ ->
+        :ets.delete(__MODULE__)
+    end
     :ets.new(__MODULE__, [:public, :set, :named_table])
     for provider <- providers do
       case provider do

@@ -84,6 +84,30 @@ main(_) ->
 parse_version(V) when is_list(V) ->
     hd(string:tokens(V,"/")).
 
+update_config(TargetNode) ->
+    case rpc:call(TargetNode, application, get_env, [distillery, config_providers], ?TIMEOUT) of
+        {badrpc, Reason} ->
+            ?INFO("ERROR: Failed to contact remote node: ~p~n", [Reason]),
+            erlang:halt(3);
+        undefined ->
+            ok;
+        Providers when is_list(Providers) ->
+            case rpc:call(TargetNode, application_controller, prep_config_change, [], ?TIMEOUT) of
+                {badrpc, Reason} ->
+                    ?INFO("ERROR: Unable to contact remote node: ~p~n", [Reason]),
+                    erlang:halt(3);
+                OldEnv ->
+                    case rpc:call(TargetNode, 'Elixir.Mix.Releases.Config.Providers', init, [Providers], infinity) of
+                        {badrpc, Reason} ->
+                            ?INFO("ERROR: Unable to contact remote node: ~p~n", [Reason]),
+                            erlang:halt(3);
+                        _ ->
+                            _ = rpc:call(TargetNode, application_controller, config_change, [OldEnv], ?TIMEOUT),
+                            ok
+                    end
+            end
+    end.
+
 install_and_permafy(TargetNode, RelName, Vsn) ->
     case rpc:call(TargetNode, release_handler, check_install_release, [Vsn], ?TIMEOUT) of
         {ok, _OtherVsn, _Desc} ->
@@ -96,6 +120,7 @@ install_and_permafy(TargetNode, RelName, Vsn) ->
                   [Vsn, [{update_paths, true}]], ?TIMEOUT) of
         {ok, _, _} ->
             ?INFO("Installed Release: ~s~n", [Vsn]),
+            update_config(TargetNode),
             permafy(TargetNode, RelName, Vsn),
             ok;
         {error, {no_such_release, Vsn}} ->

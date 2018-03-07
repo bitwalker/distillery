@@ -166,7 +166,11 @@ defmodule Mix.Releases.Release do
                     p when is_binary(p) -> p
                     _ -> Keyword.get(Mix.Project.config, :config_path)
                   end
-    base_release = %{release | :profile => %{profile | :config => config_path}}
+    providers = [
+      {Mix.Releases.Config.Providers.Elixir, [Path.join("var", "config.exs")]}
+      | release.profile.config_providers
+    ]
+    base_release = %{release | :profile => %{profile | :config => config_path, :config_providers => providers}}
     release = check_cookie(base_release, log?)
     case Utils.get_apps(release) do
       {:error, _} = err -> err
