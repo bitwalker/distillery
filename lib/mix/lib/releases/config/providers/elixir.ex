@@ -49,6 +49,9 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   defp merge_imports({:__block__, _, block}, acc, file, loaded_paths) do
     merge_imports(block, acc, file, loaded_paths)
   end
+  defp merge_imports(item, acc, file, loaded_paths) when is_tuple(item) do
+    merge_imports([item], acc, file, loaded_paths)
+  end
   defp merge_imports([], acc, _file, _loaded_paths) do
     {:__block__, [], Enum.reverse(acc)}
   end
