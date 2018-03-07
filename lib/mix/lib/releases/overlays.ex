@@ -93,7 +93,6 @@ defmodule Mix.Releases.Overlays do
   defp do_overlay(output_dir, {:template, tmpl_path, to}, vars) when is_binary(tmpl_path) and is_binary(to) do
     with {:ok, tmpl_path} <- template_str(tmpl_path, vars),
          {:ok, to}        <- template_str(to, vars),
-         true             <- File.exists?(tmpl_path),
          {:ok, templated} <- template_file(tmpl_path, vars),
          expanded_to      <- Path.join(output_dir, to),
          _                <- Logger.debug("Applying #{IO.ANSI.reset}template#{IO.ANSI.cyan} overlay\n" <>
