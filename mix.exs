@@ -15,14 +15,16 @@ defmodule Distillery.Mixfile do
      test_coverage: [tool: ExCoveralls]]
   end
 
-  def application, do: [applications: []]
+  def application do
+    []
+  end
 
   defp deps do
-    [{:ex_doc, "~> 0.13", only: [:dev]},
-     {:excoveralls, "~> 0.6", only: [:dev, :test]},
-     {:credo, "~> 0.6", only: [:dev]},
-     {:propcheck, "~> 0.0.1", only: :test},
-     {:dialyze, "~> 0.2", only: [:dev]}]
+    [{:ex_doc, "~> 0.13", only: [:dev], runtime: false},
+     {:excoveralls, "~> 0.6", only: [:dev, :test], runtime: false},
+     {:credo, "~> 0.6", only: [:dev], runtime: false},
+     {:propcheck, "~> 1.0.0", only: :test, runtime: false},
+     {:dialyze, "~> 0.2", only: [:dev], runtime: false}]
   end
 
   defp description do
