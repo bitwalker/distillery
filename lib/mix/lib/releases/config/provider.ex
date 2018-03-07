@@ -41,11 +41,10 @@ defmodule Mix.Releases.Config.Provider do
     # If called later, reset the table
     case :ets.info(__MODULE__, :size) do
       :undefined ->
-        :ok
+        :ets.new(__MODULE__, [:public, :set, :named_table])
       _ ->
-        :ets.delete(__MODULE__)
+        :ets.delete_all_objects(__MODULE__)
     end
-    :ets.new(__MODULE__, [:public, :set, :named_table])
     for provider <- providers do
       case provider do
         p when is_atom(p) ->
