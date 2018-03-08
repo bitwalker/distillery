@@ -1,12 +1,22 @@
 defmodule Distillery.Cookies.Test do
   use ExUnit.Case, async: true
-  use PropCheck
+  use EQC.ExUnit
 
-  @tag timeout: 60_000 * 5
-  property "generated cookies are always valid", [:noshrink, :quiet] do
-    numtests(100, forall c <- Distillery.Cookies.generate() do
-      is_valid_cookie(c)
-    end)
+  @tag numtests: 100
+  property "generated cookies are always valid" do
+    forall cookie <- generated_cookie() do
+      is_valid_cookie(cookie)
+    end
+  end
+
+  test "can parse cookie via command line" do
+    assert is_parsed_by_command_line(Distillery.Cookies.generate())
+  end
+
+  def generated_cookie() do
+    lazy do
+      Distillery.Cookies.generate()
+    end
   end
 
   defp is_valid_cookie(x) when is_atom(x) do
@@ -14,8 +24,7 @@ defmodule Distillery.Cookies.Test do
     chars = String.to_charlist(str)
     with false <- String.contains?(str, ["-", "+", "'", "\"", "\\", "#"]),
          false <- Enum.any?(chars, fn b -> not (b >= ?! && b <= ?~) end),
-         64 <- byte_size(str),
-         true <- is_parsed_by_command_line(str) do
+         64 <- byte_size(str) do
       true
     else
       _ -> false
@@ -24,6 +33,7 @@ defmodule Distillery.Cookies.Test do
   defp is_valid_cookie(_x), do: false
 
   defp is_parsed_by_command_line(cookie) do
+    cookie = Atom.to_string(cookie)
     case System.cmd("erl", ["-hidden", "-setcookie", cookie, "-noshell", "-s", "init", "stop"]) do
       {_, 0} -> true
       _ -> false

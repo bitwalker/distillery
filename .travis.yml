@@ -18,6 +18,7 @@ matrix:
     - elixir: 1.6
       otp_release: 18.3
 script:
+  - mix do deps.get, eqc.install --mini
   - mix test --exclude=expensive
   - mix test --only=expensive
 notifications:

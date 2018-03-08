@@ -23,7 +23,7 @@ defmodule Distillery.Mixfile do
     [{:ex_doc, "~> 0.13", only: [:dev]},
      {:excoveralls, "~> 0.6", only: [:dev, :test]},
      {:credo, "~> 0.6", only: [:dev]},
-     {:propcheck, "~> 1.0.0", only: :test},
+     {:eqc_ex, "~> 1.4", only: [:test]},
      {:dialyze, "~> 0.2", only: [:dev]}]
   end
 
