@@ -876,7 +876,7 @@ defmodule Mix.Releases.Assembler do
     case Overlays.apply(output_dir, overlays, overlay_vars) do
       {:ok, paths} ->
         release = %{release | :resolved_overlays => Enum.map(paths, fn path ->
-                      {'#{path}', '#{Path.join([output_dir, path])}'}
+                      {path, Path.join([output_dir, path])}
                     end)}
         {:ok, release}
       {:error, _} = err ->

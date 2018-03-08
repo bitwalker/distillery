@@ -140,6 +140,19 @@ defmodule Mix.Releases.Utils do
   end
 
   @doc """
+  Same as `insecure_mkdir_temp/0`, but raises on failure
+  """
+  @spec insecure_mkdir_temp!() :: String.t | no_return
+  def insecure_mkdir_temp!() do
+    case insecure_mkdir_temp() do
+      {:ok, dir} ->
+        dir
+      {:error, {:mkdir_temp, :file, reason}} ->
+        raise "Failed to create temporary directory: #{inspect reason}"
+    end
+  end
+
+  @doc """
   Creates a temporary directory with a random name in a canonical
   temporary files directory of the current system
   (i.e. `/tmp` on *NIX or `./tmp` on Windows)

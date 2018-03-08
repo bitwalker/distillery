@@ -2,7 +2,12 @@ defmodule Mix.Releases.Archiver do
   @moduledoc """
   This module is responsible for packaging a release into a tarball.
   """
-  alias Mix.Releases.{Release, Utils, Logger, Plugin, Profile}
+  alias Mix.Releases.Release
+  alias Mix.Releases.Utils
+  alias Mix.Releases.Logger
+  alias Mix.Releases.Plugin
+  alias Mix.Releases.Profile
+  alias Mix.Releases.Archiver.Archive
 
   @doc """
   Given an assembled release, and the Release struct representing it,
@@ -13,6 +18,7 @@ defmodule Mix.Releases.Archiver do
   @spec archive(Release.t) :: {:ok, String.t} | {:error, term}
   def archive(%Release{} = release) do
     Logger.debug "Archiving #{release.name}-#{release.version}"
+
     with {:ok, release}  <- Plugin.before_package(release),
          :ok             <- make_tar(release),
          {:ok, tarfile}  <- update_tar(release),
@@ -40,6 +46,7 @@ defmodule Mix.Releases.Archiver do
     end
   end
 
+  # Constructs initial release tarball using systools
   defp make_tar(release) do
     archive_path = Release.archive_path(%{release | :profile =>
                                            %{release.profile | :executable => false}})
@@ -60,7 +67,7 @@ defmodule Mix.Releases.Archiver do
       end
     ]
     rel_path = '#{String.trim_trailing(archive_path, ".tar.gz")}'
-    Logger.debug "Writing tarball to #{rel_path}.tar.gz"
+    Logger.debug "Writing archive to #{rel_path}.tar.gz"
     case :systools.make_tar(rel_path, opts) do
       :ok ->
         :ok
@@ -75,77 +82,19 @@ defmodule Mix.Releases.Archiver do
     end
   end
 
-  defp update_tar(release) do
-    Logger.debug "Updating tarball"
-    overlays   = release.resolved_overlays
-    name       = "#{release.name}"
-    output_dir = release.profile.output_dir
-    tarfile    = '#{Path.join([output_dir, "releases", release.version, name <> ".tar.gz"])}'
+  # Applies overlays and adds extra files to release tarball and recreates it
+  defp update_tar(%Release{name: name, version: version, profile: %{output_dir: output_dir}} = release) do
+    Logger.debug "Updating archive.."
+
+    initial_tar_path = Path.join([output_dir, "releases", version, "#{name}.tar.gz"])
+
     with {:ok, tmpdir} <- Utils.insecure_mkdir_temp(),
-         :ok <- :erl_tar.extract(tarfile, [{:cwd, '#{tmpdir}'}, :compressed]),
+         {:ok, _} <- Archive.extract(initial_tar_path, tmpdir),
          :ok <- strip_release(release, tmpdir),
-         :ok <- :erl_tar.create(tarfile, [
-            {'releases', '#{Path.join(tmpdir, "releases")}'},
-            {'#{Path.join("releases", "start_erl.data")}',
-            '#{Path.join([output_dir, "releases", "start_erl.data"])}'},
-            {'#{Path.join("releases", "RELEASES")}',
-            '#{Path.join([output_dir, "releases", "RELEASES"])}'},
-            {'#{Path.join(["releases", release.version, "vm.args"])}',
-            '#{Path.join([output_dir, "releases", release.version, "vm.args"])}'},
-            {'#{Path.join(["releases", release.version, "sys.config"])}',
-            '#{Path.join([output_dir, "releases", release.version, "sys.config"])}'},
-            {'#{Path.join(["releases", release.version, "config.exs"])}',
-             '#{Path.join([output_dir, "releases", release.version, "config.exs"])}'},
-            {'#{Path.join(["releases", release.version, name <> ".sh"])}',
-            '#{Path.join([output_dir, "releases", release.version, name <> ".sh"])}'},
-            {'#{Path.join(["releases", release.version, name <> ".bat"])}',
-            '#{Path.join([output_dir, "releases", release.version, name <> ".bat"])}'},
-            {'#{Path.join(["releases", release.version, name <> ".boot"])}',
-             '#{Path.join([output_dir, "releases", release.version, name <> ".boot"])}'},
-            {'#{Path.join(["releases", release.version, name <> ".script"])}',
-             '#{Path.join([output_dir, "releases", release.version, name <> ".script"])}'},
-            {'#{Path.join(["releases", release.version, name <> ".rel"])}',
-             '#{Path.join([output_dir, "releases", release.version, name <> ".rel"])}'},
-            {'#{Path.join(["releases", release.version, "start_clean.boot"])}',
-             '#{Path.join([output_dir, "releases", release.version, "start_clean.boot"])}'},
-            {'bin', '#{Path.join(output_dir, "bin")}'},
-            {'#{Path.join(["releases", release.version, "libexec"])}',
-             '#{Path.join([output_dir, "releases", release.version, "libexec"])}'},
-            {'#{Path.join(["lib", "#{release.name}-#{release.version}", "consolidated"])}',
-             '#{Path.join([output_dir, "lib", "#{release.name}-#{release.version}", "consolidated"])}'}] ++
-            if release.is_upgrade do
-              [{'#{Path.join(["releases", release.version, "relup"])}',
-                '#{Path.join([output_dir, "releases", release.version, "relup"])}'}]
-            else
-              []
-            end ++
-            case release.profile.include_erts do
-              false ->
-                case release.profile.include_system_libs do
-                  false ->
-                    Logger.debug "Stripping system libs from release tarball"
-                    libs = Enum.map(Path.wildcard(Path.join([tmpdir, "lib", "*"])), &Path.basename/1)
-                    system_libs = Enum.map(Path.wildcard(Path.join("#{:code.lib_dir}", "*")), &Path.basename/1)
-                    for libdir <- :lists.subtract(libs, system_libs),
-                      do: {'#{Path.join("lib", libdir)}', '#{Path.join([tmpdir, "lib", libdir])}'}
-                  true ->
-                    [{'lib', '#{Path.join(tmpdir, "lib")}'}]
-                  p when is_binary(p) ->
-                    p = Path.expand(p)
-                    [{'lib', '#{p}'}]
-                end
-              true ->
-                erts_vsn = Utils.erts_version()
-                [{'lib', '#{Path.join(tmpdir, "lib")}'},
-                 {'erts-#{erts_vsn}', '#{Path.join(output_dir, "erts-" <> erts_vsn)}'}]
-              path when is_binary(path) ->
-                {:ok, erts_vsn} = Utils.detect_erts_version(path)
-                [{'lib', '#{Path.join(tmpdir, "lib")}'},
-                 {'erts-#{erts_vsn}', '#{Path.join(output_dir, "erts-" <> erts_vsn)}'}]
-            end ++ overlays, [:dereference, :compressed]),
-        :ok      <- Logger.debug("Tarball updated!"),
-        {:ok, _} <-  File.rm_rf(tmpdir) do
-      {:ok, tarfile}
+         archive = make_archive(release, tmpdir),
+         {:ok, archive_path} <- save_archive(release, archive),
+         _ <- File.rm_rf(tmpdir) do
+      {:ok, archive_path}
     else
       err ->
         case err do
@@ -153,8 +102,6 @@ defmodule Mix.Releases.Archiver do
             err
           {:error, reason, file} ->
             {:error, {:archiver, {:file, reason, file}}}
-          {:error, {name, reason}} when is_list(name) ->
-            {:error, {:archiver, {:erl_tar, {name, reason}}}}
           {:error, _reason} ->
             err
         end
@@ -162,6 +109,112 @@ defmodule Mix.Releases.Archiver do
   catch
     kind, err ->
       {:error, {:archiver, Exception.normalize(kind, err, System.stacktrace)}}
+  end
+
+  defp make_archive(%Release{version: version, profile: %Profile{output_dir: output_dir}} = release, tmpdir) do
+    name = "#{release.name}"
+
+    archive =
+      Archive.new(name, output_dir)
+      |> Archive.add(Path.join(tmpdir, "releases"), "releases")
+      |> Archive.add(Path.join([output_dir, "bin"]))
+      |> Archive.add(Path.join([output_dir, "releases", "start_erl.data"]))
+      |> Archive.add(Path.join([output_dir, "releases", "RELEASES"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "vm.args"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "sys.config"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "config.exs"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "start_clean.boot"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.sh"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.bat"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.boot"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.script"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.rel"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "libexec"]))
+      |> Archive.add(Path.join([output_dir, "lib", "#{name}-#{version}", "consolidated"]))
+
+    # Only attempt to add relup file if this is an upgrade
+    archive =
+      if release.is_upgrade do
+        Archive.add(archive, Path.join([output_dir, "releases", version, "relup"]))
+      else
+        archive
+      end
+
+    # Handle optional libs and runtime
+    archive =
+      archive
+      |> maybe_include_erts(release, tmpdir)
+      |> maybe_include_system_libs(release, tmpdir)
+
+    # Apply overlays
+    Enum.reduce(release.resolved_overlays, archive, fn {entry, source}, acc ->
+      Archive.add(acc, source, entry)
+    end)
+  end
+
+  defp maybe_include_erts(archive, %Release{profile: %{include_erts: false}}, _tmpdir) do
+    archive
+  end
+  defp maybe_include_erts(archive, %Release{profile: %{include_erts: true}} = release, tmpdir) do
+    erts_vsn = Utils.erts_version()
+    archive
+    |> Archive.add(Path.join(tmpdir, "lib"), "lib")
+    |> Archive.add(Path.join(release.profile.output_dir, "erts-#{erts_vsn}"), "erts-#{erts_vsn}")
+  end
+  defp maybe_include_erts(archive, %Release{profile: %{include_erts: path}} = release, tmpdir) do
+    {:ok, erts_vsn} = Utils.detect_erts_version(path)
+    archive
+    |> Archive.add(Path.join(tmpdir, "lib"), "lib")
+    |> Archive.add(Path.join(release.profile.output_dir, "erts-#{erts_vsn}"))
+  end
+
+  defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: false}}, tmpdir) do
+    Logger.debug "Stripping system libs from release archive since ERTS is not included"
+
+    # The set of all libs required for this release
+    lib_path = Path.join([tmpdir, "lib", "*"])
+    libs =
+      lib_path
+      |> Path.wildcard
+      |> Enum.map(&Path.basename/1)
+      |> MapSet.new
+
+    # Applications belonging to the Erlang system
+    system_lib_path = Path.join("#{:code.lib_dir()}", "*")
+    system_libs =
+      system_lib_path
+      |> Path.wildcard
+      |> Enum.map(&Path.basename/1)
+      |> MapSet.new
+
+    # Remove the set of system libs from the set of all libs
+    # and add only those remaining to the archive
+    libs
+    |> MapSet.difference(system_libs)
+    |> MapSet.to_list
+    |> Enum.reduce(archive, fn lib, acc ->
+      Archive.add(acc, Path.join([tmpdir, "lib", lib]), Path.join("lib", lib))
+    end)
+  end
+  defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: true}}, tmpdir) do
+    Logger.debug "Including system libs from current Erlang installation"
+    Archive.add(archive, Path.join(tmpdir, "lib"), "lib")
+  end
+  defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: path}}, _tmpdir) do
+    Logger.debug "Including system libs from #{Path.relative_to_cwd(path)}"
+    Archive.add(archive, Path.join(Path.expand(path), "lib"), "lib")
+  end
+
+  defp save_archive(%Release{version: version, profile: %{output_dir: output_dir}}, archive) do
+    Logger.debug("Saving archive..")
+    target_dir = Path.join([output_dir, "releases", version])
+    case Archive.save(archive, target_dir) do
+      {:ok, _archive_path} = result ->
+        Logger.debug("Archive saved!")
+        result
+      {:error, reason} ->
+        {:error, {:archiver, {:erl_tar, reason}}}
+    end
   end
 
   # Strips debug info from the release, if so configured
