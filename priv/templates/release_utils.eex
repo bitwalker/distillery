@@ -91,13 +91,13 @@ update_config(TargetNode) ->
             erlang:halt(3);
         undefined ->
             ok;
-        Providers when is_list(Providers) ->
+        {ok, Providers} when is_list(Providers) ->
             case rpc:call(TargetNode, application_controller, prep_config_change, [], ?TIMEOUT) of
                 {badrpc, Reason} ->
                     ?INFO("ERROR: Unable to contact remote node: ~p~n", [Reason]),
                     erlang:halt(3);
                 OldEnv ->
-                    case rpc:call(TargetNode, 'Elixir.Mix.Releases.Config.Providers', init, [Providers], infinity) of
+                    case rpc:call(TargetNode, 'Elixir.Mix.Releases.Config.Provider', init, [Providers], infinity) of
                         {badrpc, Reason} ->
                             ?INFO("ERROR: Unable to contact remote node: ~p~n", [Reason]),
                             erlang:halt(3);
