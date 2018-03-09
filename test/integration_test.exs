@@ -38,6 +38,13 @@ defmodule IntegrationTest do
     end
   end
 
+  {:ok, req} = Version.parse_requirement("< 1.4.0")
+  if Version.match?(Version.parse!(System.version), req) do
+    @time_unit :milliseconds
+  else
+    @time_unit :millisecond
+  end
+
   # Wait for VM and application to start
   defp wait_for_app(bin_path) do
     parent = self()
@@ -49,7 +56,7 @@ defmodule IntegrationTest do
     :timeout
   end
   defp do_wait_for_app(pid, time_remaining) do
-    start = System.monotonic_time(:millisecond)
+    start = System.monotonic_time(@time_unit)
     if System.get_env("VERBOSE_TESTS") do
       IO.puts "Waiting #{time_remaining}ms for app.."
     end
@@ -57,7 +64,7 @@ defmodule IntegrationTest do
       {:ok, :pong} ->
         :ok
       _other ->
-        ts = System.monotonic_time(:millisecond)
+        ts = System.monotonic_time(@time_unit)
         do_wait_for_app(pid, time_remaining - (ts - start))
     after
       time_remaining ->
