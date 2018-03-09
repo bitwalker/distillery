@@ -39,25 +39,26 @@ defmodule Mix.Tasks.Release.Clean do
     # load release configuration
     Logger.debug "Loading configuration.."
     config_path = Path.join([File.cwd!, "rel", "config.exs"])
-    config = case File.exists?(config_path) do
-               true ->
-                 try do
-                   Config.read!(config_path)
-                 rescue
-                   e in [Config.LoadError] ->
-                     file = Path.relative_to_cwd(e.file)
-                     message = Exception.message(e)
-                     message = String.replace(message, "nofile", file)
-                     Logger.error "Failed to load config:\n" <>
-                       "    #{message}"
-                     exit({:shutdown, 1})
-                 end
-               false ->
-                 Logger.error "You are missing a release config file. Run the release.init task first"
-                 exit({:shutdown, 1})
-             end
+    config =
+      case File.exists?(config_path) do
+        true ->
+          try do
+            Config.read!(config_path)
+          rescue
+            e in [Config.LoadError] ->
+              file = Path.relative_to_cwd(e.file)
+              message = Exception.message(e)
+              message = String.replace(message, "nofile", file)
+              Logger.error "Failed to load config:\n" <>
+                "    #{message}"
+              System.halt(1)
+          end
+        false ->
+          Logger.error "You are missing a release config file. Run the release.init task first"
+          System.halt(1)
+      end
 
-    implode?    = Keyword.get(opts, :implode, false)
+    implode? = Keyword.get(opts, :implode, false)
     no_confirm? = Keyword.get(opts, :no_confirm, false)
     with {:ok, environment} <- Release.select_environment(config),
          {:ok, release}     <- Release.select_release(config),
@@ -76,7 +77,7 @@ defmodule Mix.Tasks.Release.Clean do
         err
         |> Errors.format_error
         |> Logger.error
-        exit({:shutdown, 1})
+        System.halt(1)
     end
   end
 
@@ -111,18 +112,24 @@ defmodule Mix.Tasks.Release.Clean do
   @spec clean_release(Release.t, [String.t]) :: :ok | :no_return
   defp clean_release(%Release{profile: %Profile{output_dir: output_dir}} = release, args) do
     # Remove erts
-    Path.wildcard(Path.join(output_dir, "erts-*"))
+    output_dir
+    |> Path.join("erts-*")
+    |> Path.wildcard
     |> Enum.each(&clean_path/1)
+
     # Remove libs
     release
     |> Utils.get_apps()
     |> Enum.map(fn %App{name: name, vsn: vsn} ->
       clean_path(Path.join([output_dir, "lib", "#{name}-#{vsn}"]))
     end)
+
     # Remove releases/start_erl.data
     clean_path(Path.join([output_dir, "releases", "start_erl.data"]))
+
     # Remove current release version
     clean_path(Path.join([output_dir, "releases", "#{release.version}"]))
+
     # Execute plugin callbacks for this release
     Plugin.after_cleanup(release, args)
   end
@@ -138,17 +145,32 @@ defmodule Mix.Tasks.Release.Clean do
 
   @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
-    {overrides, _} = OptionParser.parse!(argv, strict: [
-          implode: :boolean,
-          no_confirm: :boolean,
-          verbose: :boolean])
-    verbosity = case Keyword.get(overrides, :verbose) do
-                  true -> :verbose
-                  _    -> :normal
-                end
-    [implode: Keyword.get(overrides, :implode, false),
-      no_confirm: Keyword.get(overrides, :no_confirm, false),
-      verbosity: verbosity]
+    opts = [
+      strict: [
+        implode: :boolean,
+        no_confirm: :boolean,
+        verbose: :boolean
+      ]
+    ]
+    {overrides, _} = OptionParser.parse!(argv, opts)
+    defaults =
+      %{
+        verbosity: :normal,
+        implode: false,
+        no_confirm: false
+      }
+    parse_args(overrides, defaults)
+  end
+
+  defp parse_args([], acc), do: Map.to_list(acc)
+  defp parse_args([{:verbose, _} | rest], acc) do
+    parse_args(rest, Map.put(acc, :verbosity, :verbose))
+  end
+  defp parse_args([{:implode, _} | rest], acc) do
+    parse_args(rest, Map.put(acc, :implode, true))
+  end
+  defp parse_args([{:no_confirm, _} | rest], acc) do
+    parse_args(rest, Map.put(acc, :no_confirm, true))
   end
 
   @spec confirm_implode?() :: boolean

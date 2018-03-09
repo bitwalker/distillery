@@ -43,18 +43,24 @@ defmodule Mix.Tasks.Release.Init do
 
     Logger.configure(:debug)
 
-    # Generate template bindings based on type of project and task opts
     opts = parse_args(args)
-    bindings = case Mix.Project.umbrella? do
-      true  -> get_umbrella_bindings(opts)
-      false -> get_standard_bindings(opts)
-    end
+
+    # Generate template bindings based on type of project and task opts
+    bindings =
+      if Mix.Project.umbrella? do
+        get_umbrella_bindings(opts)
+      else
+        get_standard_bindings(opts)
+      end
+
     # Create /rel
     File.mkdir_p!("rel/plugins")
+
     # Generate .gitignore for plugins folder
     unless File.exists?("rel/plugins/.gitignore") do
       File.write!("rel/plugins/.gitignore", "*.*\n!*.exs\n!.gitignore", [:utf8])
     end
+
     # Generate config.exs
     {:ok, config} =
       case opts[:template] do
@@ -80,68 +86,85 @@ defmodule Mix.Tasks.Release.Init do
       exit({:shutdown, 1})
   end
 
-  @defaults [no_doc: false,
-             release_per_app: false,
-             name: nil,
-             template: nil]
   @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
-    {overrides, _} = OptionParser.parse!(argv,
-      strict: [no_doc: :boolean,
-               release_per_app: :boolean,
-               name: :string,
-               template: :string])
-    Keyword.merge(@defaults, overrides)
+    opts = [
+      strict: [
+        no_doc: :boolean,
+        release_per_app: :boolean,
+        name: :string,
+        template: :string
+      ]
+    ]
+    {overrides, _} = OptionParser.parse!(argv, opts)
+    defaults = [
+      no_doc: false,
+      release_per_app: false,
+      name: nil,
+      template: nil
+    ]
+    Keyword.merge(defaults, overrides)
   end
 
   @spec get_umbrella_bindings(Keyword.t) :: Keyword.t | no_return
   defp get_umbrella_bindings(opts) do
     apps_path = Keyword.get(Mix.Project.config, :apps_path)
     apps_paths = Path.wildcard("#{apps_path}/*")
-    apps = apps_paths
+
+    apps =
+      apps_paths
       |> Enum.map(fn app_path ->
-        Mix.Project.in_project(String.to_atom(Path.basename(app_path)), app_path, fn
-          nil ->
-            :ignore
-          mixfile ->
-            {Keyword.get(mixfile.project, :app), :permanent}
+        app =
+          app_path
+          |> Path.basename
+          |> String.to_atom
+        Mix.Project.in_project(app, app_path, fn
+          nil -> nil
+          mixfile -> {Keyword.get(mixfile.project, :app), :permanent}
         end)
       end)
-      |> Enum.filter(fn :ignore -> false; _ -> true end)
+      |> Enum.reject(&is_nil/1)
+
     release_per_app? = Keyword.get(opts, :release_per_app, false)
-    if release_per_app? do
-      [releases: Enum.map(apps, fn {app, start_type} ->
-         [release_name: app,
-          is_umbrella: false,
-          release_applications: [{app, start_type}]]
-       end)]
-      ++ get_common_bindings(opts)
-    else
-      release_name_from_cwd = String.replace(Path.basename(File.cwd!), "-", "_")
-      release_name = Keyword.get(opts, :name, release_name_from_cwd) || release_name_from_cwd
-      [releases: [
-         [release_name: String.to_atom(release_name),
+    releases =
+      if release_per_app? do
+        for {app, start_type} <- apps do
+          [
+            release_name: app,
+            is_umbrella: false,
+            release_applications: [{app, start_type}]
+          ]
+        end
+      else
+        release_name_from_cwd = String.replace(Path.basename(File.cwd!), "-", "_")
+        release_name = Keyword.get(opts, :name, release_name_from_cwd) || release_name_from_cwd
+        [
+          release_name: String.to_atom(release_name),
           is_umbrella: true,
-          release_applications: apps]]]
-      ++ get_common_bindings(opts)
-    end
+          release_applications: apps
+        ]
+      end
+    [{:releases, releases} | get_common_bindings(opts)]
   end
 
   @spec get_standard_bindings(Keyword.t) :: Keyword.t | no_return
   defp get_standard_bindings(opts) do
     app = Keyword.get(Mix.Project.config, :app)
-    [releases: [
-      [release_name: app,
-       is_umbrella: false,
-       release_applications: [{app, :permanent}]]]]
-    ++ get_common_bindings(opts)
+    releases =
+      [
+        release_name: app,
+        is_umbrella: false,
+        release_applications: [{app, :permanent}]
+      ]
+    [{:releases, releases} | get_common_bindings(opts)]
   end
 
   @spec get_common_bindings(Keyword.t) :: Keyword.t
   defp get_common_bindings(opts) do
-    no_doc? = Keyword.get(opts, :no_doc, false)
-    [no_docs: no_doc?,
-     cookie: Distillery.Cookies.get,
-     get_cookie: &Distillery.Cookies.get/0]
+    [
+      no_docs: Keyword.get(opts, :no_doc, false),
+      cookie: Distillery.Cookies.get,
+      get_cookie: &Distillery.Cookies.get/0
+    ]
   end
 end
