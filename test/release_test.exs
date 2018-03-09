@@ -27,10 +27,6 @@ defmodule ReleaseTest do
               |> Enum.map(fn {:apply, {:application, :start_boot, [name | _]}} -> name end)
               |> Enum.with_index()
 
-      if System.get_env("VERBOSE_TESTS") do
-        IO.inspect {:prios, prios}
-      end
-
       assert 0 == prios[:kernel]
       assert 1 == prios[:stdlib]
       assert prios[:logger] > prios[:lager]

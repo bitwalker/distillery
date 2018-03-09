@@ -40,23 +40,46 @@ defmodule IntegrationTest do
 
   # Wait for VM and application to start
   defp wait_for_app(bin_path) do
-    do_wait_for_app(bin_path, 10)
+    parent = self()
+    pid = spawn_link(fn -> ping_loop(bin_path, parent) end)
+    do_wait_for_app(pid, 30_000)
   end
-  defp do_wait_for_app(bin_path, i) do
+  defp do_wait_for_app(pid, time_remaining) when time_remaining <= 0 do
+    send pid, :die
+    :timeout
+  end
+  defp do_wait_for_app(pid, time_remaining) do
+    start = System.monotonic_time(:millisecond)
+    if System.get_env("VERBOSE_TESTS") do
+      IO.puts "Waiting #{time_remaining}ms for app.."
+    end
+    receive do
+      {:ok, :pong} ->
+        :ok
+      _other ->
+        ts = System.monotonic_time(:millisecond)
+        do_wait_for_app(pid, time_remaining - (ts - start))
+    after
+      time_remaining ->
+        send pid, :die
+        :timeout
+    end
+  end
+  defp ping_loop(bin_path, parent) do
     case System.cmd(bin_path, ["ping"]) do
       {"pong\n", 0} ->
-        :ok
-      {_output, _exit_code} when i > 0 ->
-        if System.get_env("VERBOSE_TESTS") do
-          IO.puts "Waiting for app.."
-        end
-        :timer.sleep(1_000)
-        do_wait_for_app(bin_path, i - 1)
+        send parent, {:ok, :pong}
       {output, _exit_code} ->
-        if System.get_env("VERBOSE_TESTS") do
-          IO.puts(output)
+        receive do
+          :die ->
+            if System.get_env("VERBOSE_TESTS") do
+              IO.puts(output)
+            end
+            :ok
+        after
+          1_000 ->
+            ping_loop(bin_path, parent)
         end
-        :timeout
     end
   end
 
