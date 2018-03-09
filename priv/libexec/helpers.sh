@@ -15,7 +15,7 @@ require_live_node() {
 
 # Get node pid
 get_pid() {
-    if output="$(nodetool rpcterms os getpid)"
+    if output="$(nodetool rpc ':os.getpid()')"
     then
         echo "$output" | sed -e 's/"//g'
         return 0
@@ -28,7 +28,9 @@ get_pid() {
 # Generate a unique nodename
 gen_nodename() {
     id="longname$(gen_id)-${NAME}"
-    "$BINDIR/erl" -boot start_clean -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host]), halt()' -noshell "${NAME_TYPE}" "$id"
+    "$BINDIR/erl" -boot start_clean \
+                  -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host]), halt()' \
+                  -noshell "${NAME_TYPE}" "$id"
 }
 
 # Generate a random id
@@ -81,5 +83,9 @@ _run_hooks_from_dir() {
 
 # Private. Gets a list of code paths for this release
 _get_code_paths() {
-    escript "bin/release_utils.escript" "get_code_paths" "$ROOTDIR" "$ERTS_DIR" "$REL_NAME" "$REL_VSN"
+    nodetool "get_code_paths" \
+             --root-dir="$ROOTDIR" \
+             --erts-dir="$ERTS_DIR" \
+             --release="$REL_NAME" \
+             --version="$REL_VSN"
 }

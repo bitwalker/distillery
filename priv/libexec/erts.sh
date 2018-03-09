@@ -147,9 +147,12 @@ otp_vsn() {
 nodetool() {
     command="$1"; shift
     name="${PEERNAME:-$NAME}"
-    __escript="$(whereis_erts_bin)/escript"
-    "$__escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$name" \
-                 -setcookie "$COOKIE" "$command" "$@"
+    elixir -r "$ROOTDIR/bin/cli.exs" -e "Mix.Releases.Runtime.CLI.main" \
+           --erl "-boot start_clean" \
+           -- \
+           --name="$name" \
+           --cookie="$COOKIE" \
+           "$command" "$@"
 }
 
 # Run an escript in the node's environment

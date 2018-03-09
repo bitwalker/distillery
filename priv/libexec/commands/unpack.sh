@@ -14,5 +14,6 @@ fi
 require_cookie
 require_live_node
 
-exec "$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
-     "unpack_release" "$REL_NAME" "$NAME_TYPE" "$NAME" "$COOKIE" "$2"
+exec nodetool "unpack_release" \
+        --release="$REL_NAME" \
+        --version="$2"

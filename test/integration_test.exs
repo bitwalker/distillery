@@ -92,10 +92,10 @@ defmodule IntegrationTest do
 
           assert {:ok, _} = run_cmd(bin_path, ["start"])
           assert :ok = wait_for_app(bin_path)
-          assert {:ok, "2\n"}    = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert {:ok, "2\n"}    = run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
 
           # Additional config items should exist
-          assert {:ok, "bar\n"} = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, foo)"])
+          assert {:ok, ":bar\n"} = run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :foo)"])
 
           case :os.type() do
             {:win32, _} ->
@@ -187,15 +187,15 @@ defmodule IntegrationTest do
           :ok = create_additional_config_file(tmpdir)
           assert {:ok, _} = run_cmd(bin_path, ["start"])
           assert :ok = wait_for_app(bin_path)
-          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(1)"])
-          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.A':push(2)"])
-          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(1)"])
-          assert {:ok, "ok\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.B':push(2)"])
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(1)"])
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(2)"])
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(1)"])
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(2)"])
           assert {:ok, output} = run_cmd(bin_path, ["upgrade", "0.0.2"])
-          assert output =~ "Made release permanent: \"0.0.2\""
-          assert {:ok, "{ok,2}\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.A':pop()"])
-          assert {:ok, "{ok,2}\n"} = run_cmd(bin_path, ["eval", "'Elixir.StandardApp.B':pop()"])
-          assert {:ok, "4\n"} = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert output =~ "Made release standard_app:0.0.2 permanent"
+          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.pop()"])
+          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.pop()"])
+          assert {:ok, "4\n"} = run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
           case :os.type() do
             {:win32, _} ->
               assert {:ok, output} = run_cmd(bin_path, ["stop"])
@@ -233,7 +233,7 @@ defmodule IntegrationTest do
         # Untar the release into a path that contains a space character then
         # try to run it.
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
-        tmpdir = Path.join(tmpdir, "dir with space/")
+        tmpdir = Path.join(tmpdir, "dir with space")
         bin_path = Path.join([tmpdir, "bin", "standard_app"])
 
         try do
@@ -251,10 +251,10 @@ defmodule IntegrationTest do
 
           assert {:ok, _} = run_cmd(bin_path, ["start"])
           assert :ok = wait_for_app(bin_path)
-          assert {:ok, "2\n"}    = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, num_procs)"])
+          assert {:ok, "2\n"}    = run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
 
           # Additional config items should exist
-          assert {:ok, "bar\n"} = run_cmd(bin_path, ["eval", "'Elixir.Application':get_env(standard_app, foo)"])
+          assert {:ok, ":bar\n"} = run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :foo)"])
 
           case :os.type() do
             {:win32, _} ->

@@ -14,7 +14,7 @@ require_live_node
 id="remsh$(gen_id)-${NAME}"
 
 # Get the node's ticktime so that we use the same thing.
-TICKTIME="$(nodetool rpcterms net_kernel get_net_ticktime)"
+TICKTIME="$(nodetool rpc ':net_kernel.get_net_ticktime()')"
 
 # Setup remote shell command to control node
 if [ ! -z "$USE_ERL_SHELL" ]; then
