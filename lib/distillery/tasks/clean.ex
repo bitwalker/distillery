@@ -21,7 +21,7 @@ defmodule Mix.Tasks.Release.Clean do
   use Mix.Task
   alias Mix.Releases.{Logger, App, Utils, Plugin, Release, Config, Profile, Errors}
 
-  @spec run(OptionParser.argv) :: no_return
+  @spec run(OptionParser.argv()) :: no_return
   def run(args) do
     # Parse options
     opts = parse_args(args)
@@ -37,8 +37,9 @@ defmodule Mix.Tasks.Release.Clean do
     Mix.Task.run("compile", [])
 
     # load release configuration
-    Logger.debug "Loading configuration.."
-    config_path = Path.join([File.cwd!, "rel", "config.exs"])
+    Logger.debug("Loading configuration..")
+    config_path = Path.join([File.cwd!(), "rel", "config.exs"])
+
     config =
       case File.exists?(config_path) do
         true ->
@@ -49,72 +50,81 @@ defmodule Mix.Tasks.Release.Clean do
               file = Path.relative_to_cwd(e.file)
               message = Exception.message(e)
               message = String.replace(message, "nofile", file)
-              Logger.error "Failed to load config:\n" <>
-                "    #{message}"
+              Logger.error("Failed to load config:\n    #{message}")
               System.halt(1)
           end
+
         false ->
-          Logger.error "You are missing a release config file. Run the release.init task first"
+          Logger.error("You are missing a release config file. Run the release.init task first")
           System.halt(1)
       end
 
     implode? = Keyword.get(opts, :implode, false)
     no_confirm? = Keyword.get(opts, :no_confirm, false)
+
     with {:ok, environment} <- Release.select_environment(config),
-         {:ok, release}     <- Release.select_release(config),
-         release            <- Release.apply_environment(release, environment),
-         {:ok, release}     <- Release.apply_configuration(release, config, true) do
+         {:ok, release} <- Release.select_release(config),
+         release <- Release.apply_environment(release, environment),
+         {:ok, release} <- Release.apply_configuration(release, config, true) do
       cond do
         implode? && no_confirm? ->
           clean_all!(release.profile.output_dir)
+
         implode? && confirm_implode?() ->
           clean_all!(release.profile.output_dir)
+
         :else ->
           clean!(config, args)
       end
     else
       {:error, _reason} = err ->
         err
-        |> Errors.format_error
-        |> Logger.error
+        |> Errors.format_error()
+        |> Logger.error()
+
         System.halt(1)
     end
   end
 
-  @spec clean_all!(String.t) :: :ok | no_return
+  @spec clean_all!(String.t()) :: :ok | no_return
   defp clean_all!(output_dir) do
-    Logger.info "Cleaning all releases.."
+    Logger.info("Cleaning all releases..")
+
     unless File.exists?(output_dir) do
-      Logger.warn "Release output directory not found! Nothing to do."
+      Logger.warn("Release output directory not found! Nothing to do.")
       exit(:normal)
     end
+
     File.rm_rf!(output_dir)
-    Logger.success "Clean successful!"
+    Logger.success("Clean successful!")
   rescue
     e in [File.Error] ->
-      Logger.error "Unable to clean #{Path.relative_to_cwd(output_dir)}:\n" <>
-        "    #{Exception.message(e)}"
-      exit({:shutdown, 1})
+      Logger.error(
+        "Unable to clean #{Path.relative_to_cwd(output_dir)}:\n\t#{Exception.message(e)}"
+      )
+
+      System.halt(1)
   end
 
-  @spec clean!(Mix.Releases.Config.t, [String.t]) :: :ok | no_return
+  @spec clean!(Mix.Releases.Config.t(), [String.t()]) :: :ok | no_return
   defp clean!(%Config{releases: releases}, args) do
     # load release configuration
-    Logger.info "Cleaning last release.."
+    Logger.info("Cleaning last release..")
     # clean release
     for {name, release} <- releases, File.exists?(release.profile.output_dir) do
-      Logger.notice "    Removing release #{name}:#{release.version}"
+      Logger.notice("    Removing release #{name}:#{release.version}")
       clean_release(release, args)
     end
-    Logger.success "Clean successful!"
+
+    Logger.success("Clean successful!")
   end
 
-  @spec clean_release(Release.t, [String.t]) :: :ok | :no_return
+  @spec clean_release(Release.t(), [String.t()]) :: :ok | :no_return
   defp clean_release(%Release{profile: %Profile{output_dir: output_dir}} = release, args) do
     # Remove erts
     output_dir
     |> Path.join("erts-*")
-    |> Path.wildcard
+    |> Path.wildcard()
     |> Enum.each(&clean_path/1)
 
     # Remove libs
@@ -138,12 +148,11 @@ defmodule Mix.Tasks.Release.Clean do
     File.rm_rf!(path)
   rescue
     e in [File.Error] ->
-      Logger.error "Unable to clean #{path}:\n" <>
-        "    #{Exception.message(e)}"
-      exit({:shutdown, 1})
+      Logger.error("Unable to clean #{path}:\n    #{Exception.message(e)}")
+      System.halt(1)
   end
 
-  @spec parse_args([String.t]) :: Keyword.t | no_return
+  @spec parse_args([String.t()]) :: Keyword.t() | no_return
   defp parse_args(argv) do
     opts = [
       strict: [
@@ -152,32 +161,37 @@ defmodule Mix.Tasks.Release.Clean do
         verbose: :boolean
       ]
     ]
+
     {overrides, _} = OptionParser.parse!(argv, opts)
-    defaults =
-      %{
-        verbosity: :normal,
-        implode: false,
-        no_confirm: false
-      }
+
+    defaults = %{
+      verbosity: :normal,
+      implode: false,
+      no_confirm: false
+    }
+
     parse_args(overrides, defaults)
   end
 
   defp parse_args([], acc), do: Map.to_list(acc)
+
   defp parse_args([{:verbose, _} | rest], acc) do
     parse_args(rest, Map.put(acc, :verbosity, :verbose))
   end
+
   defp parse_args([{:implode, _} | rest], acc) do
     parse_args(rest, Map.put(acc, :implode, true))
   end
+
   defp parse_args([{:no_confirm, _} | rest], acc) do
     parse_args(rest, Map.put(acc, :no_confirm, true))
   end
 
   @spec confirm_implode?() :: boolean
   defp confirm_implode? do
-    Distillery.IO.confirm """
+    Distillery.IO.confirm("""
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!
     Are you absolutely sure you want to proceed?
-    """
+    """)
   end
 end
