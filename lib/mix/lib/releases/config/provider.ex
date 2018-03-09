@@ -42,19 +42,25 @@ defmodule Mix.Releases.Config.Provider do
     case :ets.info(__MODULE__, :size) do
       :undefined ->
         :ets.new(__MODULE__, [:public, :set, :named_table])
+
       _ ->
         :ets.delete_all_objects(__MODULE__)
     end
+
     for provider <- providers do
       case provider do
         p when is_atom(p) ->
           :ets.insert(__MODULE__, {p, []})
           p.init([])
+
         {p, args} ->
           :ets.insert(__MODULE__, provider)
           p.init(args)
+
         p ->
-          raise ArgumentError, message: "Invalid #{__MODULE__}: Expected module or `{module, args}` tuple, got #{inspect p}"
+          raise ArgumentError,
+            message:
+              "Invalid #{__MODULE__}: Expected module or `{module, args}` tuple, got #{inspect(p)}"
       end
     end
   end
@@ -65,10 +71,12 @@ defmodule Mix.Releases.Config.Provider do
   end
 
   defp get([], _key), do: nil
+
   defp get([provider | providers], key) do
     case provider.get(key) do
       nil ->
         get(providers, key)
+
       {:ok, _} = val ->
         val
     end

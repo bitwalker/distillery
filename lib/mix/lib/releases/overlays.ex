@@ -18,15 +18,17 @@ defmodule Mix.Releases.Overlays do
   """
   alias Mix.Releases.Logger
 
-  @typep overlay :: {:mkdir, String.t} |
-                    {:copy, String.t, String.t} |
-                    {:link, String.t, String.t} |
-                    {:template, String.t, String.t}
+  @typep overlay ::
+           {:mkdir, String.t()}
+           | {:copy, String.t(), String.t()}
+           | {:link, String.t(), String.t()}
+           | {:template, String.t(), String.t()}
 
-  @typep error :: {:error, {:invalid_overlay, term}} |
-                  {:error, {:template_str, term()}} |
-                  {:error, {:template, term()}} |
-                  {:error, {:overlay_failed, module, term, overlay}}
+  @typep error ::
+           {:error, {:invalid_overlay, term}}
+           | {:error, {:template_str, term()}}
+           | {:error, {:template, term()}}
+           | {:error, {:overlay_failed, module, term, overlay}}
 
   @doc """
   Applies a list of overlays to the current release.
@@ -38,73 +40,99 @@ defmodule Mix.Releases.Overlays do
     - {:template_file, file, line, desc} - a template overlay failed
     - {:overlay_failed, term, overlay} - applying an overlay failed
   """
-  @spec apply(String.t, list(overlay), Keyword.t) :: {:ok, [String.t]} | error
+  @spec apply(String.t(), list(overlay), Keyword.t()) :: {:ok, [String.t()]} | error
   def apply(_ouput_dir, [], _overlay_vars), do: {:ok, []}
+
   def apply(output_dir, overlays, overlay_vars) do
     do_apply(output_dir, overlays, overlay_vars, [])
   end
 
-  defp do_apply(_output_dir, [], _vars, acc),
-    do: {:ok, acc}
-  defp do_apply(output_dir, [overlay|rest], overlay_vars, acc) when is_list(acc) do
+  defp do_apply(_output_dir, [], _vars, acc), do: {:ok, acc}
+
+  defp do_apply(output_dir, [overlay | rest], overlay_vars, acc) when is_list(acc) do
     case do_overlay(output_dir, overlay, overlay_vars) do
       {:ok, path} ->
-        do_apply(output_dir, rest, overlay_vars, [path|acc])
-      {:error, {:invalid_overlay, _}} = err -> err
-      {:error, {:template_str, _}} = err    -> err
-      {:error, {:template, _}} = err        -> err
+        do_apply(output_dir, rest, overlay_vars, [path | acc])
+
+      {:error, {:invalid_overlay, _}} = err ->
+        err
+
+      {:error, {:template_str, _}} = err ->
+        err
+
+      {:error, {:template, _}} = err ->
+        err
+
       {:error, reason} ->
         {:error, {:overlay_failed, :file, {reason, overlay}}}
+
       {:error, reason, file} ->
         {:error, {:overlay_failed, :file, {reason, file, overlay}}}
     end
   end
 
-  @spec do_overlay(String.t, overlay, Keyword.t) :: {:ok, String.t} | {:error, term}
+  @spec do_overlay(String.t(), overlay, Keyword.t()) :: {:ok, String.t()} | {:error, term}
   defp do_overlay(output_dir, {:mkdir, path}, vars) when is_binary(path) do
     with {:ok, path} <- template_str(path, vars),
-         _           <- Logger.debug("Applying #{IO.ANSI.reset}mkdir#{IO.ANSI.cyan} overlay\n" <>
-                                     "    dst: #{Path.relative_to_cwd(path)}"),
-         expanded    <- Path.join(output_dir, path),
-         :ok         <- File.mkdir_p(expanded),
-      do: {:ok, path}
+         _ <-
+           Logger.debug(
+             "Applying #{IO.ANSI.reset()}mkdir#{IO.ANSI.cyan()} overlay\n" <>
+               "    dst: #{Path.relative_to_cwd(path)}"
+           ),
+         expanded <- Path.join(output_dir, path),
+         :ok <- File.mkdir_p(expanded),
+         do: {:ok, path}
   end
+
   defp do_overlay(output_dir, {:copy, from, to}, vars) when is_binary(from) and is_binary(to) do
     with {:ok, from} <- template_str(from, vars),
-         {:ok, to}   <- template_str(to, vars),
-         _           <- Logger.debug("Applying #{IO.ANSI.reset}copy#{IO.ANSI.cyan} overlay\n" <>
-                                     "    src: #{Path.relative_to_cwd(from)}\n" <>
-                                     "    dst: #{Path.relative_to_cwd(to)}"),
+         {:ok, to} <- template_str(to, vars),
+         _ <-
+           Logger.debug(
+             "Applying #{IO.ANSI.reset()}copy#{IO.ANSI.cyan()} overlay\n" <>
+               "    src: #{Path.relative_to_cwd(from)}\n" <>
+               "    dst: #{Path.relative_to_cwd(to)}"
+           ),
          expanded_to <- Path.join(output_dir, to),
-         {:ok, _}    <- File.cp_r(from, expanded_to),
-      do: {:ok, to}
+         {:ok, _} <- File.cp_r(from, expanded_to),
+         do: {:ok, to}
   end
+
   defp do_overlay(output_dir, {:link, from, to}, vars) when is_binary(from) and is_binary(to) do
     with {:ok, from} <- template_str(from, vars),
-         {:ok, to}   <- template_str(to, vars),
-         _           <- Logger.debug("Applying #{IO.ANSI.reset}link#{IO.ANSI.cyan} overlay\n" <>
-                                     "    src: #{Path.relative_to_cwd(from)}\n" <>
-                                     "    dst: #{Path.relative_to_cwd(to)}"),
+         {:ok, to} <- template_str(to, vars),
+         _ <-
+           Logger.debug(
+             "Applying #{IO.ANSI.reset()}link#{IO.ANSI.cyan()} overlay\n" <>
+               "    src: #{Path.relative_to_cwd(from)}\n" <>
+               "    dst: #{Path.relative_to_cwd(to)}"
+           ),
          expanded_to <- Path.join(output_dir, to),
-         _           <- File.rm(expanded_to),
-         :ok         <- File.ln_s(from, expanded_to),
-      do: {:ok, to}
+         _ <- File.rm(expanded_to),
+         :ok <- File.ln_s(from, expanded_to),
+         do: {:ok, to}
   end
-  defp do_overlay(output_dir, {:template, tmpl_path, to}, vars) when is_binary(tmpl_path) and is_binary(to) do
+
+  defp do_overlay(output_dir, {:template, tmpl_path, to}, vars)
+       when is_binary(tmpl_path) and is_binary(to) do
     with {:ok, tmpl_path} <- template_str(tmpl_path, vars),
-         {:ok, to}        <- template_str(to, vars),
+         {:ok, to} <- template_str(to, vars),
          {:ok, templated} <- template_file(tmpl_path, vars),
-         expanded_to      <- Path.join(output_dir, to),
-         _                <- Logger.debug("Applying #{IO.ANSI.reset}template#{IO.ANSI.cyan} overlay\n" <>
-                                          "    src: #{Path.relative_to_cwd(tmpl_path)}\n" <>
-                                          "    dst: #{to}"),
-         :ok              <- File.mkdir_p(Path.dirname(expanded_to)),
-         :ok              <- File.write(expanded_to, templated),
-      do: {:ok, to}
+         expanded_to <- Path.join(output_dir, to),
+         _ <-
+           Logger.debug(
+             "Applying #{IO.ANSI.reset()}template#{IO.ANSI.cyan()} overlay\n" <>
+               "    src: #{Path.relative_to_cwd(tmpl_path)}\n" <> "    dst: #{to}"
+           ),
+         :ok <- File.mkdir_p(Path.dirname(expanded_to)),
+         :ok <- File.write(expanded_to, templated),
+         do: {:ok, to}
   end
+
   defp do_overlay(_output_dir, invalid, _), do: {:error, {:invalid_overlay, invalid}}
 
-  @spec template_str(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template_str, term}}
+  @spec template_str(String.t(), Keyword.t()) ::
+          {:ok, String.t()} | {:error, {:template_str, term}}
   def template_str(str, overlay_vars) do
     {:ok, EEx.eval_string(str, overlay_vars)}
   rescue
@@ -112,7 +140,7 @@ defmodule Mix.Releases.Overlays do
       {:error, {:template_str, {str, err.description}}}
   end
 
-  @spec template_file(String.t, Keyword.t) :: {:ok, String.t} | {:error, {:template, term}}
+  @spec template_file(String.t(), Keyword.t()) :: {:ok, String.t()} | {:error, {:template, term}}
   def template_file(path, overlay_vars) do
     {:ok, EEx.eval_file(path, overlay_vars)}
   rescue

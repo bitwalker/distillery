@@ -13,25 +13,30 @@ defmodule StandardApp.A do
   end
 
   def handle_call({:push, item}, _from, {v, state}) do
-    {:reply, :ok, {v, [item|state]}}
+    {:reply, :ok, {v, [item | state]}}
   end
+
   def handle_call(:pop, _from, {_, []} = state) do
     {:reply, {:ok, nil}, state}
   end
-  def handle_call(:pop, _from, {v, [h|rest]}) do
+
+  def handle_call(:pop, _from, {v, [h | rest]}) do
     {:reply, {:ok, h}, {v, rest}}
   end
+
   def handle_call(:length, _from, {v, state}) do
     {:reply, length(state), {v, state}}
   end
+
   def handle_call(:state, _from, state) do
     {:reply, state, state}
   end
 
   def code_change({:down, _oldvsn}, {v, acc}, _extra) do
-    {:ok, {v-1, acc}}
+    {:ok, {v - 1, acc}}
   end
+
   def code_change(_oldvsn, {v, acc}, _extra) do
-    {:ok, {v+1, acc}}
+    {:ok, {v + 1, acc}}
   end
 end

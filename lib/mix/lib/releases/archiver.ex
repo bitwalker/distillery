@@ -6,7 +6,6 @@ defmodule Mix.Releases.Archiver do
   alias Mix.Releases.Utils
   alias Mix.Releases.Logger
   alias Mix.Releases.Plugin
-  alias Mix.Releases.Profile
   alias Mix.Releases.Archiver.Archive
 
   @doc """
@@ -15,23 +14,28 @@ defmodule Mix.Releases.Archiver do
 
   It returns `{:ok, "path/to/tarball"}`, or `{:error, reason}`
   """
-  @spec archive(Release.t) :: {:ok, String.t} | {:error, term}
+  @spec archive(Release.t()) :: {:ok, String.t()} | {:error, term}
   def archive(%Release{} = release) do
-    Logger.debug "Archiving #{release.name}-#{release.version}"
+    Logger.debug("Archiving #{release.name}-#{release.version}")
 
-    with {:ok, release}  <- Plugin.before_package(release),
-         :ok             <- make_tar(release),
-         {:ok, tarfile}  <- update_tar(release),
-         {:ok, _}        <- Plugin.after_package(release) do
+    with {:ok, release} <- Plugin.before_package(release),
+         :ok <- make_tar(release),
+         {:ok, tarfile} <- update_tar(release),
+         {:ok, _} <- Plugin.after_package(release) do
       cond do
         release.profile.executable ->
-          Logger.debug "Generating executable.."
+          Logger.debug("Generating executable..")
           tarfile = List.to_string(tarfile)
           binfile = Release.archive_path(release)
+
           with {:ok, tar} <- File.read(tarfile),
                :ok <- File.rm(tarfile),
-               {:ok, header} <- Utils.template(:executable, [release_name: release.name,
-                                                             exec_options: release.profile.exec_opts]),
+               {:ok, header} <-
+                 Utils.template(
+                   :executable,
+                   release_name: release.name,
+                   exec_options: release.profile.exec_opts
+                 ),
                executable = <<header::binary, tar::binary>>,
                :ok <- File.write(binfile, executable),
                :ok <- File.chmod(binfile, 0o744) do
@@ -40,6 +44,7 @@ defmodule Mix.Releases.Archiver do
             {:error, {:template, _}} = err -> err
             {:error, reason} -> {:error, {:executable, :file, reason}}
           end
+
         :else ->
           {:ok, tarfile}
       end
@@ -48,43 +53,62 @@ defmodule Mix.Releases.Archiver do
 
   # Constructs initial release tarball using systools
   defp make_tar(release) do
-    archive_path = Release.archive_path(%{release | :profile =>
-                                           %{release.profile | :executable => false}})
-    opts = [
-      :silent,
-      {:path, ['#{Path.join([release.profile.output_dir, "lib", "*", "ebin"])}']},
-      {:dirs, [:include | if release.profile.include_src do [:src, :c_src] else [] end]},
-      {:outdir, '#{Path.dirname(archive_path)}'} |
+    archive_path =
+      Release.archive_path(%{release | :profile => %{release.profile | :executable => false}})
+
+    included_dirs =
+      if release.profile.include_src do
+        [:include, :src, :c_src, :lib]
+      else
+        [:include]
+      end
+
+    erts_opt =
       case release.profile.include_erts do
         true ->
           path = Path.expand("#{:code.root_dir()}")
           [{:erts, '#{path}'}]
+
         false ->
           []
+
         path ->
           path = Path.expand(path)
           [{:erts, '#{path}'}]
       end
+
+    opts = [
+      :silent,
+      {:path, ['#{Path.join([release.profile.output_dir, "lib", "*", "ebin"])}']},
+      {:dirs, included_dirs},
+      {:outdir, '#{Path.dirname(archive_path)}'} | erts_opt
     ]
+
     rel_path = '#{String.trim_trailing(archive_path, ".tar.gz")}'
-    Logger.debug "Writing archive to #{rel_path}.tar.gz"
+    Logger.debug("Writing archive to #{rel_path}.tar.gz")
+
     case :systools.make_tar(rel_path, opts) do
       :ok ->
         :ok
+
       {:ok, _mod, []} ->
         :ok
+
       {:ok, mod, warnings} ->
         {:error, {:tar_generation_warn, mod, warnings}}
+
       :error ->
         {:error, {:tar_generation_error, :unknown}}
+
       {:error, mod, errors} ->
         {:error, {:tar_generation_error, mod, errors}}
     end
   end
 
   # Applies overlays and adds extra files to release tarball and recreates it
-  defp update_tar(%Release{name: name, version: version, profile: %{output_dir: output_dir}} = release) do
-    Logger.debug "Updating archive.."
+  defp update_tar(%Release{name: name, version: version} = release) do
+    output_dir = release.profile.output_dir
+    Logger.debug("Updating archive..")
 
     initial_tar_path = Path.join([output_dir, "releases", version, "#{name}.tar.gz"])
 
@@ -100,19 +124,22 @@ defmodule Mix.Releases.Archiver do
         case err do
           {:error, {:archiver, _}} ->
             err
+
           {:error, reason, file} ->
             {:error, {:archiver, {:file, reason, file}}}
+
           {:error, _reason} ->
             err
         end
     end
   catch
     kind, err ->
-      {:error, {:archiver, Exception.normalize(kind, err, System.stacktrace)}}
+      {:error, {:archiver, Exception.normalize(kind, err, System.stacktrace())}}
   end
 
-  defp make_archive(%Release{version: version, profile: %Profile{output_dir: output_dir}} = release, tmpdir) do
+  defp make_archive(%Release{version: version} = release, tmpdir) do
     name = "#{release.name}"
+    output_dir = release.profile.output_dir
 
     archive =
       Archive.new(name, output_dir)
@@ -155,63 +182,73 @@ defmodule Mix.Releases.Archiver do
   defp maybe_include_erts(archive, %Release{profile: %{include_erts: false}}, _tmpdir) do
     archive
   end
+
   defp maybe_include_erts(archive, %Release{profile: %{include_erts: true}} = release, tmpdir) do
     erts_vsn = Utils.erts_version()
+
     archive
     |> Archive.add(Path.join(tmpdir, "lib"), "lib")
     |> Archive.add(Path.join(release.profile.output_dir, "erts-#{erts_vsn}"), "erts-#{erts_vsn}")
   end
+
   defp maybe_include_erts(archive, %Release{profile: %{include_erts: path}} = release, tmpdir) do
     {:ok, erts_vsn} = Utils.detect_erts_version(path)
+
     archive
     |> Archive.add(Path.join(tmpdir, "lib"), "lib")
     |> Archive.add(Path.join(release.profile.output_dir, "erts-#{erts_vsn}"))
   end
 
   defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: false}}, tmpdir) do
-    Logger.debug "Stripping system libs from release archive since ERTS is not included"
+    Logger.debug("Stripping system libs from release archive since ERTS is not included")
 
     # The set of all libs required for this release
     lib_path = Path.join([tmpdir, "lib", "*"])
+
     libs =
       lib_path
-      |> Path.wildcard
+      |> Path.wildcard()
       |> Enum.map(&Path.basename/1)
-      |> MapSet.new
+      |> MapSet.new()
 
     # Applications belonging to the Erlang system
     system_lib_path = Path.join("#{:code.lib_dir()}", "*")
+
     system_libs =
       system_lib_path
-      |> Path.wildcard
+      |> Path.wildcard()
       |> Enum.map(&Path.basename/1)
-      |> MapSet.new
+      |> MapSet.new()
 
     # Remove the set of system libs from the set of all libs
     # and add only those remaining to the archive
     libs
     |> MapSet.difference(system_libs)
-    |> MapSet.to_list
+    |> MapSet.to_list()
     |> Enum.reduce(archive, fn lib, acc ->
       Archive.add(acc, Path.join([tmpdir, "lib", lib]), Path.join("lib", lib))
     end)
   end
+
   defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: true}}, tmpdir) do
-    Logger.debug "Including system libs from current Erlang installation"
+    Logger.debug("Including system libs from current Erlang installation")
     Archive.add(archive, Path.join(tmpdir, "lib"), "lib")
   end
+
   defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: path}}, _tmpdir) do
-    Logger.debug "Including system libs from #{Path.relative_to_cwd(path)}"
+    Logger.debug("Including system libs from #{Path.relative_to_cwd(path)}")
     Archive.add(archive, Path.join(Path.expand(path), "lib"), "lib")
   end
 
   defp save_archive(%Release{version: version, profile: %{output_dir: output_dir}}, archive) do
     Logger.debug("Saving archive..")
     target_dir = Path.join([output_dir, "releases", version])
+
     case Archive.save(archive, target_dir) do
       {:ok, _archive_path} = result ->
         Logger.debug("Archive saved!")
         result
+
       {:error, reason} ->
         {:error, {:archiver, {:erl_tar, reason}}}
     end
@@ -222,33 +259,50 @@ defmodule Mix.Releases.Archiver do
   # due to being symlinked.
   # Additionally, we cannot strip debug info if this is going to be an upgrade, because the release handler
   # requires some of the chunks which are stripped, in both the upfrom and downfrom versions.
-  defp strip_release(%Release{is_upgrade: false, profile: %Profile{strip_debug_info: true, dev_mode: false}}, strip_path) do
-    Logger.warn "You have strip_debug_info set to true.\n" <>
-      "    Please be aware that if you plan on performing hot upgrades later,\n" <>
-      "    this setting will prevent you from doing so without a rolling restart.\n" <>
-      "    You may ignore this warning if you have no plans to use hot upgrades."
-    Logger.debug "Stripping release (#{strip_path})"
-    case :beam_lib.strip_release(String.to_charlist(strip_path)) do
+  defp strip_release(
+         %{is_upgrade: false, profile: %{strip_debug_info: true, dev_mode: false}},
+         path
+       ) do
+    Logger.warn(
+      "You have strip_debug_info set to true.\n" <>
+        "    Please be aware that if you plan on performing hot upgrades later,\n" <>
+        "    this setting will prevent you from doing so without a rolling restart.\n" <>
+        "    You may ignore this warning if you have no plans to use hot upgrades."
+    )
+
+    Logger.debug("Stripping release (#{path})")
+
+    case :beam_lib.strip_release(String.to_charlist(path)) do
       {:ok, _} ->
         :ok
+
       {:error, :beam_lib, reason} ->
         {:error, {:archiver, :beam_lib, reason}}
     end
   end
-  defp strip_release(%Release{is_upgrade: true, profile: %Profile{strip_debug_info: true, dev_mode: false}}, _strip_path) do
-    Logger.warn "You have strip_debug_info set in your release configuration,\n" <>
-      "    and you are performing an upgrade. This release will not be stripped,\n" <>
-      "    however if you built your previous release with stripped debug information\n" <>
-      "    this upgrade will fail, because the release handler will be unable to examine\n" <>
-      "    the previous version's BEAM files. If you are using upgrades, it is recommended\n" <>
-      "    that you do not set `strip_debug_info`"
+
+  defp strip_release(%{is_upgrade: true, profile: %{strip_debug_info: true, dev_mode: false}}, _) do
+    Logger.warn(
+      "You have strip_debug_info set in your release configuration,\n" <>
+        "    and you are performing an upgrade. This release will not be stripped,\n" <>
+        "    however if you built your previous release with stripped debug information\n" <>
+        "    this upgrade will fail, because the release handler will be unable to examine\n" <>
+        "    the previous version's BEAM files. If you are using upgrades, it is recommended\n" <>
+        "    that you do not set `strip_debug_info`"
+    )
+
     :ok
   end
-  defp strip_release(%Release{profile: %Profile{strip_debug_info: true, dev_mode: true}}, _strip_path) do
-    Logger.warn "You have strip_debug_info set while dev_mode is true,\n" <>
-      "    this release will not be stripped, because it would result in\n" <>
-      "    the symlinked BEAM files from Erlang/Elixir to be stripped as well"
+
+  defp strip_release(%{profile: %{strip_debug_info: true, dev_mode: true}}, _) do
+    Logger.warn(
+      "You have strip_debug_info set while dev_mode is true,\n" <>
+        "    this release will not be stripped, because it would result in\n" <>
+        "    the symlinked BEAM files from Erlang/Elixir to be stripped as well"
+    )
+
     :ok
   end
+
   defp strip_release(_, _), do: :ok
 end

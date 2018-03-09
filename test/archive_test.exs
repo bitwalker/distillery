@@ -5,24 +5,26 @@ defmodule ArchiveTest do
   alias Mix.Releases.Archiver.Archive
 
   setup do
-    context =
-      [
-        working_dir: Utils.insecure_mkdir_temp!,
-        extract_dir: Utils.insecure_mkdir_temp!
-      ]
+    context = [
+      working_dir: Utils.insecure_mkdir_temp!(),
+      extract_dir: Utils.insecure_mkdir_temp!()
+    ]
 
     for {_, path} <- context, do: File.mkdir_p!(path)
 
-    on_exit fn ->
+    on_exit(fn ->
       for {_, path} <- context do
         _ = File.rm_rf(path)
       end
-    end
+    end)
 
     context
   end
 
-  test "creating an archive behaves as expected", %{working_dir: working_dir, extract_dir: extract_dir} do
+  test "creating an archive behaves as expected", %{
+    working_dir: working_dir,
+    extract_dir: extract_dir
+  } do
     File.mkdir_p!(Path.join([working_dir, "foo", "bar"]))
 
     baz_path = Path.join([working_dir, "foo", "bar", "baz.txt"])

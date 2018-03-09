@@ -3,13 +3,13 @@ defmodule Mix.Releases.Archiver.Archive do
 
   defstruct [:name, :working_dir, :manifest]
 
-  @type path :: String.t
+  @type path :: String.t()
 
   @type t :: %__MODULE__{
-    name: String.t,
-    working_dir: path,
-    manifest: %{path => path}
-  }
+          name: String.t(),
+          working_dir: path,
+          manifest: %{path => path}
+        }
 
   @doc """
   Creates a new Archive with the given name and working directory.
@@ -18,7 +18,7 @@ defmodule Mix.Releases.Archiver.Archive do
   to be relative to. When adding entries to the archive, we strip the working directory
   from the source path via `Path.relative_to/2` to form the path in the resulting tarball.
   """
-  @spec new(name :: String.t, path) :: t
+  @spec new(name :: String.t(), path) :: t
   def new(name, working_dir) when is_binary(name) when is_binary(working_dir) do
     %__MODULE__{name: name, working_dir: working_dir, manifest: %{}}
   end
@@ -55,12 +55,15 @@ defmodule Mix.Releases.Archiver.Archive do
       name =
         archive_path
         |> Path.basename(".tar.gz")
+
       archive = new(name, output_dir)
+
       archive =
         manifest
         |> Enum.reduce(archive, fn entry, acc ->
           add(acc, Path.join(output_dir, entry), entry)
         end)
+
       {:ok, archive}
     else
       {:error, err} ->
@@ -73,16 +76,18 @@ defmodule Mix.Releases.Archiver.Archive do
 
   Returns the path of the written tarball wrapped in an ok tuple if successful
   """
-  @spec save(t, path) :: {:ok, path} | {:error, {:erl_tar.filename, reason :: term}}
+  @spec save(t, path) :: {:ok, path} | {:error, {:erl_tar.filename(), reason :: term}}
   def save(%__MODULE__{name: name} = archive, output_dir) when is_binary(output_dir) do
     do_save(archive, Path.join([output_dir, name <> ".tar.gz"]))
   end
 
   defp do_save(%__MODULE__{manifest: manifest}, out_path) do
     out_path_cl = String.to_charlist(out_path)
+
     case :erl_tar.create(out_path_cl, to_erl_tar_manifest(manifest), [:dereference, :compressed]) do
       :ok ->
         {:ok, out_path}
+
       {:error, _} = err ->
         err
     end
@@ -91,7 +96,9 @@ defmodule Mix.Releases.Archiver.Archive do
   defp to_erl_tar_manifest(manifest) when is_map(manifest) do
     to_erl_tar_manifest(Map.to_list(manifest), [])
   end
+
   defp to_erl_tar_manifest([], acc), do: acc
+
   defp to_erl_tar_manifest([{entry, source} | manifest], acc) do
     to_erl_tar_manifest(manifest, [{String.to_charlist(entry), String.to_charlist(source)} | acc])
   end

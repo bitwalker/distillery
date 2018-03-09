@@ -7,11 +7,11 @@ defmodule Distillery.IO do
   Ask the user to confirm an action using the given message.
   The confirmation prompt will default to "[Yn]: ", and the
   regex for determining whether the action was confirmed will
-  default to #{inspect Regex.source(@default_answer_pattern)}.
+  default to #{inspect(Regex.source(@default_answer_pattern))}.
 
   Use confirm/3 to provide your own prompt and answer regex.
   """
-  @spec confirm(String.t) :: boolean
+  @spec confirm(String.t()) :: boolean
   def confirm(message) do
     confirm(message, "[Yn]: ", @default_answer_pattern)
   end
@@ -20,11 +20,11 @@ defmodule Distillery.IO do
   Same as confirm/1, but takes a custom prompt and answer regex pattern.
   If the pattern matches the response, the action is considered confirmed.
   """
-  @spec confirm(String.t, String.t, Regex.t) :: boolean
+  @spec confirm(String.t(), String.t(), Regex.t()) :: boolean
   def confirm(message, prompt, answer_pattern) do
-    IO.puts IO.ANSI.yellow
+    IO.puts(IO.ANSI.yellow())
     answer = IO.gets("#{message} #{prompt}") |> String.trim_trailing("\n")
-    IO.puts IO.ANSI.reset
+    IO.puts(IO.ANSI.reset())
     answer =~ answer_pattern
   end
 end

@@ -19,7 +19,7 @@ defmodule Distillery.Cookies do
       # a cookie guessable by a computer, produce this obviously
       # insecure cookie. A warning will be emitted every time
       # it is used (i.e. when vm.args is being generated with it).
-      :"insecure_cookie_in_distillery_config"
+      :insecure_cookie_in_distillery_config
     end
   end
 
@@ -30,9 +30,10 @@ defmodule Distillery.Cookies do
   def generate do
     Stream.unfold(nil, fn _ -> {:crypto.strong_rand_bytes(1), nil} end)
     |> Stream.filter(fn <<b>> -> b >= ?! && b <= ?~ end)
-    |> Stream.reject(fn <<b>> -> b in [?-, ?+, ?', ?\", ?\\, ?\#] end) # special when erlexec parses vm.args
+    # special when erlexec parses vm.args
+    |> Stream.reject(fn <<b>> -> b in [?-, ?+, ?', ?\", ?\\, ?\#] end)
     |> Enum.take(64)
-    |> Enum.join
-    |> String.to_atom
+    |> Enum.join()
+    |> String.to_atom()
   end
 end

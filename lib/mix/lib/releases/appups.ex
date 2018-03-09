@@ -4,17 +4,18 @@ defmodule Mix.Releases.Appup do
   """
 
   @type app :: atom
-  @type version_str :: String.t
-  @type path_str :: String.t
+  @type version_str :: String.t()
+  @type path_str :: String.t()
   @type change :: {:advanced, [term]}
   @type dep_mods :: [module]
 
   @type appup_ver :: charlist
-  @type instruction :: {:add_module, module} |
-                        {:delete_module, module} |
-                        {:update, module, :supervisor | change} |
-                        {:update, module, change, dep_mods} |
-                        {:load_module, module}
+  @type instruction ::
+          {:add_module, module}
+          | {:delete_module, module}
+          | {:update, module, :supervisor | change}
+          | {:update, module, change, dep_mods}
+          | {:load_module, module}
   @type upgrade_instructions :: [{appup_ver, instruction}]
   @type downgrade_instructions :: [{appup_ver, instruction}]
   @type appup :: {appup_ver, upgrade_instructions, downgrade_instructions}
@@ -37,34 +38,46 @@ defmodule Mix.Releases.Appup do
       v1_path
       |> Path.join("/ebin/")
       |> Path.join(Atom.to_string(application) <> ".app")
-      |> String.to_charlist
+      |> String.to_charlist()
+
     v2_dotapp =
       v2_path
       |> Path.join("/ebin/")
       |> Path.join(Atom.to_string(application) <> ".app")
-      |> String.to_charlist
+      |> String.to_charlist()
 
     case :file.consult(v1_dotapp) do
       {:ok, [{:application, ^application, v1_props}]} ->
         consulted_v1_vsn = vsn(v1_props)
+
         case consulted_v1_vsn === v1 do
           true ->
             case :file.consult(v2_dotapp) do
               {:ok, [{:application, ^application, v2_props}]} ->
                 consulted_v2_vsn = vsn(v2_props)
+
                 case consulted_v2_vsn === v2 do
                   true ->
                     appup = make_appup(v1, v1_path, v1_props, v2, v2_path, v2_props)
                     {:ok, appup}
+
                   false ->
-                    {:error, {:appups, {:mismatched_versions, [version: :next, expected: v2, got: consulted_v2_vsn]}}}
+                    {:error,
+                     {:appups,
+                      {:mismatched_versions,
+                       [version: :next, expected: v2, got: consulted_v2_vsn]}}}
                 end
+
               {:error, reason} ->
                 {:error, {:appups, :file, {:invalid_dotapp, reason}}}
             end
+
           false ->
-            {:error, {:appups, {:mismatched_versions, [version: :previous, expected: v1, got: consulted_v1_vsn]}}}
+            {:error,
+             {:appups,
+              {:mismatched_versions, [version: :previous, expected: v1, got: consulted_v1_vsn]}}}
         end
+
       {:error, reason} ->
         {:error, {:appups, :file, {:invalid_dotapp, reason}}}
     end
@@ -78,15 +91,24 @@ defmodule Mix.Releases.Appup do
 
     {deleted, added, changed} = :beam_lib.cmp_dirs(v1_path, v2_path)
 
-    {v2, # New version
-      [{v1, # Upgrade instructions from version v1
-        generate_instructions(:added, added) ++
-        generate_instructions(:changed, changed) ++
-        generate_instructions(:deleted, deleted)}],
-      [{v1, # Downgrade instructions to version v1
-        generate_instructions(:deleted, added) ++
-        generate_instructions(:changed, changed) ++
-        generate_instructions(:added, deleted)}]}
+    # New version
+    {
+      v2,
+      # Upgrade instructions from version v1
+      [
+        {v1,
+         generate_instructions(:added, added)
+         |> Enum.concat(generate_instructions(:changed, changed))
+         |> Enum.concat(generate_instructions(:deleted, deleted))}
+      ],
+      # Downgrade instructions to version v1
+      [
+        {v1,
+         generate_instructions(:deleted, added)
+         |> Enum.concat(generate_instructions(:changed, changed))
+         |> Enum.concat(generate_instructions(:added, deleted))}
+      ]
+    }
   end
 
   # For modules which have changed, we must make sure
@@ -102,22 +124,27 @@ defmodule Mix.Releases.Appup do
     |> Enum.map(&generate_instruction(:changed, &1))
     |> topological_sort
   end
+
   defp generate_instructions(type, files) do
     Enum.map(files, &generate_instruction(type, &1))
   end
 
-  defp generate_instruction(:added, file),   do: {:add_module, module_name(file)}
+  defp generate_instruction(:added, file), do: {:add_module, module_name(file)}
   defp generate_instruction(:deleted, file), do: {:delete_module, module_name(file)}
+
   defp generate_instruction(:changed, {v1_file, v2_file}) do
-    module_name     = module_name(v1_file)
-    attributes      = beam_attributes(v1_file)
-    exports         = beam_exports(v1_file)
-    imports         = beam_imports(v2_file)
-    is_supervisor   = is_supervisor?(attributes)
+    module_name = module_name(v1_file)
+    attributes = beam_attributes(v1_file)
+    exports = beam_exports(v1_file)
+    imports = beam_imports(v2_file)
+    is_supervisor = is_supervisor?(attributes)
     is_special_proc = is_special_process?(exports)
-    depends_on = imports
-      |> Enum.map(fn {m,_f,_a} -> m end)
-      |> Enum.uniq
+
+    depends_on =
+      imports
+      |> Enum.map(fn {m, _f, _a} -> m end)
+      |> Enum.uniq()
+
     generate_instruction_advanced(module_name, is_supervisor, is_special_proc, depends_on)
   end
 
@@ -137,24 +164,27 @@ defmodule Mix.Releases.Appup do
   end
 
   defp is_special_process?(exports) do
-    Keyword.get(exports, :system_code_change) == 4 ||
-    Keyword.get(exports, :code_change) == 3 ||
-    Keyword.get(exports, :code_change) == 4
+    Keyword.get(exports, :system_code_change) == 4 || Keyword.get(exports, :code_change) == 3 ||
+      Keyword.get(exports, :code_change) == 4
   end
 
   defp is_supervisor?(attributes) do
-    behaviours = Keyword.get(attributes, :behavior, []) ++
-                 Keyword.get(attributes, :behaviour, [])
-    (:supervisor in behaviours) || (Supervisor in behaviours)
+    behaviours = Keyword.get(attributes, :behavior, []) ++ Keyword.get(attributes, :behaviour, [])
+    :supervisor in behaviours || Supervisor in behaviours
   end
 
   # supervisor
-  defp generate_instruction_advanced(m, true, _is_special, _dep_mods), do: {:update, m, :supervisor}
+  defp generate_instruction_advanced(m, true, _is_special, _dep_mods),
+    do: {:update, m, :supervisor}
+
   # special process (i.e. exports code_change/3 or system_code_change/4)
-  defp generate_instruction_advanced(m, _is_sup, true, []),       do: {:update, m, {:advanced, []}}
-  defp generate_instruction_advanced(m, _is_sup, true, dep_mods), do: {:update, m, {:advanced, []}, dep_mods}
+  defp generate_instruction_advanced(m, _is_sup, true, []), do: {:update, m, {:advanced, []}}
+
+  defp generate_instruction_advanced(m, _is_sup, true, dep_mods),
+    do: {:update, m, {:advanced, []}, dep_mods}
+
   # non-special process (i.e. neither code_change/3 nor system_code_change/4 are exported)
-  defp generate_instruction_advanced(m, _is_sup, false, []),       do: {:load_module, m}
+  defp generate_instruction_advanced(m, _is_sup, false, []), do: {:load_module, m}
   defp generate_instruction_advanced(m, _is_sup, false, dep_mods), do: {:load_module, m, dep_mods}
 
   # This "topological" sort is not truly topological, since module dependencies
@@ -170,23 +200,39 @@ defmodule Mix.Releases.Appup do
   # open to better algorithms, because I don't particularly like this one.
   defp topological_sort(instructions) do
     mods = Enum.map(instructions, fn i -> elem(i, 1) end)
+
     instructions
     |> Enum.sort(&do_sort_instructions(mods, &1, &2))
     |> Enum.map(fn
-      {:update, _, _} = i   -> i
-      {:load_module, _} = i -> i
+      {:update, _, _} = i ->
+        i
+
+      {:load_module, _} = i ->
+        i
+
       {:update, m, type, deps} ->
-        {:update, m, type, Enum.filter(deps, fn ^m -> false; d -> d in mods end)}
+        {:update, m, type,
+         Enum.filter(deps, fn
+           ^m -> false
+           d -> d in mods
+         end)}
+
       {:load_module, m, deps} ->
-        {:load_module, m, Enum.filter(deps, fn ^m -> false; d -> d in mods end)}
+        {:load_module, m,
+         Enum.filter(deps, fn
+           ^m -> false
+           d -> d in mods
+         end)}
     end)
   end
-  defp do_sort_instructions(_, {:update, a, _}, {:update, b, _}),        do: a > b
-  defp do_sort_instructions(_, {:update, _, _}, {:update, _, _, _}),     do: true
-  defp do_sort_instructions(_, {:update, _, _}, {:load_module, _, _}),   do: false
-  defp do_sort_instructions(_, {:load_module, a}, {:load_module, b}),    do: a > b
-  defp do_sort_instructions(_, {:load_module, _}, {:update, _, _, _}),   do: true
+
+  defp do_sort_instructions(_, {:update, a, _}, {:update, b, _}), do: a > b
+  defp do_sort_instructions(_, {:update, _, _}, {:update, _, _, _}), do: true
+  defp do_sort_instructions(_, {:update, _, _}, {:load_module, _, _}), do: false
+  defp do_sort_instructions(_, {:load_module, a}, {:load_module, b}), do: a > b
+  defp do_sort_instructions(_, {:load_module, _}, {:update, _, _, _}), do: true
   defp do_sort_instructions(_, {:load_module, _}, {:load_module, _, _}), do: true
+
   defp do_sort_instructions(mods, a, b) do
     am = elem(a, 1)
     bm = elem(b, 1)
@@ -194,32 +240,57 @@ defmodule Mix.Releases.Appup do
     bd = extract_deps(b)
     do_sort_instructions(mods, am, bm, ad, bd)
   end
+
   defp do_sort_instructions(mods, am, bm, ad, bd) do
-    ad = Enum.filter(ad, fn ^am -> false; d -> d in mods end)
-    bd = Enum.filter(bd, fn ^bm -> false; d -> d in mods end)
+    ad =
+      Enum.filter(ad, fn
+        ^am -> false
+        d -> d in mods
+      end)
+
+    bd =
+      Enum.filter(bd, fn
+        ^bm -> false
+        d -> d in mods
+      end)
+
     lad = length(ad)
     lbd = length(bd)
+
     cond do
-      lad == 0 and lbd != 0 -> true
-      lad != 0 and lbd == 0 -> false
+      lad == 0 and lbd != 0 ->
+        true
+
+      lad != 0 and lbd == 0 ->
+        false
+
       # If a depends on b and b doesn't depend on a
       # Then b comes first, and vice versa
-      am in bd and not bm in ad -> true
-      not am in bd and bm in ad -> false
+      am in bd and not (bm in ad) ->
+        true
+
+      not (am in bd) and bm in ad ->
+        false
+
       # If either they don't depend on each other,
       # or they both depend on each other, then the
       # module with the least outgoing dependencies
       # comes first. Otherwise we treat them as equal
-      lad > lbd -> false
-      lbd > lad -> true
-      :else -> true
+      lad > lbd ->
+        false
+
+      lbd > lad ->
+        true
+
+      :else ->
+        true
     end
   end
 
   defp extract_deps({:update, _, deps}) when is_list(deps), do: deps
-  defp extract_deps({:update, _, _}),                       do: []
-  defp extract_deps({:update, _, _, deps}),                 do: deps
-  defp extract_deps({:load_module, _, deps}),               do: deps
+  defp extract_deps({:update, _, _}), do: []
+  defp extract_deps({:update, _, _, deps}), do: deps
+  defp extract_deps({:load_module, _, deps}), do: deps
 
   defp module_name(file) do
     Keyword.fetch!(:beam_lib.info(file), :module)
