@@ -239,7 +239,7 @@ defmodule IntegrationTest do
             end
             reraise e, System.stacktrace
         after
-          File.rm_rf!(tmpdir)
+          _ = File.rm_rf(tmpdir)
           clean_up_standard_app!()
           :ok
         end
