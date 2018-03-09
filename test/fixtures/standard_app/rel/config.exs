@@ -41,7 +41,6 @@ end
 
 release :standard_app do
   set version: "0.0.1"
-  set applications: [:standard_app, {:distillery, :load}]
   plugin SampleApp.ReleasePlugin
   plugin SampleApp.AnotherReleasePlugin
 end
