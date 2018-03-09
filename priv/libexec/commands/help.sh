@@ -33,9 +33,8 @@ echo "pid                            # get the pid of the running $REL_NAME inst
 echo "ping                           # checks if $REL_NAME is running, pong is returned if successful"
 echo "pingpeer <peer>                # check if a peer node is running, pong is returned if successful"
 echo "escript <file>                 # execute an escript"
-echo "rpc <mod> <fun> [<args..>]     # execute an RPC call using the given MFA"
-echo "rpcterms <mod> <fun> [<expr>]  # execute an RPC call using the given Erlang expression for args"
-echo "eval <expr>                    # execute the given Erlang expression on the running node"
+echo "rpc <expr>                     # execute an Elixir expression against the running node"
+echo "eval <expr>                    # execute an Elixir expression, ala `elixir -e <expr>`"
 echo "command <mod> <fun> [<args..>] # execute the given MFA"
 echo "describe                       # print useful information about the $REL_NAME release"
 echo

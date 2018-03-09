@@ -485,8 +485,10 @@ defmodule Mix.Releases.Assembler do
   # Generates the nodetool utility
   defp generate_nodetool(bin_dir) do
     Logger.debug "Generating nodetool"
-    with {:ok, node_tool_file} = Utils.template(:nodetool),
-         {:ok, release_utils_file} = Utils.template(:release_utils),
+    priv_dir = Application.app_dir(:distillery, "priv")
+    with {:ok, node_tool_file} <- Utils.template(:nodetool),
+         {:ok, release_utils_file} <- Utils.template(:release_utils),
+         :ok <- File.cp(Path.join([priv_dir, "templates", "cli.exs"]), Path.join(bin_dir, "cli.exs")),
          :ok <- File.write(Path.join(bin_dir, "nodetool"), node_tool_file),
          :ok <- File.write(Path.join(bin_dir, "release_utils.escript"), release_utils_file) do
       :ok

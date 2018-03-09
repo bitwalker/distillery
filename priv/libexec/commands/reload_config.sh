@@ -9,4 +9,4 @@ set -e
 require_cookie
 require_live_node
 
-nodetool "reload_config" "$SYS_CONFIG_PATH"
+nodetool "reload_config" --sysconfig="$SYS_CONFIG_PATH"

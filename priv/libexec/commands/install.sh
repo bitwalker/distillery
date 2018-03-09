@@ -18,8 +18,9 @@ require_live_node
 SOURCE_VERSION="$REL_VSN"
 TARGET_VERSION="$2"
 
-"$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
-        "unpack_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
+nodetool "unpack_release" \
+         --release="$REL_NAME" \
+         --version="$TARGET_VERSION"
 
 # Update environment to reflect target version environment
 REL_VSN="$TARGET_VERSION"
@@ -77,8 +78,9 @@ cp -a "$VMARGS_PATH" "$REL_DIR/vm.args"
 # Run any pre-upgrade tasks
 run_hooks pre_upgrade
 
-"$BINDIR/escript" "$ROOTDIR/bin/release_utils.escript" \
-        "install_release" "$REL_NAME" "$NAME_TYPE"  "$NAME" "$COOKIE" "$TARGET_VERSION"
+nodetool "install_release" \
+         --release="$REL_NAME" \
+         --version="$TARGET_VERSION"
 
 # We were successful, clean up the configs
 mv "$REL_DIR/config.exs.bak" "$REL_DIR/config.exs"
