@@ -451,4 +451,25 @@ defmodule Mix.Releases.Utils do
       {:unix, _}  -> "\n"
     end
   end
+
+  @doc """
+  Sanitizes text allowing only letters, digits separated by underscore
+
+  ## Examples
+
+      iex> #{__MODULE__}.sanitize_name("project.name")
+      "project_name"
+
+      iex> #{__MODULE__}.sanitize_name("project name")
+      "project_name"
+
+      iex> #{__MODULE__}.sanitize_name("project-name")
+      "project_name"
+  """
+  @spec sanitize_name(String.t) :: String.t
+  def sanitize_name(text) do
+    text
+    |> String.replace(~r/[^_A-Za-z0-9]+/, "_")
+    |> String.downcase()
+  end
 end
