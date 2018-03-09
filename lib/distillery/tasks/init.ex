@@ -145,9 +145,11 @@ defmodule Mix.Tasks.Release.Init do
         release_name = Keyword.get(opts, :name, release_name_from_cwd) || release_name_from_cwd
 
         [
-          release_name: String.to_atom(release_name),
-          is_umbrella: true,
-          release_applications: apps
+          [
+            release_name: String.to_atom(release_name),
+            is_umbrella: true,
+            release_applications: apps
+          ]
         ]
       end
 
@@ -159,9 +161,11 @@ defmodule Mix.Tasks.Release.Init do
     app = Keyword.get(Mix.Project.config(), :app)
 
     releases = [
-      release_name: app,
-      is_umbrella: false,
-      release_applications: [{app, :permanent}]
+      [
+        release_name: app,
+        is_umbrella: false,
+        release_applications: [{app, :permanent}]
+      ]
     ]
 
     [{:releases, releases} | get_common_bindings(opts)]
