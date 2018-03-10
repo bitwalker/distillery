@@ -39,7 +39,6 @@ if Version.match?(Version.parse!(System.version()), req) do
 
       assert 0 == prios[:kernel]
       assert 1 == prios[:stdlib]
-      assert prios[:logger] > prios[:lager]
       assert prios[:db_connection] > prios[:connection]
       assert prios[:ordered_app] > prios[:db_connection]
       assert prios[:ordered_app] > prios[:lager]
