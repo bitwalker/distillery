@@ -1,4 +1,4 @@
-# Plugins
+# Release Plugins
 
 Plugins are how you extend `distillery` itself during release generation. It is worth your time
 to review the module documentation for `Mix.Releases.Plugin` for more detailed information,

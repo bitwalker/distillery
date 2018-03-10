@@ -98,14 +98,13 @@ and environments.
         a path to a custom sys.config file, this will be used in place of generating
         a sys.config, and thus will result in the config setting being ignored, choose
         one or the other as needed
+    - config_providers (list of module or `{module, args}`):
+        a list of custom config providers to include in the release
     - include_erts (boolean | string);
         whether to include the system ERTS or not,
         a path to an alternative ERTS can also be provided
     - include_src (boolean);
         should source code be included in the release
-    - include_system_libs (boolean | string);
-        should system libs be included in the release,
-        a path to system libs to be included can also be provided
     - included_configs (path list);
         Erlang allows sys.config to include other .config files. Distillery supports
         this feature via `included_configs`. This option expects a list of paths to include,
@@ -145,21 +144,19 @@ and environments.
       - link: {from_path, to_path} (symlink a file)
       - mkdir: path (ensure a path exists)
       - template: {template_path, output_path} (generate a file from a template)
-    - pre_start_hook (path);
-        A path to a shell script which will be executed prior to starting a release
-    - post_start_hook (path);
-        A path to a shell script which will be executed after starting a release
-    - pre_stop_hook (path);
-        A path to a shell script which will be executed prior to stopping a release
-    - post_stop_hook (path);
-        A path to a shell script which will be executed after stopping a release
+    - pre_configure_hooks (path);
+        A path to a directory containing shell scripts which will be executed before configuring a release
+    - post_configure_hooks (path);
+        A path to a directory containing shell scripts which will be executed after configuring a release
     - pre_start_hooks (path);
-        A path to a directory with hooks which will be executed prior to starting a
-    release
+        A path to a directory containing shell scripts which will be executed prior to starting a release
     - post_start_hooks (path);
-        A path to a directory with hooks which will be executed after starting a
-    release
+        A path to a directory containing shell scripts which will be executed after starting a release
     - pre_stop_hooks (path);
-        A path to a directory with hooks which will be executed prior to stopping a release
+        A path to a directory containing shell scripts which will be executed prior to stopping a release
     - post_stop_hooks (path);
-        A path to a directory with hooks which will be executed after stopping a release
+        A path to a directory containing shell scripts which will be executed after stopping a release
+    - pre_upgrade_hooks (path);
+        A path to a directory containing shell scripts which will be executed before performing a release upgrade
+    - post_upgrade_hooks (path);
+        A path to a directory containing shell scripts which will be executed after performing a release upgrade
