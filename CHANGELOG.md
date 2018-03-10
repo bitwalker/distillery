@@ -1,3 +1,37 @@
+## 2.0
+
+This is a major release with a number of large changes and some of which are breaking,
+please read these notes carefully!
+
+### Added
+
+- Support for Mix.Config (ie. `config.exs`) in releases
+- `Mix.Releases.Config.Provider` behaviour for custom runtime configuration providers
+- A new `config_providers` setting for defining which custom config providers to include
+
+### Fixed
+
+- A lot of bugs, too many to list here
+
+### Changed
+
+- The `release_utils` and `nodetool` scripts have been rewritten in Elixir
+- The `rpc` command now takes an Elixir expression as a string, and evals it on the remote node
+- The `eval` command now takes an Elixir expression as a string, and evals it locally in a clean node
+- `config.exs` is no longer translated to `sys.config`, instead `sys.config` is only used for early boot
+  config settings, such as those for `kernel`
+- The `include_system_libs` option is deprecated, as it is automatically determined based on other settings
+- The `include_src` option now includes `lib` directory (i.e. Elixir code)
+
+### Removed
+
+- The `rpcterms` command has been removed as it is no longer necessary
+- All of the `<event>_hook` config options have been removed in favor of `<event>_hooks`, for example
+  `pre_start_hook` is a path to a single script for the `pre_start` hook, you would now place that script
+  in a new directory, perhaps `rel/pre_start_hooks`, and change the config to point to that directory rather
+  than the script. This allows you to define multiple hooks for a given event. This config has been in place
+  for a long time now, but I'm finally removing the old options.
+
 ## 1.5
 
 **IMPORTANT**: Distillery now requires that Bash be installed on the target system.
