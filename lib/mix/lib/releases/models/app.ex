@@ -23,6 +23,7 @@ defmodule Mix.Releases.App do
         }
 
   @valid_start_types [:permanent, :temporary, :transient, :load, :none]
+  @new_start_types [nil | @valid_start_types]
 
   @doc """
   Create a new Application struct from an application name
@@ -34,7 +35,7 @@ defmodule Mix.Releases.App do
   Same as new/1, but specify the application's start type
   """
   @spec new(atom, start_type | nil) :: nil | __MODULE__.t() | {:error, String.t()}
-  def new(name, start_type) when is_atom(name) and start_type in [nil | @valid_start_types] do
+  def new(name, start_type) when is_atom(name) and start_type in @new_start_types do
     dep =
       Enum.find(Mix.Dep.loaded([]), fn
         %Mix.Dep{app: ^name} -> true
