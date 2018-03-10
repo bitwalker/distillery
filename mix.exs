@@ -69,7 +69,6 @@ defmodule Distillery.Mixfile do
         "docs/introduction/understanding_releases.md",
         "docs/introduction/walkthrough.md",
         "docs/introduction/release_configuration.md",
-        "docs/guides/use_with_phoenix.md",
         "docs/guides/phoenix_walkthrough.md",
         "docs/guides/running_migrations.md",
         "docs/guides/upgrades_and_downgrades.md",
