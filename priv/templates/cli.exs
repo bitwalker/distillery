@@ -461,10 +461,10 @@ defmodule Mix.Releases.Runtime.CLI do
       Log.error("You must pass --release and --version to 'get_code_paths'")
     end
 
-    case select_release(release, version, opts) do
+    case select_release(release, version, flags) do
       {:ok, {:release, _, _, _, libs, _}} ->
         for {_name, _ver, dir} <- libs do
-          IO.write("-pa \"#{List.to_string(dir)}\"/ebin ")
+          IO.write("-pa #{dir}/ebin ")
         end
 
       {:error, :no_such_release} ->
@@ -732,7 +732,7 @@ defmodule Mix.Releases.Runtime.CLI do
     end
 
     releases = get_releases(root_dir, erts_dir)
-    do_select_releases(releases, release, version)
+    do_select_releases(releases, String.to_charlist(release), String.to_charlist(version))
   end
 
   defp do_select_releases([], _release, _version) do
@@ -756,7 +756,7 @@ defmodule Mix.Releases.Runtime.CLI do
 
   # Used to fix invalid paths in RELEASES
   defp fix_release(
-         {:release, _release, _version, erts_vsn, libs, _status} = rel,
+         {:release, release, version, erts_vsn, libs, status} = rel,
          root_dir,
          erts_dir
        ) do
@@ -772,19 +772,22 @@ defmodule Mix.Releases.Runtime.CLI do
       is_current? ->
         # We're using the host ERTS, and it is a match for the release ERTS version
         # We just need to make sure the path is up to date
-        for {name, vsn, _dir} = lib <- libs do
-          if is_erts_lib(erts_dir, name) do
-            case get_erts_lib(erts_dir, name, vsn) do
-              false ->
-                Log.error("Invalid RELEASES: Could not find #{name}:#{vsn} in #{erts_dir}")
+        fixed_libs =
+          for {name, vsn, _dir} = lib <- libs do
+            if is_erts_lib(erts_dir, name) do
+              case get_erts_lib(erts_dir, name, vsn) do
+                false ->
+                  Log.error("Invalid RELEASES: Could not find #{name}:#{vsn} in #{erts_dir}")
 
-              real_dir ->
-                {name, vsn, real_dir}
+                real_dir ->
+                  {name, vsn, real_dir}
+              end
+            else
+              lib
             end
-          else
-            lib
           end
-        end
+
+        {:release, release, version, erts_vsn, fixed_libs, status}
 
       :else ->
         # We didn't include ERTS, and the host version is not a match
@@ -823,7 +826,7 @@ defmodule Mix.Releases.Runtime.CLI do
 
   # Returns the absolute path to an ERTS lib, or false if it doesn't exist
   defp get_erts_lib(erts_dir, name, vsn) do
-    dir = Path.join([erts_dir, "..", "lib", "#{name}", "#{vsn}"])
+    dir = Path.join([erts_dir, "..", "lib", "#{name}-#{vsn}"])
 
     if File.exists?(dir) do
       dir
