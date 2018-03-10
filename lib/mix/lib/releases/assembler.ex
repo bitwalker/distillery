@@ -1057,6 +1057,14 @@ defmodule Mix.Releases.Assembler do
         {:mkdir, "#{hooks_dir}/post_stop.d"},
         {:mkdir, "#{hooks_dir}/pre_upgrade.d"},
         {:mkdir, "#{hooks_dir}/post_upgrade.d"},
+        {:copy, release.profile.pre_configure_hooks, "#{hooks_dir}/pre_configure.d"},
+        {:copy, release.profile.post_configure_hooks, "#{hooks_dir}/post_configure.d"},
+        {:copy, release.profile.pre_start_hooks, "#{hooks_dir}/pre_start.d"},
+        {:copy, release.profile.post_start_hooks, "#{hooks_dir}/post_start.d"},
+        {:copy, release.profile.pre_stop_hooks, "#{hooks_dir}/pre_stop.d"},
+        {:copy, release.profile.post_stop_hooks, "#{hooks_dir}/post_stop.d"},
+        {:copy, release.profile.pre_upgrade_hooks, "#{hooks_dir}/pre_upgrade.d"},
+        {:copy, release.profile.post_upgrade_hooks, "#{hooks_dir}/post_upgrade.d"},
         {:copy, libexec_source, "releases/<%= release_version %>/libexec"},
         {:mkdir, "releases/<%= release_version %>/commands"}
         | Enum.map(release.profile.commands, fn {name, path} ->

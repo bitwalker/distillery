@@ -36,8 +36,8 @@ defmodule Mix.Releases.Profile do
 
   ## Hooks
 
-  The following options all take a list of paths to scripts which will be executed
-  at the given point in the release lifecycle:
+  The following options all take a path to a directory containing the scripts which will be
+  executed at the given point in the release lifecycle:
 
       - `pre_configure_hooks`: before the system has generated config files
       - `post_configure_hooks` after config files have been generated

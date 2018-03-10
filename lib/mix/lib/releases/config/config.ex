@@ -505,7 +505,7 @@ defmodule Mix.Releases.Config do
         not is_nil(profile.post_start_hooks) and not is_binary(profile.post_start_hooks) ->
           raise ArgumentError,
                 "expected :post_start_hooks to be nil or a path string, but got: #{
-                  inspect(config.post_start_hooks)
+                  inspect(profile.post_start_hooks)
                 }"
 
         not is_nil(profile.pre_stop_hooks) and not is_binary(profile.pre_stop_hooks) ->
