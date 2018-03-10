@@ -1,4 +1,4 @@
-## Configuration
+# Release Configuration
 
 Looking for how to handle configuration of your app when using releases?
 Check out [Runtime Configuration](https://hexdocs.pm/distillery/runtime-configuration.html).

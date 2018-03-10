@@ -1,4 +1,4 @@
-## Phoenix Walkthrough
+# Phoenix Walkthrough
 
 It is recommended that you review the [Advanced Deployment Guide](http://phoenixframework.org/docs/advanced-deployment),
 which covers Phoenix specific configurations that need to be provided in order for your application to work within a release.
