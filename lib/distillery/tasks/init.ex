@@ -117,17 +117,10 @@ defmodule Mix.Tasks.Release.Init do
     apps =
       apps_paths
       |> Enum.map(fn app_path ->
-        app =
-          app_path
-          |> Path.basename()
-          |> String.to_atom()
-
-        Mix.Project.in_project(app, app_path, fn
-          nil -> nil
-          mixfile -> {Keyword.get(mixfile.project, :app), :permanent}
-        end)
+        mixfile = Path.join(app_path, "mix.exs")
+        app = get_app_name_from_ast(mixfile)
+        {app, :permanent}
       end)
-      |> Enum.reject(&is_nil/1)
 
     release_per_app? = Keyword.get(opts, :release_per_app, false)
 
@@ -178,5 +171,65 @@ defmodule Mix.Tasks.Release.Init do
       cookie: Distillery.Cookies.get(),
       get_cookie: &Distillery.Cookies.get/0
     ]
+  end
+
+  def get_app_name_from_ast(path) do
+    cwd = File.cwd!()
+
+    try do
+      app_dir = Path.dirname(path)
+      relative_path = Path.relative_to(path, app_dir)
+      File.cd!(app_dir)
+
+      {{:module, mod, _, _}, _bindings} =
+        relative_path
+        |> File.read!()
+        |> Code.string_to_quoted!()
+        |> Code.eval_quoted(
+          [],
+          aliases: [{Mix, __MODULE__.MixMock}],
+          requires: [],
+          macros: [{__MODULE__.MixMock, [defmodule: 2]}]
+        )
+
+      mod.project[:app]
+    rescue
+      err ->
+        raise "Problem reading mix.exs at #{path}:\n\n#{Exception.message(err)}\n" <>
+                Exception.format_stacktrace()
+    after
+      File.cd!(cwd)
+    end
+  end
+
+  # Used to fake out Mix/Mix.Project when reading mixfiles
+  defmodule MixMock.Project do
+    @moduledoc false
+    defmacro __using__(_) do
+      quote do
+        :ok
+      end
+    end
+  end
+
+  defmodule MixMock do
+    @moduledoc false
+    require MixMock.Project
+
+    def env, do: :dev
+
+    # We override defmodule so that we can make sure the modules
+    # don't conflict with any already loaded
+    defmacro defmodule(name, do: body) do
+      quote do
+        conflict_free_name = Module.concat([unquote(__MODULE__), unquote(name)])
+        require Kernel
+
+        Kernel.defmodule conflict_free_name do
+          import Kernel
+          unquote(body)
+        end
+      end
+    end
   end
 end
