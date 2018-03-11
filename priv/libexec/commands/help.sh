@@ -34,7 +34,7 @@ echo "ping                           # checks if $REL_NAME is running, pong is r
 echo "pingpeer <peer>                # check if a peer node is running, pong is returned if successful"
 echo "escript <file>                 # execute an escript"
 echo "rpc <expr>                     # execute an Elixir expression against the running node"
-echo "eval <expr>                    # execute an Elixir expression, ala `elixir -e <expr>`"
+echo 'eval <expr>                    # execute an Elixir expression, ala `elixir -e <expr>`'
 echo "command <mod> <fun> [<args..>] # execute the given MFA"
 echo "describe                       # print useful information about the $REL_NAME release"
 echo
