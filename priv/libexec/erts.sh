@@ -11,9 +11,14 @@ whereis_erts_bin() {
         set -e
         echo "$__erts_bin"
     else
-        __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
-        if [ -d "$__erts_dir" ]; then
-            echo "$__erts_dir/bin"
+        if [ -z "$USE_HOST_ERTS" ]; then
+            __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
+            if [ -d "$__erts_dir" ]; then
+                echo "$__erts_dir/bin"
+            else
+                ERTS_VSN=
+                whereis_erts_bin
+            fi
         else
             ERTS_VSN=
             whereis_erts_bin
