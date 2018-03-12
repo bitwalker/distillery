@@ -5,6 +5,8 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
   use Mix.Releases.Config.Provider
 
+  alias Mix.Releases.Logger
+
   @impl Mix.Releases.Config.Provider
   def init([path]) do
     path
@@ -98,8 +100,22 @@ defmodule Mix.Releases.Config.Providers.Elixir do
     end
   end
 
-  defp merge_imports([other | block], acc, file, loaded_paths) do
-    merge_imports(block, [other | acc], file, loaded_paths)
+  defp merge_imports([{:config, env, [:kernel | _]} = other | rest], acc, file, loaded_paths) do
+    line = Keyword.get(env, :line, "N/A")
+    file_path = Path.relative_to_cwd(file)
+
+    Logger.warn(
+      "Found config setting for :kernel application in Mix config!\n" <>
+        "    File: #{file_path}\n" <>
+        "    Line: #{line}\n" <>
+        "    Any :kernel config settings need to be placed in vm.args, or they will not take effect!"
+    )
+
+    merge_imports(rest, [other | acc], file, loaded_paths)
+  end
+
+  defp merge_imports([other | rest], acc, file, loaded_paths) do
+    merge_imports(rest, [other | acc], file, loaded_paths)
   end
 
   defp eval_path(_acc, path) when is_binary(path) do
