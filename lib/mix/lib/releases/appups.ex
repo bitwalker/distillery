@@ -3,6 +3,7 @@ defmodule Mix.Releases.Appup do
   This module is responsible for generating appups between two releases.
   """
 
+  alias Mix.Releases.Utils
   alias Mix.Releases.Appup.Transform
 
   @type app :: atom
@@ -31,6 +32,54 @@ defmodule Mix.Releases.Appup do
   @type upgrade_instructions :: [{appup_ver, instruction}]
   @type downgrade_instructions :: [{appup_ver, instruction}]
   @type appup :: {appup_ver, upgrade_instructions, downgrade_instructions}
+
+  @doc """
+  Given an application name, and two versions, look for a custom appup which applies.
+  """
+  @spec locate(app, version_str, version_str) :: String.t()
+  def locate(app, v1, v2) do
+    v1 = String.to_charlist(v1)
+    v2 = String.to_charlist(v2)
+    appup_dir = Path.join(["rel", "appups", "#{app}"])
+    do_locate(Path.wildcard(Path.join(appup_dir, "*.appup")), v1, v2)
+  end
+
+  defp do_locate([], _v1, _v2), do: nil
+
+  defp do_locate([path | rest], v1, v2) do
+    case Utils.read_terms(path) do
+      {:ok, [{^v2, ups, downs}]} when is_list(ups) and is_list(downs) ->
+        if List.keyfind(ups, v1, 0) and List.keyfind(downs, v1, 0) do
+          path
+        else
+          do_locate(rest, v1, v2)
+        end
+
+      {:ok, [{v2p, [{^v1, _}], [{^v1, _}]}]} when is_binary(v2p) ->
+        v2p = Regex.compile!(v2p)
+
+        if String.match?(List.to_string(v2), v2p) do
+          # This matches the current configuration
+          path
+        else
+          do_locate(rest, v1, v2)
+        end
+
+      {:ok, [{v2p, [{v1p, _}], [{v1p, _}]}]} when is_binary(v2p) and is_binary(v1p) ->
+        v2p = Regex.compile!(v2p)
+        v1p = Regex.compile!(v1p)
+
+        if String.match?(List.to_string(v2), v2p) and String.match?(List.to_string(v1), v1p) do
+          # This matches the current configuration
+          path
+        else
+          do_locate(rest, v1, v2)
+        end
+
+      _ ->
+        do_locate(rest, v1, v2)
+    end
+  end
 
   @doc """
   Generate a .appup for the given application, start version, and upgrade version.

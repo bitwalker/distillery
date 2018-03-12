@@ -165,8 +165,10 @@ defmodule Mix.Tasks.Release do
     )
   end
 
+  @doc false
   @spec parse_args(OptionParser.argv()) :: Keyword.t() | no_return
-  defp parse_args(argv) do
+  @spec parse_args(OptionParser.argv(), Keyword.t()) :: Keyword.t() | no_return
+  def parse_args(argv, opts \\ []) do
     switches = [
       silent: :boolean,
       quiet: :boolean,
@@ -186,7 +188,14 @@ defmodule Mix.Tasks.Release do
       warnings_as_errors: :boolean
     ]
 
-    {flags, _} = OptionParser.parse!(argv, strict: switches)
+    flags =
+      if Keyword.get(opts, :strict, true) do
+        {flags, _} = OptionParser.parse!(argv, strict: switches)
+        flags
+      else
+        {flags, _, _} = OptionParser.parse(argv, strict: switches)
+        flags
+      end
 
     defaults = %{
       verbosity: :normal,
@@ -199,24 +208,24 @@ defmodule Mix.Tasks.Release do
       upgrade_from: :latest
     }
 
-    parse_args(flags, defaults)
+    do_parse_args(flags, defaults)
   end
 
-  defp parse_args([], acc), do: Map.to_list(acc)
+  defp do_parse_args([], acc), do: Map.to_list(acc)
 
-  defp parse_args([{:verbose, _} | rest], acc) do
-    parse_args(rest, Map.put(acc, :verbosity, :verbose))
+  defp do_parse_args([{:verbose, _} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :verbosity, :verbose))
   end
 
-  defp parse_args([{:quiet, _} | rest], acc) do
-    parse_args(rest, Map.put(acc, :verbosity, :quiet))
+  defp do_parse_args([{:quiet, _} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :verbosity, :quiet))
   end
 
-  defp parse_args([{:silent, _} | rest], acc) do
-    parse_args(rest, Map.put(acc, :verbosity, :silent))
+  defp do_parse_args([{:silent, _} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :verbosity, :silent))
   end
 
-  defp parse_args([{:profile, profile} | rest], acc) do
+  defp do_parse_args([{:profile, profile} | rest], acc) do
     case String.split(profile, ":", trim: true, parts: 2) do
       [rel, env] ->
         new_acc =
@@ -224,7 +233,7 @@ defmodule Mix.Tasks.Release do
           |> Map.put(:selected_release, rel)
           |> Map.put(:selected_environment, env)
 
-        parse_args(rest, new_acc)
+        do_parse_args(rest, new_acc)
 
       other ->
         Logger.error("invalid profile name `#{other}`, must be `name:env`")
@@ -232,60 +241,60 @@ defmodule Mix.Tasks.Release do
     end
   end
 
-  defp parse_args([{:name, name} | rest], acc) do
-    parse_args(rest, Map.put(acc, :selected_release, String.to_atom(name)))
+  defp do_parse_args([{:name, name} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :selected_release, String.to_atom(name)))
   end
 
-  defp parse_args([{:env, name} | rest], acc) do
-    parse_args(rest, Map.put(acc, :selected_environment, String.to_atom(name)))
+  defp do_parse_args([{:env, name} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :selected_environment, String.to_atom(name)))
   end
 
-  defp parse_args([{:no_warn_missing, true} | rest], acc) do
+  defp do_parse_args([{:no_warn_missing, true} | rest], acc) do
     Application.put_env(:distillery, :no_warn_missing, true)
-    parse_args(rest, acc)
+    do_parse_args(rest, acc)
   end
 
-  defp parse_args([{:no_warn_missing, apps} | rest], acc) when is_list(apps) do
+  defp do_parse_args([{:no_warn_missing, apps} | rest], acc) when is_list(apps) do
     Application.put_env(:distillery, :no_warn_missing, apps)
-    parse_args(rest, acc)
+    do_parse_args(rest, acc)
   end
 
-  defp parse_args([{:executable, _} | _rest], %{is_upgrade: true}) do
+  defp do_parse_args([{:executable, _} | _rest], %{is_upgrade: true}) do
     Logger.error("You cannot combine --executable with --upgrade")
     System.halt(1)
   end
 
-  defp parse_args([{:executable, _} | rest], acc) do
+  defp do_parse_args([{:executable, _} | rest], acc) do
     case :os.type() do
       {:win32, _} ->
         Logger.error("--executable is not supported on Windows")
         System.halt(1)
 
       _ ->
-        parse_args(rest, Map.put(acc, :executable, true))
+        do_parse_args(rest, Map.put(acc, :executable, true))
     end
   end
 
-  defp parse_args([{:upgrade, _} | _rest], %{executable: true}) do
+  defp do_parse_args([{:upgrade, _} | _rest], %{executable: true}) do
     Logger.error("You cannot combine --executable with --upgrade")
     System.halt(1)
   end
 
-  defp parse_args([{:upgrade, _} | rest], acc) do
-    parse_args(rest, Map.put(acc, :is_upgrade, true))
+  defp do_parse_args([{:upgrade, _} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :is_upgrade, true))
   end
 
-  defp parse_args([{:warnings_as_errors, _} | rest], acc) do
+  defp do_parse_args([{:warnings_as_errors, _} | rest], acc) do
     Application.put_env(:distillery, :warnings_as_errors, true)
-    parse_args(rest, acc)
+    do_parse_args(rest, acc)
   end
 
-  defp parse_args([{:transient, _} | rest], acc) do
+  defp do_parse_args([{:transient, _} | rest], acc) do
     exec_opts =
       acc
       |> Map.get(:exec_opts, [])
       |> Keyword.put(:transient, true)
 
-    parse_args(rest, Map.put(acc, :exec_opts, exec_opts))
+    do_parse_args(rest, Map.put(acc, :exec_opts, exec_opts))
   end
 end

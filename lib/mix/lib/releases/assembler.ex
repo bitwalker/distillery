@@ -10,6 +10,20 @@ defmodule Mix.Releases.Assembler do
   require Record
   Record.defrecordp(:file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl"))
 
+  @doc false
+  @spec pre_assemble(Config.t()) :: {:ok, Release.t()} | {:error, term}
+  def pre_assemble(%Config{} = config) do
+    with {:ok, environment} <- Release.select_environment(config),
+         {:ok, release} <- Release.select_release(config),
+         release <- apply_environment(release, environment),
+         :ok <- validate_configuration(release),
+         {:ok, release} <- Release.apply_configuration(release, config, true),
+         :ok <- File.mkdir_p(release.profile.output_dir),
+         {:ok, release} <- Plugin.before_assembly(release) do
+      {:ok, release}
+    end
+  end
+
   @doc """
   This function takes a Config struct and assembles the release.
 
@@ -19,15 +33,9 @@ defmodule Mix.Releases.Assembler do
   this function are scoped to the current project's `rel` directory, and cannot
   impact the filesystem outside of this directory.
   """
-  @spec assemble(Config.t()) :: {:ok, Config.t()} | {:error, term}
+  @spec assemble(Config.t()) :: {:ok, Release.t()} | {:error, term}
   def assemble(%Config{} = config) do
-    with {:ok, environment} <- Release.select_environment(config),
-         {:ok, release} <- Release.select_release(config),
-         release <- apply_environment(release, environment),
-         :ok <- validate_configuration(release),
-         {:ok, release} <- Release.apply_configuration(release, config, true),
-         :ok <- File.mkdir_p(release.profile.output_dir),
-         {:ok, release} <- Plugin.before_assembly(release),
+    with {:ok, release} <- pre_assemble(config),
          {:ok, release} <- generate_overlay_vars(release),
          {:ok, release} <- copy_applications(release),
          :ok <- create_release_info(release),
@@ -483,21 +491,38 @@ defmodule Mix.Releases.Assembler do
     v1_path = Path.join([output_dir, "lib", "#{app}-#{v1}"])
     v2_path = Path.join([output_dir, "lib", "#{app}-#{v2}"])
     appup_path = Path.join([v2_path, "ebin", "#{app}.appup"])
+
+    # Fallback to custom path if possible
+    unless File.exists?(appup_path) do
+      case Appup.locate(app, v1, v2) do
+        nil ->
+          :ok
+
+        path ->
+          File.cp!(path, appup_path)
+      end
+    end
+
+    # Final check for existence
     appup_exists? = File.exists?(appup_path)
 
     appup_valid? =
-      case :file.consult(~c[#{appup_path}]) do
-        {:ok, [{upto_ver, [{downto_ver, _}], [{downto_ver, _}]}]} ->
-          cond do
-            upto_ver == ~c[#{v2}] and downto_ver == ~c[#{v1}] ->
-              true
+      if appup_exists? do
+        case :file.consult(~c[#{appup_path}]) do
+          {:ok, [{upto_ver, [{downto_ver, _}], [{downto_ver, _}]}]} ->
+            cond do
+              upto_ver == ~c[#{v2}] and downto_ver == ~c[#{v1}] ->
+                true
 
-            :else ->
-              false
-          end
+              :else ->
+                false
+            end
 
-        _other ->
-          false
+          _other ->
+            false
+        end
+      else
+        false
       end
 
     cond do
