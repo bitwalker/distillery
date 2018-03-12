@@ -53,12 +53,12 @@ CONSOLIDATED_DIR="$ROOTDIR/lib/${REL_NAME}-${REL_VSN}/consolidated"
 export RELEASE_CONFIG_DIR="${RELEASE_CONFIG_DIR:-$RELEASE_ROOT_DIR}"
 
 # Make sure important directories exist
-if [ ! -d "$RELEASE_MUTABLE_DIR" ]; then
+if [ ! -d "$RELEASE_MUTABLE_DIR" ] && [ -z "$RELEASE_MUTABLE_IGNORE" ]; then
     mkdir -p "$RELEASE_MUTABLE_DIR"
     echo "Files in this directory are regenerated frequently, edits will be lost" \
         > "$RELEASE_MUTABLE_DIR/WARNING_README"
 fi
 
-if [ ! -d "$RUNNER_LOG_DIR" ]; then
+if [ ! -d "$RUNNER_LOG_DIR" ] && [ -z "$RELEASE_MUTABLE_IGNORE" ]; then
     mkdir -p "$RUNNER_LOG_DIR"
 fi

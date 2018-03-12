@@ -30,11 +30,15 @@ configure_release() {
         export SRC_VMARGS_PATH="$VMARGS_PATH"
     fi
     if [ "$SRC_VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
-        echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
-            >  "$RELEASE_MUTABLE_DIR/vm.args"
-        cat  "$SRC_VMARGS_PATH"                              \
-            >> "$RELEASE_MUTABLE_DIR/vm.args"
-        export DEST_VMARGS_PATH="$RELEASE_MUTABLE_DIR"/vm.args
+        if [ -z "$RELEASE_MUTABLE_IGNORE" ]; then
+            echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
+                >  "$RELEASE_MUTABLE_DIR/vm.args"
+            cat  "$SRC_VMARGS_PATH"                              \
+                >> "$RELEASE_MUTABLE_DIR/vm.args"
+            export DEST_VMARGS_PATH="$RELEASE_MUTABLE_DIR"/vm.args
+        else
+            export DEST_VMARGS_PATH="$SRC_VMARGS_PATH"
+        fi
     fi
     if [ ! -z "$REPLACE_OS_VARS" ]; then
         _replace_os_vars "$DEST_VMARGS_PATH"
@@ -52,7 +56,7 @@ configure_release() {
     else
         export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
     fi
-    if [ "$SRC_SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
+    if [ "$SRC_SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ] && [ -z "$RELEASE_MUTABLE_IGNORE" ]; then
         (echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead."; \
         cat  "$SRC_SYS_CONFIG_PATH")                              \
             > "$RELEASE_MUTABLE_DIR/sys.config"
