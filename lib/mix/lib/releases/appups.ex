@@ -6,16 +6,26 @@ defmodule Mix.Releases.Appup do
   @type app :: atom
   @type version_str :: String.t()
   @type path_str :: String.t()
-  @type change :: {:advanced, [term]}
+  @type change :: :soft | {:advanced, [term]}
   @type dep_mods :: [module]
 
-  @type appup_ver :: charlist
+  # Appup versions can be a version string as a charlist,
+  # or a regular expression as a binary. The regex must match
+  # the entire version string for an application, or it is rejected.
+  @type appup_ver :: charlist | binary
   @type instruction ::
           {:add_module, module}
           | {:delete_module, module}
           | {:update, module, :supervisor | change}
           | {:update, module, change, dep_mods}
           | {:load_module, module}
+          | {:load_module, module, dep_mods}
+          | {:apply, {module, atom, [term]}}
+          | {:add_application, atom}
+          | {:remove_application, atom}
+          | {:restart_application, atom}
+          | :restart_new_emulator
+          | :restart_emulator
   @type upgrade_instructions :: [{appup_ver, instruction}]
   @type downgrade_instructions :: [{appup_ver, instruction}]
   @type appup :: {appup_ver, upgrade_instructions, downgrade_instructions}
