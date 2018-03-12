@@ -27,6 +27,8 @@ defmodule Mix.Releases.Profile do
                             e.g. `["/etc/sys.config"]`
       - `config_providers`: a list of custom config providers,
                             e.g. `[MyCustomProvider, {MyOtherProvider, [:foo]}]`
+      - `appup_transforms`: a list of custom appup transforms,
+                            e.g. `[MyCustomTransform, {MyOtherTransform, [:foo]}]`
       - `strip_debug_info`: true to strip debug chunks from BEAM files, false to leave them as-is
       - `plugins`: a list of plugins, e.g. `[MyPlugin, {MyOtherPlugin, [:foo]}]`
       - `overlay_vars`: a keyword list of vars to make available in overlays
@@ -65,6 +67,7 @@ defmodule Mix.Releases.Profile do
             include_system_libs: nil,
             included_configs: [],
             config_providers: [],
+            appup_transforms: [],
             strip_debug_info: nil,
             plugins: [],
             overlay_vars: [],
@@ -95,6 +98,7 @@ defmodule Mix.Releases.Profile do
           include_system_libs: nil | boolean | String.t(),
           included_configs: [String.t()],
           config_providers: [module() | {module(), [term]}],
+          appup_transforms: [module() | {module(), [term]}],
           strip_debug_info: nil | boolean,
           plugins: [module()],
           overlay_vars: nil | Keyword.t(),

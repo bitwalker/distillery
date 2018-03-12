@@ -361,7 +361,7 @@ defmodule Mix.Releases.Assembler do
         added = get_added_apps(v2_apps, changed)
         removed = get_removed_apps(v1_apps, v2_apps)
 
-        case generate_appups(changed, output_dir) do
+        case generate_appups(release, changed, output_dir) do
           {:error, _} = err ->
             err
 
@@ -477,9 +477,9 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generate .appup files for a list of {app, v1, v2}
-  defp generate_appups([], _output_dir), do: :ok
+  defp generate_appups(_rel, [], _output_dir), do: :ok
 
-  defp generate_appups([{app, v1, v2} | apps], output_dir) do
+  defp generate_appups(release, [{app, v1, v2} | apps], output_dir) do
     v1_path = Path.join([output_dir, "lib", "#{app}-#{v1}"])
     v2_path = Path.join([output_dir, "lib", "#{app}-#{v2}"])
     appup_path = Path.join([v2_path, "ebin", "#{app}.appup"])
@@ -503,7 +503,7 @@ defmodule Mix.Releases.Assembler do
     cond do
       appup_exists? && appup_valid? ->
         Logger.debug("#{app} requires an appup, and one was provided, skipping generation..")
-        generate_appups(apps, output_dir)
+        generate_appups(release, apps, output_dir)
 
       appup_exists? ->
         Logger.warn(
@@ -513,14 +513,14 @@ defmodule Mix.Releases.Assembler do
 
         :ok = File.cp!(appup_path, "#{appup_path}.bak")
 
-        case Appup.make(app, v1, v2, v1_path, v2_path) do
+        case Appup.make(app, v1, v2, v1_path, v2_path, release.profile.appup_transforms) do
           {:error, _} = err ->
             err
 
           {:ok, appup} ->
             :ok = Utils.write_term(appup_path, appup)
             Logger.info("Generated .appup for #{app} #{v1} -> #{v2}")
-            generate_appups(apps, output_dir)
+            generate_appups(release, apps, output_dir)
         end
 
       :else ->
@@ -528,14 +528,14 @@ defmodule Mix.Releases.Assembler do
           "#{app} requires an appup, but it wasn't provided, one will be generated for you.."
         )
 
-        case Appup.make(app, v1, v2, v1_path, v2_path) do
+        case Appup.make(app, v1, v2, v1_path, v2_path, release.profile.appup_transforms) do
           {:error, _} = err ->
             err
 
           {:ok, appup} ->
             :ok = Utils.write_term(appup_path, appup)
             Logger.info("Generated .appup for #{app} #{v1} -> #{v2}")
-            generate_appups(apps, output_dir)
+            generate_appups(release, apps, output_dir)
         end
     end
   end

@@ -13,6 +13,7 @@ defmodule Distillery.Mixfile do
       package: package(),
       docs: docs(),
       aliases: aliases(),
+      elixirc_paths: elixirc_paths(Mix.env),
       test_coverage: [tool: ExCoveralls]
     ]
   end
@@ -89,4 +90,7 @@ defmodule Distillery.Mixfile do
       ]
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end

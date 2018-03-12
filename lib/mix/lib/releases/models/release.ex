@@ -33,6 +33,7 @@ defmodule Mix.Releases.Release do
               include_system_libs: true,
               included_configs: [],
               config_providers: [],
+              appup_transforms: [],
               strip_debug_info: false,
               plugins: [],
               overlay_vars: [],

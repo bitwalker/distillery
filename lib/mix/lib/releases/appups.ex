@@ -3,6 +3,8 @@ defmodule Mix.Releases.Appup do
   This module is responsible for generating appups between two releases.
   """
 
+  alias Mix.Releases.Appup.Transform
+
   @type app :: atom
   @type version_str :: String.t()
   @type path_str :: String.t()
@@ -43,7 +45,9 @@ defmodule Mix.Releases.Appup do
 
   """
   @spec make(app, version_str, version_str, path_str, path_str) :: {:ok, appup} | {:error, term}
-  def make(application, v1, v2, v1_path, v2_path) do
+  @spec make(app, version_str, version_str, path_str, path_str, [module]) ::
+          {:ok, appup} | {:error, term}
+  def make(application, v1, v2, v1_path, v2_path, transforms \\ []) do
     v1_dotapp =
       v1_path
       |> Path.join("/ebin/")
@@ -68,8 +72,17 @@ defmodule Mix.Releases.Appup do
 
                 case consulted_v2_vsn === v2 do
                   true ->
-                    appup = make_appup(v1, v1_path, v1_props, v2, v2_path, v2_props)
-                    {:ok, appup}
+                    {:ok,
+                     make_appup(
+                       application,
+                       v1,
+                       v1_path,
+                       v1_props,
+                       v2,
+                       v2_path,
+                       v2_props,
+                       transforms
+                     )}
 
                   false ->
                     {:error,
@@ -93,7 +106,7 @@ defmodule Mix.Releases.Appup do
     end
   end
 
-  defp make_appup(v1, v1_path, _v1_props, v2, v2_path, _v2_props) do
+  defp make_appup(app, v1, v1_path, _v1_props, v2, v2_path, _v2_props, transforms) do
     v1 = String.to_charlist(v1)
     v2 = String.to_charlist(v2)
     v1_path = String.to_charlist(Path.join(v1_path, "ebin"))
@@ -109,28 +122,31 @@ defmodule Mix.Releases.Appup do
             # Due to the way Elixir generates core ast, all beams will always show as changed,
             # so we ignore this chunk in the comparison for changed beams
             false
+
           _ ->
             true
         end
       end)
 
-    # New version
+    up_instructions =
+      generate_instructions(:added, added)
+      |> Enum.concat(generate_instructions(:changed, actually_changed))
+      |> Enum.concat(generate_instructions(:deleted, deleted))
+      |> Transform.up(app, v1, v2, transforms)
+
+    down_instructions =
+      generate_instructions(:deleted, added)
+      |> Enum.concat(generate_instructions(:changed, actually_changed))
+      |> Enum.concat(generate_instructions(:added, deleted))
+      |> Transform.down(app, v1, v2, transforms)
+
     {
+      # New version
       v2,
       # Upgrade instructions from version v1
-      [
-        {v1,
-         generate_instructions(:added, added)
-         |> Enum.concat(generate_instructions(:changed, actually_changed))
-         |> Enum.concat(generate_instructions(:deleted, deleted))}
-      ],
+      [{v1, up_instructions}],
       # Downgrade instructions to version v1
-      [
-        {v1,
-         generate_instructions(:deleted, added)
-         |> Enum.concat(generate_instructions(:changed, actually_changed))
-         |> Enum.concat(generate_instructions(:added, deleted))}
-      ]
+      [{v1, down_instructions}]
     }
   end
 

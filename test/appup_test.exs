@@ -1,6 +1,7 @@
 defmodule AppupTest do
   use ExUnit.Case
   alias Mix.Releases.Appup
+  alias Mix.Releases.Appup.Transform
 
   @v1_path Path.join([__DIR__, "fixtures", "appup_beams", "test-0.1.0"])
   @v2_path Path.join([__DIR__, "fixtures", "appup_beams", "test-0.2.0"])
@@ -58,5 +59,30 @@ defmodule AppupTest do
         ]}}
 
     assert ^expected = Appup.make(:test, "0.2.0", "0.3.0", @v2_path, @v3_path)
+  end
+
+  test "transforms" do
+    ixs = [
+      {:update, Test.Server, {:advanced, []}, []},
+      {:load_module, Test.ServerB}
+    ]
+    transforms = [
+      {Distillery.Test.SoftPurgeTransform, default: :brutal_purge, overrides: [test: :soft_purge]}
+    ]
+    transformed =
+      Transform.up(ixs, :test, "0.1.0", "0.2.0", transforms)
+    expected = [
+      {:update, Test.Server, {:advanced, []}, :soft_purge, :soft_purge, []},
+      {:load_module, Test.ServerB, :soft_purge, :soft_purge, []}
+    ]
+    assert ^expected = transformed
+
+    transformed =
+      Transform.down(ixs, :test, "0.1.0", "0.2.0", transforms)
+    expected = [
+      {:update, Test.Server, {:advanced, []}, :soft_purge, :soft_purge, []},
+      {:load_module, Test.ServerB, :soft_purge, :soft_purge, []}
+    ]
+    assert ^expected = transformed
   end
 end
