@@ -249,13 +249,6 @@ defmodule Mix.Releases.Appup do
     end)
   end
 
-  defp do_sort_instructions(_, {:update, a, _}, {:update, b, _}), do: a > b
-  defp do_sort_instructions(_, {:update, _, _}, {:update, _, _, _}), do: true
-  defp do_sort_instructions(_, {:update, _, _}, {:load_module, _, _}), do: false
-  defp do_sort_instructions(_, {:load_module, a}, {:load_module, b}), do: a > b
-  defp do_sort_instructions(_, {:load_module, _}, {:update, _, _, _}), do: true
-  defp do_sort_instructions(_, {:load_module, _}, {:load_module, _, _}), do: true
-
   defp do_sort_instructions(mods, a, b) do
     am = elem(a, 1)
     bm = elem(b, 1)
@@ -310,10 +303,15 @@ defmodule Mix.Releases.Appup do
     end
   end
 
-  defp extract_deps({:update, _, deps}) when is_list(deps), do: deps
-  defp extract_deps({:update, _, _}), do: []
-  defp extract_deps({:update, _, _, deps}), do: deps
-  defp extract_deps({:load_module, _, deps}), do: deps
+  defp extract_deps({:update, _m, deps}) when is_list(deps), do: deps
+  defp extract_deps({:update, _m, _change}), do: []
+  defp extract_deps({:update, _m, _change, deps}), do: deps
+  defp extract_deps({:update, _m, _change, _pre_purge, _post_purge, deps}), do: deps
+  defp extract_deps({:load_module, _m, deps}), do: deps
+  defp extract_deps({:load_module, _m, _pre_purge, _post_purge, deps}), do: deps
+  defp extract_deps({:delete_module, _m, deps}), do: deps
+  defp extract_deps({:add_module, _m, deps}), do: deps
+  defp extract_deps(_), do: []
 
   defp module_name(file) do
     Keyword.fetch!(:beam_lib.info(file), :module)
