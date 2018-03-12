@@ -38,10 +38,20 @@ defmodule Mix.Releases.Appup do
   """
   @spec locate(app, version_str, version_str) :: String.t()
   def locate(app, v1, v2) do
-    v1 = String.to_charlist(v1)
-    v2 = String.to_charlist(v2)
-    appup_dir = Path.join(["rel", "appups", "#{app}"])
-    do_locate(Path.wildcard(Path.join(appup_dir, "*.appup")), v1, v2)
+    # First check the application's own priv directory
+    priv_path = Application.app_dir(app, Path.join(["priv", "appups"]))
+
+    case do_locate(Path.wildcard(Path.join(priv_path, "*.appup")), v1, v2) do
+      nil ->
+        # Fallback to user-provided appups for this app
+        v1 = String.to_charlist(v1)
+        v2 = String.to_charlist(v2)
+        appup_dir = Path.join(["rel", "appups", "#{app}"])
+        do_locate(Path.wildcard(Path.join(appup_dir, "*.appup")), v1, v2)
+
+      path ->
+        path
+    end
   end
 
   defp do_locate([], _v1, _v2), do: nil

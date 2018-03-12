@@ -490,28 +490,32 @@ defmodule Mix.Releases.Assembler do
   defp generate_appups(release, [{app, v1, v2} | apps], output_dir) do
     v1_path = Path.join([output_dir, "lib", "#{app}-#{v1}"])
     v2_path = Path.join([output_dir, "lib", "#{app}-#{v2}"])
-    appup_path = Path.join([v2_path, "ebin", "#{app}.appup"])
+    target_appup_path = Path.join([v2_path, "ebin", "#{app}.appup"])
 
-    # Fallback to custom path if possible
-    unless File.exists?(appup_path) do
+    appup_path =
       case Appup.locate(app, v1, v2) do
         nil ->
-          :ok
+          target_appup_path
 
         path ->
-          File.cp!(path, appup_path)
+          File.cp!(path, target_appup_path)
       end
-    end
 
-    # Final check for existence
-    appup_exists? = File.exists?(appup_path)
+    # Check for existence
+    appup_exists? = File.exists?(target_appup_path)
 
     appup_valid? =
       if appup_exists? do
-        case :file.consult(~c[#{appup_path}]) do
-          {:ok, [{upto_ver, [{downto_ver, _}], [{downto_ver, _}]}]} ->
+        case Utils.read_terms(target_appup_path) do
+          {:ok, [{v2p, [{v1p, _}], [{v1p, _}]}]} ->
             cond do
-              upto_ver == ~c[#{v2}] and downto_ver == ~c[#{v1}] ->
+              is_binary(v2p) and is_binary(v1p) ->
+                # Versions are regular expressions
+                v1p = Regex.compile!(v1p)
+                v2p = Regex.compile!(v2p)
+                String.match?(v1p, v1) and String.match?(v2p, v2)
+
+              v2p == ~c[#{v2}] and v1p == ~c[#{v1}] ->
                 true
 
               :else ->
@@ -536,14 +540,14 @@ defmodule Mix.Releases.Assembler do
             "    Backing up appfile with .bak extension and generating new one.."
         )
 
-        :ok = File.cp!(appup_path, "#{appup_path}.bak")
+        :ok = File.cp!(target_appup_path, "#{appup_path}.bak")
 
         case Appup.make(app, v1, v2, v1_path, v2_path, release.profile.appup_transforms) do
           {:error, _} = err ->
             err
 
           {:ok, appup} ->
-            :ok = Utils.write_term(appup_path, appup)
+            :ok = Utils.write_term(target_appup_path, appup)
             Logger.info("Generated .appup for #{app} #{v1} -> #{v2}")
             generate_appups(release, apps, output_dir)
         end
@@ -558,7 +562,7 @@ defmodule Mix.Releases.Assembler do
             err
 
           {:ok, appup} ->
-            :ok = Utils.write_term(appup_path, appup)
+            :ok = Utils.write_term(target_appup_path, appup)
             Logger.info("Generated .appup for #{app} #{v1} -> #{v2}")
             generate_appups(release, apps, output_dir)
         end
