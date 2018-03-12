@@ -35,6 +35,10 @@ configure_release() {
     #    the new config file can be applied as needed. This of course could fail if a
     #    required config change is in the new files, but that is a change management issue,
     #    not one that we can solve in this script.
+    #
+    # For some additional discussion on the motivations behind this code, please review
+    # https://github.com/bitwalker/issues/398 - the code under discussion there is already
+    # out of date, but the conversation is still relevant now.
 
     # Set VMARGS_PATH, the path to the vm.args file to use
     # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
@@ -94,6 +98,8 @@ configure_release() {
     fi
     export SYS_CONFIG_PATH="${DEST_SYS_CONFIG_PATH:-$SYS_CONFIG_PATH}"
 
+    # Set CONFIG_EXS_PATH, the path to the config.exs file to use
+    # Use $RELEASE_CONFIG_DIR/config.exs if it exists, otherwise releases/VSN/config.exs
     if [ -z "CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
         if [ -f "$RELEASE_CONFIG_DIR/config.exs" ]; then
             export SRC_CONFIG_EXS_PATH="$RELEASE_CONFIG_DIR/config.exs"
@@ -114,6 +120,7 @@ configure_release() {
             export DEST_CONFIG_EXS_PATH="$SRC_CONFIG_EXS_PATH"
         fi
     fi
+    # We do not do replacements on this file, it is not necessary
     export CONFIG_EXS_PATH="${DEST_CONFIG_EXS_PATH:-$CONFIG_EXS_PATH}"
 
     # Need to ensure post_configure is run here, but
