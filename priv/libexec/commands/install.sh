@@ -12,6 +12,10 @@ if [ -z "$2" ]; then
     fail "Missing package argument\nUsage: $REL_NAME $1 <version>"
 fi
 
+if [ ! -z "$RELEASE_READ_ONLY" ]; then
+    fail "Cannot install a release upgrade with RELEASE_READ_ONLY set!"
+fi
+
 require_cookie
 require_live_node
 

@@ -6,6 +6,10 @@ set -o posix
 
 set -e
 
+if [ ! -z "$RELEASE_READ_ONLY" ]; then
+    fail "Cannot start a release with RELEASE_READ_ONLY set!"
+fi
+
 require_cookie
 
 # Output a start command for the last argument of run_erl

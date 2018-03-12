@@ -8,6 +8,10 @@ set -o posix
 set -e
 set -m
 
+if [ ! -z "$RELEASE_READ_ONLY" ]; then
+    fail "Cannot start a release with RELEASE_READ_ONLY set!"
+fi
+
 require_cookie
 
 [ -f "$REL_DIR/$REL_NAME.boot" ] && BOOTFILE="$REL_NAME" || BOOTFILE=start

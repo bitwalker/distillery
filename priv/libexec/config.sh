@@ -30,13 +30,17 @@ configure_release() {
         export SRC_VMARGS_PATH="$VMARGS_PATH"
     fi
     if [ "$SRC_VMARGS_PATH" != "$RELEASE_MUTABLE_DIR/vm.args" ]; then
-        echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
-            >  "$RELEASE_MUTABLE_DIR/vm.args"
-        cat  "$SRC_VMARGS_PATH"                              \
-            >> "$RELEASE_MUTABLE_DIR/vm.args"
-        export DEST_VMARGS_PATH="$RELEASE_MUTABLE_DIR"/vm.args
+        if [ -z "$RELEASE_READ_ONLY" ]; then
+            echo "#### Generated - edit/create $RELEASE_CONFIG_DIR/vm.args instead." \
+                >  "$RELEASE_MUTABLE_DIR/vm.args"
+            cat  "$SRC_VMARGS_PATH" \
+                >> "$RELEASE_MUTABLE_DIR/vm.args"
+            export DEST_VMARGS_PATH="$RELEASE_MUTABLE_DIR/vm.args"
+        else
+            export DEST_VMARGS_PATH="$SRC_VMARGS_PATH"
+        fi
     fi
-    if [ ! -z "$REPLACE_OS_VARS" ]; then
+    if [ -z "$RELEASE_READ_ONLY"] && [ ! -z "$REPLACE_OS_VARS" ]; then
         _replace_os_vars "$DEST_VMARGS_PATH"
     fi
     export VMARGS_PATH="${DEST_VMARGS_PATH:-$VMARGS_PATH}"
@@ -53,12 +57,17 @@ configure_release() {
         export SRC_SYS_CONFIG_PATH="$SYS_CONFIG_PATH"
     fi
     if [ "$SRC_SYS_CONFIG_PATH" != "$RELEASE_MUTABLE_DIR/sys.config" ]; then
-        (echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead."; \
-        cat  "$SRC_SYS_CONFIG_PATH")                              \
-            > "$RELEASE_MUTABLE_DIR/sys.config"
-        export DEST_SYS_CONFIG_PATH="$RELEASE_MUTABLE_DIR"/sys.config
+        if [ -z "$RELEASE_READ_ONLY" ]; then
+            echo "%% Generated - edit/create $RELEASE_CONFIG_DIR/sys.config instead." \
+                > "$RELEASE_MUTABLE_DIR/sys.config"
+            cat  "$SRC_SYS_CONFIG_PATH" \
+                >> "$RELEASE_MUTABLE_DIR/sys.config"
+            export DEST_SYS_CONFIG_PATH="$RELEASE_MUTABLE_DIR/sys.config"
+        else
+            export DEST_SYS_CONFIG_PATH="$SRC_SYS_CONFIG_PATH"
+        fi
     fi
-    if [ ! -z "$REPLACE_OS_VARS" ]; then
+    if [ -z "$RELEASE_READ_ONLY"] && [ ! -z "$REPLACE_OS_VARS" ]; then
         _replace_os_vars "$DEST_SYS_CONFIG_PATH"
     fi
     export SYS_CONFIG_PATH="${SYS_CONFIG_PATH:-$DEST_SYS_CONFIG_PATH}"
@@ -73,10 +82,15 @@ configure_release() {
         export SRC_CONFIG_EXS_PATH="$CONFIG_EXS_PATH"
     fi
     if [ "$SRC_CONFIG_EXS_PATH" != "$RELEASE_MUTABLE_DIR/config.exs" ]; then
-        (echo "# Generated - edit/create $RELEASE_CONFIG_DIR/config.exs instead."; \
-         cat "$SRC_CONFIG_EXS_PATH") \
-            > "$RELEASE_MUTABLE_DIR/config.exs"
-         export DEST_CONFIG_EXS_PATH="$RELEASE_MUTABLE_DIR"/config.exs
+        if [ -z "$RELEASE_READ_ONLY" ]; then
+            echo "# Generated - edit/create $RELEASE_CONFIG_DIR/config.exs instead." \
+                 > "$RELEASE_MUTABLE_DIR/config.exs"
+            cat "$SRC_CONFIG_EXS_PATH" \
+                 >> "$RELEASE_MUTABLE_DIR/config.exs"
+            export DEST_CONFIG_EXS_PATH="$RELEASE_MUTABLE_DIR/config.exs"
+        else
+            export DEST_CONFIG_EXS_PATH="$SRC_CONFIG_EXS_PATH"
+        fi
     fi
     export CONFIG_EXS_PATH="${CONFIG_EXS_PATH:-$DEST_CONFIG_EXS_PATH}"
 

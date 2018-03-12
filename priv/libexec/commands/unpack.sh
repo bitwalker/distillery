@@ -11,6 +11,10 @@ if [ -z "$1" ]; then
     fail "Missing version argument\nUsage: $REL_NAME unpack <version>"
 fi
 
+if [ ! -z "$RELEASE_READ_ONLY" ]; then
+    fail "Cannot unpack a release with RELEASE_READ_ONLY set!"
+fi
+
 require_cookie
 require_live_node
 
