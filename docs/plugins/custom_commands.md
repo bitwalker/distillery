@@ -1,9 +1,9 @@
 # Custom Commands
 
-Custom commands are extensions to the boot script, and are used in the same
+Custom commands are extensions to the management script, and are used in the same
 way you use `foreground` or `remote_console`, in other words, they have the
-appearance of being part of the boot script. Like hooks, they have access to
-the boot scripts helper functions and environment.
+appearance of being part of the release command line interface. Like hooks, they have access to
+the management scripts helper functions and environment.
 
 ## Example Usage
 
@@ -37,6 +37,5 @@ When you build your release, you can then call your command like so:
 hi
 ```
 
-You have access to anything defined in the boot script's environment,
-see [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for
-details.
+You have access to anything defined in the management scripts environment, see 
+[Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for details.

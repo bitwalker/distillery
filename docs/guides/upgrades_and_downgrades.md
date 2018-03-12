@@ -1,91 +1,73 @@
-# Upgrades and Downgrades
+# Hot Upgrades and Downgrades
 
 ## A word of caution
 
-In general, unless you have a strong reason for using hot upgrades, it's almost always simpler to just
-do rolling releases. Hot upgrades are an amazing capability, but they are deceptively simple to use due
-to the automatic appups. If you get to the point where you need to write your own appups, you will need
-to become intimately familiar with them, and there is a lot of complexity hidden there. However, there
-is nothing preventing you from using upgrades until you hit that point, doing a rolling release, then
-continuing with upgrades from there - it ultimately depends on your needs. I would caution anyone thinking
-of using them to evaluate whether they are truly necessary for their use case.
+Hot upgrades are one of the most powerful capabilities of OTP, but with that power comes a lot of
+associated complexity. Hot upgrades are so impressive because of the technical feat required to swap
+out code at runtime, and while OTP makes this process quite easy to accomplish, it also expects you
+to fully understand what you are asking it to do. In other words, you need to be very aware of how
+hot upgrades are performed, and how to manage change in your applications such that you can perform upgrades
+seamlessly.
+
+Distillery makes hot upgrades deceptively simple to use, because it automatically generates appups for you
+(see [Appups](appups.html) for more). This may lead you to believe that you can let Distillery handle this
+process entirely for you, and you need to understand that this is not the case. Distillery does this for you
+in order to make things easier on you, by only requiring you to make small adjustments to the appups before
+building a release, rather than having to write every appup from scratch. It is still on you to review these
+generated appups, understand when they are correct, or when something has been missed, or when you simply need
+to do your part in the process (such as implementing `code_change` in processes you want upgraded).
+
+Always remember though, that if an upgrade goes badly, you can always reboot your application and get back to a
+good state, so if in doubt, just perform a rolling release - only the most critical of applications will require
+hot upgrades, and in those cases it will be worth your while to understand them in great detail. I would recommend
+using rolling releases always, rather than undertaking hot upgrades, but when you need them, they are there.
 
 **IMPORTANT**: It is not possible to use hot upgrades and `include_erts: false` in conjunction with one
 another. This is due to how `release_handler` manages information about releases as they are unpacked
 and installed. ERTS must be packaged in the release in order for hot upgrades/downgrades to properly work.
 
-## A bit about upgrades
+## Overview
 
 **NOTE**: You *cannot* perform upgrades from within the `_build` directory - you must deploy the tarballs
-as described in the Walkthrough document. Hot upgrades/downgrades mutate the release directory, and some of
-the files which are required for building releases will be missing if you do a build after upgrading a release
-there, resulting in errors when you attempt to upgrade/downgrade from that release. Always deploy to another
-local directory (for example, `/tmp`) first.
+as described in the [Walkthrough](../introduction/walkthrough.html). Hot upgrades/downgrades mutate the release 
+directory, and some of the files which are required for building releases will be missing if you do a build after 
+upgrading a release there, resulting in errors when you attempt to upgrade/downgrade from that release. Always deploy 
+to another local directory (for example, `/tmp`) first.
 
-When building upgrade releases, Distillery will ensure that all modified
-applications have appups generated for them. Appups are what tell `:systools` how
-to generate the `relup` file, which are low-level instructions for the release handler,
-which tell it how to load/remove/change modules in the system during a hot upgrade.
+When building upgrade releases, Distillery will ensure that all modified applications have appups generated for them. 
+Appups are what tell `:systools` how to generate the `relup` file, which contains low-level instructions for the release 
+handler, so that it knows how to load/remove/change modules in the system during a hot upgrade.
 
-Without an appup, an upgrade cannot succeed, because the release handler will not know
-how to upgrade that application. Distillery is very intelligent about ordering instructions
-based on additions/deletions/changes to modules, based on whether they are special processes
-(`gen_server`, `supervisor`, `proc_lib`-started apps), and their dependencies to each other.
-However, while Distillery's appup generator is quite good, it can't be perfect for all applications,
-or all situations. There will be times when you need to modify these appups, or provide your own.
-For instance, you may need to upgrade state of a `gen_server` between one version and another based
-on some external state. Appups provide facilities for passing extra data to the code change handler
-for these situations. Distillery cannot know what data to provide, or when it's needed, and that's when
-you'll need to step in.
+Without an appup, an upgrade cannot succeed, because the release handler will not know how to upgrade that application. 
+Distillery takes great care to provide good default instruction sets for the appups it generates, by ordering instructions
+based on module dependencies, and whether things have been added, removed, or modified; it makes sure to take advantage of
+special processes (such as `GenServer` and friends) by using the `code_change` handler, and even handles custom special
+processes started via `:proc_lib` by leveraging the `system_code_change` handler.
 
-## Appups
+However, while Distillery's appup generator is quite good, it can't be perfect for all applications, or all situations. 
+Any time you modify the internal state of a process, say the state parameter of a `GenServer`, you will need to make sure
+that the new version of the code knows how to transform the old state to the new format, by implementing `code_change`, or
+what will happen is that the new module will start executing using the old state, and things will blow up in your face. It
+is important that you be aware of how your application has changed, and ensure that you handle cases like these, either in your
+own code, or by using instructions in the appup file Distillery generates (or even provide your own).
 
-**NOTE**: This is a copy of my wiki article on appups in the `relx` repository.
+When you upgrade from one release version to another, if something goes wrong during the upgrade past the point of no return, 
+the node will be restarted running the original version of the code, and if something goes wrong early, the changes will be rolled back.
+In both cases, the error will be printed to standard output.
 
-Ok, so you've generated a release, deployed it to your target system, made some code changes in development,
-and now you want to generate a release package that will allow you to do a hot upgrade. In order to do this,
-you must create a project.appup file, which will go in the ebin directory of your production build.
+## Migrations
 
-There is no real clear example of how appups are supposed to be built, so the following example is intended
-to help you get started. For more complicated application upgrades, you'll want to check out the
-[Appup Cookbook](http://erlang.org/doc/design_principles/appup_cookbook.html).
+Since I have received many questions on this topic, I want to take a moment to discuss hot upgrades in conjunction with migrations.
 
-Given a sample application called `test`, with a supervisor (`TestSup`), and a `gen_server` (`TestServ`),
-you should have a `test.app` file in `_build/<env>/lib/test/ebin` that looks something like the following:
+You need to consider migrations and application upgrades as two separate, distinct deployments. Migrations should be backwards compatible
+with the old version of the application, and should be deployed in advance of application upgrades, so that you have a chance to vet,
+and roll back if necessary, the migrated changes. Once the migration has been applied and confirmed to be good, you then proceed with
+applying your application upgrade. If a problem with the new application code occurs, you can then safely roll back the application without
+needing to also roll back the migration (if even possible).
 
-```erlang
-{application,test,
-             [{registered,[]},
-              {description,"test app"},
-              {mod,{test,[]}},
-              {applications,[stdlib,kernel]},
-              {vsn,"0.0.1"},
-              {modules,['Elixir.Test','Elixir.TestServ',
-                        'Elixir.TestSup']}]}.
-```
+The above strategy does require that you have strict change management, so that you incrementally apply changes, rather than try to do them
+all at once. This has implications in your application code as well, since you need to usually allow for two different code paths (one to support old schemas and one for new). This seems onerous, but in practice it makes deployments easier to manage, and changes can be introduced at a steady pace.
 
-If you make code changes to, `test_server` for instance, the following is a simple appup file that will
-load your project's application, and call `code_change/3` on `test_server`. The first
-`"0.1.0"` block is the order of operations for the upgrade, the second one is the order of operations for the
-downgrade (note that they should be in reverse order of the upgrade instructions).
-
-```erlang
-{"0.2.0",
- [{"0.1.0",[{update,'Elixir.TestServ',{advanced,[]},[]}]}],
- [{"0.1.0",[{update,'Elixir.TestServ',{advanced,[]},[]}]}]}.
-```
-
-Note that the `{advanced, []}` tuple in each of the blocks is where you would pass additional arguments to `code_change`, if needed.
-
-It is important that you order the instructions such that processes which depend on each other are upgraded
-in an order compatible with the dependencies between them. If you have `proc_a` and `proc_b`, and `proc_a` calls
-`proc_b` for something, upgrade `proc_b` first, then `proc_a`. When processes are upgraded, they are suspended
-during the upgrade, but in-flight requests will be handled by the old version, until the upgrade is complete and
-the new version is un-suspended.
-
-This is the simplest case for an appup, but it covers the gist of the process. The Appup Cookbook should be your
-reference when authoring appups, as it goes into great detail all of the steps, what each instruction type does, and
-more.
-
-To generate an upgrade release, you'll need to pass `--upgrade` to `mix release`. To generate an upgrade from an arbitrary
-version you've previously built, pass `--upfrom=<version>`. Distillery will look for the appup in the ebin of your current build.
+I say all of this because I see people wanting to have OTP apply migrations as part of the hot upgrade process, but that is not what it was
+designed for, and is not intended to make any guarantees about external systems - it only makes guarantees about how it applies upgrades to
+application code. Trying to mix these concerns together will only lead to pain, so avoid doing so at all cost!

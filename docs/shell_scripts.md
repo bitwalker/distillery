@@ -43,7 +43,7 @@ Generates a unique identifier. Returns it as a string.
 ### nodetool()
 
 Executes the node tool against a running node. It uses the arguments passed to the
-boot script, but you can use the `set` builtin to change what those arguments are.
+management script, but you can use the `set` builtin to change what those arguments are.
 It uses `$1` to set the command for the nodetool, and `$@` to pass arguments to that
 command.
 
@@ -95,9 +95,9 @@ will be marked as mutable.
 
 ```
 - SCRIPT;
-  the path to the boot script
+  the path to the management script
 - SCRIPT_DIR;
-  the path to the parent directory of the boot script
+  the path to the parent directory of the management script
 - RELEASE_ROOT_DIR;
   the path to the release directory
 - REL_NAME;

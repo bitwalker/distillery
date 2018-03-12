@@ -1,4 +1,4 @@
-# Common Issues/Questions
+# FAQ
 
 ## What should I put in my .gitignore?
 
@@ -23,7 +23,7 @@ It is critical that we as a community let maintainers know when they have module
 conflict with other projects, and encourage each other to namespace our projects properly
 to prevent this from happening.
 
-## Why do I have to set both MIX_ENV and --env?
+## What is the difference between Mix environments and Distillery environments?
 
 Mix environments and release environments represent two distinct concepts, though they appear to be the same.
 
@@ -36,13 +36,8 @@ Release environments correspond to the environments in which you deploy releases
 might only be used on your local machine for quick iteration, you may want to define both staging and production
 environments, or perhaps more.
 
-However, if your build and deployment environments correspond, there is a way to simplify your life a bit by configuring
-Distillery to use `MIX_ENV` as the release environment:
-
-```elixir
-use Mix.Releases.Config,
-  default_environment: Mix.env
-```
+However, if your build and deployment environments correspond, by default Distillery will look for an environment
+definition which matches the value of `MIX_ENV`.
 
 You must ensure that you have environments defined in `rel/config.exs` for each of your build environments where you
 will run `mix release`, but with this configuration you can simply run `MIX_ENV=whatever mix release` and the correct
@@ -78,9 +73,9 @@ cross-compile any natively-implemented dependencies, such as those contained in 
 If you must cross-compile, you will need to make sure that you set up the cross-compilation toolchain for
 those dependencies as well, which is beyond the scope of Distillery or this document.
 
-In the future I will try to provide a walkthrough on how to set this up, but it's important to note
-that each dependency may be different, and no guide can cover all of the requirements for a specific
-package. It is up to the package maintainers to provide instructions on how to cross-compile NIFs.
+I strongly recommend building releases you plan to deploy within a Docker container or Vagrant virtual machine.
+This allows you to tightly control the build environment for the release, and easily compile it for the target
+system's OS and architecture. In the near future I will try to provide a walkthrough on how to set this up.
 
 ## Upgrade failures
 
