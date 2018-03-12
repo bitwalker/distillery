@@ -1,7 +1,14 @@
 # Using Distillery with systemd
 
+**IMPORTANT:** You need to be aware that when running `bin/myapp upgrade <version>`, this command
+will be executed in the _callers_ environment, not the environment defined by the systemd unit. If you
+need environment variables to be available during the upgrade, then you need to either execute it with the
+same environment as the systemd unit, or export those environment variables in the calling environment.
+
 Here are three general approaches to running a Distillery release with Systemd:
+
 #### 1. Run app as daemon using `start` and a `forking` Systemd service *with* pidfile
+
 * Systemd can automatically restart your app if it crashes
 * You'll need to generate a pidfile for your app. The [pid_file](https://github.com/OvermindDL1/pid_file) package makes this quite simple.
 * Logs will be written to the `/logs` directory in your release
@@ -32,6 +39,7 @@ WantedBy=multi-user.target
 
 
 #### 2. Run app as daemon using `start` and a `forking` Systemd service *without* pidfile
+
 * Systemd will attempt (and probably fail) to guess your apps pid. Without the correct pid it will be unable to automatically restart your app if it crashes
 * No need for pidfiles
 * Logs will be written to the `/logs` directory in your release
@@ -61,6 +69,7 @@ WantedBy=multi-user.target
 
 
 #### 3. Run app in `foreground` using a `simple` Systemd configuration
+
 * Systemd can automatically restart your app if it crashes
 * No need for pidfiles or pid-detection
 * Logging is handled by systemd
