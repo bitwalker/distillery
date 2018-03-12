@@ -140,10 +140,10 @@ and environments.
     - overlays (special keyword list);
         A list of overlay operations to perform against the release, prior to archival,
         such as copying files, symlinking files, etc.
-      - copy: {from_path, to_path} (copy a file)
-      - link: {from_path, to_path} (symlink a file)
-      - mkdir: path (ensure a path exists)
-      - template: {template_path, output_path} (generate a file from a template)
+      - {:copy, from_path, to_path} (copy a file)
+      - {:link, from_path, to_path} (symlink a file)
+      - {:mkdir, path} (ensure a path exists)
+      - {:template, template_path, output_path} (generate a file from a template)
     - pre_configure_hooks (path);
         A path to a directory containing shell scripts which will be executed before configuring a release
     - post_configure_hooks (path);
