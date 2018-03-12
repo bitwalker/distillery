@@ -129,17 +129,17 @@ iex() {
 
 # Echoes the current ERTS version
 erts_vsn() {
-    erl -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver]), halt()' -noshell -boot start_clean
+    erl -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver])' -noshell -boot start_clean -s erlang halt
 }
 
 # Echoes the current ERTS root directory
 erts_root() {
-    erl -eval 'io:format("~s~n", [code:root_dir()]), halt().' -noshell -boot start_clean
+    erl -eval 'io:format("~s~n", [code:root_dir()]).' -noshell -boot start_clean -s erlang halt
 }
 
 # Echoes the current OTP version
 otp_vsn() {
-    erl -eval 'Ver = erlang:system_info(otp_release), io:format("~s~n", [Ver]), halt()' -noshell -boot start_clean
+    erl -eval 'Ver = erlang:system_info(otp_release), io:format("~s~n", [Ver])' -noshell -boot start_clean -s erlang halt
 }
 
 # Control a node
@@ -164,20 +164,25 @@ escript() {
     "$__escript" "$ROOTDIR/$scriptpath" "$@"
 }
 
-export ROOTDIR
-ROOTDIR="$(erts_root)"
-export ERTS_VSN
-if [ -z "$ERTS_VSN" ]; then
-    # Update start_erl.data
+# Test erl to make sure it works
+if erl -eval 'io:format("ok~n", [])' -noshell -boot start_clean -s erlang halt 2>/dev/null | grep "ok" >/dev/null; then
+    export ROOTDIR
+    ROOTDIR="$(erts_root)"
+    export ERTS_VSN
+    if [ -z "$ERTS_VSN" ]; then
+        # Update start_erl.data
+        ERTS_VSN="$(erts_vsn)"
+        echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
+    fi
     ERTS_VSN="$(erts_vsn)"
-    echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
+    export ERTS_DIR
+    ERTS_DIR="$ROOTDIR/erts-$ERTS_VSN"
+    export BINDIR
+    BINDIR="$ERTS_DIR/bin"
+    export ERTS_LIB_DIR
+    ERTS_LIB_DIR="$ERTS_DIR/../lib"
+    export EMU="beam"
+    export PROGNAME="erl"
+else
+    fail "Unusable Erlang runtime system! This is likely due to being compiled for another system than the host is running"
 fi
-ERTS_VSN="$(erts_vsn)"
-export ERTS_DIR
-ERTS_DIR="$ROOTDIR/erts-$ERTS_VSN"
-export BINDIR
-BINDIR="$ERTS_DIR/bin"
-export ERTS_LIB_DIR
-ERTS_LIB_DIR="$ERTS_DIR/../lib"
-export EMU="beam"
-export PROGNAME="erl"
