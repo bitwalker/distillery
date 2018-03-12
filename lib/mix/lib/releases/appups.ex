@@ -101,6 +101,19 @@ defmodule Mix.Releases.Appup do
 
     {deleted, added, changed} = :beam_lib.cmp_dirs(v1_path, v2_path)
 
+    actually_changed =
+      changed
+      |> Enum.filter(fn {v1_beam, v2_beam} ->
+        case :beam_lib.cmp(v1_beam, v2_beam) do
+          {:error, :beam_lib, {:chunks_different, 'Dbgi'}} ->
+            # Due to the way Elixir generates core ast, all beams will always show as changed,
+            # so we ignore this chunk in the comparison for changed beams
+            false
+          _ ->
+            true
+        end
+      end)
+
     # New version
     {
       v2,
@@ -108,14 +121,14 @@ defmodule Mix.Releases.Appup do
       [
         {v1,
          generate_instructions(:added, added)
-         |> Enum.concat(generate_instructions(:changed, changed))
+         |> Enum.concat(generate_instructions(:changed, actually_changed))
          |> Enum.concat(generate_instructions(:deleted, deleted))}
       ],
       # Downgrade instructions to version v1
       [
         {v1,
          generate_instructions(:deleted, added)
-         |> Enum.concat(generate_instructions(:changed, changed))
+         |> Enum.concat(generate_instructions(:changed, actually_changed))
          |> Enum.concat(generate_instructions(:added, deleted))}
       ]
     }
