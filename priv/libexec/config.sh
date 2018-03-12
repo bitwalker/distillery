@@ -18,6 +18,24 @@ configure_release() {
     run_hooks pre_configure
     unset DISTILLERY_PRECONFIGURE
 
+    ## NOTE: Please read the following to understand what is going on here:
+    # This code hides a great deal of implicit behavior, so it is important to
+    # understand as much of the whole picture as possible.
+    #
+    # 1. Source config files must remain immutable, this is to ensure that when
+    #    we replace environment variables in them, that these replacements do not
+    #    become effectively permanent.
+    # 2. We must not generate files when RELEASE_READ_ONLY is set
+    # 3. We must respect the public shell script API, which includes SYS_CONFIG_PATH,
+    #    VMARGS_PATH, and CONFIG_EXS_PATH. This means that if provided, we must use
+    #    them as the source file, but we must update them to point to the m
+    # 4. The upgrade installer script unpacks new config files, but attempts to use
+    #    the sources defined here, rather than those included in the release. This is
+    #    so that configuration is not blown away when the upgrade is applied, instead
+    #    the new config file can be applied as needed. This of course could fail if a
+    #    required config change is in the new files, but that is a change management issue,
+    #    not one that we can solve in this script.
+
     # Set VMARGS_PATH, the path to the vm.args file to use
     # Use $RELEASE_CONFIG_DIR/vm.args if exists, otherwise releases/VSN/vm.args
     if [ -z "$VMARGS_PATH" ]; then
@@ -41,7 +59,9 @@ configure_release() {
         fi
     fi
     if [ -z "$RELEASE_READ_ONLY"] && [ ! -z "$REPLACE_OS_VARS" ]; then
-        _replace_os_vars "$DEST_VMARGS_PATH"
+        if [ ! -z "$DEST_VMARGS_PATH" ]; then
+            _replace_os_vars "$DEST_VMARGS_PATH"
+        fi
     fi
     export VMARGS_PATH="${DEST_VMARGS_PATH:-$VMARGS_PATH}"
 
@@ -68,9 +88,11 @@ configure_release() {
         fi
     fi
     if [ -z "$RELEASE_READ_ONLY"] && [ ! -z "$REPLACE_OS_VARS" ]; then
-        _replace_os_vars "$DEST_SYS_CONFIG_PATH"
+        if [ ! -z "$DEST_SYS_CONFIG_PATH" ]; then
+            _replace_os_vars "$DEST_SYS_CONFIG_PATH"
+        fi
     fi
-    export SYS_CONFIG_PATH="${SYS_CONFIG_PATH:-$DEST_SYS_CONFIG_PATH}"
+    export SYS_CONFIG_PATH="${DEST_SYS_CONFIG_PATH:-$SYS_CONFIG_PATH}"
 
     if [ -z "CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
         if [ -f "$RELEASE_CONFIG_DIR/config.exs" ]; then
@@ -92,7 +114,7 @@ configure_release() {
             export DEST_CONFIG_EXS_PATH="$SRC_CONFIG_EXS_PATH"
         fi
     fi
-    export CONFIG_EXS_PATH="${CONFIG_EXS_PATH:-$DEST_CONFIG_EXS_PATH}"
+    export CONFIG_EXS_PATH="${DEST_CONFIG_EXS_PATH:-$CONFIG_EXS_PATH}"
 
     # Need to ensure post_configure is run here, but
     # prevent recursion if the hook calls back to the boot script
