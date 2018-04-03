@@ -39,7 +39,7 @@ Next we will add Distillery to the deps function of our `mix.exs` file.
 First let's modify the Phoenix `config/prod.exs` file. Change this section of text:
 
 ```
-config :phx_distillery, PhxDistilleryWeb.Endpoint,
+config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
   load_from_system_env: true,
   url: [host: "example.com", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json"
@@ -51,7 +51,7 @@ to the following:
 config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
   http: [port: {:system, "PORT"}],
   url: [host: "localhost", port: {:system, "PORT"}], # This is critical for ensuring web-sockets properly authorize.
-  cache_static_manifest: "priv/static/manifest.json",
+  cache_static_manifest: "priv/static/cache_manifest.json",
   server: true,
   root: ".",
   version: Application.spec(:phoenix_distillery, :vsn)
@@ -105,9 +105,9 @@ To build the release the following command is executed:
 $ MIX_ENV=prod mix release
 ```
 
-To run your execute the following command: 
+To run your release, execute the following command: 
 ```
-$ PORT=4001 _build/dev/rel/phoenix_new/bin/phoenix_new foreground
+$ PORT=4001 _build/prod/rel/phoenix_distillery/bin/phoenix_distillery foreground
 ```
 
 You should be able to go to [localhost:4001](localhost:4001) and load the default
@@ -226,10 +226,10 @@ you need to create a `0.0.2` directory in `local_deploy/releases` and
 copy the 0.0.2 tarball into this directory. Your copy command should
 look something like this:
 
-`cp _build/prod/rel/phoenix_distillery/releases/0.0.2/phoenix_distillery.tar.gz local_deploy/releases/0.0.2`
+`cp _build/prod/rel/phoenix_distillery/releases/0.0.2/phoenix_distillery.tar.gz local_deploy/releases/0.0.2/`
 
 Now all you have to do is upgrade your running instance by executing
-`local_deploy/bin/phoenix_distillery upgrade 0.0.2`. If you go reload
+`./local_deploy/bin/phoenix_distillery upgrade 0.0.2`. If you go reload
 your browser you will see that the logo has now disappeared!
 
 ### Version 0.0.3
@@ -243,7 +243,7 @@ emitting even numbers:
 
 *new file:   lib/phoenix_distillery_web/channels/heartbeat_channel.ex*
 ```elixir
-defmodule PhoenixDistillery.HeartbeatChannel do
+defmodule PhoenixDistilleryWeb.HeartbeatChannel do
   use Phoenix.Channel
 
   def join("heartbeat:listen", _message, socket) do
@@ -271,9 +271,9 @@ Now we need to modify the default `user_socket` to reference the
 
 *file: lib/phoenix_distillery_web/channels/user_socket.ex*
 ```elixir
-defmodule PhoenixDistillery.UserSocket do
+defmodule PhoenixDistilleryWeb.UserSocket do
    use Phoenix.Socket
-   channel "heartbeat:*", PhoenixDistillery.HeartbeatChannel
+   channel "heartbeat:*", PhoenixDistilleryWeb.HeartbeatChannel
 
    ...
 end
@@ -282,17 +282,17 @@ end
 Now we need to enable the default socket and tell it how to handle our
 heartbeat message:
 
-*file: priv/static/js/app.js*
+*file: assets/js/app.js*
 ```javascript
-import "deps/phoenix_html/web/static/js/phoenix_html"
+import "phoenix_html"
 import socket from "./socket"
 ```
 
-*file: priv/static/js/socket.js*
+*file: assets/js/socket.js*
 ```javascript
 ...
 let socket = new Socket("/socket", {params: {token: window.userToken}})
- socket.connect()
+socket.connect()
 
 let channel = socket.channel("heartbeat:listen", {})
 channel.join()
@@ -320,7 +320,8 @@ just as we did with 0.0.2. So we will generate a release, copy the
 upgrade the application.
 
 1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
-1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3`
+1. `mkdir local_deploy/releases/0.0.3`
+1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3/`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
 
 If you go reload your browser and open your console you will be
@@ -350,7 +351,7 @@ Next update the `HeartbeatChannel` to emit numbers incremented by one:
 
 *new file:   lib/phoenix_distillery_web/channels/heartbeat_channel.ex*
 ```elixir
-defmodule PhoenixDistillery.HeartbeatChannel do
+defmodule PhoenixDistilleryWeb.HeartbeatChannel do
   ...
 
   def handle_info({:beat, i}, socket) do
@@ -369,7 +370,8 @@ into a new release directory under `local_deploy`, and upgrade the
 application.
 
 1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
-1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4`
+1. `mkdir local_deploy/releases/0.0.4`
+1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4/`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
 
 *DO NOT RELOAD YOUR BROWSER* Simply stare at your console and wait. In
