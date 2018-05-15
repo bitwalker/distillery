@@ -308,6 +308,7 @@ defmodule Mix.Releases.Utils do
   @spec get_apps(Mix.Releases.Release.t()) :: [{atom, String.t()}] | {:error, String.t()}
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps} = release) do
+    loaded_deps = Mix.Dep.loaded([])
     apps =
       if Enum.member?(apps, name) do
         apps
@@ -331,7 +332,7 @@ defmodule Mix.Releases.Utils do
                   app -> app
                 end)
               else
-                get_apps(App.new(a, start_type), acc)
+                get_apps(App.new(a, start_type, loaded_deps), loaded_deps, acc)
               end
 
             :else ->
@@ -342,7 +343,7 @@ defmodule Mix.Releases.Utils do
           if Enum.any?(acc, fn %App{name: app} -> a == app end) do
             acc
           else
-            get_apps(App.new(a), acc)
+            get_apps(App.new(a, loaded_deps), loaded_deps, acc)
           end
       end)
 
@@ -474,10 +475,10 @@ defmodule Mix.Releases.Utils do
     end
   end
 
-  defp get_apps(nil, acc), do: Enum.uniq(acc)
-  defp get_apps({:error, _} = err, _acc), do: err
+  defp get_apps(nil, _loaded_deps, acc), do: Enum.uniq(acc)
+  defp get_apps({:error, _} = err, _loaded_deps, _acc), do: err
 
-  defp get_apps(%App{} = app, acc) do
+  defp get_apps(%App{} = app, loaded_deps, acc) do
     new_acc =
       app.applications
       |> Enum.concat(app.included_applications)
@@ -489,12 +490,12 @@ defmodule Mix.Releases.Utils do
           if Enum.any?(acc, fn %App{name: app} -> a == app end) do
             acc
           else
-            case App.new(a, load_type) do
+            case App.new(a, load_type, loaded_deps) do
               nil ->
                 acc
 
               %App{} = app ->
-                case get_apps(app, acc) do
+                case get_apps(app, loaded_deps, acc) do
                   {:error, _} = err ->
                     err
 
@@ -511,12 +512,12 @@ defmodule Mix.Releases.Utils do
           if Enum.any?(acc, fn %App{name: app} -> a == app end) do
             acc
           else
-            case App.new(a) do
+            case App.new(a, loaded_deps) do
               nil ->
                 acc
 
               %App{} = app ->
-                case get_apps(app, acc) do
+                case get_apps(app, loaded_deps, acc) do
                   {:error, _} = err ->
                     err
 
