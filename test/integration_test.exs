@@ -190,42 +190,7 @@ defmodule IntegrationTest do
       with_standard_app do
         # Build v1 release
         assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
-        # Update config for v2
-        project_config_path = Path.join(@standard_app_path, "mix.exs")
-        project = File.read!(project_config_path)
-        config_path = Path.join([@standard_app_path, "config", "config.exs"])
-        config = File.read!(config_path)
-        rel_config_path = Path.join([@standard_app_path, "rel", "config.exs"])
-        rel_config = File.read!(rel_config_path)
-        # Write updates to modules
-        a_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "a.ex"])
-        a_mod = File.read!(a_mod_path)
-        b_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "b.ex"])
-        b_mod = File.read!(b_mod_path)
-        # Save orig
-        File.cp!(project_config_path, Path.join(@standard_app_path, "mix.exs.v1"))
-        File.cp!(config_path, Path.join([@standard_app_path, "config", "config.exs.v1"]))
-        File.cp!(rel_config_path, Path.join([@standard_app_path, "rel", "config.exs.v1"]))
-        File.cp!(a_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "a.ex.v1"]))
-        File.cp!(b_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "b.ex.v1"]))
-        # Write new config
-        new_project_config = String.replace(project, "version: \"0.0.1\"", "version: \"0.0.2\"")
-        new_config = String.replace(config, "num_procs: 2", "num_procs: 4")
-
-        new_rel_config =
-          String.replace(rel_config, "set version: \"0.0.1\"", "set version: \"0.0.2\"")
-
-        File.write!(project_config_path, new_project_config)
-        File.write!(config_path, new_config)
-        File.write!(rel_config_path, new_rel_config)
-        # Write updated modules
-        new_a_mod = String.replace(a_mod, "{:ok, {1, []}}", "{:ok, {2, []}}")
-
-        new_b_mod =
-          String.replace(b_mod, "loop({1, []}, parent, debug)", "loop({2, []}, parent, debug)")
-
-        File.write!(a_mod_path, new_a_mod)
-        File.write!(b_mod_path, new_b_mod)
+        update_config_and_code_to_v2()
         # Build v2 release
         assert {:ok, _} = mix("compile")
         assert {:ok, _} = mix("release", ["--verbose", "--env=prod", "--upgrade"])
@@ -235,14 +200,86 @@ defmodule IntegrationTest do
         bin_path = Path.join([tmpdir, "bin", "standard_app"])
 
         try do
-          tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
-          assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
-          File.mkdir_p!(Path.join([tmpdir, "releases", "0.0.2"]))
+          unpack_old_release(tmpdir)
+          copy_new_release(tmpdir)
 
-          File.cp!(
-            Path.join([@standard_output_path, "releases", "0.0.2", "standard_app.tar.gz"]),
-            Path.join([tmpdir, "releases", "0.0.2", "standard_app.tar.gz"])
-          )
+          # Boot it, ping it, upgrade it, rpc to verify, then shut it down
+          assert File.exists?(bin_path)
+
+          case :os.type() do
+            {:win32, _} ->
+              assert {:ok, _} = run_cmd(bin_path, ["install"])
+
+            _ ->
+              :ok
+          end
+
+          :ok = create_additional_config_file(tmpdir)
+          assert {:ok, _} = run_cmd(bin_path, ["start"])
+          assert :ok = wait_for_app(bin_path)
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(1)"])
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(2)"])
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(1)"])
+          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(2)"])
+          assert {:ok, output} = run_cmd(bin_path, ["upgrade", "0.0.2"])
+          assert output =~ "Made release standard_app:0.0.2 permanent"
+          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.pop()"])
+          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.pop()"])
+
+          assert {:ok, "4\n"} =
+                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
+
+          case :os.type() do
+            {:win32, _} ->
+              assert {:ok, output} = run_cmd(bin_path, ["stop"])
+              assert output =~ "stopped"
+              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
+
+            _ ->
+              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
+              :ok
+          end
+        rescue
+          e ->
+            run_cmd(bin_path, ["stop"])
+
+            case :os.type() do
+              {:win32, _} ->
+                run_cmd(bin_path, ["uninstall"])
+
+              _ ->
+                :ok
+            end
+
+            reraise e, System.stacktrace()
+        after
+          _ = File.rm_rf(tmpdir)
+          clean_up_standard_app!()
+          :ok
+        end
+      end
+    end
+
+    @tag :expensive
+    # 5m
+    @tag timeout: 60_000 * 5
+    test "can build and deploy hot upgrade with previously generated appup" do
+      with_standard_app do
+        # Build v1 release
+        assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
+        update_config_and_code_to_v2()
+        # Build v2 release
+        assert {:ok, _} = mix("compile")
+        assert {:ok, _} = mix("release.gen.appup", ["--app=standard_app"])
+        assert {:ok, _} = mix("release", ["--verbose", "--env=prod", "--upgrade"])
+        assert ["0.0.2", "0.0.1"] == Utils.get_release_versions(@standard_output_path)
+        # Deploy it
+        assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
+        bin_path = Path.join([tmpdir, "bin", "standard_app"])
+
+        try do
+          unpack_old_release(tmpdir)
+          copy_new_release(tmpdir)
 
           # Boot it, ping it, upgrade it, rpc to verify, then shut it down
           assert File.exists?(bin_path)
@@ -414,6 +451,59 @@ defmodule IntegrationTest do
     end
 
     File.rm_rf!(Path.join([@standard_app_path, "rel", "standard_app"]))
+    File.rm_rf!(Path.join([@standard_app_path, "rel", "appups", "standard_app"]))
     :ok
+  end
+
+  defp update_config_and_code_to_v2 do
+    # Update config for v2
+    project_config_path = Path.join(@standard_app_path, "mix.exs")
+    project = File.read!(project_config_path)
+    config_path = Path.join([@standard_app_path, "config", "config.exs"])
+    config = File.read!(config_path)
+    rel_config_path = Path.join([@standard_app_path, "rel", "config.exs"])
+    rel_config = File.read!(rel_config_path)
+    # Write updates to modules
+    a_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "a.ex"])
+    a_mod = File.read!(a_mod_path)
+    b_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "b.ex"])
+    b_mod = File.read!(b_mod_path)
+    # Save orig
+    File.cp!(project_config_path, Path.join(@standard_app_path, "mix.exs.v1"))
+    File.cp!(config_path, Path.join([@standard_app_path, "config", "config.exs.v1"]))
+    File.cp!(rel_config_path, Path.join([@standard_app_path, "rel", "config.exs.v1"]))
+    File.cp!(a_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "a.ex.v1"]))
+    File.cp!(b_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "b.ex.v1"]))
+    # Write new config
+    new_project_config = String.replace(project, "version: \"0.0.1\"", "version: \"0.0.2\"")
+    new_config = String.replace(config, "num_procs: 2", "num_procs: 4")
+
+    new_rel_config =
+    String.replace(rel_config, "set version: \"0.0.1\"", "set version: \"0.0.2\"")
+
+    File.write!(project_config_path, new_project_config)
+    File.write!(config_path, new_config)
+    File.write!(rel_config_path, new_rel_config)
+    # Write updated modules
+    new_a_mod = String.replace(a_mod, "{:ok, {1, []}}", "{:ok, {2, []}}")
+
+    new_b_mod =
+    String.replace(b_mod, "loop({1, []}, parent, debug)", "loop({2, []}, parent, debug)")
+
+    File.write!(a_mod_path, new_a_mod)
+    File.write!(b_mod_path, new_b_mod)
+  end
+
+  defp unpack_old_release(tmpdir) do
+    tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
+    assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
+  end
+
+  defp copy_new_release(tmpdir) do
+    File.mkdir_p!(Path.join([tmpdir, "releases", "0.0.2"]))
+    File.cp!(
+      Path.join([@standard_output_path, "releases", "0.0.2", "standard_app.tar.gz"]),
+      Path.join([tmpdir, "releases", "0.0.2", "standard_app.tar.gz"])
+    )
   end
 end
