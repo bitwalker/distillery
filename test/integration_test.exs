@@ -17,17 +17,17 @@ defmodule IntegrationTest do
                           "standard_app"
                         ])
 
-  defmacrop with_standard_app(body) do
+  defmacrop with_standard_app(mix_exs, body) do
     quote do
       clean_up_standard_app!()
       old_dir = File.cwd!()
       File.cd!(@standard_app_path)
       {:ok, _} = File.rm_rf(Path.join(@standard_app_path, "_build"))
       _ = File.rm(Path.join(@standard_app_path, "mix.lock"))
-      {:ok, _} = mix("deps.get")
-      {:ok, _} = mix("deps.compile", ["distillery"])
-      {:ok, _} = mix("compile")
-      {:ok, _} = mix("release.clean")
+      {:ok, _} = mix("deps.get", [], unquote(mix_exs))
+      {:ok, _} = mix("deps.compile", ["distillery"], unquote(mix_exs))
+      {:ok, _} = mix("compile", [], unquote(mix_exs))
+      {:ok, _} = mix("release.clean", [], unquote(mix_exs))
       unquote(body)
       File.cd!(old_dir)
     end
@@ -113,72 +113,81 @@ defmodule IntegrationTest do
     @tag :expensive
     # 5m
     @tag timeout: 60_000 * 5
-    test "can build release and start it" do
-      with_standard_app do
-        # Build release
-        assert {:ok, output} = mix("release", ["--verbose", "--env=prod"])
+    for mix_exs <- ~w(mix.exs extra_apps.mix.exs) do
+      @tag mix_exs: mix_exs
+      test "can build release with #{mix_exs} and start it", config do
+        with_standard_app(config.mix_exs) do
+          # Build release
+          assert {:ok, output} =
+            mix("release", ["--verbose", "--env=prod"], config.mix_exs)
 
-        for callback <- ~w(before_assembly after_assembly before_package after_package) do
-          assert output =~ "Prod Plugin - #{callback}"
-        end
-
-        refute String.contains?(output, "Release Plugin")
-
-        assert ["0.0.1"] == Utils.get_release_versions(@standard_output_path)
-        # Boot it, ping it, and shut it down
-        assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
-        bin_path = Path.join([tmpdir, "bin", "standard_app"])
-
-        try do
-          tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
-          assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
-          assert File.exists?(bin_path)
-
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, _} = run_cmd(bin_path, ["install"])
-
-            _ ->
-              :ok
+          for callback <- ~w(before_assembly after_assembly before_package after_package) do
+            assert output =~ "Prod Plugin - #{callback}"
           end
 
-          :ok = create_additional_config_file(tmpdir)
+          refute String.contains?(output, "Release Plugin")
 
-          assert {:ok, _} = run_cmd(bin_path, ["start"])
-          assert :ok = wait_for_app(bin_path)
+          assert ["0.0.1"] == Utils.get_release_versions(@standard_output_path)
+          # Boot it, ping it, and shut it down
+          assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
+          bin_path = Path.join([tmpdir, "bin", "standard_app"])
 
-          assert {:ok, "2\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
-
-          # Additional config items should exist
-          assert {:ok, ":bar\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :foo)"])
-
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, output} = run_cmd(bin_path, ["stop"])
-              assert output =~ "stopped"
-              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
-
-            _ ->
-              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
-          end
-        rescue
-          e ->
-            run_cmd(bin_path, ["stop"])
+          try do
+            tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
+            assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
+            assert File.exists?(bin_path)
 
             case :os.type() do
               {:win32, _} ->
-                run_cmd(bin_path, ["uninstall"])
+                assert {:ok, _} = run_cmd(bin_path, ["install"])
 
               _ ->
                 :ok
             end
 
-            reraise e, System.stacktrace()
-        after
-          File.rm_rf!(tmpdir)
-          :ok
+            :ok = create_additional_config_file(tmpdir)
+
+            assert {:ok, _} = run_cmd(bin_path, ["start"])
+            assert :ok = wait_for_app(bin_path)
+
+            assert {:ok, ":ok\n"} =
+                      run_cmd(bin_path, ["rpc", "StandardApp.A.push(1)"])
+            assert {:ok, "{:ok, 1}\n"} =
+                      run_cmd(bin_path, ["rpc", "StandardApp.A.pop()"])
+
+            assert {:ok, "2\n"} =
+                     run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
+
+            # Additional config items should exist
+            assert {:ok, ":bar\n"} =
+                     run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :foo)"])
+
+            case :os.type() do
+              {:win32, _} ->
+                assert {:ok, output} = run_cmd(bin_path, ["stop"])
+                assert output =~ "stopped"
+                assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
+
+              _ ->
+                assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
+            end
+          rescue
+            e ->
+              run_cmd(bin_path, ["stop"])
+
+              case :os.type() do
+                {:win32, _} ->
+                  run_cmd(bin_path, ["uninstall"])
+
+                _ ->
+                  :ok
+              end
+
+              reraise e, System.stacktrace()
+          after
+            File.rm_rf!(tmpdir)
+            :ok
+          end
         end
       end
     end
@@ -187,7 +196,7 @@ defmodule IntegrationTest do
     # 5m
     @tag timeout: 60_000 * 5
     test "can build and deploy hot upgrade" do
-      with_standard_app do
+      with_standard_app("mix.exs") do
         # Build v1 release
         assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
         # Update config for v2
@@ -305,7 +314,7 @@ defmodule IntegrationTest do
     # 5m
     @tag timeout: 60_000 * 5
     test "when installation directory contains a space" do
-      with_standard_app do
+      with_standard_app("mix.exs") do
         # Build v1 release
         assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
 

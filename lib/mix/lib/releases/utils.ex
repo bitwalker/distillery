@@ -346,6 +346,11 @@ defmodule Mix.Releases.Utils do
           end
       end)
 
+    base_apps =
+      base_apps
+      |> add_app_if_doesnt_exist(:mix, :load)
+      |> add_app_if_doesnt_exist(:distillery, :load)
+
     # Correct any ERTS libs which should be pulled from the correct
     # ERTS directory, not from the current environment.
     apps =
@@ -383,6 +388,7 @@ defmodule Mix.Releases.Utils do
               end
           end)
       end
+
 
     case apps do
       {:error, _} = err ->
@@ -536,6 +542,13 @@ defmodule Mix.Releases.Utils do
 
       apps ->
         Enum.uniq([app | apps])
+    end
+  end
+
+  defp add_app_if_doesnt_exist(apps, name, start_type) do
+    case Enum.any?(apps, fn %App{name: a} -> a == name; _ -> false end) do
+      false -> [App.new(name, start_type) | apps]
+      true -> apps
     end
   end
 

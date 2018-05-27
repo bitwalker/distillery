@@ -12,9 +12,7 @@ defmodule Mix.Releases.Release do
               # included so the elixir shell works
               :iex,
               # required for upgrades
-              :sasl,
-              {:mix, :load},
-              {:distillery, :load}
+              :sasl
               # can also use `app_name: type`, as in `some_dep: load`,
               # to only load the application, not start it
             ],
