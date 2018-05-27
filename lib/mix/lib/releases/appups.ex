@@ -59,7 +59,7 @@ defmodule Mix.Releases.Appup do
   defp do_locate([path | rest], v1, v2) do
     case Utils.read_terms(path) do
       {:ok, [{^v2, ups, downs}]} when is_list(ups) and is_list(downs) ->
-        if List.keyfind(ups, v1, 0) and List.keyfind(downs, v1, 0) do
+        if List.keyfind(ups, v1, 0) && List.keyfind(downs, v1, 0) do
           path
         else
           do_locate(rest, v1, v2)
