@@ -45,7 +45,7 @@ defmodule MyApp.ReleaseTasks do
 
   defp prepare do
     me = myapp()
-    
+
     IO.puts "Loading #{me}.."
     # Load the code for myapp, but don't start it
     :ok = Application.load(me)
@@ -107,7 +107,7 @@ For more info on shell variables look at the [Shell Script API](https://hexdocs.
 
 ## Tying it all together
 
-Now that we have our custom command and migrator module defined, we just need to set up our config appropriately:
+Now that we have our custom command and migrator module defined, we just need to set up our config appropriately in the `rel/config.exs` file:
 
 ```elixir
 ...
