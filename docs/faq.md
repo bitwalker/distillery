@@ -101,9 +101,19 @@ release again. To prevent this from happening in the future, set
 ## Permissions
 
 One of the things that often catches people off guard are the permissions required by a release, particularly with upgrades.
+
+### Without upgrades
+
 The following is a list of things the release handler expects:
 
-- It can read `$HOME/.erlang.cookie` and create it if it doesn't exist
-- It can read/write the directory it's deployed to (write really only applies to upgrades, but it needs to be able to write to `$RELEASE_MUTABLE_DIR` as well, which is the `var` folder by default).
+- It can read/write to `$HOME/.erlang.cookie` and create it if it doesn't exist
+- It can read/write to `$RELEASE_MUTABLE_DIR` if set, otherwise it needs to read/write to `/var` directory under the directory it's deployed to
+- It can read the directory it's deployed to
+
+### With hot upgrades
+
+- It can read/write to `$HOME/.erlang.cookie` and create it if it doesn't exist
+- It can read/write to `$RELEASE_MUTABLE_DIR` if set, otherwise it needs to read/write to `/var` directory under the directory it's deployed to
+- It can read/write the directory it's deployed to
 
 If permissions are wrong, you may see a variety of errors depending on what permissions are off, but ensure the list above is satisfied, and you should be in good shape.
