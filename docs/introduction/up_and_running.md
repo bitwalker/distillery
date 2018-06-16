@@ -26,7 +26,7 @@ mix release.init
 There are a few options you can provide to this task, to view those just run `mix help release.init`.
 The main option of interest is in regards to umbrella projects, as the default configuration is to define
 a release containing all of the applications in the umbrella, but you may want to instead have it generate
-a release for each initially. In either case, it does not matter much, as you will likely want to modify them
+a release for each individually. In either case, it does not matter much, as you will likely want to modify them
 later anyway.
 
 Running this task will generate a new directory `rel` in the root of your project, and a new config file,
@@ -73,7 +73,7 @@ build a basic release for experimentation:
       Daemon: _build/dev/rel/test/bin/myapp start
 ```
 
-Since `MIX_ENV=dev` by default when running mix tasks, this used the `:dev` environment configuration when
+Since `MIX_ENV=dev` is set by default when running mix tasks, this used the `:dev` environment configuration when
 building this release, which by default sets `dev_mode: true`, symlinking rather than copying content into
 the release, and skipping the part where it is packed up into a tarball. As shown above, you can easily run
 the release using one of the three different modes of execution.
