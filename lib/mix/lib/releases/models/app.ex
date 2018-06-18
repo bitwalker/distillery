@@ -44,19 +44,19 @@ defmodule Mix.Releases.App do
 
     cond do
       is_nil(dep) ->
-        do_new(name, start_type)
+        do_new(name, start_type, loaded_deps)
 
       Keyword.get(dep.opts, :runtime) === false ->
         nil
 
       :else ->
-        do_new(name, start_type)
+        do_new(name, start_type, loaded_deps)
     end
   end
 
   def new(name, start_type, _loaded_deps), do: {:error, {:apps, {:invalid_start_type, name, start_type}}}
 
-  defp do_new(name, start_type) do
+  defp do_new(name, start_type, loaded_deps) do
     _ = Application.load(name)
 
     case Application.spec(name) do
@@ -65,7 +65,7 @@ defmodule Mix.Releases.App do
 
       spec ->
         vsn = '#{Keyword.get(spec, :vsn)}'
-        deps = get_dependencies(name)
+        deps = get_dependencies(name, loaded_deps)
         apps = Keyword.get(spec, :applications, [])
         included = Keyword.get(spec, :included_applications, [])
         path = Application.app_dir(name)
@@ -97,8 +97,8 @@ defmodule Mix.Releases.App do
 
   # Gets a list of all applications which are children
   # of this application.
-  defp get_dependencies(name) do
-    Mix.Dep.loaded_by_name([name], [])
+  defp get_dependencies(name, loaded_deps) do
+    Mix.Dep.loaded_by_name([name], loaded_deps, [])
     |> Stream.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
     |> Stream.filter(&include_dep?/1)
     |> Enum.map(&map_dep/1)
