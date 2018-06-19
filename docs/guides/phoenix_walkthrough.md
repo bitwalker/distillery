@@ -15,7 +15,7 @@ will be added at a later time.
 
 ### Create Phoenix App with Distillery
 
-First off we will create a new Phoenix app (without Ecto) and then change into the 
+First off we will create a new Phoenix app (without Ecto) and then change into the
 newly created directory with the following commands:
 ```
 $ mix phx.new --no-ecto phoenix_distillery
@@ -45,7 +45,7 @@ config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json"
 ```
 
-to the following: 
+to the following:
 
 ```
 config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
@@ -70,10 +70,10 @@ the tuple `{:system, "PORT"}` to the port option. Your release will
 not start properly if the `PORT` variable is not available to it on
 the production machine/in the production environment.
 
-### Building a Release 
+### Building a Release
 
 Now we have the Phoenix app created with Distillery and our configuration all ready
-for building a release. Execute the following commands: 
+for building a release. Execute the following commands:
 
 ```
 $ mix deps.get --only prod
@@ -85,7 +85,7 @@ $ mix phx.digest
 ```
 
 The above commands are not unique to Distillery, they are required by Phoenix to
-build a production release and get all the static files in order. 
+build a production release and get all the static files in order.
 
 #### Distillery Release
 
@@ -94,18 +94,18 @@ The following initializes Distillery for the project:
 $ mix release.init
 ```
 
-The above command will create the file `rel/config.exs` in addition to an 
+The above command will create the file `rel/config.exs` in addition to an
 empty directory `rel/plugins/`. Please refer to the
 Distillery [walkthrough](https://github.com/bitwalker/distillery/blob/master/docs/Walkthrough.md)
 for a detailed look at the configuration options available.
 
-To build the release the following command is executed: 
+To build the release the following command is executed:
 
 ```
 $ MIX_ENV=prod mix release
 ```
 
-To run your release, execute the following command: 
+To run your release, execute the following command:
 ```
 $ PORT=4001 _build/prod/rel/phoenix_distillery/bin/phoenix_distillery foreground
 ```
@@ -113,7 +113,7 @@ $ PORT=4001 _build/prod/rel/phoenix_distillery/bin/phoenix_distillery foreground
 You should be able to go to [localhost:4001](localhost:4001) and load the default
 Phoenix application.
 
-*NOTE* The above commands can be combined into one quick command as 
+*NOTE* The above commands can be combined into one quick command as
 ```
 $ cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod
 ```
@@ -128,21 +128,21 @@ which is not intended to be packaged in releases. As you won't be doing code rel
 ### Version 0.0.1
 
 If you followed the above you will have generated a working release. A few notes on some of the
-above commands we used: 
+above commands we used:
 
 1. `./node_modules/brunch/bin/brunch b -p` builds your assets in
    production mode. More detail can be found in the
-   [Phoenix Static Asset Guide](http://www.phoenixframework.org/docs/static-assets)
+   [Phoenix Static Asset Guide](http://phoenixframework.org/blog/static-assets)
 1. `MIX_ENV=prod mix phx.digest` To compress and tag your assets
     for proper caching. More detail can be found in the
-    [Phoenix Mix Task Guide](http://www.phoenixframework.org/docs/mix-tasks#section--mix-phoenix-digest-)
+    [Phoenix Mix Task Guide](https://hexdocs.pm/phoenix/Mix.Tasks.Phoenix.Digest.html)
 1. `MIX_ENV=prod mix release --env=prod` To actually generate a release for a
     production environment
 
-You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is 
+You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is
 supposed to be interactive with features such as live code reload and automatic `brunch` asset
 recompilation and extra logging. While great for development, it comes at a performance cost
-and you would not want to run a production Phoenix application in dev mode. 
+and you would not want to run a production Phoenix application in dev mode.
 
 
 #### Take that Release Anywhere
