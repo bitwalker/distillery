@@ -1,8 +1,15 @@
 # Boot Hooks
 
-Boot hooks are scripts which execute pre/post to events that occur in the boot script.
-Currently, that is `pre/post_start`, and `pre/post_stop`. These scripts are simply
-shell scripts which will be sourced into the boot script during execution.
+Boot hooks are scripts which execute pre/post to events that occur in the run control script.
+
+## Events
+
+- `pre_configure`, occurs before `REPLACE_OS_VARS` triggers replacement, and before any generated files are generated
+- `post_configure`, currs after environment variable replacement and after generated files are generated
+- `pre_start`, occurs before the release is started
+- `post_start`, occurs right after the release is started
+- `pre_stop`, occurs after a request to stop the release is issued, but before the release is stopped
+- `post_stop`, occurs after the release is stopped
 
 ## Example Usage
 
@@ -46,6 +53,4 @@ we've started!
 ...snip...
 ```
 
-You have access to anything defined in the boot script's environment,
-see [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for
-details.
+You have access to anything defined in the run control script environment, see [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for details.

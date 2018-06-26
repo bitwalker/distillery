@@ -9,7 +9,7 @@ are here which are likely of interest to most of you:
 ### Executables
 
 Distillery has the capability to generate executable releases via the `--executable` flag. 
-These are self-extracting tar archives with a header script which passes arguments to the boot script upon extraction. 
+These are self-extracting tar archives with a header script which passes arguments to the releases run control script upon extraction. 
 It will only extract itself on the first run, to `./tmp/<rel_name>`, further runs will use the already extracted release for efficiency.
 If you want the executable to remove the extracted files after the release terminates, you can enable this auto-cleanup by marking
 the executable as transient with `--transient`.

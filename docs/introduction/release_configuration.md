@@ -123,10 +123,10 @@ and environments.
     - run_erl_env (string);
         a string of environment variables to be applied to run_erl
     - commands (keyword list of names to paths);
-        Commands are extensions to the boot script which will run like any
-        other boot script command, i.e. foreground, and are implemented
+        Commands are extensions to the release run control script which will run like any
+        other command, i.e. foreground, and are implemented
         as shell scripts, which will be copied into the release when it is built,
-        just like boot script hooks.
+        just like hooks.
     - overrides (keyword list of app names to paths);
         During development its often the case that you want to substitute the app
         that you are working on for a 'production' version of an app. You can

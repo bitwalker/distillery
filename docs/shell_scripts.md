@@ -40,12 +40,17 @@ it as a string.
 
 Generates a unique identifier. Returns it as a string.
 
-### nodetool()
+### release_ctl()
 
-Executes the node tool against a running node. It uses the arguments passed to the
-management script, but you can use the `set` builtin to change what those arguments are.
-It uses `$1` to set the command for the nodetool, and `$@` to pass arguments to that
-command.
+Executes commands locally or in a clean node. You can pass `help` to see a list
+of commands and global options, and `help <cmd>` to see help for a specific command.
+
+### release_remote_ctl()
+
+Executes commands against a running node. Like `release_ctl` you can pass `help` to
+get details on commands and options it exports. Both functions use the same underlying
+script, but this one is automatically configured to connect to the running release so you
+don't have to.
 
 ### escript()
 

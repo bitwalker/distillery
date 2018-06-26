@@ -98,6 +98,32 @@ extract the tarball over the top of the release root directory, then start the
 release again. To prevent this from happening in the future, set
 `strip_debug_info: false` when using hot upgrades.
 
+---
+
+If you see the following error when upgrading:
+
+```
+Unpack failed: {enoent,"/path/to/release/releases/0.2.0/myapp.rel"}
+```
+
+This is very likely due to repackaging the release tarball using the `tar` utility in a way
+which changes the filename entries such that they do not match what the release handler is expecting.
+
+The release tarball has entries of the form `releases/0.2.0/myapp.rel`, where GNU `tar` (and likely others)
+may add entries relative to a directory, resulting in entries of the form `./releases/0.2.0/myapp.rel`. Despite
+the fact that these equate to the same logical path, they are nevertheless considered different files in the tar
+file format, as the name of the entry differs. Since the release handler is expecting the former, and cannot handle
+the latter, your only option is to ensure entries are added to the tarball in the proper format.
+
+However, I would strongly suggest you reevaluate any process which has you repackaging the tarball. Distillery in
+particular is designed with a plugin system and overlay system so that you can extend the contents of the tarball as
+needed by hooking into those. If you need to modify things on the target system, such as `vm.args`, considering using
+features like `REPLACE_OS_VARS=true` so that you can base information in the configuration or `vm.args` on data exported
+in the system environment; if that isn't an option, you can use shell hooks (e.g. `pre_upgrade` to copy files where they need to
+go). If you _really_ need to repackage the release tarball, you can do this, but you may have an easier time of it if you 
+can repackage it with `erl_tar`, which will match the way Distillery builds it, and the release handler unpacks it.
+
+
 ## Permissions
 
 One of the things that often catches people off guard are the permissions required by a release, particularly with upgrades.

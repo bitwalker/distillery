@@ -83,9 +83,10 @@ link, and template, and allow you to do one of those four operations to extend t
 
 A plugin for Distillery's appup generation which transforms the appup instruction set in some way.
 
-#### Management Script
+#### Management Script or Run Control Script
 
-For lack of a better name, it is how we currently refer to the script executed when you run `bin/myapp <command>`.
+This is the script executed when you run `bin/myapp`. It delegates to one or more scripts internally to execute
+specific commands, including custom commands and hooks you define.
 
 #### Boot Script
 
