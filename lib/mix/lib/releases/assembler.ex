@@ -977,19 +977,38 @@ defmodule Mix.Releases.Assembler do
 
   # Extend boot script instructions
   defp extend_script(%Release{profile: %Profile{config_providers: providers}}, script_path) do
+    alias Mix.Releases.Runtime.Pidfile
+
+    kernel_procs = [
+      # Starts the pidfile kernel process
+      {:kernelProcess, {Pidfile, {Pidfile, :start, []}}}
+    ]
+
     extras = [
       # Applies the config hook for executing config.exs on boot
       {:apply, {Mix.Releases.Config.Provider, :init, [providers]}}
     ]
 
     with {:ok, [{:script, {_relname, _relvsn} = header, ixns}]} <- Utils.read_terms(script_path),
+         # Inject kernel processes
+         {before_app_ctrl, after_app_ctrl} <-
+           Enum.split_while(ixns, fn
+             {:kernelProcess, {:application_controller, {:application_controller, :start, _}}} -> false
+             _ -> true
+           end),
+         ixns = before_app_ctrl ++ kernel_procs ++ after_app_ctrl,
+         # Inject extras after Elixir is started
          {before_elixir, [elixir | after_elixir]} <-
            Enum.split_while(ixns, fn
              {:apply, {:application, :start_boot, [:elixir | _]}} -> false
              _ -> true
            end),
-         extended_script = {:script, header, before_elixir ++ [elixir | extras] ++ after_elixir},
+         ixns = before_elixir ++ [elixir | extras] ++ after_elixir,
+         # Put script back together
+         extended_script = {:script, header, ixns},
+         # Write script to .script file
          :ok <- Utils.write_term(script_path, extended_script),
+         # Write binary script to .boot file
          boot_path =
            Path.join(Path.dirname(script_path), Path.basename(script_path, ".script") <> ".boot"),
          :ok <- File.write(boot_path, :erlang.term_to_binary(extended_script)) do
