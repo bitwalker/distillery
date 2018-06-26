@@ -254,7 +254,13 @@ defmodule Mix.Releases.Assembler do
 
         clean_apps =
           release.applications
-          |> Enum.filter(fn %{name: n} -> n in [:kernel, :stdlib, :compiler, :elixir, :iex] end)
+          |> Enum.map(fn %{name: n} = a ->
+            if not n in [:kernel, :stdlib, :compiler, :elixir, :iex] do
+              %{a | start_type: :load}
+            else
+              a
+            end
+          end)
 
         start_clean_rel = %{release | applications: clean_apps}
 
