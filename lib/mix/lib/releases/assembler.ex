@@ -251,6 +251,7 @@ defmodule Mix.Releases.Assembler do
       :ok ->
         release_file = Path.join(rel_dir, "#{relname}.rel")
         start_clean_file = Path.join(rel_dir, "start_clean.rel")
+        no_dot_erlang_file = Path.join(rel_dir, "no_dot_erlang.rel")
 
         clean_apps =
           release.applications
@@ -266,6 +267,7 @@ defmodule Mix.Releases.Assembler do
 
         with :ok <- write_relfile(release_file, release),
              :ok <- write_relfile(start_clean_file, start_clean_rel),
+             :ok <- write_relfile(no_dot_erlang_file, start_clean_rel),
              :ok <- write_binfile(release, rel_dir),
              :ok <- generate_relup(release, rel_dir),
              do: :ok
@@ -865,8 +867,6 @@ defmodule Mix.Releases.Assembler do
 
         erts_output_dir = Path.join(output_dir, "erts-#{erts_vsn}")
         erl_path = Path.join([erts_output_dir, "bin", "erl"])
-        nodetool_path = Path.join([output_dir, "bin", "nodetool"])
-        nodetool_dest = Path.join([erts_output_dir, "bin", "nodetool"])
 
         with :ok <- remove_if_exists(erts_output_dir),
              :ok <- File.mkdir_p(erts_output_dir),
@@ -874,9 +874,7 @@ defmodule Mix.Releases.Assembler do
              {:ok, _} <- File.rm_rf(erl_path),
              {:ok, erl_script} <- Utils.template(:erl_script, release.profile.overlay_vars),
              :ok <- File.write(erl_path, erl_script),
-             :ok <- File.chmod(erl_path, 0o755),
-             :ok <- File.cp(nodetool_path, nodetool_dest),
-             :ok <- File.chmod(nodetool_dest, 0o755) do
+             :ok <- File.chmod(erl_path, 0o755) do
           :ok
         else
           {:error, reason} ->
@@ -935,6 +933,7 @@ defmodule Mix.Releases.Assembler do
                  Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
                ),
              :ok <- create_start_clean(rel_dir, output_dir, options),
+             :ok <- create_no_dot_erlang(rel_dir, output_dir, options),
              do: :ok
 
       {:ok, _, []} ->
@@ -945,6 +944,7 @@ defmodule Mix.Releases.Assembler do
                  Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
                ),
              :ok <- create_start_clean(rel_dir, output_dir, options),
+             :ok <- create_no_dot_erlang(rel_dir, output_dir, options),
              do: :ok
 
       :error ->
@@ -1029,38 +1029,45 @@ defmodule Mix.Releases.Assembler do
 
   # Generates start_clean.boot
   defp create_start_clean(rel_dir, output_dir, options) do
-    Logger.debug("Generating start_clean.boot")
+    create_boot_script(:start_clean, rel_dir, output_dir, options)
+  end
+  defp create_no_dot_erlang(rel_dir, output_dir, options) do
+    create_boot_script(:no_dot_erlang, rel_dir, output_dir, options)
+  end
 
-    case :systools.make_script('start_clean', options) do
+  defp create_boot_script(name, rel_dir, output_dir, options) do
+    Logger.debug("Generating #{name}.boot")
+
+    case :systools.make_script('#{name}', options) do
       :ok ->
         with :ok <-
                File.cp(
-                 Path.join(rel_dir, "start_clean.boot"),
-                 Path.join([output_dir, "bin", "start_clean.boot"])
+                 Path.join(rel_dir, "#{name}.boot"),
+                 Path.join([output_dir, "bin", "#{name}.boot"])
                ),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.rel")),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.script")) do
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.rel")),
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.script")) do
           :ok
         else
           {:error, reason} ->
-            {:error, {:assembler, :file, {:start_clean, reason}}}
+            {:error, {:assembler, :file, {name, reason}}}
         end
 
       :error ->
-        {:error, {:assembler, {:start_clean, :unknown}}}
+        {:error, {:assembler, {:named_boot, name, :unknown}}}
 
       {:ok, _, []} ->
         with :ok <-
                File.cp(
-                 Path.join(rel_dir, "start_clean.boot"),
-                 Path.join([output_dir, "bin", "start_clean.boot"])
+                 Path.join(rel_dir, "#{name}.boot"),
+                 Path.join([output_dir, "bin", "#{name}.boot"])
                ),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.rel")),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.script")) do
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.rel")),
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.script")) do
           :ok
         else
           {:error, reason} ->
-            {:error, {:assembler, :file, {:start_clean, reason}}}
+            {:error, {:assembler, :file, {name, reason}}}
         end
 
       {:ok, mod, warnings} ->
@@ -1069,7 +1076,7 @@ defmodule Mix.Releases.Assembler do
 
       {:error, mod, errors} ->
         error = format_systools_error(mod, errors)
-        {:error, {:assembler, {:start_clean, error}}}
+        {:error, {:assembler, {:named_boot, name, error}}}
     end
   end
 
