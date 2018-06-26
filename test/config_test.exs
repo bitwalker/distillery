@@ -26,6 +26,7 @@ defmodule ConfigTest do
                      :elixir,
                      :iex,
                      :sasl,
+                     :runtime_tools,
                      {:mix, :load},
                      {:distillery, :load},
                    ]
