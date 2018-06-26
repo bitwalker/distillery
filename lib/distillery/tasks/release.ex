@@ -258,6 +258,10 @@ defmodule Mix.Tasks.Release do
     Application.put_env(:distillery, :no_warn_missing, apps)
     do_parse_args(rest, acc)
   end
+  
+  defp do_parse_args([{:no_tar, _} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :no_tar, true))
+  end
 
   defp do_parse_args([{:executable, _} | _rest], %{is_upgrade: true}) do
     Logger.error("You cannot combine --executable with --upgrade")

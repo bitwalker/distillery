@@ -13,6 +13,13 @@ defmodule InitTest do
                                             "init_test_app",
                                             "init_test_config.eex"
                                           ])
+  
+  setup_all do
+    old_dir = File.cwd!()
+    File.cd!(@init_test_app_path)
+    {:ok, _} = mix("deps.get")
+    File.cd!(old_dir)
+  end
 
   describe "release.init" do
     test "creates an example rel/config.exs" do

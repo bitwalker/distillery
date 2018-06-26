@@ -22,7 +22,7 @@ if Version.match?(Version.parse!(System.version()), req) do
       old_dir = File.cwd!()
       File.cd!(@app_path)
       {:ok, _} = mix("deps.get")
-      {:ok, _} = mix("release")
+      {:ok, _} = mix("release", ["--no-tar"])
 
       assert File.exists?(@boot_script)
       {:ok, [{:script, _, lines}]} = :file.consult(@boot_script)

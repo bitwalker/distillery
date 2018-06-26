@@ -10,7 +10,7 @@ environment :dev do
 end
 
 environment :prod do
-  set include_erts: true
+  set include_erts: false
   set include_src: false
   set cookie: :"UMSq<$cWFWDtMB*yl?o;7$ote.$Xcmh:z|!:]@U81}1RsDJzcC<1g8F3/g!gjom="
 end
