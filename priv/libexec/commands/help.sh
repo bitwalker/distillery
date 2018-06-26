@@ -4,6 +4,12 @@ set -o posix
 
 set -e
 
+if [ ! -z "$1" ]; then
+    # We should delegate this to the command tool
+    release_ctl help "$@"
+    exit 1
+fi
+
 echo "Usage: $REL_NAME <task>"
 echo
 echo "Service Control"

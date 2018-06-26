@@ -19,11 +19,13 @@ RUN_ERL_ENV="${RUN_ERL_ENV:-<%= release.profile.run_erl_env %>}"
 # Current version of ERTS being used
 # If this is not present/unset, it will be detected
 <%= if ((is_binary(include_erts) or include_erts) and not is_nil(erts_vsn)) do %>ERTS_VSN="${ERTS_VSN:-<%= erts_vsn %>}"<% end %>
+DISTILLERY_VSN="<%= Application.spec(:distillery, :vsn) %>"
 export REL_NAME
 export REL_VSN
 export ERL_OPTS
 export RUN_ERL_ENV
 export ERTS_VSN
+export DISTILLERY_VSN
 
 # If readlink has no -f option, or greadlink is not available,
 # This function behaves like `readlink -f`
@@ -81,7 +83,7 @@ RELEASE_LIBEXEC_DIR="$SCRIPT_DIR/libexec"
 . "$RELEASE_LIBEXEC_DIR/config.sh"
 
 # Make the release root our working directory
-cd "$ROOTDIR"
+cd "$RELEASE_ROOT_DIR"
 
 # We export this so that custom tasks in Elixir
 # which need to know how they were invoked can

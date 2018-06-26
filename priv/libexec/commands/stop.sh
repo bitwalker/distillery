@@ -12,7 +12,7 @@ run_hooks pre_stop
 
 # Wait for the node to completely stop...
 PID="$(get_pid)"
-if ! nodetool "stop"; then
+if ! release_remote_ctl stop; then
     exit 1
 fi
 

@@ -13,6 +13,9 @@ defmodule Mix.Releases.Release do
               :iex,
               # required for upgrades
               :sasl,
+              # required for some command tooling
+              :runtime_tools,
+              # required for config providers
               {:mix, :load},
               {:distillery, :load}
               # can also use `app_name: type`, as in `some_dep: load`,

@@ -2,15 +2,19 @@
 
 set -o posix
 
-## This command sends a "ping" to the running node.
-## If the node is not running, or cannot be reached,
-## an error will be printed. If the node is running,
-## but cannot be connected to, "pang" is printed.
+## Pings the running node, or an arbitrary peer node
+## by supplying `--peer` and `--cookie` flags.
+##
+## If the node is running and can be connected to,
+## 'pong' will be printed to stdout. If the node is
+## not reachable or cannot be connected to due to an
+## invalid cookie, 'pang' will be printed to stdout
+## and the command will exit with a non-zero status code.
 
 set -e
 
 require_cookie
 
-if ! nodetool "ping"; then
+if ! release_ctl ping --peer="$NAME" --cookie="$COOKIE" "$@"; then
     exit 1
 fi

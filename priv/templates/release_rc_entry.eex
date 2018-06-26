@@ -33,5 +33,5 @@ if ! command -v bash >/dev/null ; then
     printf "${bldred}%s${txtrst}\n" "$message"
     exit 1
 else
-    exec "${SCRIPT_DIR}/${REL_NAME}_loader.sh" "$@"
+    exec "${SCRIPT_DIR}/${REL_NAME}_rc_exec.sh" "$@"
 fi

@@ -12,6 +12,8 @@ REL_NAME="${REL_NAME:-<%= release_name %>}"
 REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "$RELEASES_DIR"/start_erl.data)}"
 ERTS_VSN="${ERTS_VSN:-$(cut -d' ' -f1 "$RELEASES_DIR"/start_erl.data)}"
 <%= if (not include_erts or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
+# The location of consolidated protocol .beams
+CONSOLIDATED_DIR="$ROOT/lib/${REL_NAME}-${REL_VSN}/consolidated"
 
 export RELEASE_ROOT_DIR
 export RELEASES_DIR
@@ -20,6 +22,7 @@ export REL_VSN
 export ERTS_VSN
 export USE_HOST_ERTS
 export DEBUG_BOOT
+export CONSOLIDATED_DIR
 
 # Set DEBUG_BOOT to output verbose debugging info during execution
 if [ ! -z "$DEBUG_BOOT" ]; then

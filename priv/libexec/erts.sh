@@ -3,6 +3,20 @@
 set -o posix
 set -e
 
+code_paths() {
+    __rel="$RELEASE_ROOT_DIR/releases/$REL_VSN/$REL_NAME.rel"
+    cat "$__rel" \
+        | egrep "{[A-Za-z_]*,\"[0-9.]*[A-Za-z0-9.\_\-\+]*\"(,[a-z]*)?}" \
+        | grep -v "erts" \
+        | sed -e's/"[^"]*$//' \
+              -e's/^[^a-z]*//' \
+              -e's/,/-/' \
+              -e's/"//' \
+              -e"s|^|$RELEASE_ROOT_DIR/lib/|" \
+              -e's|$|/ebin|' \
+        | tr '\n' ' '
+}
+
 # Echoes the path to the current ERTS binaries, e.g. erl
 whereis_erts_bin() {
     if [ -z "$ERTS_VSN" ]; then
@@ -124,7 +138,12 @@ elixir() {
         I=$(expr $I + $S)
     done
     if [ "$MODE" != "iex" ]; then ERL="-noshell -s elixir start_cli $ERL"; fi
-    erl -pa "$RELEASE_ROOT_DIR"/lib/*/ebin $ELIXIR_ERL_OPTIONS $ERL -extra "$@"
+    __code_path="$(code_paths)"
+    erl -boot_var ERTS_LIB_DIR "$ERTS_DIR/../lib" \
+        -boot "$RELEASE_ROOT_DIR/bin/start_clean" \
+        -pa $__code_path \
+        -pa "$CONSOLIDATED_DIR" \
+        $ELIXIR_ERL_OPTIONS $ERL -extra "$@"
 }
 
 # Run IEx
@@ -147,17 +166,31 @@ otp_vsn() {
     erl -eval 'Ver = erlang:system_info(otp_release), io:format("~s~n", [Ver])' -noshell -boot start_clean -s erlang halt
 }
 
-# Control a node
-# Use like `nodetool "ping"`
-nodetool() {
+# Use release_ctl for local operations
+# Use like `release_ctl eval "IO.puts(\"Hi!\")"`
+release_ctl() {
+    command="$1"; shift
+    elixir -e "Mix.Releases.Runtime.Control.main" \
+           -- \
+           "$command" "$@"
+}
+
+# Use release_ctl for remote operations
+# Use like `release_remote_ctl ping`
+release_remote_ctl() {
     command="$1"; shift
     name="${PEERNAME:-$NAME}"
-    elixir -r "$ROOTDIR/bin/cli.exs" -e "Mix.Releases.Runtime.CLI.main" \
-           --erl "-boot start_clean" \
+    elixir -e "Mix.Releases.Runtime.Control.main" \
            -- \
+           "$command" \
            --name="$name" \
            --cookie="$COOKIE" \
-           "$command" "$@"
+           "$@"
+}
+
+# DEPRECATED: Use release_remote_ctl instead
+nodetool() {
+    release_remote_ctl "$@"
 }
 
 # Run an escript in the node's environment

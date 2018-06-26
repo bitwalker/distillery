@@ -296,35 +296,35 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  # Creates the .boot files, nodetool, vm.args, sys.config, start_erl.data, and includes ERTS into
+  # Creates the .boot files, config files (vm.args, sys.config, config.exs),
+  # start_erl.data, release_rc scripts, and includes ERTS into
   # the release if so configured
   defp write_binfile(release, rel_dir) do
     name = "#{release.name}"
     bin_dir = Path.join(release.profile.output_dir, "bin")
-    bootcheck_path = Path.join(bin_dir, name)
-    bootloader_path = Path.join(bin_dir, "#{name}_loader.sh")
-    boot_path = Path.join(rel_dir, "#{name}.sh")
-    bootloader_win_path = Path.join(bin_dir, "#{name}.bat")
-    boot_win_path = Path.join(rel_dir, "#{name}.bat")
+    release_rc_entry_path = Path.join(bin_dir, name)
+    release_rc_exec_path = Path.join(bin_dir, "#{name}_rc_exec.sh")
+    release_rc_main_path = Path.join(rel_dir, "#{name}.sh")
+    release_rc_win_exec_path = Path.join(bin_dir, "#{name}.bat")
+    release_rc_win_main_path = Path.join(rel_dir, "#{name}.bat")
     template_params = release.profile.overlay_vars
 
     with :ok <- File.mkdir_p(bin_dir),
-         :ok <- generate_nodetool(bin_dir),
-         {:ok, bootcheck_contents} <- Utils.template(:boot_check, template_params),
-         {:ok, bootloader_contents} <- Utils.template(:boot_loader, template_params),
-         {:ok, bootloader_win_contents} <- Utils.template(:boot_loader_win, template_params),
-         {:ok, boot_contents} <- Utils.template(:boot, template_params),
-         {:ok, boot_win_contents} <- Utils.template(:boot_win, template_params),
-         :ok <- File.write(bootcheck_path, bootcheck_contents),
-         :ok <- File.write(bootloader_path, bootloader_contents),
-         :ok <- File.write(bootloader_win_path, bootloader_win_contents),
-         :ok <- File.write(boot_path, boot_contents),
-         :ok <- File.write(boot_win_path, boot_win_contents),
-         :ok <- File.chmod(bootcheck_path, 0o777),
-         :ok <- File.chmod(bootloader_path, 0o777),
-         :ok <- File.chmod(bootloader_win_path, 0o777),
-         :ok <- File.chmod!(boot_path, 0o777),
-         :ok <- File.chmod!(boot_win_path, 0o777),
+         {:ok, release_rc_entry_contents} <- Utils.template(:release_rc_entry, template_params),
+         {:ok, release_rc_exec_contents} <- Utils.template(:release_rc_exec, template_params),
+         {:ok, release_rc_win_exec_contents} <- Utils.template(:release_rc_win_exec, template_params),
+         {:ok, release_rc_main_contents} <- Utils.template(:release_rc_main, template_params),
+         {:ok, release_rc_win_main_contents} <- Utils.template(:release_rc_win_main, template_params),
+         :ok <- File.write(release_rc_entry_path, release_rc_entry_contents),
+         :ok <- File.write(release_rc_exec_path, release_rc_exec_contents),
+         :ok <- File.write(release_rc_win_exec_path, release_rc_win_exec_contents),
+         :ok <- File.write(release_rc_main_path, release_rc_main_contents),
+         :ok <- File.write(release_rc_win_main_path, release_rc_win_main_contents),
+         :ok <- File.chmod(release_rc_entry_path, 0o777),
+         :ok <- File.chmod(release_rc_exec_path, 0o777),
+         :ok <- File.chmod(release_rc_win_exec_path, 0o777),
+         :ok <- File.chmod!(release_rc_main_path, 0o777),
+         :ok <- File.chmod!(release_rc_win_main_path, 0o777),
          :ok <- generate_start_erl_data(release, rel_dir),
          :ok <- generate_vm_args(release, rel_dir),
          :ok <- generate_config_exs(release, rel_dir),
@@ -621,27 +621,6 @@ defmodule Mix.Releases.Assembler do
       Path.join([output_dir, "lib", "#{app}-#{v1}", "consolidated"]) |> String.to_charlist()
 
     get_removed_relup_code_paths(apps, output_dir, [v1_path_consolidated, v1_path | paths])
-  end
-
-  # Generates the nodetool utility
-  defp generate_nodetool(bin_dir) do
-    Logger.debug("Generating nodetool")
-    priv_dir = Application.app_dir(:distillery, "priv")
-
-    with {:ok, node_tool_file} <- Utils.template(:nodetool),
-         {:ok, release_utils_file} <- Utils.template(:release_utils),
-         :ok <-
-           File.cp(Path.join([priv_dir, "templates", "cli.exs"]), Path.join(bin_dir, "cli.exs")),
-         :ok <- File.write(Path.join(bin_dir, "nodetool"), node_tool_file),
-         :ok <- File.write(Path.join(bin_dir, "release_utils.escript"), release_utils_file) do
-      :ok
-    else
-      {:error, {:template, _}} = err ->
-        err
-
-      {:error, reason} ->
-        {:error, {:assembler, :file, reason}}
-    end
   end
 
   # Generates start_erl.data

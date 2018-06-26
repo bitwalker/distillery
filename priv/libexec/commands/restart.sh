@@ -9,6 +9,6 @@ set -e
 require_cookie
 run_hooks pre_start
 
-if ! nodetool "restart"; then
+if ! release_remote_ctl restart; then
     exit 1
 fi

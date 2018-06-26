@@ -1,5 +1,3 @@
-Code.require_file("test/mix_test_helper.exs")
-
 defmodule InitTest do
   use ExUnit.Case
 

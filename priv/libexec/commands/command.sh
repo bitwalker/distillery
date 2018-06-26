@@ -2,6 +2,7 @@
 
 set -o posix
 
+# DEPRECATED: Use `eval` instead
 # Execute as command-line utility
 #
 # Like the escript command, this does not start the OTP application.
@@ -20,7 +21,7 @@ FUNCTION="$1"; shift
 # Save extra arguments
 ARGS=$*
 
-__code_paths=$(_get_code_paths)
+__code_paths=$(code_paths)
 
 # Checks is a module/function pair is defined
 is_function_defined() {
@@ -32,25 +33,26 @@ is_function_defined() {
     fi
     erl -eval "code:ensure_modules_loaded(['$1']), io:format(\"~p~n\", [erlang:function_exported('$1', $2, 0)]), halt()" \
         -noshell \
-        -boot start_clean \
+        -boot "$RELEASE_ROOT_DIR/bin/start_clean" \
         -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
         -pa "$CONSOLIDATED_DIR" \
-        ${__code_paths}
+        -pa ${__code_paths}
 }
 
 # Build arguments for erlexec
 [ "$SYS_CONFIG_PATH" ] && set -- -config "$SYS_CONFIG_PATH"
-set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
 set -- "$@" -noshell
-set -- "$@" -boot start_clean
+set -- "$@" -boot "$RELEASE_ROOT_DIR/bin/start_clean"
+set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
 set -- "$@" -pa "$CONSOLIDATED_DIR"
-set -- "$@" ${__code_paths}
+set -- "$@" -pa ${__code_paths}
 set -- "$@" -s "$MODULE" "$FUNCTION"
+set -- "$@" -s erlang halt
 
 __is_defined=$(is_function_defined "$MODULE" "$FUNCTION")
 if [ "$__is_defined" = "false" ]; then
     fail "$MODULE.$FUNCTION is either not defined or has a non-zero arity"
 fi
 
-"$BINDIR"/erlexec "$@" -s init stop $ERL_OPTS -extra $ARGS
+"$BINDIR"/erlexec "$@" $ERL_OPTS -extra $ARGS
 exit "$?"

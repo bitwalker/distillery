@@ -24,9 +24,7 @@ case "$1" in
         fi
         ;;
     console_clean)
-        BOOTFILE="$ROOTDIR/bin/start_clean"
-        __code_paths=$(_get_code_paths)
-        EXTRA_CODE_PATHS=${__code_paths}
+        BOOTFILE="$RELEASE_ROOT_DIR/bin/start_clean"
         ;;
     console_boot)
         shift
@@ -49,10 +47,11 @@ run_hooks pre_start
 
 # Build an array of arguments to pass to exec later on
 # Build it here because this command will be used for logging.
+__code_path="$(code_paths)"
 set -- "$BINDIR/erlexec" \
     -boot "$BOOTFILE" \
     -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-    -env ERL_LIBS "$REL_LIB_DIR" \
+    -pa ${__code_path} \
     -pa "$CONSOLIDATED_DIR" \
     ${EXTRA_CODE_PATHS} \
     -args_file "$VMARGS_PATH" \

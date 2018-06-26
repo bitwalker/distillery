@@ -6,7 +6,4 @@ set -o posix
 
 set -e
 
-require_cookie
-require_live_node
-
-nodetool "eval" "$@"
+release_ctl eval "$@"

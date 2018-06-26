@@ -6,7 +6,7 @@ set -e
 
 # Ensures the current node is running, otherwise fails
 require_live_node() {
-    if ! nodetool "ping" >/dev/null; then
+    if ! release_remote_ctl ping >/dev/null; then
         fail "Node $NAME is not running!"
     else
         return 0
@@ -15,7 +15,7 @@ require_live_node() {
 
 # Get node pid
 get_pid() {
-    if output="$(nodetool rpc ':os.getpid()')"
+    if output="$(release_remote_ctl rpc ':os.getpid()')"
     then
         echo "$output" | sed -e 's/"//g'
         return 0
@@ -40,8 +40,6 @@ gen_id() {
 
 ## Run hooks for one of the configured startup phases
 run_hooks() {
-    _old_erl_libs="${ERL_LIBS:-}"
-    export ERL_LIBS="$ERTS_LIB_DIR:$REL_LIB_DIR:$CONSOLIDATED_DIR"
     case $1 in
         pre_configure)
             _run_hooks_from_dir "$PRE_CONFIGURE_HOOKS"
@@ -68,7 +66,6 @@ run_hooks() {
             _run_hooks_from_dir "$POST_UPGRADE_HOOKS"
             ;;
     esac
-    ERL_LIBS="$_old_erl_libs"
 }
 
 # Private. Run hooks from directory.
@@ -79,13 +76,4 @@ _run_hooks_from_dir() {
             . "$file"
         done
     fi
-}
-
-# Private. Gets a list of code paths for this release
-_get_code_paths() {
-    nodetool "get_code_paths" \
-             --root-dir="$ROOTDIR" \
-             --erts-dir="$ERTS_DIR" \
-             --release="$REL_NAME" \
-             --version="$REL_VSN"
 }

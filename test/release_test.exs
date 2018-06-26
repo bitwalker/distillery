@@ -1,5 +1,3 @@
-Code.require_file("test/mix_test_helper.exs")
-
 {:ok, req} = Version.parse_requirement(">= 1.4.0")
 
 if Version.match?(Version.parse!(System.version()), req) do

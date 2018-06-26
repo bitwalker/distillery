@@ -6,14 +6,14 @@ set -e
 
 # Sets config paths for sys.config and vm.args, and ensures that env var replacements are performed
 configure_release() {
-    # If a preconfigure hook calls back to the boot script, do not
+    # If a preconfigure hook calls back to the run control script, do not
     # try to init the configs again, as it will result in an infinite loop
     if [ ! -z "$DISTILLERY_PRECONFIGURE" ]; then
         return 0
     fi
 
     # Need to ensure pre_configure is run here, but
-    # prevent recursion if the hook calls back to the boot script
+    # prevent recursion if the hook calls back to the run control script
     export DISTILLERY_PRECONFIGURE=true
     run_hooks pre_configure
     unset DISTILLERY_PRECONFIGURE
@@ -124,7 +124,7 @@ configure_release() {
     export CONFIG_EXS_PATH="${DEST_CONFIG_EXS_PATH:-$CONFIG_EXS_PATH}"
 
     # Need to ensure post_configure is run here, but
-    # prevent recursion if the hook calls back to the boot script
+    # prevent recursion if the hook calls back to the run control script
     export DISTILLERY_PRECONFIGURE=true
     run_hooks post_configure
     unset DISTILLERY_PRECONFIGURE

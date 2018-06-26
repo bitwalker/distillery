@@ -18,6 +18,6 @@ fi
 require_cookie
 require_live_node
 
-exec nodetool "unpack_release" \
+exec release_remote_ctl unpack \
         --release="$REL_NAME" \
-        --version="$2"
+        "$2"

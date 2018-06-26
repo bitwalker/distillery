@@ -9,4 +9,4 @@ set -e
 require_cookie
 require_live_node
 
-nodetool rpc "$@"
+release_remote_ctl rpc "$@"

@@ -22,9 +22,9 @@ require_live_node
 SOURCE_VERSION="$REL_VSN"
 TARGET_VERSION="$2"
 
-nodetool "unpack_release" \
+release_remote_ctl unpack \
          --release="$REL_NAME" \
-         --version="$TARGET_VERSION"
+         "$TARGET_VERSION"
 
 # Update environment to reflect target version environment
 REL_VSN="$TARGET_VERSION"
@@ -82,9 +82,9 @@ cp -a "$VMARGS_PATH" "$REL_DIR/vm.args"
 # Run any pre-upgrade tasks
 run_hooks pre_upgrade
 
-nodetool "install_release" \
+release_remote_ctl install \
          --release="$REL_NAME" \
-         --version="$TARGET_VERSION"
+         "$TARGET_VERSION"
 
 # We were successful, clean up the configs
 mv "$REL_DIR/config.exs.bak" "$REL_DIR/config.exs"
