@@ -91,7 +91,7 @@ specific commands, including custom commands and hooks you define.
 #### Boot Script
 
 The script containing instructions for the VM on how to boot. The source form has the `.script` extension, and the
-"compiled" or binary form of the script has the `.boot` extension. You can get the source from from the binary form
+"compiled" or binary form of the script has the `.boot` extension. You can get the source form from the binary form
 by piping it through `:erlang.binary_to_term/1`.
 
 #### Boot Hook

@@ -98,7 +98,7 @@ and environments.
         a path to a custom sys.config file, this will be used in place of generating
         a sys.config, and thus will result in the config setting being ignored, choose
         one or the other as needed
-    - config_providers (list of module or `{module, args}`):
+    - config_providers (list of modules or `{module, args}`):
         a list of custom config providers to include in the release
     - include_erts (boolean | string);
         whether to include the system ERTS or not,

@@ -106,8 +106,8 @@ end
 ```
 
 This creates an environment called `prod`, and configures a few settings which are optimal for a self-contained
-production release package. `include_erts: true` bundles the Erlang Runtime System so that the target system need
-not have Erlang or Elixir installed, and `include_src: false` will ensure that unnecessary source code files are not
+production release package. `include_erts: true` bundles the Erlang Runtime System so that the target system does not need
+to have Erlang or Elixir installed, and `include_src: false` will ensure that unnecessary source code files are not
 included in the release package, reducing the final file size of the release.
 
 ```elixir

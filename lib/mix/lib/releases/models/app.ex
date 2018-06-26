@@ -28,35 +28,35 @@ defmodule Mix.Releases.App do
   @doc """
   Create a new Application struct from an application name
   """
-  @spec new(atom) :: nil | __MODULE__.t() | {:error, String.t()}
-  def new(name), do: new(name, nil)
+  @spec new(atom, [Mix.Dep.t()]) :: nil | __MODULE__.t() | {:error, String.t()}
+  def new(name, loaded_deps), do: new(name, nil, loaded_deps)
 
   @doc """
   Same as new/1, but specify the application's start type
   """
-  @spec new(atom, start_type | nil) :: nil | __MODULE__.t() | {:error, String.t()}
-  def new(name, start_type) when is_atom(name) and start_type in @new_start_types do
+  @spec new(atom, start_type | nil, [Mix.Dep.t()]) :: nil | __MODULE__.t() | {:error, String.t()}
+  def new(name, start_type, loaded_deps) when is_atom(name) and start_type in @new_start_types do
     dep =
-      Enum.find(Mix.Dep.loaded([]), fn
+      Enum.find(loaded_deps, fn
         %Mix.Dep{app: ^name} -> true
         _ -> false
       end)
 
     cond do
       is_nil(dep) ->
-        do_new(name, start_type)
+        do_new(name, start_type, loaded_deps)
 
       Keyword.get(dep.opts, :runtime) === false ->
         nil
 
       :else ->
-        do_new(name, start_type)
+        do_new(name, start_type, loaded_deps)
     end
   end
 
-  def new(name, start_type), do: {:error, {:apps, {:invalid_start_type, name, start_type}}}
+  def new(name, start_type, _loaded_deps), do: {:error, {:apps, {:invalid_start_type, name, start_type}}}
 
-  defp do_new(name, start_type) do
+  defp do_new(name, start_type, loaded_deps) do
     _ = Application.load(name)
 
     case Application.spec(name) do
@@ -65,7 +65,7 @@ defmodule Mix.Releases.App do
 
       spec ->
         vsn = '#{Keyword.get(spec, :vsn)}'
-        deps = get_dependencies(name)
+        deps = get_dependencies(name, loaded_deps)
         apps = Keyword.get(spec, :applications, [])
         included = Keyword.get(spec, :included_applications, [])
         path = Application.app_dir(name)
@@ -97,8 +97,8 @@ defmodule Mix.Releases.App do
 
   # Gets a list of all applications which are children
   # of this application.
-  defp get_dependencies(name) do
-    Mix.Dep.loaded_by_name([name], [])
+  defp get_dependencies(name, loaded_deps) do
+    Mix.Dep.loaded_by_name([name], loaded_deps, [])
     |> Stream.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
     |> Stream.filter(&include_dep?/1)
     |> Enum.map(&map_dep/1)
