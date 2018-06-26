@@ -24,7 +24,7 @@ defmodule OrderedApp.Mixfile do
     [
       {:lager, "~> 3.5"},
       {:db_connection, "~> 1.1"},
-      {:distillery, path: "../../../.", runtime: false}
+      {:distillery, path: "../../../."}
     ]
   end
 end

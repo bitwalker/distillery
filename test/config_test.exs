@@ -25,9 +25,7 @@ defmodule ConfigTest do
                    applications: [
                      :elixir,
                      :iex,
-                     :sasl,
-                     {:mix, :load},
-                     {:distillery, :load},
+                     :sasl
                    ]
                  }
                },
