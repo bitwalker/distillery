@@ -62,7 +62,7 @@ defmodule OverlayTest do
       result =
         Overlays.apply(
           @output_dir,
-          [{:copy, "priv/templates/boot.eex", "<%= release_name %>.eex"}],
+          [{:copy, "priv/templates/release_rc_entry.eex", "<%= release_name %>.eex"}],
           release_name: :copy
         )
 
@@ -84,7 +84,7 @@ defmodule OverlayTest do
       copied_path = Path.join(@output_dir, "copy")
       created? = File.exists?(copied_path)
       is_dir? = File.dir?(copied_path)
-      is_recursive? = File.exists?(Path.join([copied_path, "templates", "boot.eex"]))
+      is_recursive? = File.exists?(Path.join([copied_path, "templates", "release_rc_entry.eex"]))
 
       if created? do
         File.rm_rf!(copied_path)
@@ -102,7 +102,7 @@ defmodule OverlayTest do
       result =
         Overlays.apply(
           @output_dir,
-          [{:link, "priv/templates/boot.eex", "<%= release_name %>.eex"}],
+          [{:link, "priv/templates/release_rc_entry.eex", "<%= release_name %>.eex"}],
           release_name: :link
         )
 
