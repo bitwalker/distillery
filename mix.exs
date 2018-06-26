@@ -14,21 +14,25 @@ defmodule Distillery.Mixfile do
       docs: docs(),
       aliases: aliases(),
       elixirc_paths: elixirc_paths(Mix.env),
-      test_coverage: [tool: ExCoveralls]
+      test_coverage: [tool: ExCoveralls],
+      dialyzer: [
+        flags: ["-Wunmatched_returns", :error_handling, :race_conditions, :underspecs]
+      ]
     ]
   end
 
   def application do
-    []
+    [extra_applications: [:runtime_tools]]
   end
 
   defp deps do
     [
+      {:artificery, "~> 0.2"},
       {:ex_doc, "~> 0.13", only: [:dev]},
       {:excoveralls, "~> 0.6", only: [:dev, :test]},
       {:credo, "~> 0.6", only: [:dev]},
       {:eqc_ex, "~> 1.4", only: [:dev, :test]},
-      {:dialyze, "~> 0.2", only: [:dev]}
+      {:dialyxir, "~> 1.0.0-rc.2", only: [:dev], runtime: false}
     ]
   end
 
