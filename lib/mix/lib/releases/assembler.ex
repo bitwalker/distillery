@@ -966,7 +966,7 @@ defmodule Mix.Releases.Assembler do
 
     kernel_procs = [
       # Starts the pidfile kernel process
-      {:kernelProcess, {Pidfile, {Pidfile, :start, []}}}
+      {:kernelProcess, Pidfile, {Pidfile, :start, []}}
     ]
 
     extras = [
