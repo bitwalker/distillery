@@ -23,7 +23,6 @@ defmodule IntegrationTest do
       {:ok, _} = File.rm_rf(Path.join(@standard_app_path, "_build"))
       _ = File.rm(Path.join(@standard_app_path, "mix.lock"))
       {:ok, _} = mix("deps.get")
-      {:ok, _} = mix("deps.compile", ["distillery"])
       {:ok, _} = mix("compile")
       {:ok, _} = mix("release.clean")
       unquote(body)
