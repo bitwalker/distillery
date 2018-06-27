@@ -583,7 +583,7 @@ defmodule Mix.Releases.Runtime.Control do
   @doc """
   Unpacks a release in preparation for it to be loaded
   """
-  def unpack_release(_argv, %{peer: peer, release: release, version: version}) do
+  def unpack(_argv, %{peer: peer, release: release, version: version}) do
     unless is_binary(release) and is_binary(version) do
       Console.error("You must provide both --release and --version to 'unpack_release'")
     end
@@ -627,7 +627,7 @@ defmodule Mix.Releases.Runtime.Control do
   @doc """
   Installs a release, unpacking if necessary
   """
-  def install_release(_argv, %{peer: peer, release: release, version: version}) do
+  def install(_argv, %{peer: peer, release: release, version: version}) do
     unless is_binary(release) and is_binary(version) do
       Console.error("You must provide both --release and --version to 'install_release'")
     end
