@@ -139,16 +139,16 @@ defmodule Mix.Releases.Errors do
     "Release failed, during .boot generation:\n" <>
     "    #{reason}"
   end
-  def format_error({:error, {:assembler, mod, {:start_clean, reason}}}) do
-    "Release failed during start_clean.boot generation:\n" <>
+  def format_error({:error, {:assembler, mod, {:named_boot, name, reason}}}) do
+    "Release failed during #{name}.boot generation:\n" <>
     "    #{mod.format_error(reason)}"
   end
-  def format_error({:error, {:assembler, {:start_clean, :unknown}}}) do
-    "Release failed, unable to generate start_clean.boot for unknown reasons\n" <>
+  def format_error({:error, {:assembler, {:named_boot, name, :unknown}}}) do
+    "Release failed, unable to generate #{name}.boot for unknown reasons\n" <>
     "    Please open an issue for this problem."
   end
-  def format_error({:error, {:assembler, {:start_clean, reason}}}) do
-    "Release failed, unable to generate start_clean.boot:\n" <>
+  def format_error({:error, {:assembler, {:named_boot, name, reason}}}) do
+    "Release failed, unable to generate #{name}.boot:\n" <>
       "    #{reason}"
   end
   def format_error({:error, {:assembler, mod, {:copy_app, app_dir, target_dir, reason}}}) do
