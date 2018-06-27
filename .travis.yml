@@ -3,20 +3,12 @@ language: elixir
 git:
   depth: 3
 elixir:
-  - 1.3
   - 1.6
 otp_release:
-  - 18.3
-  - 19.3
   - 20.0
+  - 21.0
 env:
   - MIX_ENV=test VERBOSE_TESTS=true
-matrix:
-  exclude:
-    - elixir: 1.3
-      otp_release: 20.0
-    - elixir: 1.6
-      otp_release: 18.3
 script:
   - mix do deps.get, eqc.install --mini
   - mix test --exclude=expensive
