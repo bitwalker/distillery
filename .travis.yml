@@ -10,6 +10,7 @@ otp_release:
 env:
   - MIX_ENV=test VERBOSE_TESTS=true
 script:
+  - epmd -daemon
   - mix do deps.get, eqc.install --mini
   - mix test --exclude=expensive
   - mix test --only=expensive
