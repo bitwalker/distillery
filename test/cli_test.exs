@@ -118,7 +118,7 @@ defmodule Distillery.Test.Runtime.CLI do
                 :ok = :net_kernel.monitor_nodes(false)
                 # Normally the boot script would do this for us, but we're working with a
                 # clean node with no custom boot script
-                {:ok, _} = :rpc.call(peer, :application, :ensure_all_started, [:ctrl_app])
+                #{:ok, _} = :rpc.call(peer, :application, :ensure_all_started, [:ctrl_app])
                 :restarted
             after
               1_000 ->
