@@ -867,7 +867,7 @@ defmodule Mix.Releases.Assembler do
 
         erts_output_dir = Path.join(output_dir, "erts-#{erts_vsn}")
         erl_path = Path.join([erts_output_dir, "bin", "erl"])
-
+        
         with :ok <- remove_if_exists(erts_output_dir),
              :ok <- File.mkdir_p(erts_output_dir),
              {:ok, _} <- File.cp_r(erts_dir, erts_output_dir),

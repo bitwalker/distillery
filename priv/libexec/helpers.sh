@@ -6,7 +6,7 @@ set -e
 
 # Ensures the current node is running, otherwise fails
 require_live_node() {
-    if ! release_remote_ctl ping >/dev/null; then
+    if ! release_ctl ping --peer="$NAME" --cookie="$COOKIE" >/dev/null; then
         fail "Node $NAME is not running!"
     else
         return 0

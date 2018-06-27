@@ -14,6 +14,6 @@ if ! release_remote_ctl reboot; then
 fi
 
 # Node needs to be brought back up without heart
-if ! release_remote_ctl ping >/dev/null; then
+if ! release_ctl ping --peer="$NAME" --cookie="$COOKIE" >/dev/null; then
     exec "$RELEASE_ROOT_DIR/bin/$REL_NAME" start
 fi
