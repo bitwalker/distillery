@@ -9,7 +9,7 @@ set -e
 _load_cookie
 
 release_ctl describe \
-            --release_root_dir="$RELEASE_ROOT_DIR"
+            --release_root_dir="$RELEASE_ROOT_DIR" \
             --release="$REL_NAME" \
             --name="$NAME" \
             --cookie="$COOKIE" \
