@@ -106,6 +106,8 @@ defmodule Mix.Releases.Archiver do
              '#{Path.join([output_dir, "releases", release.version, name <> ".rel"])}'},
             {'#{Path.join(["releases", release.version, "start_clean.boot"])}',
              '#{Path.join([output_dir, "releases", release.version, "start_clean.boot"])}'},
+            {'#{Path.join(["releases", release.version, "no_dot_erlang.boot"])}',
+             '#{Path.join([output_dir, "releases", release.version, "no_dot_erlang.boot"])}'},
             {'bin', '#{Path.join(output_dir, "bin")}'},
             {'#{Path.join(["releases", release.version, "libexec"])}',
              '#{Path.join([output_dir, "releases", release.version, "libexec"])}'},

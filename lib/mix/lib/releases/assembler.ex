@@ -207,12 +207,14 @@ defmodule Mix.Releases.Assembler do
       :ok ->
         release_file     = Path.join(rel_dir, "#{relname}.rel")
         start_clean_file = Path.join(rel_dir, "start_clean.rel")
+        no_dot_erlang_file = Path.join(rel_dir, "no_dot_erlang.rel")
         start_clean_rel  = %{release |
                              :applications => Enum.filter(release.applications, fn %App{name: n} ->
                                n in [:kernel, :stdlib, :compiler, :elixir, :iex]
                              end)}
         with :ok <- write_relfile(release_file, release),
              :ok <- write_relfile(start_clean_file, start_clean_rel),
+             :ok <- write_relfile(no_dot_erlang_file, start_clean_rel),
              :ok <- write_binfile(release, rel_dir),
              :ok <- generate_relup(release, rel_dir), do: :ok
     end
@@ -729,10 +731,12 @@ defmodule Mix.Releases.Assembler do
     case :systools.make_script(rel_name, options) do
       :ok ->
         with :ok <- create_RELEASES(output_dir, Path.join(["releases", "#{release.version}", "#{release.name}.rel"])),
-             :ok <- create_start_clean(rel_dir, output_dir, options), do: :ok
+             :ok <- create_named_boot(:start_clean, rel_dir, output_dir, options),
+             :ok <- create_named_boot(:no_dot_erlang, rel_dir, output_dir, options), do: :ok
       {:ok, _, []} ->
         with :ok <- create_RELEASES(output_dir, Path.join(["releases", "#{release.version}", "#{release.name}.rel"])),
-             :ok <- create_start_clean(rel_dir, output_dir, options), do: :ok
+             :ok <- create_named_boot(:start_clean, rel_dir, output_dir, options),
+             :ok <- create_named_boot(:no_dot_erlang, rel_dir, output_dir, options), do: :ok
       :error ->
         {:error, {:assembler, {:make_boot_script, {:unknown, release_file}}}}
       {:ok, mod, warnings} ->
@@ -767,38 +771,38 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
-  # Generates start_clean.boot
-  defp create_start_clean(rel_dir, output_dir, options) do
-    Logger.debug "Generating start_clean.boot"
-    case :systools.make_script('start_clean', options) do
+  # Generates named boot files (like start_clean.boot)
+  defp create_named_boot(name, rel_dir, output_dir, options) do
+    Logger.debug "Generating #{name}.boot"
+    case :systools.make_script('#{name}', options) do
       :ok ->
-        with :ok <- File.cp(Path.join(rel_dir, "start_clean.boot"),
-                            Path.join([output_dir, "bin", "start_clean.boot"])),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.rel")),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.script")) do
+        with :ok <- File.cp(Path.join(rel_dir, "#{name}.boot"),
+                            Path.join([output_dir, "bin", "#{name}.boot"])),
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.rel")),
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.script")) do
           :ok
         else
           {:error, reason} ->
-            {:error, {:assembler, :file, {:start_clean, reason}}}
+            {:error, {:assembler, :file, {:named_boot, name, reason}}}
         end
       :error ->
-        {:error, {:assembler, {:start_clean, :unknown}}}
+        {:error, {:assembler, {:named_boot, name, :unknown}}}
       {:ok, _, []} ->
-        with :ok <- File.cp(Path.join(rel_dir, "start_clean.boot"),
-                            Path.join([output_dir, "bin", "start_clean.boot"])),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.rel")),
-             :ok <- File.rm(Path.join(rel_dir, "start_clean.script")) do
+        with :ok <- File.cp(Path.join(rel_dir, "#{name}.boot"),
+                            Path.join([output_dir, "bin", "#{name}.boot"])),
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.rel")),
+             :ok <- File.rm(Path.join(rel_dir, "#{name}.script")) do
            :ok
         else
           {:error, reason} ->
-            {:error, {:assembler, :file, {:start_clean, reason}}}
+            {:error, {:assembler, :file, {:named_boot, name, reason}}}
         end
       {:ok, mod, warnings} ->
         Logger.warn format_systools_warning(mod, warnings)
         :ok
       {:error, mod, errors} ->
         error = format_systools_error(mod, errors)
-        {:error, {:assembler, {:start_clean, error}}}
+        {:error, {:assembler, {:named_boot, name, error}}}
     end
   end
 
