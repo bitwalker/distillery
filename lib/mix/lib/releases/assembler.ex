@@ -990,8 +990,8 @@ defmodule Mix.Releases.Assembler do
                  output_dir,
                  Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
                ),
-             :ok <- create_start_clean(rel_dir, output_dir, options),
-             :ok <- create_no_dot_erlang(rel_dir, output_dir, options),
+             :ok <- create_named_boot(:start_clean, rel_dir, output_dir, options),
+             :ok <- create_named_boot(:no_dot_erlang, rel_dir, output_dir, options),
              do: :ok
 
       {:ok, _, []} ->
@@ -1001,8 +1001,8 @@ defmodule Mix.Releases.Assembler do
                  output_dir,
                  Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
                ),
-             :ok <- create_start_clean(rel_dir, output_dir, options),
-             :ok <- create_no_dot_erlang(rel_dir, output_dir, options),
+             :ok <- create_named_boot(:start_clean, rel_dir, output_dir, options),
+             :ok <- create_named_boot(:no_dot_erlang, rel_dir, output_dir, options),
              do: :ok
 
       :error ->
@@ -1085,15 +1085,8 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
-  # Generates start_clean.boot
-  defp create_start_clean(rel_dir, output_dir, options) do
-    create_boot_script(:start_clean, rel_dir, output_dir, options)
-  end
-  defp create_no_dot_erlang(rel_dir, output_dir, options) do
-    create_boot_script(:no_dot_erlang, rel_dir, output_dir, options)
-  end
-
-  defp create_boot_script(name, rel_dir, output_dir, options) do
+  # Generates a named boot script (like 'start_clean')
+  defp create_named_boot(name, rel_dir, output_dir, options) do
     Logger.debug("Generating #{name}.boot")
 
     case :systools.make_script('#{name}', options) do
