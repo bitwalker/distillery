@@ -36,6 +36,7 @@ defmodule Mix.Releases.Release do
               include_system_libs: true,
               included_configs: [],
               config_providers: [],
+              disable_mix_config_provider: false,
               appup_transforms: [],
               strip_debug_info: false,
               plugins: [],
@@ -195,10 +196,15 @@ defmodule Mix.Releases.Release do
         _ -> Keyword.get(Mix.Project.config(), :config_path)
       end
 
-    providers = [
-      {Mix.Releases.Config.Providers.Elixir, [Path.join("var", "config.exs")]}
-      | release.profile.config_providers
-    ]
+    providers =
+      if release.profile.disable_mix_config_provider do
+        release.profile.config_providers
+      else
+        [
+          {Mix.Releases.Config.Providers.Elixir, [Path.join("var", "config.exs")]}
+          | release.profile.config_providers
+        ]
+      end
 
     base_release = %{
       release

@@ -690,6 +690,9 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
+  defp generate_config_exs(%Release{profile: %Profile{disable_mix_config_provider: true}}, _rel_dir) do
+    :ok
+  end
   defp generate_config_exs(%Release{profile: %Profile{config: base_config_path}}, rel_dir) do
     Logger.debug("Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}")
 
@@ -715,7 +718,49 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  # Generates sys.config
+  # Generated when Mix.Config provider is _disabled_, compiles config.exs, merges sys.config and appends included configs
+  defp generate_sys_config(%Release{profile: %{disable_mix_config_provider: true, 
+                                               config: base_config_path,
+                                               sys_config: config_path}} = rel, rel_dir) 
+      when is_binary(config_path) do
+    Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
+    overlay_vars = rel.profile.overlay_vars
+    base_config = generate_base_config(base_config_path)
+    res = with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
+               {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
+               {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
+               {:ok, sys_config} <- :erl_parse.parse_term(tokens),
+               :ok               <- validate_sys_config(sys_config),
+               merged            <- Mix.Config.merge(base_config, sys_config),
+               final             <- append_included_configs(merged, rel.profile.included_configs) do
+            Utils.write_term(Path.join(rel_dir, "sys.config"), final)
+          end
+    case res do
+      :ok ->
+        :ok
+      {:error, {:template, _}} = err ->
+        err
+      {:error, {:template_str, _}} = err ->
+        err
+      {:error, {:assembler, _}} = err ->
+        err
+      {:error, error_info, _end_loc} when is_tuple(error_info) ->
+        {:error, {:assembler, {:invalid_sys_config, error_info}}}
+      {:error, error_info} when is_tuple(error_info) ->
+        {:error, {:assembler, {:invalid_sys_config, error_info}}}
+    end
+  end
+  # Generted when Mix.Config provider is _disabled_, compiles config.exs, appends included configs
+  defp generate_sys_config(%Release{profile: %{disable_mix_config_provider: true,
+                                               config: config_path,
+                                               included_configs: included_configs}}, rel_dir) do
+    Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
+    config = config_path
+             |> generate_base_config()
+             |> append_included_configs(included_configs)
+    Utils.write_term(Path.join(rel_dir, "sys.config"), config)
+  end
+  # Generated when Mix.Config provider is active, default + provided sys.config
   defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir)
        when is_binary(config_path) do
     Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
@@ -757,7 +802,7 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:invalid_sys_config, error_info}}}
     end
   end
-
+  # Generated when Mix.Config provider is active, default configuration
   defp generate_sys_config(%Release{} = rel, rel_dir) do
     Logger.debug("Generating default sys.config with included_configs applied")
 
@@ -772,6 +817,19 @@ defmodule Mix.Releases.Assembler do
       |> append_included_configs(included_configs)
 
     Utils.write_term(Path.join(rel_dir, "sys.config"), config)
+  end
+  
+  defp generate_base_config(base_config_path) do
+    config = Mix.Config.read!(base_config_path)
+    case Keyword.get(config, :sasl) do
+      nil ->
+        Keyword.put(config, :sasl, [errlog_type: :error])
+      sasl ->
+        case Keyword.get(sasl, :errlog_type) do
+          nil -> put_in(config, [:sasl, :errlog_type], :error)
+          _   -> config
+        end
+    end
   end
 
   # Extend the config with the paths of additional config files

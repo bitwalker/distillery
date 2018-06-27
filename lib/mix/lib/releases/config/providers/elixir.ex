@@ -9,9 +9,13 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
   @impl Mix.Releases.Config.Provider
   def init([path]) do
-    path
-    |> Mix.Config.read!()
-    |> Mix.Config.persist()
+    if File.exists?(path) do
+      path
+      |> Mix.Config.read!()
+      |> Mix.Config.persist()
+    else
+      :ok
+    end
   end
 
   @impl Mix.Releases.Config.Provider

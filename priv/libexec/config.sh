@@ -98,30 +98,33 @@ configure_release() {
     fi
     export SYS_CONFIG_PATH="${DEST_SYS_CONFIG_PATH:-$SYS_CONFIG_PATH}"
 
-    # Set CONFIG_EXS_PATH, the path to the config.exs file to use
-    # Use $RELEASE_CONFIG_DIR/config.exs if it exists, otherwise releases/VSN/config.exs
-    if [ -z "CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
-        if [ -f "$RELEASE_CONFIG_DIR/config.exs" ]; then
-            export SRC_CONFIG_EXS_PATH="$RELEASE_CONFIG_DIR/config.exs"
+    # If config.exs isn't present, the provider is disabled, so skip this block
+    if [ -f "$REL_DIR/config.exs" ]; then
+        # Set CONFIG_EXS_PATH, the path to the config.exs file to use
+        # Use $RELEASE_CONFIG_DIR/config.exs if it exists, otherwise releases/VSN/config.exs
+        if [ -z "CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
+            if [ -f "$RELEASE_CONFIG_DIR/config.exs" ]; then
+                export SRC_CONFIG_EXS_PATH="$RELEASE_CONFIG_DIR/config.exs"
+            else
+                export SRC_CONFIG_EXS_PATH="$REL_DIR/config.exs"
+            fi
         else
-            export SRC_CONFIG_EXS_PATH="$REL_DIR/config.exs"
+            export SRC_CONFIG_EXS_PATH="$CONFIG_EXS_PATH"
         fi
-    else
-        export SRC_CONFIG_EXS_PATH="$CONFIG_EXS_PATH"
-    fi
-    if [ "$SRC_CONFIG_EXS_PATH" != "$RELEASE_MUTABLE_DIR/config.exs" ]; then
-        if [ -z "$RELEASE_READ_ONLY" ]; then
-            echo "# Generated - edit/create $RELEASE_CONFIG_DIR/config.exs instead." \
-                 > "$RELEASE_MUTABLE_DIR/config.exs"
-            cat "$SRC_CONFIG_EXS_PATH" \
-                 >> "$RELEASE_MUTABLE_DIR/config.exs"
-            export DEST_CONFIG_EXS_PATH="$RELEASE_MUTABLE_DIR/config.exs"
-        else
-            export DEST_CONFIG_EXS_PATH="$SRC_CONFIG_EXS_PATH"
+        if [ "$SRC_CONFIG_EXS_PATH" != "$RELEASE_MUTABLE_DIR/config.exs" ]; then
+            if [ -z "$RELEASE_READ_ONLY" ]; then
+                echo "# Generated - edit/create $RELEASE_CONFIG_DIR/config.exs instead." \
+                    > "$RELEASE_MUTABLE_DIR/config.exs"
+                cat "$SRC_CONFIG_EXS_PATH" \
+                    >> "$RELEASE_MUTABLE_DIR/config.exs"
+                export DEST_CONFIG_EXS_PATH="$RELEASE_MUTABLE_DIR/config.exs"
+            else
+                export DEST_CONFIG_EXS_PATH="$SRC_CONFIG_EXS_PATH"
+            fi
         fi
+        # We do not do replacements on this file, it is not necessary
+        export CONFIG_EXS_PATH="${DEST_CONFIG_EXS_PATH:-$CONFIG_EXS_PATH}"
     fi
-    # We do not do replacements on this file, it is not necessary
-    export CONFIG_EXS_PATH="${DEST_CONFIG_EXS_PATH:-$CONFIG_EXS_PATH}"
 
     # Need to ensure post_configure is run here, but
     # prevent recursion if the hook calls back to the run control script

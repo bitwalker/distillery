@@ -49,7 +49,7 @@ else
         export SYS_CONFIG_PATH="$SRC_SYS_CONFIG_PATH"
     fi
 fi
-if [ "$SRC_CONFIG_EXS_PATH" = "$RELEASE_MUTABLE_DIR/config.exs" ]; then
+if [ -z "$SRC_CONFIG_EXS_PATH" ] || [ "$SRC_CONFIG_EXS_PATH" = "$RELEASE_MUTABLE_DIR/config.exs" ]; then
     unset CONFIG_EXS_PATH
 else
     if [ "$SRC_CONFIG_EXS_PATH" = "$RELEASE_ROOT_DIR/releases/$SOURCE_VERSION/config.exs" ]; then
@@ -71,11 +71,15 @@ if [ -f "$REL_DIR/vm.args.bak" ]; then
     mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
 fi
 # Then, backup the packaged configs
-cp -a "$REL_DIR/config.exs" "$REL_DIR/config.exs.bak"
+if [ -f "$REL_DIR/config.exs" ]; then
+    cp -a "$REL_DIR/config.exs" "$REL_DIR/config.exs.bak"
+fi
 cp -a "$REL_DIR/sys.config" "$REL_DIR/sys.config.bak"
 cp -a "$REL_DIR/vm.args" "$REL_DIR/vm.args.bak"
 # Then, substitute in the prepared configs
-cp -a "$CONFIG_EXS_PATH" "$REL_DIR/config.exs"
+if [ ! -z "$CONFIG_EXS_PATH" ] && [ -f "$CONFIG_EXS_PATH" ]; then
+    cp -a "$CONFIG_EXS_PATH" "$REL_DIR/config.exs"
+fi
 cp -a "$SYS_CONFIG_PATH" "$REL_DIR/sys.config"
 cp -a "$VMARGS_PATH" "$REL_DIR/vm.args"
 
@@ -87,7 +91,9 @@ release_remote_ctl install \
          "$TARGET_VERSION"
 
 # We were successful, clean up the configs
-mv "$REL_DIR/config.exs.bak" "$REL_DIR/config.exs"
+if [ -f "$REL_DIR/config.exs.bak" ]; then
+    mv "$REL_DIR/config.exs.bak" "$REL_DIR/config.exs"
+fi
 mv "$REL_DIR/sys.config.bak" "$REL_DIR/sys.config"
 mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
 
