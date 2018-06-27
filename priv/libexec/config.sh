@@ -207,6 +207,13 @@ _load_cookie() {
     if [ -z "$COOKIE_ARG" ]; then
         if [ -f "$DEFAULT_COOKIE_FILE" ]; then
             COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
+        else
+            # Try generating one by starting the VM
+            if erl -noshell -name "$NAME" -s erlang halt >/dev/null; then
+                if [ -f "$DEFAULT_COOKIE_FILE" ]; then
+                    COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
+                fi
+            fi
         fi
     else
         # Extract cookie name from COOKIE_ARG
