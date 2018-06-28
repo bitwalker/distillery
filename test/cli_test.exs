@@ -7,11 +7,19 @@ defmodule Distillery.Test.Runtime.CLI do
 
   setup_all do
     Application.put_env(:artificery, :no_halt, true)
-    nodes = [:"test_cli@127.0.0.1", :"test_cli_slave@127.0.0.1"]
-    :ok = start_boot_server(hd(nodes))
-    [:ok] = spawn_nodes(tl(nodes))
+    boot_server = :"test_cli@127.0.0.1"
+    peer = :"test_cli_slave@127.0.0.1"
+    :ok = start_boot_server(boot_server)
+    %{node: peer}
+  end
+  
+  setup %{node: peer} do
+    # Ensure slave is stopped
+    :slave.stop(peer)
+    # Spawn it again
+    [:ok] = spawn_nodes([peer])
     IO.write "\n"
-    %{node: :"test_cli_slave@127.0.0.1"}
+    :ok
   end
 
   describe "when pinging a node" do
@@ -27,7 +35,7 @@ defmodule Distillery.Test.Runtime.CLI do
       end) =~ "Received 'pang' from missingno@127.0.0.1!\n"
     end
 
-    test "omitting required global produces friendly error", %{node: peer} do
+    test "omitting required flag produces friendly error", %{node: peer} do
       assert is_failure(fn ->
         Control.main(["--verbose", "ping", "--peer", "#{peer}"])
       end) =~ "Missing required flag '--cookie'."
@@ -92,6 +100,7 @@ defmodule Distillery.Test.Runtime.CLI do
 
     test "can restart node" do
       use LanguageExtensions.While
+      
 
       assert is_success(:ctrl_app, [slave: false], fn peer ->
         :ok = :net_kernel.monitor_nodes(true)
@@ -116,9 +125,6 @@ defmodule Distillery.Test.Runtime.CLI do
             receive do
               {:nodeup, ^peer} ->
                 :ok = :net_kernel.monitor_nodes(false)
-                # Normally the boot script would do this for us, but we're working with a
-                # clean node with no custom boot script
-                #{:ok, _} = :rpc.call(peer, :application, :ensure_all_started, [:ctrl_app])
                 :restarted
             after
               1_000 ->
@@ -231,24 +237,30 @@ defmodule Distillery.Test.Runtime.CLI do
   end
 
   defp is_failure(fun) do
-    assert capture_io(:stderr, fn ->
+    capture_io(:stderr, fn ->
       try do
         fun.()
       catch
-        :exit, {:halt, 1} ->
+        :exit, {:halt, _} ->
           :ok
       end
     end)
   end
 
   defp is_success(fun) do
-    assert capture_io(fn ->
-      :ok = fun.()
+    capture_io(fn ->
+      try do
+        fun.()
+      catch
+        :exit, {:halt, _} ->
+          :ok
+      end
     end)
   end
 
   defp is_success(app, opts, fun) when is_list(opts) do
     use LanguageExtensions.While
+    
 
     use_heart? = Keyword.get(opts, :heart, false)
     use_slave? = Keyword.get(opts, :slave, false)
@@ -263,6 +275,34 @@ defmodule Distillery.Test.Runtime.CLI do
       code_path
       |> Enum.map(&List.to_string/1)
       |> Enum.join(" ")
+    
+    app_rel = {:release,
+      {'#{app}', '0.1.0'},
+      {:erts, '#{Mix.Releases.Utils.erts_version()}'},
+      [
+        {:kernel, Keyword.fetch!(Application.spec(:kernel), :vsn)},
+        {:stdlib, Keyword.fetch!(Application.spec(:stdlib), :vsn)},
+        {:compiler, Keyword.fetch!(Application.spec(:compiler), :vsn)},
+        {:runtime_tools, Keyword.fetch!(Application.spec(:runtime_tools), :vsn)},
+        {:elixir, Keyword.fetch!(Application.spec(:elixir), :vsn)},
+        {:logger, Keyword.fetch!(Application.spec(:logger), :vsn)},
+        {app, '0.1.0'}
+    ]}
+    rel_path = Path.join([project_path, "#{app}.rel"])
+    :ok = Mix.Releases.Utils.write_term(rel_path, app_rel)
+    old_cwd = File.cwd!
+    File.cd!(project_path)
+    {:ok, _, _} = :systools.make_script('#{app}', [
+          {:path, [String.to_charlist(Path.join([project_path, "_build", "dev", "lib", "*", "ebin"]))]}, 
+          :local, 
+          :silent, 
+          :warnings_as_errors, 
+          :no_dot_erlang, 
+          :no_warn_sasl
+    ])
+    File.cd!(old_cwd)
+    boot_path = Path.join([project_path, "#{app}"])
+
     # If we're not using heart for this test, just use the :slave module directly,
     # otherwise, we have to start up the node manually because we have to pass some
     # extra flags to make sure that heart is configured correctly. For some tests,
@@ -272,9 +312,9 @@ defmodule Distillery.Test.Runtime.CLI do
       cond do
         not use_heart? and use_slave? ->
           # Start slave node for app
-          {:ok, name} = :slave.start('127.0.0.1', app, inet_loader_args())
+          {:ok, name} = :slave.start('127.0.0.1', app, inet_loader_args() ++ ' -boot #{boot_path}')
           # Make sure the code path is set
-          :rpc.call(name, :code, :add_paths, [code_path])
+          #:rpc.call(name, :code, :add_paths, [code_path])
           name
 
         not use_heart? ->
@@ -283,6 +323,7 @@ defmodule Distillery.Test.Runtime.CLI do
             "-noshell",
             "-noinput",
             "-detached",
+            "-boot", "#{app}",
             "-name", "#{app}@127.0.0.1",
             "-setcookie", "#{Node.get_cookie}",
             "-pa" | Enum.map(code_path, &List.to_string/1)
@@ -292,12 +333,14 @@ defmodule Distillery.Test.Runtime.CLI do
 
         :else ->
           heart_cmd = "erl -detached " <>
+            "-boot #{app} " <>
             "-master test_cli@127.0.0.1 -s slave slave_start test_cli@127.0.0.1 slave_waiter_0 " <>
             "-name #{app}@127.0.0.1 -setcookie #{Node.get_cookie} " <>
-            "-pa #{code_path_str} " <>
-            "-eval 'application:ensure_all_started(#{app}).'"
+            "-pa #{code_path_str} " #<>
+            #"-eval 'application:ensure_all_started(#{app}).'"
           {_, 0} = System.cmd "erl", [
             "-detached",
+            "-boot", "#{app}",
             "-master", "test_cli@127.0.0.1",
             "-s", "slave", "slave_start", "test_cli@127.0.0.1", "slave_waiter_0",
             "-name", "#{app}@127.0.0.1",
@@ -324,16 +367,10 @@ defmodule Distillery.Test.Runtime.CLI do
       pid = :rpc.call(name, :os, :getpid, [])
       Process.put(name, pid)
     end
-
+    
     # We're good to go!
     # Run test
     try do
-      # Start app
-      :ok = :rpc.call(name, :application, :start_boot, [:compiler, :permanent])
-      :ok = :rpc.call(name, :application, :start_boot, [:elixir, :permanent])
-      :ok = :rpc.call(name, :application, :start_boot, [:logger, :permanent])
-      :ok = :rpc.call(name, :application, :start_boot, [app, :permanent])
-
       if is_nil(System.get_env("VERBOSE_TESTS")) do
         assert capture_io(fn ->
           :ok = fun.(name)
@@ -394,7 +431,7 @@ defmodule Distillery.Test.Runtime.CLI do
   defp spawn_node(node_host) do
     {:ok, name} = :slave.start('127.0.0.1', node_name(node_host), inet_loader_args())
     :rpc.call(name, :code, :add_paths, [:code.get_path()])
-    {:ok, _deps} = :rpc.call(name, :application, :ensure_all_started, [:elixir])
+    {:ok, _} = :rpc.call(name, :application, :ensure_all_started, [:elixir])
     {:ok, _} = :rpc.call(name, :application, :ensure_all_started, [:runtime_tools])
     IO.puts "Started slave #{node_host}"
   end

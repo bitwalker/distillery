@@ -22,3 +22,11 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 ctrl_app-*.tar
 
+# Release definition
+ctrl_app.rel
+
+# Boot script
+ctrl_app.boot
+
+# Boot script source
+ctrl_app.script
