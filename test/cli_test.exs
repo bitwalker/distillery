@@ -6,20 +6,20 @@ defmodule Distillery.Test.Runtime.CLI do
   alias Mix.Releases.Runtime.Control
 
   setup_all do
+    :rand.seed(:exs64)
     Application.put_env(:artificery, :no_halt, true)
     boot_server = :"test_cli@127.0.0.1"
-    peer = :"test_cli_slave@127.0.0.1"
     :ok = start_boot_server(boot_server)
-    %{node: peer}
+    tab = :ets.new(__MODULE__, [:public, :set])
+    :ets.insert_new(tab, {:counter, 1})
+    %{table: tab}
   end
   
-  setup %{node: peer} do
-    # Ensure slave is stopped
-    :slave.stop(peer)
-    # Spawn it again
+  setup %{table: tab} do
+    id = :ets.update_counter(tab, :counter, 1)
+    peer = :"test_cli_slave#{id}@127.0.0.1"
     [:ok] = spawn_nodes([peer])
-    IO.write "\n"
-    :ok
+    %{node: peer}
   end
 
   describe "when pinging a node" do
@@ -64,14 +64,14 @@ defmodule Distillery.Test.Runtime.CLI do
     test "rpc is executed remotely", %{node: peer} do
       assert is_success(fn ->
         Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "IO.puts \"Hello from \" <> to_string(Node.self) <> \"!\""])
-      end) =~ "Hello from test_cli_slave@127.0.0.1!"
+      end) =~ ~r/Hello from test_cli_slave\d+@127.0.0.1!/
     end
 
     test "rpc --file", %{node: peer} do
       assert is_success(fn ->
         path = Path.join([__DIR__, "support", "eval_file_test.exs"]) |> Path.expand
         Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "--file", path])
-      end) =~ "ok from test_cli_slave@127.0.0.1\n"
+      end) =~ ~r/ok from test_cli_slave\d+@127.0.0.1\n/
     end
 
     test "rpc error produces friendly error", %{node: peer} do
@@ -98,11 +98,11 @@ defmodule Distillery.Test.Runtime.CLI do
       end) =~ "ok\n"
     end
 
-    test "can restart node" do
+    test "can restart node", %{table: tab} do
       use LanguageExtensions.While
       
 
-      assert is_success(:ctrl_app, [slave: false], fn peer ->
+      assert is_success(:ctrl_app, [table: tab, slave: false], fn peer ->
         :ok = :net_kernel.monitor_nodes(true)
         pid = :rpc.call(peer, GenServer, :whereis, [CtrlApp.Worker])
         assert is_pid(pid)
@@ -146,10 +146,10 @@ defmodule Distillery.Test.Runtime.CLI do
       end)
     end
 
-    test "can reboot node" do
+    test "can reboot node", %{table: tab} do
       use LanguageExtensions.While
 
-      assert is_success(:ctrl_app, [heart: true], fn peer ->
+      assert is_success(:ctrl_app, [table: tab, heart: true], fn peer ->
         # Watch for the node going down
         :erlang.monitor_node(peer, true)
         # Get the pid of a worker running in the app on the peer node and monitor it
@@ -264,6 +264,8 @@ defmodule Distillery.Test.Runtime.CLI do
 
     use_heart? = Keyword.get(opts, :heart, false)
     use_slave? = Keyword.get(opts, :slave, false)
+    tab = Keyword.fetch!(opts, :table)
+    id = :ets.update_counter(tab, :counter, 1)
     # Get path for app's beam files
     project_path = Path.join([__DIR__, "fixtures", "#{app}"])
     ebin_path = Path.join([project_path, "_build", "dev", "lib", "#{app}", "ebin"])
@@ -312,9 +314,7 @@ defmodule Distillery.Test.Runtime.CLI do
       cond do
         not use_heart? and use_slave? ->
           # Start slave node for app
-          {:ok, name} = :slave.start('127.0.0.1', app, inet_loader_args() ++ ' -boot #{boot_path}')
-          # Make sure the code path is set
-          #:rpc.call(name, :code, :add_paths, [code_path])
+          {:ok, name} = :slave.start('127.0.0.1', :"#{app}#{id}", inet_loader_args() ++ ' -boot #{boot_path}')
           name
 
         not use_heart? ->
@@ -324,18 +324,18 @@ defmodule Distillery.Test.Runtime.CLI do
             "-noinput",
             "-detached",
             "-boot", "#{app}",
-            "-name", "#{app}@127.0.0.1",
+            "-name", "#{app}#{id}@127.0.0.1",
             "-setcookie", "#{Node.get_cookie}",
             "-pa" | Enum.map(code_path, &List.to_string/1)
           ], cd: project_path
           # We know the name
-          :"#{app}@127.0.0.1"
+          :"#{app}#{id}@127.0.0.1"
 
         :else ->
           heart_cmd = "erl -detached " <>
             "-boot #{app} " <>
             "-master test_cli@127.0.0.1 -s slave slave_start test_cli@127.0.0.1 slave_waiter_0 " <>
-            "-name #{app}@127.0.0.1 -setcookie #{Node.get_cookie} " <>
+            "-name #{app}#{id}@127.0.0.1 -setcookie #{Node.get_cookie} " <>
             "-pa #{code_path_str} " #<>
             #"-eval 'application:ensure_all_started(#{app}).'"
           {_, 0} = System.cmd "erl", [
@@ -343,7 +343,7 @@ defmodule Distillery.Test.Runtime.CLI do
             "-boot", "#{app}",
             "-master", "test_cli@127.0.0.1",
             "-s", "slave", "slave_start", "test_cli@127.0.0.1", "slave_waiter_0",
-            "-name", "#{app}@127.0.0.1",
+            "-name", "#{app}#{id}@127.0.0.1",
             "-setcookie", "#{Node.get_cookie}",
             "-heart",
             "-env", "HEART_COMMAND", heart_cmd,
@@ -351,7 +351,7 @@ defmodule Distillery.Test.Runtime.CLI do
             "-pa" | Enum.map(code_path, &List.to_string/1)
           ], cd: project_path
           # We know the name
-          :"#{app}@127.0.0.1"
+          :"#{app}#{id}@127.0.0.1"
       end
 
     # Wait for node
@@ -389,7 +389,8 @@ defmodule Distillery.Test.Runtime.CLI do
         pid ->
           # Try rpc first
           case :rpc.call(name, :init, :stop, []) do
-            {:badrpc, _} ->
+            {:badrpc, reason} ->
+              IO.inspect "Unable to stop node: #{inspect reason}, attempting to kill.."
               # Kill it with fire
               _ = System.cmd("kill", ["-s", "KILL", "#{pid}"])
             _ ->
@@ -422,7 +423,6 @@ defmodule Distillery.Test.Runtime.CLI do
   Spawns the given nodes.
   """
   def spawn_nodes(children) do
-    IO.puts "Starting slaves.."
     children
     |> Enum.map(&Task.async(fn -> spawn_node(&1) end))
     |> Enum.map(&Task.await(&1, 30_000))
@@ -432,8 +432,8 @@ defmodule Distillery.Test.Runtime.CLI do
     {:ok, name} = :slave.start('127.0.0.1', node_name(node_host), inet_loader_args())
     :rpc.call(name, :code, :add_paths, [:code.get_path()])
     {:ok, _} = :rpc.call(name, :application, :ensure_all_started, [:elixir])
-    {:ok, _} = :rpc.call(name, :application, :ensure_all_started, [:runtime_tools])
-    IO.puts "Started slave #{node_host}"
+    {:ok, _} = :rpc.call(name, :application, :ensure_all_started, [:distillery])
+    :timer.sleep(1_000)
   end
 
   defp inet_loader_args(extra \\ []) when is_list(extra) do
