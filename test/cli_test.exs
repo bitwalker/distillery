@@ -288,6 +288,7 @@ defmodule Distillery.Test.Runtime.CLI do
         {:runtime_tools, Keyword.fetch!(Application.spec(:runtime_tools), :vsn)},
         {:elixir, Keyword.fetch!(Application.spec(:elixir), :vsn)},
         {:logger, Keyword.fetch!(Application.spec(:logger), :vsn)},
+        {:distillery, Keyword.fetch!(Application.spec(:distillery), :vsn)},
         {app, '0.1.0'}
     ]}
     rel_path = Path.join([project_path, "#{app}.rel"])
