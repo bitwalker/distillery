@@ -278,19 +278,14 @@ defmodule Distillery.Test.Runtime.CLI do
       |> Enum.map(&List.to_string/1)
       |> Enum.join(" ")
     
+    apps = [:kernel, :stdlib, :compiler, :runtime_tools, :elixir, :logger, :distillery]
+    profile = %Mix.Releases.Profile{include_erts: false}
+    apps = Mix.Releases.Utils.get_apps(%Mix.Releases.Release{name: app, applications: apps, profile: profile})
     app_rel = {:release,
       {'#{app}', '0.1.0'},
       {:erts, '#{Mix.Releases.Utils.erts_version()}'},
-      [
-        {:kernel, Keyword.fetch!(Application.spec(:kernel), :vsn)},
-        {:stdlib, Keyword.fetch!(Application.spec(:stdlib), :vsn)},
-        {:compiler, Keyword.fetch!(Application.spec(:compiler), :vsn)},
-        {:runtime_tools, Keyword.fetch!(Application.spec(:runtime_tools), :vsn)},
-        {:elixir, Keyword.fetch!(Application.spec(:elixir), :vsn)},
-        {:logger, Keyword.fetch!(Application.spec(:logger), :vsn)},
-        {:distillery, Keyword.fetch!(Application.spec(:distillery), :vsn)},
-        {app, '0.1.0'}
-    ]}
+      Enum.map(apps, fn %{name: n, vsn: v} -> {n, v} end) ++ [{app, '0.1.0'}]
+    }
     rel_path = Path.join([project_path, "#{app}.rel"])
     :ok = Mix.Releases.Utils.write_term(rel_path, app_rel)
     old_cwd = File.cwd!
