@@ -140,6 +140,9 @@ configure_release() {
 
 # Do a textual replacement of ${VAR} occurrences in $1 and pipe to $2
 _replace_os_vars() {
+    # Copy the source file to preserve permissions
+    cp -a "$1" "$1.bak"
+    # Perform the replacement, rewriting $1.bak
     awk '
         function escape(s) {
             gsub(/'\&'/, "\\\\&", s);
@@ -151,6 +154,7 @@ _replace_os_vars() {
                 gsub("[$]{"var"}", escape(ENVIRON[var]))
             }
         }1' < "$1" > "$1.bak"
+    # Replace $1 with the rewritten $1.bak
     mv -- "$1.bak" "$1"
 }
 
