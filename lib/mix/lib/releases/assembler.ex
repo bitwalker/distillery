@@ -977,6 +977,12 @@ defmodule Mix.Releases.Assembler do
       :no_module_tests,
       :silent
     ]
+    options = 
+      if release.profile.no_dot_erlang do
+        [:no_dot_erlang | options]
+      else
+        options
+      end
 
     rel_name = '#{release.name}'
     release_file = Path.join(rel_dir, "#{release.name}.rel")

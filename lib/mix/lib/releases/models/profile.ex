@@ -12,6 +12,7 @@ defmodule Mix.Releases.Profile do
       - `cookie`: the secret cookie to use for distributed Erlang
       - `sys_config`: path of a custom sys.config file to use
       - `code_paths`: additional code paths to make available
+      - `no_dot_erlang`: build boot scripts with given no_dot_erlang setting
       - `executable`: whether this release is an executable type or not
       - `exec_opts`: a keyword list of options for executable mode
         - `transient`: whether the extracted contents of an executable will be cleaned up on shutdown
@@ -62,6 +63,7 @@ defmodule Mix.Releases.Profile do
             erl_opts: nil,
             run_erl_env: nil,
             dev_mode: nil,
+            no_dot_erlang: nil,
             include_erts: nil,
             include_src: nil,
             include_system_libs: nil,
@@ -97,6 +99,7 @@ defmodule Mix.Releases.Profile do
           erl_opts: nil | String.t(),
           run_erl_env: nil | String.t(),
           dev_mode: nil | boolean,
+          no_dot_erlang: nil | boolean,
           include_erts: nil | boolean | String.t(),
           include_src: nil | boolean,
           include_system_libs: nil | boolean | String.t(),
