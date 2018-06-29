@@ -54,7 +54,8 @@ defmodule Mix.Releases.App do
     end
   end
 
-  def new(name, start_type, _loaded_deps), do: {:error, {:apps, {:invalid_start_type, name, start_type}}}
+  def new(name, start_type, _loaded_deps),
+    do: {:error, {:apps, {:invalid_start_type, name, start_type}}}
 
   defp do_new(name, start_type, loaded_deps) do
     _ = Application.load(name)

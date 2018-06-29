@@ -38,7 +38,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
       quoted
     end
   end
-  
+
   defp do_read_quoted_wildcard!(path, loaded_paths) do
     # This has a wildcard path, so we need to walk the list
     # of files, and strip the `use Mix.Config` from all but the first,
@@ -51,21 +51,26 @@ defmodule Mix.Releases.Config.Providers.Elixir do
           # Extract the quoted body of the top-level block for merging
           {{:__block__, _, quoted}, new_loaded_paths} = do_read_quoted!(f, loaded_paths)
           {quoted, new_loaded_paths}
+
         f, {quoted, loaded_paths} ->
           if f in loaded_paths do
             raise ArgumentError, message: "recursive load of #{f} detected"
           end
+
           # Again, extract the quoted body, strip the `use`, and concat to the
           # head of the merged quoted body
           {{:__block__, _, f_quoted}, new_loaded_paths} = do_read_quoted!(f, loaded_paths)
+
           f_quoted =
             f_quoted
             |> Enum.reject(fn
               {:use, _, [{:__aliases__, _, [:Mix, :Config]}]} -> true
               _ -> false
             end)
+
           {Enum.concat(quoted, f_quoted), new_loaded_paths}
       end)
+
     # In the final step, reverse the quoted body so that they are in the file
     # in the order they were traversed, and wrap them all in a block
     {{:__block__, [], final_quoted}, new_loaded_paths}
@@ -106,7 +111,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
        when is_binary(path) do
     path = Path.join(Path.dirname(file), Path.relative_to(path, file))
 
-    {quoted, new_loaded_paths} = 
+    {quoted, new_loaded_paths} =
       if String.contains?(path, "*") do
         {{:__block__, _, quoted}, new_loaded_paths} = do_read_quoted_wildcard!(path, loaded_paths)
         {quoted, new_loaded_paths}
@@ -134,9 +139,12 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
       path ->
         path = Path.join(Path.dirname(file), Path.relative_to(path, file))
+
         {quoted, new_loaded_paths} =
           if String.contains?(path, "*") do
-            {{:__block__, _, quoted}, new_loaded_paths} = do_read_quoted_wildcard!(path, loaded_paths)
+            {{:__block__, _, quoted}, new_loaded_paths} =
+              do_read_quoted_wildcard!(path, loaded_paths)
+
             {quoted, new_loaded_paths}
           else
             {{:__block__, _, quoted}, new_loaded_paths} = do_read_quoted!(path, loaded_paths)

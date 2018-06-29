@@ -309,6 +309,7 @@ defmodule Mix.Releases.Utils do
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps} = release) do
     loaded_deps = Mix.Dep.loaded([])
+
     apps =
       if Enum.member?(apps, name) do
         apps

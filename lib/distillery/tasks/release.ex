@@ -145,15 +145,13 @@ defmodule Mix.Tasks.Release do
     relative_output_dir = Path.relative_to_cwd(output_dir)
 
     app =
-      cond do
-        executable? ->
-          "#{app}.run"
-
-        :else ->
-          case :os.type() do
-            {:win32, _} -> "#{app}.bat"
-            {:unix, _} -> "#{app}"
-          end
+      if executable? do
+        "#{app}.run"
+      else
+        case :os.type() do
+          {:win32, _} -> "#{app}.bat"
+          {:unix, _} -> "#{app}"
+        end
       end
 
     Logger.success(
@@ -258,7 +256,7 @@ defmodule Mix.Tasks.Release do
     Application.put_env(:distillery, :no_warn_missing, apps)
     do_parse_args(rest, acc)
   end
-  
+
   defp do_parse_args([{:no_tar, _} | rest], acc) do
     do_parse_args(rest, Map.put(acc, :no_tar, true))
   end

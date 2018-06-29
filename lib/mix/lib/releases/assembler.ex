@@ -256,7 +256,7 @@ defmodule Mix.Releases.Assembler do
         clean_apps =
           release.applications
           |> Enum.map(fn %{name: n} = a ->
-            if not n in [:kernel, :stdlib, :compiler, :elixir, :iex] do
+            if not (n in [:kernel, :stdlib, :compiler, :elixir, :iex]) do
               %{a | start_type: :load}
             else
               a
@@ -314,9 +314,11 @@ defmodule Mix.Releases.Assembler do
     with :ok <- File.mkdir_p(bin_dir),
          {:ok, release_rc_entry_contents} <- Utils.template(:release_rc_entry, template_params),
          {:ok, release_rc_exec_contents} <- Utils.template(:release_rc_exec, template_params),
-         {:ok, release_rc_win_exec_contents} <- Utils.template(:release_rc_win_exec, template_params),
+         {:ok, release_rc_win_exec_contents} <-
+           Utils.template(:release_rc_win_exec, template_params),
          {:ok, release_rc_main_contents} <- Utils.template(:release_rc_main, template_params),
-         {:ok, release_rc_win_main_contents} <- Utils.template(:release_rc_win_main, template_params),
+         {:ok, release_rc_win_main_contents} <-
+           Utils.template(:release_rc_win_main, template_params),
          :ok <- File.write(release_rc_entry_path, release_rc_entry_contents),
          :ok <- File.write(release_rc_exec_path, release_rc_exec_contents),
          :ok <- File.write(release_rc_win_exec_path, release_rc_win_exec_contents),
@@ -690,9 +692,13 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp generate_config_exs(%Release{profile: %Profile{disable_mix_config_provider: true}}, _rel_dir) do
+  defp generate_config_exs(
+         %Release{profile: %Profile{disable_mix_config_provider: true}},
+         _rel_dir
+       ) do
     :ok
   end
+
   defp generate_config_exs(%Release{profile: %Profile{config: base_config_path}}, rel_dir) do
     Logger.debug("Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}")
 
@@ -719,47 +725,74 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generated when Mix.Config provider is _disabled_, compiles config.exs, merges sys.config and appends included configs
-  defp generate_sys_config(%Release{profile: %{disable_mix_config_provider: true, 
-                                               config: base_config_path,
-                                               sys_config: config_path}} = rel, rel_dir) 
-      when is_binary(config_path) do
-    Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
+  defp generate_sys_config(
+         %Release{
+           profile: %{
+             disable_mix_config_provider: true,
+             config: base_config_path,
+             sys_config: config_path
+           }
+         } = rel,
+         rel_dir
+       )
+       when is_binary(config_path) do
+    Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
     overlay_vars = rel.profile.overlay_vars
     base_config = generate_base_config(base_config_path)
-    res = with {:ok, path}       <- Overlays.template_str(config_path, overlay_vars),
-               {:ok, templated}  <- Overlays.template_file(path, overlay_vars),
-               {:ok, tokens, _}  <- :erl_scan.string(String.to_charlist(templated)),
-               {:ok, sys_config} <- :erl_parse.parse_term(tokens),
-               :ok               <- validate_sys_config(sys_config),
-               merged            <- Mix.Config.merge(base_config, sys_config),
-               final             <- append_included_configs(merged, rel.profile.included_configs) do
-            Utils.write_term(Path.join(rel_dir, "sys.config"), final)
-          end
+
+    res =
+      with {:ok, path} <- Overlays.template_str(config_path, overlay_vars),
+           {:ok, templated} <- Overlays.template_file(path, overlay_vars),
+           {:ok, tokens, _} <- :erl_scan.string(String.to_charlist(templated)),
+           {:ok, sys_config} <- :erl_parse.parse_term(tokens),
+           :ok <- validate_sys_config(sys_config),
+           merged <- Mix.Config.merge(base_config, sys_config),
+           final <- append_included_configs(merged, rel.profile.included_configs) do
+        Utils.write_term(Path.join(rel_dir, "sys.config"), final)
+      end
+
     case res do
       :ok ->
         :ok
+
       {:error, {:template, _}} = err ->
         err
+
       {:error, {:template_str, _}} = err ->
         err
+
       {:error, {:assembler, _}} = err ->
         err
+
       {:error, error_info, _end_loc} when is_tuple(error_info) ->
         {:error, {:assembler, {:invalid_sys_config, error_info}}}
+
       {:error, error_info} when is_tuple(error_info) ->
         {:error, {:assembler, {:invalid_sys_config, error_info}}}
     end
   end
+
   # Generted when Mix.Config provider is _disabled_, compiles config.exs, appends included configs
-  defp generate_sys_config(%Release{profile: %{disable_mix_config_provider: true,
-                                               config: config_path,
-                                               included_configs: included_configs}}, rel_dir) do
-    Logger.debug "Generating sys.config from #{Path.relative_to_cwd(config_path)}"
-    config = config_path
-             |> generate_base_config()
-             |> append_included_configs(included_configs)
+  defp generate_sys_config(
+         %Release{
+           profile: %{
+             disable_mix_config_provider: true,
+             config: config_path,
+             included_configs: included_configs
+           }
+         },
+         rel_dir
+       ) do
+    Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
+
+    config =
+      config_path
+      |> generate_base_config()
+      |> append_included_configs(included_configs)
+
     Utils.write_term(Path.join(rel_dir, "sys.config"), config)
   end
+
   # Generated when Mix.Config provider is active, default + provided sys.config
   defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir)
        when is_binary(config_path) do
@@ -802,6 +835,7 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:invalid_sys_config, error_info}}}
     end
   end
+
   # Generated when Mix.Config provider is active, default configuration
   defp generate_sys_config(%Release{} = rel, rel_dir) do
     Logger.debug("Generating default sys.config with included_configs applied")
@@ -818,16 +852,18 @@ defmodule Mix.Releases.Assembler do
 
     Utils.write_term(Path.join(rel_dir, "sys.config"), config)
   end
-  
+
   defp generate_base_config(base_config_path) do
     config = Mix.Config.read!(base_config_path)
+
     case Keyword.get(config, :sasl) do
       nil ->
-        Keyword.put(config, :sasl, [errlog_type: :error])
+        Keyword.put(config, :sasl, errlog_type: :error)
+
       sasl ->
         case Keyword.get(sasl, :errlog_type) do
           nil -> put_in(config, [:sasl, :errlog_type], :error)
-          _   -> config
+          _ -> config
         end
     end
   end
@@ -925,7 +961,7 @@ defmodule Mix.Releases.Assembler do
 
         erts_output_dir = Path.join(output_dir, "erts-#{erts_vsn}")
         erl_path = Path.join([erts_output_dir, "bin", "erl"])
-        
+
         with :ok <- remove_if_exists(erts_output_dir),
              :ok <- File.mkdir_p(erts_output_dir),
              {:ok, _} <- File.cp_r(erts_dir, erts_output_dir),
@@ -977,7 +1013,8 @@ defmodule Mix.Releases.Assembler do
       :no_module_tests,
       :silent
     ]
-    options = 
+
+    options =
       if release.profile.no_dot_erlang do
         [:no_dot_erlang | options]
       else
@@ -1042,8 +1079,11 @@ defmodule Mix.Releases.Assembler do
          # Inject kernel processes
          {before_app_ctrl, after_app_ctrl} <-
            Enum.split_while(ixns, fn
-             {:kernelProcess, {:application_controller, {:application_controller, :start, _}}} -> false
-             _ -> true
+             {:kernelProcess, {:application_controller, {:application_controller, :start, _}}} ->
+               false
+
+             _ ->
+               true
            end),
          ixns = before_app_ctrl ++ kernel_procs ++ after_app_ctrl,
          # Inject extras after Elixir is started

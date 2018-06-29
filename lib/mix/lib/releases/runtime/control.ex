@@ -12,111 +12,120 @@ defmodule Mix.Releases.Runtime.Control do
 
   alias Artificery.Console
 
-  defoption :name, :string, 
+  defoption(
+    :name,
+    :string,
     "The name of the remote node to connect to.\n" <>
-    "Can be in either long form (i.e. 'foo@bar') or short form (i.e. 'foo')"
-    
-  defoption :cookie, :string,
+      "Can be in either long form (i.e. 'foo@bar') or short form (i.e. 'foo')"
+  )
+
+  defoption(
+    :cookie,
+    :string,
     "The distribution cookie to use when connecting to peers",
     transform: &String.to_atom/1
+  )
 
-  option :verbose, :boolean, "Turns on verbose output", alias: :v
+  option(:verbose, :boolean, "Turns on verbose output", alias: :v)
 
   # Basic management tasks
   command :ping, "Pings the remote node" do
-    option :cookie, required: true
-    option :peer, :string, "The node name of the peer to ping"
+    option(:cookie, required: true)
+    option(:peer, :string, "The node name of the peer to ping")
   end
 
   # Stub for `describe`
-  command :start, "Starts the remote node"
+  command(:start, "Starts the remote node")
 
   command :stop, "Stops the remote node" do
-    option :name
-    option :cookie
+    option(:name)
+    option(:cookie)
   end
 
   command :restart, "Restarts the remote node. This will not restart the emulator" do
-    option :name
-    option :cookie
+    option(:name)
+    option(:cookie)
   end
 
   command :reboot, "Reboots the remote node. This will restart the emulator" do
-    option :name
-    option :cookie
+    option(:name)
+    option(:cookie)
   end
 
   # Stub for `describe`
-  command :attach, "Attach directly to the remote node's console"
+  command(:attach, "Attach directly to the remote node's console")
 
   # Stub for `describe`
-  command :remote_console, "Connect to the remote node via remote shell"
+  command(:remote_console, "Connect to the remote node via remote shell")
 
   # Stub for `describe`
-  command :foreground, "Run the release in the foreground"
+  command(:foreground, "Run the release in the foreground")
 
   # Upgrade management tasks
   command :unpack, "Unpacks a release upgrade for installation" do
-    option :name
-    option :cookie
-    option :release, :string, "The release name", required: true, hidden: true
+    option(:name)
+    option(:cookie)
+    option(:release, :string, "The release name", required: true, hidden: true)
 
-    argument :version, :string, "The release version to unpack", required: true
+    argument(:version, :string, "The release version to unpack", required: true)
   end
 
   command :install, "Installs a release upgrade" do
-    option :name
-    option :cookie
-    option :release, :string, "The release name", required: true, hidden: true
+    option(:name)
+    option(:cookie)
+    option(:release, :string, "The release name", required: true, hidden: true)
 
-    argument :version, :string, "The release version to install", required: true
+    argument(:version, :string, "The release version to install", required: true)
   end
 
   # Configuration tasks
   command :reload_config, "Reloads the config of the remote node" do
-    option :name
-    option :cookie
-    option :sysconfig, :string, "The path to a sys.config file"
+    option(:name)
+    option(:cookie)
+    option(:sysconfig, :string, "The path to a sys.config file")
   end
 
   command :rpc, "Executes the provided expression on the remote node" do
-    option :name
-    option :cookie
-    option :file, :string, "Evaluate a file instead of an expression"
+    option(:name)
+    option(:cookie)
+    option(:file, :string, "Evaluate a file instead of an expression")
 
-    argument :expr, :string, "The expression to evaluate", required: true
+    argument(:expr, :string, "The expression to evaluate", required: true)
   end
 
   command(:eval, "Executes the provided expression in a clean node") do
-    option :file, :string, "Evaluate a file instead of an expression"
-    argument :expr, :string, "The expression to evaluate"
+    option(:file, :string, "Evaluate a file instead of an expression")
+    argument(:expr, :string, "The expression to evaluate")
   end
 
   command :escript, "Executes the given escript" do
-    argument :path, :string, "The path to the escript to execute"
+    argument(:path, :string, "The path to the escript to execute")
   end
 
   command :info, "Prints information about the remote node to stdout" do
-    option :name
-    option :cookie
+    option(:name)
+    option(:cookie)
 
     command :processes, [callback: :processes_info], "Show a table of running processes" do
-      option :sort_by, :string,
+      option(
+        :sort_by,
+        :string,
         "Sets the sort column (default: memory)\n" <>
-        "Valid types are: reductions, memory, message_queue, name, current_function, pid",
+          "Valid types are: reductions, memory, message_queue, name, current_function, pid",
         transform: :to_process_info_sort_by
+      )
     end
   end
 
   command :describe, "Describes the currently installed release" do
-    option :name
-    option :cookie
-    option :release_root_dir, :string, "The root directory for all releases"
-    option :sysconfig, :string, "The path to the sys.config file used by the release"
-    option :vmargs, :string, "The path to the vm.args file used by the release"
-    option :config, :string, "The path to the config.exs file used by the release"
-    option :erl_opts, :string, "Extra options for erl"
-    option :run_erl_env, :string, "Extra configuration for run_erl"
+    option(:name)
+    option(:cookie)
+    option(:release_root_dir, :string, "The root directory for all releases")
+    option(:sysconfig, :string, "The path to the sys.config file used by the release")
+    option(:vmargs, :string, "The path to the vm.args file used by the release")
+    option(:config, :string, "The path to the config.exs file used by the release")
+    option(:erl_opts, :string, "Extra options for erl")
+    option(:run_erl_env, :string, "Extra configuration for run_erl")
   end
 
   @doc """
@@ -147,17 +156,20 @@ defmodule Mix.Releases.Runtime.Control do
   defp format_os({:unix, name}) do
     name =
       name
-      |> Atom.to_string
-      |> String.capitalize
-    "#{name} " <> format_os_version(:os.version)
+      |> Atom.to_string()
+      |> String.capitalize()
+
+    "#{name} " <> format_os_version(:os.version())
   end
+
   defp format_os({:win32, _}) do
-    "Windows " <> format_os_version(:os.version)
+    "Windows " <> format_os_version(:os.version())
   end
 
   defp format_os_version({maj, min, patch}) do
     "#{maj}.#{min}.#{patch}"
   end
+
   defp format_os_version(vsn) when is_list(vsn) do
     List.to_string(vsn)
   end
@@ -166,6 +178,7 @@ defmodule Mix.Releases.Runtime.Control do
     case hidden_connect(peer) do
       {:ok, _} ->
         "running"
+
       _ ->
         "stopped"
     end
@@ -175,82 +188,93 @@ defmodule Mix.Releases.Runtime.Control do
   Describes the current release
   """
   def describe(_argv, opts) do
-    Console.debug "Gathering release description.."
+    Console.debug("Gathering release description..")
     start_data = start_data(opts)
     opts = Map.put(opts, :version, start_data.version)
-    Console.success "#{opts.release}-#{start_data.version}"
-    Console.info "System Info ==========================="
-    Console.info "OS:     #{format_os(:os.type)}"
-    Console.info "ERTS:   #{start_data.erts}"
+    Console.success("#{opts.release}-#{start_data.version}")
+    Console.info("System Info ===========================")
+    Console.info("OS:     #{format_os(:os.type())}")
+    Console.info("ERTS:   #{start_data.erts}")
     status = format_status(opts)
+
     if status == "running" do
-      IO.write ["Status: ", IO.ANSI.bright, IO.ANSI.green, status, IO.ANSI.reset, ?\n]
+      IO.write(["Status: ", IO.ANSI.bright(), IO.ANSI.green(), status, IO.ANSI.reset(), ?\n])
     else
-      IO.write ["Status: ", IO.ANSI.yellow, status, IO.ANSI.reset, ?\n]
+      IO.write(["Status: ", IO.ANSI.yellow(), status, IO.ANSI.reset(), ?\n])
     end
 
-    Console.info "Release Info =========================="
-    Console.info "Name:              #{opts.name}"
-    Console.info "Cookie:            #{opts.cookie}"
-    Console.info "Working Directory: #{opts.release_root_dir}"
-    Console.info "System Config:     #{opts.sysconfig}"
-    Console.info "VM Config:         #{opts.vmargs}"
-    Console.info "App Config:        #{opts.config}"
-    Console.info "Extra Erl Flags:   #{opts.erl_opts || "N/A"}"
-    Console.info "Run Erl Env:       #{opts.run_erl_env || "N/A"}\n"
+    Console.info("Release Info ==========================")
+    Console.info("Name:              #{opts.name}")
+    Console.info("Cookie:            #{opts.cookie}")
+    Console.info("Working Directory: #{opts.release_root_dir}")
+    Console.info("System Config:     #{opts.sysconfig}")
+    Console.info("VM Config:         #{opts.vmargs}")
+    Console.info("App Config:        #{opts.config}")
+    Console.info("Extra Erl Flags:   #{opts.erl_opts || "N/A"}")
+    Console.info("Run Erl Env:       #{opts.run_erl_env || "N/A"}\n")
 
-    Console.info "Hooks ================================="
+    Console.info("Hooks =================================")
+
     for {group, hooks} <- fetch_hooks(opts) do
-      Console.info "#{group}:"
+      Console.info("#{group}:")
+
       if length(hooks) > 0 do
         {hook_width, doc_width} = column_widths(hooks)
+
         for {hook, doc} <- hooks do
           IO.write([hook, String.duplicate(" ", max(hook_width - byte_size(hook) + 2, 2))])
           print_help_lines(doc, doc_width + 1)
         end
       else
-        Console.warn "    No #{group} hooks defined"
+        Console.warn("    No #{group} hooks defined")
       end
     end
 
-    Console.info "Custom Commands ======================="
+    Console.info("Custom Commands =======================")
     custom_commands = fetch_custom_commands(opts)
+
     if length(custom_commands) > 0 do
       {command_width, doc_width} = column_widths(custom_commands)
+
       for {name, doc} <- fetch_custom_commands(opts) do
         IO.write([name, String.duplicate(" ", max(command_width - byte_size(name) + 2, 2))])
         print_help_lines(doc, doc_width + 2)
       end
     else
-      Console.warn "No custom commands defined"
+      Console.warn("No custom commands defined")
     end
   end
 
   defp start_data(%{release_root_dir: root_dir}) do
     [erts, version] =
       Path.join([root_dir, "releases", "start_erl.data"])
-      |> File.read!
+      |> File.read!()
       |> String.split(" ", parts: 2)
+
     erts_vsn =
       case erts do
         "ERTS_VSN" ->
           # Get host ERTS version
           List.to_string(:erlang.system_info(:version))
+
         erts_vsn ->
           erts_vsn
       end
+
     %{erts: erts_vsn, version: version}
   end
 
   defp fetch_hooks(%{release_root_dir: root_dir, version: version}) do
     hook_types = Path.join([root_dir, "releases", version, "hooks", "*.d"])
+
     for hook_type <- Path.wildcard(hook_types), into: %{} do
       hooks =
         hook_type
-        |> File.ls!
+        |> File.ls!()
         |> Enum.map(fn hook_file ->
-            {hook_file, read_doc(Path.join(hook_type, hook_file))}
-          end)
+          {hook_file, read_doc(Path.join(hook_type, hook_file))}
+        end)
+
       {hook_type, hooks}
     end
   end
@@ -258,7 +282,8 @@ defmodule Mix.Releases.Runtime.Control do
   defp fetch_custom_commands(%{release_root_dir: root_dir, version: version}) do
     commands =
       Path.join([root_dir, "releases", version, "commands", "*"])
-      |> Path.wildcard
+      |> Path.wildcard()
+
     for command <- commands do
       ext = Path.extname(command)
       name = Path.basename(command, ext)
@@ -270,10 +295,16 @@ defmodule Mix.Releases.Runtime.Control do
   defp read_doc(path) do
     path
     |> File.stream!([:read], :line)
-    |> Stream.reject(fn "#!" <> _shebang -> true; _ -> false  end)
-    |> Stream.take_while(fn <<c::utf8, _doc::binary>> when c in [?\#, ?%] -> true; _ -> false end)
+    |> Stream.reject(fn
+      "#!" <> _shebang -> true
+      _ -> false
+    end)
+    |> Stream.take_while(fn
+      <<c::utf8, _doc::binary>> when c in [?\#, ?%] -> true
+      _ -> false
+    end)
     |> Stream.map(fn line ->
-      line |> String.replace(~r/^[#%]+/, "") |> String.trim
+      line |> String.replace(~r/^[#%]+/, "") |> String.trim()
     end)
     |> Enum.join(" ")
   end
@@ -426,7 +457,6 @@ defmodule Mix.Releases.Runtime.Control do
         Console.error("Unable to prepare config change, call failed: #{inspect(reason)}")
 
       oldenv ->
-
         if has_sysconfig? do
           Console.info("Applying sys.config...")
 
@@ -438,7 +468,9 @@ defmodule Mix.Releases.Runtime.Control do
 
               case rpc_call(peer, :application, :set_env, [app, key, value, [persistent: true]]) do
                 {:badrpc, reason} ->
-                  Console.error("Failed during call to :application.set_env/4: #{inspect(reason)}")
+                  Console.error(
+                    "Failed during call to :application.set_env/4: #{inspect(reason)}"
+                  )
 
                 _ ->
                   :ok
@@ -451,15 +483,20 @@ defmodule Mix.Releases.Runtime.Control do
           case Keyword.get(sysconfig, :distillery) do
             nil ->
               Console.debug("Trying to fetch config providers from peer..")
+
               case rpc_call(peer, :application, :get_env, [:distillery, :config_providers]) do
                 {:badrpc, reason} ->
-                  Console.error("Failed to fetch provider configuration from remote: #{inspect(reason)}")
+                  Console.error(
+                    "Failed to fetch provider configuration from remote: #{inspect(reason)}"
+                  )
+
                 providers when is_list(providers) ->
                   providers
 
                 _ ->
                   []
               end
+
             opts ->
               Keyword.get(opts, :config_providers, [])
           end
@@ -468,6 +505,7 @@ defmodule Mix.Releases.Runtime.Control do
           Console.debug("No config providers defined, skipping..")
         else
           Console.debug("Running config providers..")
+
           case rpc_call(peer, Mix.Releases.Config.Provider, :init, [providers], :infinity) do
             {:badrpc, reason} ->
               Console.error("Failed to run config providers: #{inspect(reason)}")
@@ -477,10 +515,13 @@ defmodule Mix.Releases.Runtime.Control do
           end
         end
 
-        Console.debug "Applying config change via :application_controller.."
+        Console.debug("Applying config change via :application_controller..")
+
         case rpc_call(peer, :application_controller, :config_change, [oldenv]) do
           {:badrpc, reason} ->
-            Console.error("Failed during :application_controller.config_change/1: #{inspect(reason)}")
+            Console.error(
+              "Failed during :application_controller.config_change/1: #{inspect(reason)}"
+            )
 
           _ ->
             Console.success("Config changes applied successfully!")
@@ -497,29 +538,32 @@ defmodule Mix.Releases.Runtime.Control do
         rpc(argv, opts |> Map.delete(:file) |> Map.put(:expr, contents))
 
       {:error, reason} ->
-        Console.error "Failed to read #{file}: #{inspect reason}"
+        Console.error("Failed to read #{file}: #{inspect(reason)}")
     end
   end
+
   def rpc(_argv, %{expr: expr, peer: peer}) do
     case Code.string_to_quoted(expr) do
       {:ok, quoted} ->
         case rpc_call(peer, Code, :eval_quoted, [quoted], :infinity) do
           {:badrpc, {:EXIT, {type, trace}}} ->
-            Console.error """
+            Console.error("""
             Given the following expression: #{Macro.to_string(quoted)}
 
             The remote call failed with:
 
             #{Exception.format(:exit, type, trace)}
-            """
+            """)
+
           {:badrpc, {kind, {type, trace}}} when kind in [:exit, :throw, :error] ->
-            Console.error """
+            Console.error("""
             Given the following expression: #{Macro.to_string(quoted)}
 
             The remote call failed with:
 
             #{Exception.format(kind, type, trace)}
-            """
+            """)
+
           {:badrpc, reason} ->
             Console.error("Remote call failed with: #{inspect(reason)}")
 
@@ -546,18 +590,20 @@ defmodule Mix.Releases.Runtime.Control do
     Code.eval_file(file)
   rescue
     err in [Code.LoadError] ->
-      Console.error """
+      Console.error("""
       Could not load #{Path.expand(file)}: #{Exception.message(err)}
 
       #{Exception.format_stacktrace(err)}
-      """
+      """)
+
     err ->
-      Console.error """
+      Console.error("""
       Evaluation failed: #{Exception.message(err)}
 
       #{Exception.format_stacktrace(err)}
-      """
+      """)
   end
+
   def eval(_argv, %{expr: expr}) do
     case Code.string_to_quoted(expr) do
       {:ok, quoted} ->
@@ -679,7 +725,9 @@ defmodule Mix.Releases.Runtime.Control do
         permafy(peer, release, version)
 
       {_ver, :permanent} ->
-        Console.info("Release #{release}:#{version} is already installed, current, and permanent!")
+        Console.info(
+          "Release #{release}:#{version} is already installed, current, and permanent!"
+        )
     end
   end
 
@@ -818,7 +866,9 @@ defmodule Mix.Releases.Runtime.Control do
         # When executing a relup containing soft_purge instructions:
         #   If the value is soft_purge, release_handler:install_release/1
         #   returns {:error, {:old_processes, mod}}
-        Console.error("Unable to install #{version}: old processes still running code from #{mod}")
+        Console.error(
+          "Unable to install #{version}: old processes still running code from #{mod}"
+        )
 
       {:error, reason} ->
         Console.error("Release handler failed to install: #{inspect(reason)}")
@@ -865,7 +915,9 @@ defmodule Mix.Releases.Runtime.Control do
   defp which_releases(name, peer) do
     case rpc_call(peer, :release_handler, :which_releases, [], :infinity) do
       {:badrpc, reason} ->
-        Console.error("Failed to interrogate release information from #{peer}: #{inspect(reason)}")
+        Console.error(
+          "Failed to interrogate release information from #{peer}: #{inspect(reason)}"
+        )
 
       releases ->
         name = String.to_charlist(name)

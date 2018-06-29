@@ -9,7 +9,7 @@ defmodule CtrlApp.Application do
     # List all child processes to be supervised
     children = [
       # Starts a worker by calling: CtrlApp.Worker.start_link(arg)
-      CtrlApp.Worker,
+      CtrlApp.Worker
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

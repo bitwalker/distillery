@@ -38,7 +38,7 @@ defmodule LanguageExtensions.While do
   """
   defmacro break do
     quote do
-      throw {unquote(__MODULE__), :break}
+      throw({unquote(__MODULE__), :break})
     end
   end
 
@@ -83,34 +83,36 @@ defmodule LanguageExtensions.While do
   # A simple while loop
   defmacro while(predicate, do: block) do
     quote location: :keep do
-      while(_ = :ok, unquote(predicate), [do: unquote(block), after: nil])
+      while(_ = :ok, unquote(predicate), do: unquote(block), after: nil)
     end
   end
 
   # A loop + timeout block
-  defmacro while(predicate, [do: block, after: after_block]) do
+  defmacro while(predicate, do: block, after: after_block) do
     quote location: :keep do
-      while(_ = :ok, unquote(predicate), [do: unquote(block), after: unquote(after_block)])
+      while(_ = :ok, unquote(predicate), do: unquote(block), after: unquote(after_block))
     end
   end
 
   # An accumulator loop
   defmacro while(init, predicate, do: block) do
     quote location: :keep do
-      while(unquote(init), unquote(predicate), [do: unquote(block), after: nil])
+      while(unquote(init), unquote(predicate), do: unquote(block), after: nil)
     end
   end
 
   # An accumulator loop + timeout block
-  defmacro while(init, predicate, [do: block, after: after_block]) do
+  defmacro while(init, predicate, do: block, after: after_block) do
     # Validate initializer
     {init_name, init_expr} =
       case init do
         {:=, env, [init_name | init_expr]} ->
           {init_name, {:__block__, env, init_expr}}
+
         {_, env, _} ->
           raise CompileError,
-            description: "expected an initializer of the form `n = <expr>`, got: #{Macro.to_string(init)}",
+            description:
+              "expected an initializer of the form `n = <expr>`, got: #{Macro.to_string(init)}",
             file: Keyword.get(env, :file, __ENV__.file),
             line: Keyword.get(env, :line, __ENV__.line)
       end
@@ -120,7 +122,7 @@ defmodule LanguageExtensions.While do
     # After body only allows one timeout clause
     {timeout, after_block} =
       case after_block do
-        [{:->, _, [[timeout], after_body]}] when is_integer(timeout) and timeout >= 0->
+        [{:->, _, [[timeout], after_body]}] when is_integer(timeout) and timeout >= 0 ->
           {timeout, after_body}
 
         [{:->, env, [[_], _after_body]}] ->
@@ -174,7 +176,6 @@ defmodule LanguageExtensions.While do
         end
       end
 
-
     # Construct the body of the function
     body =
       case block_type do
@@ -209,12 +210,15 @@ defmodule LanguageExtensions.While do
         :acc ->
           quote location: :keep, generated: true do
             unquote(init_name) = acc
+
             if unquote(predicate) do
               import unquote(__MODULE__), only: [break: 0]
+
               acc2 =
                 case unquote(init_name) do
                   unquote(block)
                 end
+
               unquote(timeout_calc)
               f.(after_time, now, acc2, f)
             else
@@ -247,6 +251,7 @@ defmodule LanguageExtensions.While do
               acc
           end
       end
+
       now = System.monotonic_time(:milliseconds)
       fun.(unquote(timeout), now, unquote(init_expr), fun)
     end
