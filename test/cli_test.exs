@@ -154,6 +154,7 @@ defmodule Distillery.Test.Runtime.CLI do
         :erlang.monitor_node(peer, true)
         # Get the pid of a worker running in the app on the peer node and monitor it
         pid = :rpc.call(peer, GenServer, :whereis, [CtrlApp.Worker])
+        IO.inspect pid, label: "GenServer.whereis(CtrlApp.Worker)"
         assert is_pid(pid)
         ref = Process.monitor(pid)
         # Issue the reboot command
