@@ -28,7 +28,7 @@ defmodule ConfigTest do
                      :sasl,
                      :runtime_tools,
                      {:mix, :load},
-                     {:distillery, :load},
+                     :distillery,
                    ]
                  }
                },
