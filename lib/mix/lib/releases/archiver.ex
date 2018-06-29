@@ -284,7 +284,7 @@ defmodule Mix.Releases.Archiver do
         :ok
 
       {:error, :beam_lib, reason} ->
-        {:error, {:archiver, :beam_lib, reason}}
+        {:error, {:archiver, {:beam_lib, reason}}}
     end
   end
 
