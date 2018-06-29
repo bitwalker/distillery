@@ -157,7 +157,14 @@ defmodule Mix.Releases.Archiver do
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.script"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.rel"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "libexec"]))
-      |> Archive.add(Path.join([output_dir, "lib", "#{name}-#{version}", "consolidated"]))
+    consolidation_path =
+      Path.join([output_dir, "lib", "#{name}-#{version}", "consolidated"])
+    archive =
+      if File.exists?(consolidation_path) do
+        Archive.add(archive, consolidation_path)
+      else
+        archive
+      end
 
     # Only attempt to add relup file if this is an upgrade
     archive =
