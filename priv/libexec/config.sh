@@ -62,7 +62,7 @@ configure_release() {
             export DEST_VMARGS_PATH="$SRC_VMARGS_PATH"
         fi
     fi
-    if [ -z "$RELEASE_READ_ONLY"] && [ ! -z "$REPLACE_OS_VARS" ]; then
+    if [ -z "$RELEASE_READ_ONLY" ] && [ ! -z "$REPLACE_OS_VARS" ]; then
         if [ ! -z "$DEST_VMARGS_PATH" ]; then
             _replace_os_vars "$DEST_VMARGS_PATH"
         fi
@@ -91,7 +91,7 @@ configure_release() {
             export DEST_SYS_CONFIG_PATH="$SRC_SYS_CONFIG_PATH"
         fi
     fi
-    if [ -z "$RELEASE_READ_ONLY"] && [ ! -z "$REPLACE_OS_VARS" ]; then
+    if [ -z "$RELEASE_READ_ONLY" ] && [ ! -z "$REPLACE_OS_VARS" ]; then
         if [ ! -z "$DEST_SYS_CONFIG_PATH" ]; then
             _replace_os_vars "$DEST_SYS_CONFIG_PATH"
         fi
@@ -102,7 +102,7 @@ configure_release() {
     if [ -f "$REL_DIR/config.exs" ]; then
         # Set CONFIG_EXS_PATH, the path to the config.exs file to use
         # Use $RELEASE_CONFIG_DIR/config.exs if it exists, otherwise releases/VSN/config.exs
-        if [ -z "CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
+        if [ -z "$CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
             if [ -f "$RELEASE_CONFIG_DIR/config.exs" ]; then
                 export SRC_CONFIG_EXS_PATH="$RELEASE_CONFIG_DIR/config.exs"
             else
