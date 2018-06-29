@@ -158,6 +158,7 @@ defmodule Mix.Tasks.Release do
       "Release successfully built!\n    " <>
         "You can run it in one of the following ways:\n      " <>
         "Interactive: #{relative_output_dir}/bin/#{app} console\n      " <>
+        "Remote Interactive: #{relative_output_dir}/bin/#{app} remote_console\n      " <>
         "Foreground: #{relative_output_dir}/bin/#{app} foreground\n      " <>
         "Daemon: #{relative_output_dir}/bin/#{app} start"
     )
