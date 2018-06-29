@@ -104,6 +104,12 @@ defmodule Distillery.Test.Runtime.CLI do
 
       assert is_success(:ctrl_app, [table: tab, slave: false], fn peer ->
         :ok = :net_kernel.monitor_nodes(true)
+        while not is_pid(:rpc.call(peer, GenServer, :whereis, [CtrlApp.Worker])) do
+          :timer.sleep(500)
+        after
+          10_000 ->
+            raise "Expected #{peer} to start CtrlApp.Worker within 10s"
+        end
         pid = :rpc.call(peer, GenServer, :whereis, [CtrlApp.Worker])
         assert is_pid(pid)
         ref = Process.monitor(pid)
@@ -153,8 +159,13 @@ defmodule Distillery.Test.Runtime.CLI do
         # Watch for the node going down
         :erlang.monitor_node(peer, true)
         # Get the pid of a worker running in the app on the peer node and monitor it
+        while not is_pid(:rpc.call(peer, GenServer, :whereis, [CtrlApp.Worker])) do
+          :timer.sleep(500)
+        after
+          10_000 ->
+            raise "Expected #{peer} to start CtrlApp.Worker, but hasn't happened after 10s"
+        end
         pid = :rpc.call(peer, GenServer, :whereis, [CtrlApp.Worker])
-        IO.inspect pid, label: "GenServer.whereis(CtrlApp.Worker)"
         assert is_pid(pid)
         ref = Process.monitor(pid)
         # Issue the reboot command
