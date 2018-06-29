@@ -24,7 +24,6 @@ if [ ! -z "$USE_ERL_SHELL" ]; then
         -remsh "$NAME" \
         -setcookie "$COOKIE"
 else
-    __code_paths="$(code_paths)"
     iex --erl "-hidden -kernel net_ticktime $TICKTIME" \
         -"$NAME_TYPE" "$id" \
         --cookie "$COOKIE" \

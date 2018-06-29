@@ -5,8 +5,7 @@ set -e
 
 code_paths() {
     __rel="$RELEASE_ROOT_DIR/releases/$REL_VSN/$REL_NAME.rel"
-    cat "$__rel" \
-        | egrep "{[A-Za-z_]*,\"[0-9.]*[A-Za-z0-9.\_\-\+]*\"(,[a-z]*)?}" \
+    grep -E '{[A-Za-z_]*,\"[0-9.]*[A-Za-z0-9.\_\-\+]*\"(,[a-z]*)?}' "$__rel" \
         | grep -v "erts" \
         | sed -e's/"[^"]*$//' \
               -e's/^[^a-z]*//' \
