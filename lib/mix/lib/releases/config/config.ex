@@ -30,18 +30,16 @@ defmodule Mix.Releases.Config do
   defmacro __using__(opts) do
     quote do
       import Mix.Releases.Config
-      # Initialize config state
-      {:ok, agent} = Mix.Config.Agent.start_link()
 
-      Mix.Config.Agent.merge(
-        agent,
+      opts = unquote(opts)
+
+      var!(config, Mix.Releases.Config) = %{
         environments: [],
         releases: [],
-        default_release: Keyword.get(unquote(opts), :default_release, :default),
-        default_environment: Keyword.get(unquote(opts), :default_environment, :default)
-      )
+        default_release: Keyword.get(opts, :default_release, :default),
+        default_environment: Keyword.get(opts, :default_environment, :default)
+      }
 
-      var!(config_agent, Mix.Releases.Config) = agent
       var!(current_env, Mix.Releases.Config) = nil
       var!(current_rel, Mix.Releases.Config) = nil
     end
@@ -119,18 +117,16 @@ defmodule Mix.Releases.Config do
   """
   defmacro environment(name, do: block) do
     quote do
-      unless is_atom(unquote(name)) do
-        raise "environment name must be an atom! got #{inspect(unquote(name))}"
+      name = unquote(name)
+
+      unless is_atom(name) do
+        raise "environment name must be an atom! got #{inspect(name)}"
       end
 
-      env = Environment.new(unquote(name))
-
-      Mix.Config.Agent.merge(
-        var!(config_agent, Mix.Releases.Config),
-        environments: [{unquote(name), env}]
-      )
-
-      var!(current_env, Mix.Releases.Config) = unquote(name)
+      env = Environment.new(name)
+      conf = var!(config, Mix.Releases.Config)
+      var!(config, Mix.Releases.Config) = put_in(conf, [:environments, name], env)
+      var!(current_env, Mix.Releases.Config) = name
       unquote(block)
       var!(current_env, Mix.Releases.Config) = nil
     end
@@ -153,18 +149,17 @@ defmodule Mix.Releases.Config do
   """
   defmacro release(name, do: block) do
     quote do
-      unless is_atom(unquote(name)) do
-        raise "release name must be an atom! got #{inspect(unquote(name))}"
+      name = unquote(name)
+
+      unless is_atom(name) do
+        raise "release name must be an atom! got #{inspect(name)}"
       end
 
-      rel = Release.new(unquote(name), unquote(@default_release_version), [])
+      rel = Release.new(name, unquote(@default_release_version), [])
 
-      Mix.Config.Agent.merge(
-        var!(config_agent, Mix.Releases.Config),
-        releases: [{unquote(name), rel}]
-      )
-
-      var!(current_rel, Mix.Releases.Config) = unquote(name)
+      conf = var!(config, Mix.Releases.Config)
+      var!(config, Mix.Releases.Config) = put_in(conf, [:releases, name], rel)
+      var!(current_rel, Mix.Releases.Config) = name
       unquote(block)
       var!(current_rel, Mix.Releases.Config) = nil
     end
@@ -191,6 +186,8 @@ defmodule Mix.Releases.Config do
       end
 
     quote do
+      name = unquote(name)
+      plugin_opts = unquote(opts)
       current_env = var!(current_env, Mix.Releases.Config)
       current_rel = var!(current_rel, Mix.Releases.Config)
 
@@ -198,7 +195,7 @@ defmodule Mix.Releases.Config do
         raise "cannot use plugin/1 outside of an environment or a release!"
       end
 
-      case :code.which(unquote(name)) do
+      case :code.which(name) do
         :non_existing ->
           raise "cannot load plugin #{unquote(name)}, no such module could be found"
 
@@ -206,31 +203,28 @@ defmodule Mix.Releases.Config do
           :ok
       end
 
-      config = Mix.Config.Agent.get(var!(config_agent, Mix.Releases.Config))
+      conf = var!(config, Mix.Releases.Config)
 
-      cond do
-        current_env != nil ->
-          env = get_in(config, [:environments, current_env])
-          profile = env.profile
-          plugins = profile.plugins ++ [{unquote(name), unquote(opts)}]
-          env = %{env | :profile => %{profile | :plugins => plugins}}
+      new_conf =
+        cond do
+          current_env != nil ->
+            env = get_in(conf, [:environments, current_env])
+            profile = env.profile
+            plugins = profile.plugins ++ [{name, plugin_opts}]
+            env = %{env | :profile => %{profile | :plugins => plugins}}
 
-          Mix.Config.Agent.merge(
-            var!(config_agent, Mix.Releases.Config),
-            environments: [{current_env, env}]
-          )
+            put_in(conf, [:environments, current_env], env)
 
-        current_rel != nil ->
-          rel = get_in(config, [:releases, current_rel])
-          profile = rel.profile
-          plugins = profile.plugins ++ [{unquote(name), unquote(opts)}]
-          rel = %{rel | :profile => %{profile | :plugins => plugins}}
+          current_rel != nil ->
+            rel = get_in(conf, [:releases, current_rel])
+            profile = rel.profile
+            plugins = profile.plugins ++ [{name, plugin_opts}]
+            rel = %{rel | :profile => %{profile | :plugins => plugins}}
 
-          Mix.Config.Agent.merge(
-            var!(config_agent, Mix.Releases.Config),
-            releases: [{current_rel, rel}]
-          )
-      end
+            put_in(conf, [:releases, current_rel], rel)
+        end
+
+      var!(config, Mix.Releases.Config) = new_conf
     end
   end
 
@@ -256,54 +250,53 @@ defmodule Mix.Releases.Config do
         raise "cannot use set/1 outside of an environment or a release!"
       end
 
-      config = Mix.Config.Agent.get(var!(config_agent, Mix.Releases.Config))
+      set_opts = unquote(opts)
 
-      cond do
-        current_env != nil ->
-          env = get_in(config, [:environments, current_env])
+      conf = var!(config, Mix.Releases.Config)
 
-          env =
-            Enum.reduce(unquote(opts), env, fn {k, v}, acc ->
-              case Map.has_key?(acc.profile, k) do
-                false ->
-                  raise "unknown environment config setting `#{k}`"
+      new_conf =
+        cond do
+          current_env != nil ->
+            env = get_in(conf, [:environments, current_env])
 
-                true ->
-                  %{acc | :profile => Map.put(acc.profile, k, v)}
-              end
-            end)
-
-          Mix.Config.Agent.merge(
-            var!(config_agent, Mix.Releases.Config),
-            environments: [{current_env, env}]
-          )
-
-        current_rel != nil ->
-          rel = get_in(config, [:releases, current_rel])
-
-          rel =
-            Enum.reduce(unquote(opts), rel, fn
-              {:version, v}, acc ->
-                %{acc | :version => v}
-
-              {:applications, v}, acc ->
-                %{acc | :applications => acc.applications ++ v}
-
-              {k, v}, acc ->
+            env =
+              Enum.reduce(set_opts, env, fn {k, v}, acc ->
                 case Map.has_key?(acc.profile, k) do
                   false ->
-                    raise "unknown release config setting `#{k}`"
+                    raise "unknown environment config setting `#{k}`"
 
                   true ->
                     %{acc | :profile => Map.put(acc.profile, k, v)}
                 end
-            end)
+              end)
 
-          Mix.Config.Agent.merge(
-            var!(config_agent, Mix.Releases.Config),
-            releases: [{current_rel, rel}]
-          )
-      end
+            put_in(conf, [:environments, current_env], env)
+
+          current_rel != nil ->
+            rel = get_in(conf, [:releases, current_rel])
+
+            rel =
+              Enum.reduce(set_opts, rel, fn
+                {:version, v}, acc ->
+                  %{acc | :version => v}
+
+                {:applications, v}, acc ->
+                  %{acc | :applications => acc.applications ++ v}
+
+                {k, v}, acc ->
+                  case Map.has_key?(acc.profile, k) do
+                    false ->
+                      raise "unknown release config setting `#{k}`"
+
+                    true ->
+                      %{acc | :profile => Map.put(acc.profile, k, v)}
+                  end
+              end)
+
+            put_in(conf, [:releases, current_rel], rel)
+        end
+
+      var!(config, Mix.Releases.Config) = new_conf
     end
   end
 
@@ -321,15 +314,20 @@ defmodule Mix.Releases.Config do
   """
   defmacro current_version(app) do
     quote do
-      unless is_atom(unquote(app)) do
-        raise "current_version argument must be an atom! got #{inspect(unquote(app))}"
+      app = unquote(app)
+
+      unless is_atom(app) do
+        raise "current_version argument must be an atom! got #{inspect(app)}"
       end
 
-      Application.load(unquote(app))
+      Application.load(app)
 
-      case Application.spec(unquote(app)) do
-        nil -> raise "could not get current version of #{unquote(app)}, app could not be loaded"
-        spec -> "#{Keyword.get(spec, :vsn)}"
+      case Application.spec(app) do
+        nil ->
+          raise "could not get current version of #{app}, app could not be loaded"
+
+        spec ->
+          "#{Keyword.get(spec, :vsn)}"
       end
     end
   end
@@ -343,17 +341,23 @@ defmodule Mix.Releases.Config do
     {config, binding} = Code.eval_string(contents)
 
     config =
-      case List.keyfind(binding, {:config_agent, Mix.Releases.Config}, 0) do
-        {_, agent} -> get_config_and_stop_agent(agent)
-        nil -> config
+      case List.keyfind(binding, {:config, Mix.Releases.Config}, 0) do
+        {_, conf} ->
+          conf
+
+        nil ->
+          config
       end
 
     config = to_struct(config)
     validate!(config)
     config
   rescue
-    e in [LoadError] -> reraise(e, System.stacktrace())
-    e -> reraise(LoadError, [file: "nofile", error: e], System.stacktrace())
+    e in [LoadError] ->
+      reraise(e, System.stacktrace())
+
+    e ->
+      reraise(LoadError, [file: "nofile", error: e], System.stacktrace())
   end
 
   @doc """
@@ -364,8 +368,11 @@ defmodule Mix.Releases.Config do
   def read!(file) do
     read_string!(File.read!(file))
   rescue
-    e in [LoadError] -> reraise(LoadError, [file: file, error: e.error], System.stacktrace())
-    e -> reraise(LoadError, [file: file, error: e], System.stacktrace())
+    e in [LoadError] ->
+      reraise(LoadError, [file: file, error: e.error], System.stacktrace())
+
+    e ->
+      reraise(LoadError, [file: file, error: e], System.stacktrace())
   end
 
   @doc """
@@ -544,25 +551,17 @@ defmodule Mix.Releases.Config do
     raise ArgumentError, "expected release config to be a struct, instead got: #{inspect(config)}"
   end
 
-  defp get_config_and_stop_agent(agent) do
-    config = Mix.Config.Agent.get(agent)
-    Mix.Config.Agent.stop(agent)
-    config
+  defp to_struct(config) when is_map(config) do
+    default_env = Map.get(config, :default_environment)
+    default_release = Map.get(config, :default_release)
+
+    %__MODULE__{default_environment: default_env, default_release: default_release}
+    |> to_struct(:environments, Map.get(config, :environments, []))
+    |> to_struct(:releases, Map.get(config, :releases, []))
   end
 
-  defp to_struct(config) when is_list(config) do
-    case Keyword.keyword?(config) do
-      false ->
-        raise LoadError, message: "invalid config term, expected keyword list: #{inspect(config)}"
-
-      true ->
-        default_env = Keyword.get(config, :default_environment)
-        default_release = Keyword.get(config, :default_release)
-
-        %__MODULE__{default_environment: default_env, default_release: default_release}
-        |> to_struct(:environments, Keyword.get(config, :environments, []))
-        |> to_struct(:releases, Keyword.get(config, :releases, []))
-    end
+  defp to_struct(config) do
+    raise LoadError, message: "invalid config term, expected map: #{inspect(config)}"
   end
 
   defp to_struct(config, :environments, []) do
