@@ -69,10 +69,6 @@ defmodule Mix.Releases.Profile do
             include_system_libs: nil,
             included_configs: [],
             config_providers: [],
-            # NOTE: This is to allow applications which can't support Mix.Config
-            # in their releases due to compatibility problems, to disable the Mix.Config
-            # provider support, falling back to the old sys.config provider instead.
-            disable_mix_config_provider: nil,
             appup_transforms: [],
             strip_debug_info: nil,
             plugins: [],
@@ -105,7 +101,6 @@ defmodule Mix.Releases.Profile do
           include_system_libs: nil | boolean | String.t(),
           included_configs: [String.t()],
           config_providers: [module() | {module(), [term]}],
-          disable_mix_config_provider: boolean,
           appup_transforms: [module() | {module(), [term]}],
           strip_debug_info: nil | boolean,
           plugins: [module()],

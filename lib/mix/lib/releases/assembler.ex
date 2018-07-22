@@ -6,6 +6,7 @@ defmodule Mix.Releases.Assembler do
   """
   alias Mix.Releases.{Config, Release, Environment, Profile, App}
   alias Mix.Releases.{Utils, Logger, Appup, Plugin, Overlays}
+  alias Mix.Releases.Config.Provider
 
   require Record
   Record.defrecordp(:file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl"))
@@ -692,14 +693,15 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp generate_config_exs(
-         %Release{profile: %Profile{disable_mix_config_provider: true}},
-         _rel_dir
-       ) do
-    :ok
+  defp generate_config_exs(%Release{profile: %Profile{config_providers: ps}} = rel, rel_dir) do
+    if Provider.enabled?(ps, Mix.Releases.Config.Providers.Elixir) do
+      do_generate_config_exs(rel, rel_dir)
+    else
+      :ok
+    end
   end
 
-  defp generate_config_exs(%Release{profile: %Profile{config: base_config_path}}, rel_dir) do
+  defp do_generate_config_exs(%Release{profile: %Profile{config: base_config_path}}, rel_dir) do
     Logger.debug("Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}")
 
     merged =
@@ -724,85 +726,14 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  # Generated when Mix.Config provider is _disabled_, compiles config.exs, merges sys.config and appends included configs
-  defp generate_sys_config(
-         %Release{
-           profile: %{
-             disable_mix_config_provider: true,
-             config: base_config_path,
-             sys_config: config_path
-           }
-         } = rel,
-         rel_dir
-       )
-       when is_binary(config_path) do
-    Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
-    overlay_vars = rel.profile.overlay_vars
-    base_config = generate_base_config(base_config_path)
-
-    res =
-      with {:ok, path} <- Overlays.template_str(config_path, overlay_vars),
-           {:ok, templated} <- Overlays.template_file(path, overlay_vars),
-           {:ok, tokens, _} <- :erl_scan.string(String.to_charlist(templated)),
-           {:ok, sys_config} <- :erl_parse.parse_term(tokens),
-           :ok <- validate_sys_config(sys_config),
-           merged <- Mix.Config.merge(base_config, sys_config),
-           final <- append_included_configs(merged, rel.profile.included_configs) do
-        Utils.write_term(Path.join(rel_dir, "sys.config"), final)
-      end
-
-    case res do
-      :ok ->
-        :ok
-
-      {:error, {:template, _}} = err ->
-        err
-
-      {:error, {:template_str, _}} = err ->
-        err
-
-      {:error, {:assembler, _}} = err ->
-        err
-
-      {:error, error_info, _end_loc} when is_tuple(error_info) ->
-        {:error, {:assembler, {:invalid_sys_config, error_info}}}
-
-      {:error, error_info} when is_tuple(error_info) ->
-        {:error, {:assembler, {:invalid_sys_config, error_info}}}
-    end
-  end
-
-  # Generted when Mix.Config provider is _disabled_, compiles config.exs, appends included configs
-  defp generate_sys_config(
-         %Release{
-           profile: %{
-             disable_mix_config_provider: true,
-             config: config_path,
-             included_configs: included_configs
-           }
-         },
-         rel_dir
-       ) do
-    Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
-
-    config =
-      config_path
-      |> generate_base_config()
-      |> append_included_configs(included_configs)
-
-    Utils.write_term(Path.join(rel_dir, "sys.config"), config)
-  end
-
   # Generated when Mix.Config provider is active, default + provided sys.config
-  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir)
-       when is_binary(config_path) do
+  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir) when is_binary(config_path) do
     Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
     overlay_vars = rel.profile.overlay_vars
-
-    base_config = [
-      {:sasl, [errlog_type: :error]},
-      {:distillery, [config_providers: rel.profile.config_providers]}
-    ]
+    
+    base_config =
+      rel.profile.config_path
+      |> generate_base_config(rel.profile.config_providers)
 
     res =
       with {:ok, path} <- Overlays.template_str(config_path, overlay_vars),
@@ -836,38 +767,29 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  # Generated when Mix.Config provider is active, default configuration
-  defp generate_sys_config(%Release{} = rel, rel_dir) do
-    Logger.debug("Generating default sys.config with included_configs applied")
-
-    included_configs = rel.profile.included_configs
-    config_providers = rel.profile.config_providers
+  defp generate_base_config(base_config_path, config_providers) do
+    config = Mix.Releases.Config.Providers.Elixir.eval!(base_config_path)
 
     config =
-      [
-        {:sasl, [errlog_type: :error]},
-        {:distillery, [config_providers: config_providers]}
-      ]
-      |> append_included_configs(included_configs)
+      case Keyword.get(config, :sasl) do
+        nil ->
+          Keyword.put(config, :sasl, errlog_type: :error)
 
-    Utils.write_term(Path.join(rel_dir, "sys.config"), config)
-  end
-
-  defp generate_base_config(base_config_path) do
-    config = Mix.Config.read!(base_config_path)
-
-    case Keyword.get(config, :sasl) do
+        sasl ->
+          case Keyword.get(sasl, :errlog_type) do
+            nil -> put_in(config, [:sasl, :errlog_type], :error)
+            _ -> config
+          end
+      end
+    
+    case Keyword.get(config, :distillery) do
       nil ->
-        Keyword.put(config, :sasl, errlog_type: :error)
-
-      sasl ->
-        case Keyword.get(sasl, :errlog_type) do
-          nil -> put_in(config, [:sasl, :errlog_type], :error)
-          _ -> config
-        end
+        Keyword.put(config, :distillery, [config_providers: config_providers])
+      dc ->
+        Keyword.put(config, :distillery, Keyword.merge(dc, [config_providers: config_providers]))
     end
   end
-
+  
   # Extend the config with the paths of additional config files
   defp append_included_configs(config, []), do: config
 
@@ -1071,7 +993,7 @@ defmodule Mix.Releases.Assembler do
     ]
 
     extras = [
-      # Applies the config hook for executing config.exs on boot
+      # Applies the config hook for executing config providers on boot
       {:apply, {Mix.Releases.Config.Provider, :init, [providers]}}
     ]
 
