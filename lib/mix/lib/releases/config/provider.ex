@@ -37,6 +37,14 @@ defmodule Mix.Releases.Config.Provider do
   @callback get(key :: [atom]) :: {:ok, term} | nil
 
   @doc false
+  def enabled?(providers, provider) when is_list(providers) and is_atom(provider) do
+    Enum.any?(providers, fn
+      mod when is_atom(mod) -> mod == provider
+      {mod, _opts} when is_atom(mod) -> mod == provider
+    end)
+  end
+
+  @doc false
   def init(providers) when is_list(providers) do
     # If called later, reset the table
     case :ets.info(__MODULE__, :size) do
