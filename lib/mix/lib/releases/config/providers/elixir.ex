@@ -11,7 +11,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   def init([path]) do
     if File.exists?(path) do
       path
-      |> Mix.Config.read!()
+      |> eval!()
       |> Mix.Config.persist()
     else
       :ok
@@ -37,6 +37,15 @@ defmodule Mix.Releases.Config.Providers.Elixir do
       {quoted, _} = do_read_quoted!(file, [])
       quoted
     end
+  end
+  
+  @doc false
+  def eval!(path, imported_paths \\ [])
+
+  if function_exported?(Mix.Config, :eval!, 2) do
+    def eval!(path, imported_paths), do: Mix.Config.eval!(path, imported_paths)
+  else
+    def eval!(path, imported_paths), do: Mix.Config.read!(path, imported_paths)
   end
 
   defp do_read_quoted_wildcard!(path, loaded_paths) do
