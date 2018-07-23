@@ -37,7 +37,10 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   
   Code.ensure_loaded(Mix.Config)
   if function_exported?(Mix.Config, :eval!, 2) do
-    def eval!(path, imported_paths), do: Mix.Config.eval!(path, imported_paths)
+    def eval!(path, imported_paths) do 
+      {config, _} = Mix.Config.eval!(path, imported_paths)
+      config
+    end
   else
     def eval!(path, imported_paths), do: Mix.Config.read!(path, imported_paths)
   end
