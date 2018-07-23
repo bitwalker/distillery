@@ -416,6 +416,13 @@ defmodule Mix.Releases.Utils do
     end
   end
 
+  Code.ensure_loaded(Mix.Dep)
+  if function_exported?(Mix.Dep, :load_on_environment, 1) do
+    defp loaded_deps(opts), do: Mix.Dep.load_on_environment(opts)
+  else
+    defp loaded_deps(opts), do: Mix.Dep.loaded(opts)
+  end
+
   @doc """
   Gets a list of {app, vsn} tuples for the current release.
 
@@ -424,7 +431,7 @@ defmodule Mix.Releases.Utils do
   @spec get_apps(Mix.Releases.Release.t()) :: [{atom, String.t()}] | {:error, String.t()}
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps} = release) do
-    loaded_deps = Mix.Dep.loaded([])
+    loaded_deps = loaded_deps([])
 
     apps =
       if Enum.member?(apps, name) do

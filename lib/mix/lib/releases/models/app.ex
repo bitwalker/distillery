@@ -96,10 +96,19 @@ defmodule Mix.Releases.App do
 
   def valid_start_type?(_), do: false
 
+  Code.ensure_loaded(Mix.Dep)
+  if function_exported?(Mix.Dep, :filter_by_name, 3) do
+    defp loaded_by_name(name, deps, opts),
+      do: Mix.Dep.filter_by_name([name], deps, opts)
+  else
+    defp loaded_by_name(name, deps, opts),
+      do: Mix.Dep.loaded_by_name([name], deps, opts)
+  end
+
   # Gets a list of all applications which are children
   # of this application.
   defp get_dependencies(name, loaded_deps) do
-    Mix.Dep.loaded_by_name([name], loaded_deps, [])
+    loaded_by_name(name, loaded_deps, [])
     |> Stream.flat_map(fn %Mix.Dep{deps: deps} -> deps end)
     |> Stream.filter(&include_dep?/1)
     |> Enum.map(&map_dep/1)
