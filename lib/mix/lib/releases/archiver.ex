@@ -7,6 +7,8 @@ defmodule Mix.Releases.Archiver do
   alias Mix.Releases.Logger
   alias Mix.Releases.Plugin
   alias Mix.Releases.Archiver.Archive
+  alias Mix.Releases.Config.Provider
+  alias Mix.Releases.Config.Providers
 
   @doc """
   Given an assembled release, and the Release struct representing it,
@@ -149,7 +151,6 @@ defmodule Mix.Releases.Archiver do
       |> Archive.add(Path.join([output_dir, "releases", "RELEASES"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "vm.args"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "sys.config"]))
-      |> Archive.add(Path.join([output_dir, "releases", version, "config.exs"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "start_clean.boot"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.sh"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.bat"]))
@@ -157,6 +158,14 @@ defmodule Mix.Releases.Archiver do
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.script"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.rel"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "libexec"]))
+
+    config_providers = release.profile.config_providers
+    archive =
+      if Provider.enabled?(config_providers, Providers.Elixir) do
+        Archive.add(archive, Path.join([output_dir, "releases", version, "config.exs"]))
+      else
+        archive
+      end
 
     consolidation_path = Path.join([output_dir, "lib", "#{name}-#{version}", "consolidated"])
 
