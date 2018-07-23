@@ -18,13 +18,6 @@ defmodule Mix.Releases.Config.Providers.Elixir do
     end
   end
 
-  @impl Mix.Releases.Config.Provider
-  def get([app | rest]) do
-    app
-    |> Application.get_all_env()
-    |> get_in(rest)
-  end
-
   @doc """
   Given a path to a config file, this function will return the quoted AST of
   that config and all configs that it imports.
