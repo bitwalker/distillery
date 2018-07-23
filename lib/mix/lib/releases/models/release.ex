@@ -118,7 +118,7 @@ defmodule Mix.Releases.Release do
   def to_resource(
         %__MODULE__{applications: apps, profile: %Profile{erts_version: erts}} = release
       ) do
-    rel_name = String.to_charlist(release.name)
+    rel_name = Atom.to_charlist(release.name)
     rel_version = String.to_charlist(release.version)
     erts = String.to_charlist(erts)
 
