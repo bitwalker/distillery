@@ -23,6 +23,18 @@ defmodule Mix.Releases.Config.Provider do
   defmacro __using__(_) do
     quote do
       @behaviour unquote(__MODULE__)
+
+      def get([app | keypath]) do
+        config = Application.get_all_env(app)
+        case get_in(config, keypath) do
+          nil ->
+            nil
+          v ->
+            {:ok, v}
+        end
+      end
+
+      defoverridable [get: 1]
     end
   end
 
