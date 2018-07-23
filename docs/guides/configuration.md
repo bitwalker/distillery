@@ -1,9 +1,25 @@
 # Runtime Configuration
 
 **IMPORTANT:** As of the time this document has changed, Distillery now supports `config.exs` natively. 
-You can configure your application the same way you normally would and can mostly ignore the parts below
-about what does/doesn't work in `config.exs`. I would still pay attention to the parts about approaching
-configuration more generally (i.e. conventions) because that is still important information.
+To use `config.exs` rather than the old `sys.config` file, simply set the
+following in your `rel/config.exs`:
+
+```elixir
+release :myapp do
+  set config_providers: [{Mix.Releases.Config.Providers.Elixir, ["var/config.exs"]}]
+end
+```
+
+When using this config provider, you can configure your application the same way
+you normally would when running under Mix. It works by compiling your
+`config.exs` file, and it's imports, into a single `config.exs` file which is
+then placed in the release. The editable version of this is placed in
+`var/config.exs` for you by Distillery, which is why that path is given above in
+the provider's argument list.
+
+If you are using the `Elixir` config provider, then most of the following
+content does not apply to you, with the exception of the parts on configuration
+conventions, as that is still applicable to all forms of runtime configuration.
 
 ### Configuration Conventions
 
