@@ -4,7 +4,7 @@ defmodule Mix.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by `:systools` and `:release_handler`.
   """
-  alias Mix.Releases.{Config, Release, Environment, Profile, App}
+  alias Mix.Releases.{Config, Release, Environment, Profile}
   alias Mix.Releases.{Utils, Logger, Appup, Plugin, Overlays}
   alias Mix.Releases.Config.Provider
 
@@ -19,7 +19,7 @@ defmodule Mix.Releases.Assembler do
          release <- apply_environment(release, environment),
          :ok <- validate_configuration(release),
          {:ok, release} <- Release.apply_configuration(release, config, true),
-         :ok <- File.mkdir_p(release.profile.output_dir),
+         :ok <- make_paths(release),
          {:ok, release} <- Plugin.before_assembly(release) do
       {:ok, release}
     end
@@ -39,7 +39,8 @@ defmodule Mix.Releases.Assembler do
     with {:ok, release} <- pre_assemble(config),
          {:ok, release} <- generate_overlay_vars(release),
          {:ok, release} <- copy_applications(release),
-         :ok <- create_release_info(release),
+         :ok <- write_release_metadata(release),
+         :ok <- write_release_scripts(release),
          {:ok, release} <- apply_overlays(release),
          {:ok, release} <- Plugin.after_assembly(release),
          do: {:ok, release}
@@ -68,23 +69,14 @@ defmodule Mix.Releases.Assembler do
   defp copy_applications(%Release{profile: %Profile{output_dir: output_dir}} = release) do
     Logger.debug("Copying applications to #{output_dir}")
 
-    try do
-      File.mkdir_p!(Path.join(output_dir, "lib"))
+    Enum.each(release.applications, &copy_app(&1, release))
 
-      for app <- release.applications do
-        copy_app(app, release)
-      end
+    case copy_consolidated(release) do
+      :ok ->
+        {:ok, release}
 
-      case copy_consolidated(release) do
-        :ok ->
-          {:ok, release}
-
-        {:error, _} = err ->
-          err
-      end
-    catch
-      kind, err ->
-        {:error, {:assembler, {kind, err}}}
+      {:error, _} = err ->
+        err
     end
   end
 
@@ -93,10 +85,10 @@ defmodule Mix.Releases.Assembler do
     :ok
   end
 
-  defp copy_consolidated(%Release{name: name, version: version, profile: profile}) do
+  defp copy_consolidated(%Release{name: name, version: version} = release) do
     src = Mix.Project.consolidation_path()
-    dest = Path.join([profile.output_dir, "lib", "#{name}-#{version}", "consolidated"])
-    remove_symlink_or_dir!(dest)
+    dest = Path.join([Release.lib_path(release), "#{name}-#{version}", "consolidated"])
+    Utils.remove_symlink_or_dir!(dest)
     File.mkdir_p!(dest)
 
     if File.exists?(src) do
@@ -128,7 +120,7 @@ defmodule Mix.Releases.Assembler do
     app_dir = app.path
     lib_dir = Path.join(output_dir, "lib")
     target_dir = Path.join(lib_dir, "#{app_name}-#{app_version}")
-    remove_symlink_or_dir!(target_dir)
+    Utils.remove_symlink_or_dir!(target_dir)
 
     case include_erts? do
       true ->
@@ -178,7 +170,7 @@ defmodule Mix.Releases.Assembler do
         |> Enum.each(fn p ->
           t = Path.join(target_dir, Path.basename(p))
 
-          if symlink?(p) do
+          if Utils.symlink?(p) do
             # We need to follow the symlink
             File.mkdir_p!(t)
 
@@ -213,129 +205,61 @@ defmodule Mix.Releases.Assembler do
       {:error, err}
   end
 
-  defp remove_symlink_or_dir!(path) do
-    case File.exists?(path) do
-      true ->
-        File.rm_rf!(path)
-
-      false ->
-        if symlink?(path) do
-          File.rm!(path)
-        end
-    end
-
-    :ok
-  rescue
-    e in [File.Error] ->
-      {:error, {:assembler, e}}
-  end
-
-  defp symlink?(path) do
-    case :file.read_link_info('#{path}') do
-      {:ok, info} ->
-        elem(info, 2) == :symlink
-
-      _ ->
-        false
-    end
-  end
-
   # Creates release metadata files
-  defp create_release_info(%Release{name: relname} = release) do
-    output_dir = release.profile.output_dir
-    rel_dir = Path.join([output_dir, "releases", "#{release.version}"])
+  defp write_release_metadata(%Release{name: relname} = release) do
+    rel_dir = Release.version_path(release)
 
-    case File.mkdir_p(rel_dir) do
-      {:error, reason} ->
-        {:error, {:assembler, :file, {reason, rel_dir}}}
+    release_file = Path.join(rel_dir, "#{relname}.rel")
+    start_clean_file = Path.join(rel_dir, "start_clean.rel")
+    no_dot_erlang_file = Path.join(rel_dir, "no_dot_erlang.rel")
 
-      :ok ->
-        release_file = Path.join(rel_dir, "#{relname}.rel")
-        start_clean_file = Path.join(rel_dir, "start_clean.rel")
-        no_dot_erlang_file = Path.join(rel_dir, "no_dot_erlang.rel")
+    clean_apps =
+      release.applications
+      |> Enum.map(fn %{name: n} = a ->
+        if not (n in [:kernel, :stdlib, :compiler, :elixir, :iex]) do
+          %{a | start_type: :load}
+        else
+          a
+        end
+      end)
 
-        clean_apps =
-          release.applications
-          |> Enum.map(fn %{name: n} = a ->
-            if not (n in [:kernel, :stdlib, :compiler, :elixir, :iex]) do
-              %{a | start_type: :load}
-            else
-              a
-            end
-          end)
+    clean_release = %{release | applications: clean_apps}
 
-        start_clean_rel = %{release | applications: clean_apps}
-
-        with :ok <- write_relfile(release_file, release),
-             :ok <- write_relfile(start_clean_file, start_clean_rel),
-             :ok <- write_relfile(no_dot_erlang_file, start_clean_rel),
-             :ok <- write_binfile(release, rel_dir),
-             :ok <- generate_relup(release, rel_dir),
-             do: :ok
-    end
-  end
-
-  # Creates the .rel file for the release
-  defp write_relfile(path, %Release{applications: apps} = release) do
-    case get_erts_version(release) do
-      {:error, _} = err ->
-        err
-
-      {:ok, erts_vsn} ->
-        relfile =
-          {:release, {'#{release.name}', '#{release.version}'}, {:erts, '#{erts_vsn}'},
-           apps
-           |> Enum.map(fn %App{name: name, vsn: vsn, start_type: start_type} ->
-             case start_type do
-               nil ->
-                 {name, '#{vsn}'}
-
-               t ->
-                 {name, '#{vsn}', t}
-             end
-           end)}
-
-        Utils.write_term(path, relfile)
+    with :ok <- Utils.write_term(release_file, Release.to_resource(release)),
+         :ok <- Utils.write_term(start_clean_file, Release.to_resource(clean_release)),
+         :ok <- Utils.write_term(no_dot_erlang_file, Release.to_resource(clean_release)),
+         :ok <- generate_relup(release) do
+      :ok
     end
   end
 
   # Creates the .boot files, config files (vm.args, sys.config, config.exs),
   # start_erl.data, release_rc scripts, and includes ERTS into
   # the release if so configured
-  defp write_binfile(release, rel_dir) do
+  defp write_release_scripts(%Release{} = release) do
     name = "#{release.name}"
+    rel_dir = Release.version_path(release)
     bin_dir = Path.join(release.profile.output_dir, "bin")
-    release_rc_entry_path = Path.join(bin_dir, name)
-    release_rc_exec_path = Path.join(bin_dir, "#{name}_rc_exec.sh")
-    release_rc_main_path = Path.join(rel_dir, "#{name}.sh")
-    release_rc_win_exec_path = Path.join(bin_dir, "#{name}.bat")
-    release_rc_win_main_path = Path.join(rel_dir, "#{name}.bat")
     template_params = release.profile.overlay_vars
 
-    with :ok <- File.mkdir_p(bin_dir),
-         {:ok, release_rc_entry_contents} <- Utils.template(:release_rc_entry, template_params),
-         {:ok, release_rc_exec_contents} <- Utils.template(:release_rc_exec, template_params),
-         {:ok, release_rc_win_exec_contents} <-
-           Utils.template(:release_rc_win_exec, template_params),
-         {:ok, release_rc_main_contents} <- Utils.template(:release_rc_main, template_params),
-         {:ok, release_rc_win_main_contents} <-
-           Utils.template(:release_rc_win_main, template_params),
-         :ok <- File.write(release_rc_entry_path, release_rc_entry_contents),
-         :ok <- File.write(release_rc_exec_path, release_rc_exec_contents),
-         :ok <- File.write(release_rc_win_exec_path, release_rc_win_exec_contents),
-         :ok <- File.write(release_rc_main_path, release_rc_main_contents),
-         :ok <- File.write(release_rc_win_main_path, release_rc_win_main_contents),
-         :ok <- File.chmod(release_rc_entry_path, 0o777),
-         :ok <- File.chmod(release_rc_exec_path, 0o777),
-         :ok <- File.chmod(release_rc_win_exec_path, 0o777),
-         :ok <- File.chmod!(release_rc_main_path, 0o777),
-         :ok <- File.chmod!(release_rc_win_main_path, 0o777),
-         :ok <- generate_start_erl_data(release, rel_dir),
-         :ok <- generate_vm_args(release, rel_dir),
-         :ok <- generate_config_exs(release, rel_dir),
-         :ok <- generate_sys_config(release, rel_dir),
+    scripts = [
+      {Path.join(bin_dir, name), {:template, :release_rc_entry, template_params}, 0o777},
+      {Path.join(bin_dir, "#{name}_rc_exec.sh"), {:template, :release_rc_exec, template_params},
+       0o777},
+      {Path.join(rel_dir, "#{name}.sh"), {:template, :release_rc_main, template_params}, 0o777},
+      {Path.join(bin_dir, "#{name}.bat"), {:template, :release_rc_win_exec, template_params},
+       0o777},
+      {Path.join(rel_dir, "#{name}.bat"), {:template, :release_rc_win_main, template_params},
+       0o777}
+    ]
+
+    with :ok <- Utils.write_all(scripts),
+         :ok <- generate_start_erl_data(release),
+         :ok <- generate_vm_args(release),
+         :ok <- generate_config_exs(release),
+         :ok <- generate_sys_config(release),
          :ok <- include_erts(release),
-         :ok <- make_boot_script(release, rel_dir) do
+         :ok <- make_boot_script(release) do
       :ok
     else
       {:error, {:assembler, _}} = err ->
@@ -353,9 +277,10 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates a relup and .appup for all upgraded applications during upgrade releases
-  defp generate_relup(%Release{is_upgrade: false}, _rel_dir), do: :ok
+  defp generate_relup(%Release{is_upgrade: false}), do: :ok
 
-  defp generate_relup(%Release{name: name, upgrade_from: upfrom} = release, rel_dir) do
+  defp generate_relup(%Release{name: name, upgrade_from: upfrom} = release) do
+    rel_dir = Release.version_path(release)
     output_dir = release.profile.output_dir
 
     Logger.debug("Generating relup for #{name}")
@@ -629,36 +554,24 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates start_erl.data
-  defp generate_start_erl_data(%Release{profile: %{include_erts: false}} = rel, rel_dir) do
+  defp generate_start_erl_data(%Release{profile: %{include_erts: false}} = rel) do
     Logger.debug("Generating start_erl.data")
     version = rel.version
     contents = "ERTS_VSN #{version}"
-    File.write(Path.join([rel_dir, "..", "start_erl.data"]), contents)
+    File.write(Path.join([Release.version_path(rel), "..", "start_erl.data"]), contents)
   end
 
-  defp generate_start_erl_data(%Release{profile: %Profile{include_erts: path}} = release, rel_dir)
-       when is_binary(path) do
+  defp generate_start_erl_data(%Release{profile: %Profile{erts_version: erts}} = release) do
     Logger.debug("Generating start_erl.data")
 
-    case Utils.detect_erts_version(path) do
-      {:error, _} = err ->
-        err
-
-      {:ok, vsn} ->
-        contents = "#{vsn} #{release.version}"
-        File.write(Path.join([rel_dir, "..", "start_erl.data"]), contents)
-    end
-  end
-
-  defp generate_start_erl_data(release, rel_dir) do
-    Logger.debug("Generating start_erl.data")
-    contents = "#{Utils.erts_version()} #{release.version}"
-    File.write(Path.join([rel_dir, "..", "start_erl.data"]), contents)
+    contents = "#{erts} #{release.version}"
+    File.write(Path.join([Release.version_path(release), "..", "start_erl.data"]), contents)
   end
 
   # Generates vm.args
-  defp generate_vm_args(%Release{profile: %Profile{vm_args: nil}} = rel, rel_dir) do
+  defp generate_vm_args(%Release{profile: %Profile{vm_args: nil}} = rel) do
     Logger.debug("Generating vm.args")
+    rel_dir = Release.version_path(rel)
     overlay_vars = rel.profile.overlay_vars
 
     with {:ok, contents} <- Utils.template("vm.args", overlay_vars),
@@ -673,8 +586,9 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp generate_vm_args(%Release{profile: %Profile{vm_args: path}} = rel, rel_dir) do
+  defp generate_vm_args(%Release{profile: %Profile{vm_args: path}} = rel) do
     Logger.debug("Generating vm.args from #{Path.relative_to_cwd(path)}")
+    rel_dir = Release.version_path(rel)
     overlay_vars = rel.profile.overlay_vars
 
     with {:ok, path} <- Overlays.template_str(path, overlay_vars),
@@ -693,15 +607,15 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp generate_config_exs(%Release{profile: %Profile{config_providers: ps}} = rel, rel_dir) do
+  defp generate_config_exs(%Release{profile: %Profile{config_providers: ps}} = rel) do
     if Provider.enabled?(ps, Mix.Releases.Config.Providers.Elixir) do
-      do_generate_config_exs(rel, rel_dir)
+      do_generate_config_exs(rel)
     else
       :ok
     end
   end
 
-  defp do_generate_config_exs(%Release{profile: %Profile{config: base_config_path}}, rel_dir) do
+  defp do_generate_config_exs(%Release{profile: %Profile{config: base_config_path}} = rel) do
     Logger.debug("Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}")
 
     merged =
@@ -716,6 +630,8 @@ defmodule Mix.Releases.Assembler do
         merged
       end
 
+    rel_dir = Release.version_path(rel)
+
     case File.write(Path.join(rel_dir, "config.exs"), formatted) do
       :ok ->
         Utils.write_term(Path.join(rel_dir, "sys.config"), [{:sasl, [errlog_type: :error]}])
@@ -727,10 +643,11 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generated when Mix.Config provider is active, default + provided sys.config
-  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel, rel_dir) when is_binary(config_path) do
+  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel)
+       when is_binary(config_path) do
     Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
     overlay_vars = rel.profile.overlay_vars
-    
+
     base_config =
       rel.profile.config_path
       |> generate_base_config(rel.profile.config_providers)
@@ -743,7 +660,7 @@ defmodule Mix.Releases.Assembler do
            :ok <- validate_sys_config(sys_config),
            merged <- Mix.Config.merge(base_config, sys_config),
            final <- append_included_configs(merged, rel.profile.included_configs) do
-        Utils.write_term(Path.join(rel_dir, "sys.config"), final)
+        Utils.write_term(Path.join(Release.version_path(rel), "sys.config"), final)
       end
 
     case res do
@@ -781,15 +698,16 @@ defmodule Mix.Releases.Assembler do
             _ -> config
           end
       end
-    
+
     case Keyword.get(config, :distillery) do
       nil ->
-        Keyword.put(config, :distillery, [config_providers: config_providers])
+        Keyword.put(config, :distillery, config_providers: config_providers)
+
       dc ->
-        Keyword.put(config, :distillery, Keyword.merge(dc, [config_providers: config_providers]))
+        Keyword.put(config, :distillery, Keyword.merge(dc, config_providers: config_providers))
     end
   end
-  
+
   # Extend the config with the paths of additional config files
   defp append_included_configs(config, []), do: config
 
@@ -850,75 +768,36 @@ defmodule Mix.Releases.Assembler do
           Path.expand(p)
       end
 
-    erts_vsn =
-      case include_erts do
-        true ->
-          Utils.erts_version()
+    erts_vsn = release.profile.erts_version
+    erts_dir = Path.join([prefix, "erts-#{erts_vsn}"])
 
-        p when is_binary(p) ->
-          case Utils.detect_erts_version(prefix) do
-            {:ok, vsn} ->
-              # verify that the path given was actually the right one
-              if File.exists?(Path.join(prefix, "bin")) do
-                vsn
-              else
-                pfx = Path.relative_to_cwd(prefix)
-                maybe_path = Path.relative_to_cwd(Path.expand(Path.join(prefix, "..")))
-                {:error, {:assembler, {:invalid_erts_path, pfx, maybe_path}}}
-              end
+    Logger.info("Including ERTS #{erts_vsn} from #{Path.relative_to_cwd(erts_dir)}")
 
-            {:error, _} = err ->
-              err
-          end
-      end
+    erts_output_dir = Path.join(output_dir, "erts-#{erts_vsn}")
+    erl_path = Path.join([erts_output_dir, "bin", "erl"])
 
-    case erts_vsn do
-      {:error, _} = err ->
-        err
-
-      _ ->
-        erts_dir = Path.join([prefix, "erts-#{erts_vsn}"])
-
-        Logger.info("Including ERTS #{erts_vsn} from #{Path.relative_to_cwd(erts_dir)}")
-
-        erts_output_dir = Path.join(output_dir, "erts-#{erts_vsn}")
-        erl_path = Path.join([erts_output_dir, "bin", "erl"])
-
-        with :ok <- remove_if_exists(erts_output_dir),
-             :ok <- File.mkdir_p(erts_output_dir),
-             {:ok, _} <- File.cp_r(erts_dir, erts_output_dir),
-             {:ok, _} <- File.rm_rf(erl_path),
-             {:ok, erl_script} <- Utils.template(:erl_script, release.profile.overlay_vars),
-             :ok <- File.write(erl_path, erl_script),
-             :ok <- File.chmod(erl_path, 0o755) do
-          :ok
-        else
-          {:error, reason} ->
-            {:error, {:assembler, :file, {:include_erts, reason}}}
-
-          {:error, reason, file} ->
-            {:error, {:assembler, :file, {:include_erts, reason, file}}}
-        end
-    end
-  end
-
-  defp remove_if_exists(path) do
-    if File.exists?(path) do
-      case File.rm_rf(path) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason, file} ->
-          {:error, {:assembler, :file, {reason, file}}}
-      end
-    else
+    with :ok <- Utils.remove_if_exists(erts_output_dir),
+         :ok <- File.mkdir_p(erts_output_dir),
+         {:ok, _} <- File.cp_r(erts_dir, erts_output_dir),
+         {:ok, _} <- File.rm_rf(erl_path),
+         {:ok, erl_script} <- Utils.template(:erl_script, release.profile.overlay_vars),
+         :ok <- File.write(erl_path, erl_script),
+         :ok <- File.chmod(erl_path, 0o755) do
       :ok
+    else
+      {:error, reason} ->
+        {:error, {:assembler, :file, {:include_erts, reason}}}
+
+      {:error, reason, file} ->
+        {:error, {:assembler, :file, {:include_erts, reason, file}}}
     end
   end
 
   # Generates .boot script
-  defp make_boot_script(%Release{profile: %Profile{output_dir: output_dir}} = release, rel_dir) do
+  defp make_boot_script(%Release{profile: %Profile{output_dir: output_dir}} = release) do
     Logger.debug("Generating boot script")
+
+    rel_dir = Release.version_path(release)
 
     erts_lib_dir =
       case release.profile.include_erts do
@@ -1159,49 +1038,49 @@ defmodule Mix.Releases.Assembler do
     end
   end
 
-  defp generate_overlay_vars(release) do
-    case get_erts_version(release) do
-      {:error, _} = err ->
-        err
+  defp generate_overlay_vars(%Release{profile: %Profile{erts_version: erts_vsn}} = release) do
+    vars =
+      [
+        release: release,
+        release_name: release.name,
+        release_version: release.version,
+        is_upgrade: release.is_upgrade,
+        upgrade_from: release.upgrade_from,
+        dev_mode: release.profile.dev_mode,
+        include_erts: release.profile.include_erts,
+        include_src: release.profile.include_src,
+        include_system_libs: release.profile.include_system_libs,
+        erl_opts: release.profile.erl_opts,
+        run_erl_env: release.profile.run_erl_env,
+        erts_vsn: erts_vsn,
+        output_dir: release.profile.output_dir
+      ] ++ release.profile.overlay_vars
 
-      {:ok, erts_vsn} ->
-        vars =
-          [
-            release: release,
-            release_name: release.name,
-            release_version: release.version,
-            is_upgrade: release.is_upgrade,
-            upgrade_from: release.upgrade_from,
-            dev_mode: release.profile.dev_mode,
-            include_erts: release.profile.include_erts,
-            include_src: release.profile.include_src,
-            include_system_libs: release.profile.include_system_libs,
-            erl_opts: release.profile.erl_opts,
-            run_erl_env: release.profile.run_erl_env,
-            erts_vsn: erts_vsn,
-            output_dir: release.profile.output_dir
-          ] ++ release.profile.overlay_vars
+    Logger.debug("Generated overlay vars:")
 
-        Logger.debug("Generated overlay vars:")
+    inspected =
+      vars
+      |> Enum.map(fn
+        {:release, _} -> nil
+        {k, v} -> "#{k}=#{inspect(v)}"
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join("\n    ")
 
-        inspected =
-          vars
-          |> Enum.map(fn
-            {:release, _} -> nil
-            {k, v} -> "#{k}=#{inspect(v)}"
-          end)
-          |> Enum.reject(&is_nil/1)
-          |> Enum.join("\n    ")
-
-        Logger.debug("    #{inspected}", :plain)
-        {:ok, %{release | :profile => %{release.profile | :overlay_vars => vars}}}
-    end
+    Logger.debug("    #{inspected}", :plain)
+    {:ok, %{release | :profile => %{release.profile | :overlay_vars => vars}}}
   end
 
-  @spec get_erts_version(Release.t()) :: {:ok, String.t()} | {:error, term}
-  defp get_erts_version(%Release{profile: %Profile{include_erts: path}}) when is_binary(path),
-    do: Utils.detect_erts_version(path)
+  defp make_paths(%Release{} = release) do
+    rel_dir = Release.version_path(release)
+    bin_dir = Release.bin_path(release)
 
-  defp get_erts_version(%Release{profile: %Profile{include_erts: _}}),
-    do: {:ok, Utils.erts_version()}
+    with {_, :ok} <- {rel_dir, File.mkdir_p(rel_dir)},
+         {_, :ok} <- {bin_dir, File.mkdir_p(bin_dir)} do
+      :ok
+    else
+      {path, {:error, reason}} ->
+        {:error, {:assembler, :file, {reason, path}}}
+    end
+  end
 end

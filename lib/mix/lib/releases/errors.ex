@@ -116,6 +116,10 @@ defmodule Mix.Releases.Errors do
       "    #{name}:#{v2} @ #{Path.relative_to_cwd(path2)}"
   end
 
+  def format_error({:error, {:assembler, {:invalid_cookie, cookie}}}) do
+    "Invalid secure cookie for distribution, expected an atom, but got #{inspect(cookie)}"
+  end
+
   def format_error({:error, {:assembler, {:bad_upgrade_spec, :upfrom_is_current, vsn}}}) do
     "Upgrade failed, the current version and upfrom version are the same: #{vsn}"
   end

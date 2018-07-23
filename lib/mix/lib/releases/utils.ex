@@ -86,6 +86,68 @@ defmodule Mix.Releases.Utils do
     end
   end
 
+  @type write_all_template_spec :: {:template, atom | String.t(), Keyword.t()}
+  @type write_all_pair ::
+          {String.t(), binary}
+          | {String.t(), binary, pos_integer}
+          | {String.t(), write_all_template_spec}
+          | {String.t(), write_all_template_spec, pos_integer}
+
+  @doc """
+  Given a list of tuples containing paths to write, either
+  the content to write or a template specification for the content,
+  and an optional octal permissions value; write a file to the given
+  path, using the content provided, and if given, assign permissions
+  to the written file.
+
+  ## Examples
+
+      write_all([{"path/to/file", <<"hello world">>}])
+      
+      write_all([{"path/to/file", {:template, :foo_template, [key: :val]}}])
+
+      write_all([{"path/to/file", <<"hello world">>, Oo777}])
+  """
+  @spec write_all([write_all_pair]) :: :ok | {:error, term}
+  def write_all([]), do: :ok
+
+  def write_all([{path, {:template, tmpl, params}} | files]) do
+    case template(tmpl, params) do
+      {:ok, contents} ->
+        write_all([{path, contents} | files])
+
+      err ->
+        err
+    end
+  end
+
+  def write_all([{path, contents} | files]) do
+    case File.write(path, contents) do
+      :ok ->
+        write_all(files)
+
+      err ->
+        err
+    end
+  end
+
+  def write_all([{path, {:template, tmpl, params}, permissions} | files]) do
+    case template(tmpl, params) do
+      {:ok, contents} ->
+        write_all([{path, contents, permissions} | files])
+
+      err ->
+        err
+    end
+  end
+
+  def write_all([{path, contents, permissions} | files]) do
+    with :ok <- File.write(path, contents),
+         :ok <- File.chmod(path, permissions) do
+      write_all(files)
+    end
+  end
+
   @doc """
   Determines the current ERTS version
   """
@@ -107,9 +169,10 @@ defmodule Mix.Releases.Utils do
       end
 
     bin =
-      case File.exists?(Path.join(path, "bin")) do
-        false -> {:error, {:invalid_erts, :missing_bin}}
-        true -> :ok
+      if File.exists?(Path.join(path, "bin")) do
+        :ok
+      else
+        {:error, {:invalid_erts, :missing_bin}}
       end
 
     lib =
@@ -195,6 +258,59 @@ defmodule Mix.Releases.Utils do
 
       {:error, reason} ->
         {:error, {:mkdir_temp, :file, reason}}
+    end
+  end
+
+  @doc """
+  Deletes the given path, if it exists.
+  """
+  @spec remove_if_exists(String.t()) :: :ok | {:error, term}
+  def remove_if_exists(path) do
+    if File.exists?(path) do
+      case File.rm_rf(path) do
+        {:ok, _} ->
+          :ok
+
+        {:error, reason, file} ->
+          {:error, {:assembler, :file, {reason, file}}}
+      end
+    else
+      :ok
+    end
+  end
+
+  @doc """
+  Deletes the given path properly, depending on whether it is a symlink or not
+  """
+  @spec remove_symlink_or_dir!(String.t()) :: :ok | {:error, term}
+  def remove_symlink_or_dir!(path) do
+    case File.exists?(path) do
+      true ->
+        File.rm_rf!(path)
+
+      false ->
+        if symlink?(path) do
+          File.rm!(path)
+        end
+    end
+
+    :ok
+  rescue
+    e in [File.Error] ->
+      {:error, e}
+  end
+
+  @doc """
+  Returns true if the given path is a symlink, otherwise false
+  """
+  @spec symlink?(String.t()) :: boolean
+  def symlink?(path) do
+    case :file.read_link_info('#{path}') do
+      {:ok, info} ->
+        elem(info, 2) == :symlink
+
+      _ ->
+        false
     end
   end
 

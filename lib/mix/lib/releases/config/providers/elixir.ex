@@ -38,7 +38,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
       quoted
     end
   end
-  
+
   @doc false
   def eval!(path, imported_paths \\ [])
 

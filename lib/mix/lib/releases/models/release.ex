@@ -47,21 +47,28 @@ defmodule Mix.Releases.Release do
             env: nil
 
   @type t :: %__MODULE__{
-          name: atom(),
+          name: atom,
           version: String.t(),
           applications: list(atom | {atom, App.start_type()} | App.t()),
           is_upgrade: boolean,
           upgrade_from: nil | String.t(),
           resolved_overlays: [Overlays.overlay()],
           profile: Profile.t(),
-          env: atom()
+          env: atom
         }
+
+  @type app_resource ::
+          {atom, app_version :: charlist}
+          | {atom, app_version :: charlist, App.start_type()}
+  @type resource ::
+          {:release, {name :: charlist, version :: charlist}, {:erts, erts_version :: charlist},
+           [app_resource]}
 
   @doc """
   Creates a new Release with the given name, version, and applications.
   """
-  @spec new(atom(), String.t()) :: __MODULE__.t()
-  @spec new(atom(), String.t(), [atom()]) :: __MODULE__.t()
+  @spec new(atom, String.t()) :: t
+  @spec new(atom, String.t(), [atom]) :: t
   def new(name, version, apps \\ []) do
     build_path = Mix.Project.build_path()
     output_dir = Path.relative_to_cwd(Path.join([build_path, "rel", "#{name}"]))
@@ -76,9 +83,9 @@ defmodule Mix.Releases.Release do
   @doc """
   Load a fully configured Release object given a release name and environment name.
   """
-  @spec get(atom()) :: {:ok, __MODULE__.t()} | {:error, term()}
-  @spec get(atom(), atom()) :: {:ok, __MODULE__.t()} | {:error, term()}
-  @spec get(atom(), atom(), Keyword.t()) :: {:ok, __MODULE__.t()} | {:error, term()}
+  @spec get(atom) :: {:ok, t} | {:error, term}
+  @spec get(atom, atom) :: {:ok, t} | {:error, term}
+  @spec get(atom, atom, Keyword.t()) :: {:ok, t} | {:error, term}
   def get(name, env \\ :default, opts \\ [])
 
   def get(name, env, opts) when is_atom(name) and is_atom(env) do
@@ -103,16 +110,67 @@ defmodule Mix.Releases.Release do
   end
 
   @doc """
-  Get the path at which the release tarball will be output
+  Converts a Release struct to a release resource structure.
+
+  The format of release resources is documented [in the Erlang manual](http://erlang.org/doc/design_principles/release_structure.html#res_file)
   """
-  @spec archive_path(__MODULE__.t()) :: String.t()
-  def archive_path(%__MODULE__{profile: %Profile{output_dir: output_dir} = p} = r) do
+  @spec to_resource(t) :: resource
+  def to_resource(
+        %__MODULE__{applications: apps, profile: %Profile{erts_version: erts}} = release
+      ) do
+    rel_name = String.to_charlist(release.name)
+    rel_version = String.to_charlist(release.version)
+    erts = String.to_charlist(erts)
+
+    {
+      :release,
+      {rel_name, rel_version},
+      {:erts, erts},
+      for %App{name: name, vsn: vsn, start_type: start_type} <- apps do
+        if is_nil(start_type) do
+          {name, '#{vsn}'}
+        else
+          {name, '#{vsn}', start_type}
+        end
+      end
+    }
+  end
+
+  @doc """
+  Get the path to which release binaries will be output
+  """
+  @spec bin_path(t) :: String.t()
+  def bin_path(%__MODULE__{profile: %Profile{output_dir: output_dir}}) do
+    Path.join([output_dir, "bin"])
+  end
+
+  @doc """
+  Get the path to which versioned release data will be output
+  """
+  @spec version_path(t) :: String.t()
+  def version_path(%__MODULE__{profile: %Profile{output_dir: output_dir}} = r) do
+    Path.join([output_dir, "releases", "#{r.version}"])
+  end
+
+  @doc """
+  Get the path to which compiled applications will be output
+  """
+  @spec lib_path(t) :: String.t()
+  def lib_path(%__MODULE__{profile: %Profile{output_dir: output_dir}}) do
+    Path.join([output_dir, "lib"])
+  end
+
+  @doc """
+  Get the path to which the release tarball will be output
+  """
+  @spec archive_path(t) :: String.t()
+  def archive_path(%__MODULE__{profile: p} = r) do
     cond do
       p.executable ->
-        Path.join([output_dir, "bin", "#{r.name}.run"])
+        Path.join([bin_path(r), "#{r.name}.run"])
 
       :else ->
-        Path.join([output_dir, "releases", "#{r.version}", "#{r.name}.tar.gz"])
+        Path.join([version_path(r), "#{r.name}.tar.gz"])
     end
   end
 
@@ -133,7 +191,7 @@ defmodule Mix.Releases.Release do
 
   # Returns the release that the provided Config has selected
   @doc false
-  @spec select_release(Config.t()) :: {:ok, Release.t()} | {:error, :no_releases}
+  @spec select_release(Config.t()) :: {:ok, t} | {:error, :no_releases}
   def select_release(%Config{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
 
@@ -148,7 +206,7 @@ defmodule Mix.Releases.Release do
 
   # Applies the environment settings to a release
   @doc false
-  @spec apply_environment(__MODULE__.t(), Environment.t()) :: Release.t()
+  @spec apply_environment(t, Environment.t()) :: t
   def apply_environment(%__MODULE__{profile: rel_profile} = r, %Environment{name: env_name} = env) do
     env_profile = Map.from_struct(env.profile)
 
@@ -164,10 +222,10 @@ defmodule Mix.Releases.Release do
   end
 
   @doc false
-  @spec validate_configuration(__MODULE__.t()) ::
-          :ok | {:error, term} | {:ok, warning :: String.t()}
+  @spec validate_configuration(t) :: :ok | {:error, term} | {:ok, warning :: String.t()}
   def validate_configuration(%__MODULE__{version: _, profile: profile}) do
-    with :ok <- Utils.validate_erts(profile.include_erts) do
+    with :ok <- Utils.validate_erts(profile.include_erts),
+         :ok <- validate_cookie(profile.cookie) do
       # Warn if not including ERTS when not obviously running in a dev configuration
       if profile.dev_mode == false and profile.include_erts == false do
         {:ok,
@@ -182,116 +240,152 @@ defmodule Mix.Releases.Release do
 
   # Applies global configuration options to the release profile
   @doc false
-  @spec apply_configuration(__MODULE__.t(), Config.t()) :: {:ok, __MODULE__.t()} | {:error, term}
-  @spec apply_configuration(__MODULE__.t(), Config.t(), log? :: boolean) ::
-          {:ok, __MODULE__.t()} | {:error, term}
+  @spec apply_configuration(t, Config.t()) :: {:ok, t} | {:error, term}
+  @spec apply_configuration(t, Config.t(), log? :: boolean) :: {:ok, t} | {:error, term}
   def apply_configuration(%__MODULE__{} = release, %Config{} = config, log? \\ false) do
-    current_version = release.version
     profile = release.profile
 
-    config_path =
+    profile =
       case profile.config do
-        p when is_binary(p) -> p
-        _ -> Keyword.get(Mix.Project.config(), :config_path)
+        p when is_binary(p) ->
+          %{profile | config: p}
+
+        _ ->
+          %{profile | config: Keyword.get(Mix.Project.config(), :config_path)}
       end
 
-    base_release = %{release | :profile => %{profile | :config => config_path}}
+    profile =
+      case profile.include_erts do
+        p when is_binary(p) ->
+          case Utils.detect_erts_version(p) do
+            {:error, _} = err ->
+              throw(err)
 
-    release = check_cookie(base_release, log?)
+            vsn ->
+              %{profile | erts_version: vsn}
+          end
 
-    case Utils.get_apps(release) do
-      {:error, _} = err ->
-        err
+        _ ->
+          %{profile | erts_version: Utils.erts_version()}
+      end
 
-      release_apps ->
-        release = %{release | :applications => release_apps}
+    profile =
+      case profile.cookie do
+        nil ->
+          profile
 
-        case config.is_upgrade do
-          true ->
-            case config.upgrade_from do
-              :latest ->
-                upfrom =
-                  case Utils.get_release_versions(release.profile.output_dir) do
-                    [] -> :no_upfrom
-                    [^current_version, v | _] -> v
-                    [v | _] -> v
-                  end
+        c when is_atom(c) ->
+          profile
 
-                case upfrom do
-                  :no_upfrom ->
-                    if log? do
-                      Logger.warn(
-                        "An upgrade was requested, but there are no " <>
-                          "releases to upgrade from, no upgrade will be performed."
-                      )
-                    end
+        c when is_binary(c) ->
+          %{profile | cookie: String.to_atom(c)}
 
-                    {:ok, %{release | :is_upgrade => false, :upgrade_from => nil}}
+        c ->
+          throw({:error, {:assembler, {:invalid_cookie, c}}})
+      end
 
-                  v ->
-                    {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
-                end
+    release = %{release | profile: profile}
 
-              ^current_version ->
-                {:error, {:assembler, {:bad_upgrade_spec, :upfrom_is_current, current_version}}}
+    release =
+      case Utils.get_apps(release) do
+        {:error, _} = err ->
+          throw(err)
 
-              version when is_binary(version) ->
-                if log?,
-                  do:
-                    Logger.debug(
-                      "Upgrading #{release.name} from #{version} to #{current_version}"
-                    )
+        apps ->
+          %{release | applications: apps}
+      end
 
-                upfrom_path = Path.join([release.profile.output_dir, "releases", version])
+    if config.is_upgrade do
+      apply_upgrade_configuration(release, config, log?)
+    else
+      {:ok, release}
+    end
+  catch
+    :throw, {:error, _} = err ->
+      err
+  end
 
-                case File.exists?(upfrom_path) do
-                  false ->
-                    {:error,
-                     {:assembler, {:bad_upgrade_spec, :doesnt_exist, version, upfrom_path}}}
+  defp apply_upgrade_configuration(%__MODULE__{} = release, %Config{upgrade_from: :latest}, log?) do
+    current_version = release.version
 
-                  true ->
-                    {:ok, %{release | :is_upgrade => true, :upgrade_from => version}}
-                end
-            end
+    upfrom =
+      case Utils.get_release_versions(release.profile.output_dir) do
+        [] ->
+          :no_upfrom
 
-          false ->
-            {:ok, release}
+        [^current_version, v | _] ->
+          v
+
+        [v | _] ->
+          v
+      end
+
+    case upfrom do
+      :no_upfrom ->
+        if log? do
+          Logger.warn(
+            "An upgrade was requested, but there are no " <>
+              "releases to upgrade from, no upgrade will be performed."
+          )
         end
+
+        {:ok, %{release | :is_upgrade => false, :upgrade_from => nil}}
+
+      v ->
+        {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
     end
   end
 
-  defp check_cookie(%__MODULE__{profile: %Profile{cookie: cookie} = profile} = release, log?) do
-    cond do
-      !cookie and log? ->
-        Logger.warn(
-          "Attention! You did not provide a cookie for the erlang distribution protocol in rel/config.exs\n" <>
-            "    For backwards compatibility, the release name will be used as a cookie, which is potentially a security risk!\n" <>
-            "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs.\n" <>
-            "    This will be an error in a future release."
-        )
+  defp apply_upgrade_configuration(%__MODULE__{version: v}, %Config{upgrade_from: v}, _log?) do
+    {:error, {:assembler, {:bad_upgrade_spec, :upfrom_is_current, v}}}
+  end
 
-        %{release | :profile => %{profile | :cookie => release.name}}
+  defp apply_upgrade_configuration(
+         %__MODULE__{name: name} = release,
+         %Config{upgrade_from: v},
+         log?
+       ) do
+    current_version = release.version
 
-      not is_atom(cookie) ->
-        %{release | :profile => %{profile | :cookie => :"#{cookie}"}}
+    if log?,
+      do: Logger.debug("Upgrading #{name} from #{v} to #{current_version}")
 
-      log? and String.contains?(Atom.to_string(cookie), "insecure") ->
-        Logger.warn(
-          "Attention! You have an insecure cookie for the erlang distribution protocol in rel/config.exs\n" <>
-            "    This is probably because a secure cookie could not be auto-generated.\n" <>
-            "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs." <>
-            release
-        )
+    upfrom_path = Path.join([release.profile.output_dir, "releases", v])
 
-      :else ->
-        release
+    if File.exists?(upfrom_path) do
+      {:ok, %{release | :is_upgrade => true, :upgrade_from => v}}
+    else
+      {:error, {:assembler, {:bad_upgrade_spec, :doesnt_exist, v, upfrom_path}}}
+    end
+  end
+
+  defp validate_cookie(nil) do
+    warning =
+      "Attention! You did not provide a cookie for the erlang distribution protocol in rel/config.exs\n" <>
+        "    For backwards compatibility, the release name will be used as a cookie, which is potentially a security risk!\n" <>
+        "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs.\n" <>
+        "    This will be an error in a future release."
+
+    {:ok, warning}
+  end
+
+  defp validate_cookie(cookie) when is_atom(cookie) do
+    if String.contains?(Atom.to_string(cookie), "insecure") do
+      warning =
+        "Attention! You have an insecure cookie for the erlang distribution protocol in rel/config.exs\n" <>
+          "    This is probably because a secure cookie could not be auto-generated.\n" <>
+          "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs."
+
+      {:ok, warning}
+    else
+      :ok
     end
   end
 
   @doc """
   Returns a list of all code_paths of all appliactions included in the release
   """
-  @spec get_code_paths(__MODULE__.t()) :: [charlist()]
+  @spec get_code_paths(t) :: [charlist]
   def get_code_paths(%__MODULE__{profile: %Profile{output_dir: output_dir}} = release) do
     release.applications
     |> Enum.flat_map(fn %App{name: name, vsn: version, path: path} ->
