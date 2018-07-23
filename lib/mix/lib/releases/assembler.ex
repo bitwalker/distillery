@@ -643,45 +643,71 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generated when Mix.Config provider is active, default + provided sys.config
-  defp generate_sys_config(%Release{profile: %Profile{sys_config: config_path}} = rel)
-       when is_binary(config_path) do
-    Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_path)}")
-    overlay_vars = rel.profile.overlay_vars
-
-    base_config =
-      rel.profile.config_path
-      |> generate_base_config(rel.profile.config_providers)
-
-    res =
-      with {:ok, path} <- Overlays.template_str(config_path, overlay_vars),
-           {:ok, templated} <- Overlays.template_file(path, overlay_vars),
-           {:ok, tokens, _} <- :erl_scan.string(String.to_charlist(templated)),
-           {:ok, sys_config} <- :erl_parse.parse_term(tokens),
-           :ok <- validate_sys_config(sys_config),
-           merged <- Mix.Config.merge(base_config, sys_config),
-           final <- append_included_configs(merged, rel.profile.included_configs) do
-        Utils.write_term(Path.join(Release.version_path(rel), "sys.config"), final)
+  defp generate_sys_config(%Release{profile: %Profile{} = profile} = rel) do
+    overlay_vars = profile.overlay_vars
+    config_exs_path = profile.config
+    
+    # Construct path to provided sys.config, if one was provided
+    sys_config_path =
+      case profile.sys_config do
+        nil ->
+          Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_exs_path)}")
+          nil
+        p when is_binary(p) -> 
+          case Overlays.template_str(p, overlay_vars) do
+            {:ok, p} ->
+              relative_config_exs_path = Path.relative_to_cwd(config_exs_path)
+              relative_p = Path.relative_to_cwd(p)
+              Logger.debug("Generating sys.config from #{relative_config_exs_path} and #{relative_p}")
+              p
+            {:error, _} = err ->
+              throw err
+          end
       end
 
-    case res do
-      :ok ->
-        :ok
+    # Generate base sys.config from Mix config file
+    base_config =
+      config_exs_path
+      |> generate_base_config(profile.config_providers)
+    
+    # If sys.config was provided, template it and merge over base config
+    sys_config =
+      case sys_config_path do
+        nil ->
+          base_config
+        _ ->
+          with {:ok, templated} <- Overlays.template_file(sys_config_path, overlay_vars),
+               {:ok, tokens, _} <- :erl_scan.string(String.to_charlist(templated)),
+               {:ok, sys_config} <- :erl_parse.parse_term(tokens),
+               :ok <- validate_sys_config(sys_config),
+               merged <- Mix.Config.merge(base_config, sys_config) do
+            merged
+          else
+            err ->
+              throw err
+          end
+      end
+    
+    # Append any included configs to generated sys.config
+    sys_config = append_included_configs(sys_config, profile.included_configs)
+    
+    # Write result
+    Utils.write_term(Path.join(Release.version_path(rel), "sys.config"), sys_config)
+  catch
+    :throw, {:error, {:template, _}} = err ->
+      err
 
-      {:error, {:template, _}} = err ->
-        err
+    :throw, {:error, {:template_str, _}} = err ->
+      err
 
-      {:error, {:template_str, _}} = err ->
-        err
+    :throw, {:error, {:assembler, _}} = err ->
+      err
 
-      {:error, {:assembler, _}} = err ->
-        err
+    :throw, {:error, error_info, _end_loc} when is_tuple(error_info) ->
+      {:error, {:assembler, {:invalid_sys_config, error_info}}}
 
-      {:error, error_info, _end_loc} when is_tuple(error_info) ->
-        {:error, {:assembler, {:invalid_sys_config, error_info}}}
-
-      {:error, error_info} when is_tuple(error_info) ->
-        {:error, {:assembler, {:invalid_sys_config, error_info}}}
-    end
+    :throw, {:error, error_info} when is_tuple(error_info) ->
+      {:error, {:ssembler, {:invalid_sys_config, error_info}}}
   end
 
   defp generate_base_config(base_config_path, config_providers) do
