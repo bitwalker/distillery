@@ -71,7 +71,6 @@ defmodule Mix.Releases.Overlays do
     end
   end
 
-  @spec do_overlay(String.t(), overlay, Keyword.t()) :: {:ok, String.t()} | {:error, term}
   defp do_overlay(output_dir, {:mkdir, path}, vars) when is_binary(path) do
     with {:ok, path} <- template_str(path, vars),
          _ <-
@@ -131,8 +130,6 @@ defmodule Mix.Releases.Overlays do
 
   defp do_overlay(_output_dir, invalid, _), do: {:error, {:invalid_overlay, invalid}}
 
-  @spec template_str(String.t(), Keyword.t()) ::
-          {:ok, String.t()} | {:error, {:template_str, term}}
   def template_str(str, overlay_vars) do
     {:ok, EEx.eval_string(str, overlay_vars)}
   rescue
@@ -140,7 +137,6 @@ defmodule Mix.Releases.Overlays do
       {:error, {:template_str, {str, err.description}}}
   end
 
-  @spec template_file(String.t(), Keyword.t()) :: {:ok, String.t()} | {:error, {:template, term}}
   def template_file(path, overlay_vars) do
     {:ok, EEx.eval_file(path, overlay_vars)}
   rescue

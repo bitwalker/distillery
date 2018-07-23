@@ -34,7 +34,8 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
   @doc false
   def eval!(path, imported_paths \\ [])
-
+  
+  Code.ensure_loaded(Mix.Config)
   if function_exported?(Mix.Config, :eval!, 2) do
     def eval!(path, imported_paths), do: Mix.Config.eval!(path, imported_paths)
   else
@@ -79,22 +80,17 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   end
 
   defp do_read_quoted!(file, loaded_paths) do
-    try do
-      file = Path.expand(file)
+    file = Path.expand(file)
 
-      if file in loaded_paths do
-        raise ArgumentError, message: "recursive load of #{file} detected"
-      end
-
-      content = File.read!(file)
-      quoted = Code.string_to_quoted!(content, file: file, line: 1)
-      merged = merge_imports(quoted, [], file, [file | loaded_paths])
-
-      {merged, loaded_paths}
-    rescue
-      e in [Mix.Config.LoadError] -> reraise(e, System.stacktrace())
-      e -> reraise(Mix.Config.LoadError, [file: file, error: e], System.stacktrace())
+    if file in loaded_paths do
+      raise ArgumentError, message: "recursive load of #{file} detected"
     end
+
+    content = File.read!(file)
+    quoted = Code.string_to_quoted!(content, file: file, line: 1)
+    merged = merge_imports(quoted, [], file, [file | loaded_paths])
+
+    {merged, loaded_paths}
   end
 
   defp merge_imports({:__block__, _, block}, acc, file, loaded_paths) do
@@ -137,7 +133,9 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   defp merge_imports([{:import_config, _, [path_expr]} | block], acc, file, loaded_paths) do
     case eval_path(acc, path_expr) do
       {:error, err} ->
-        raise Mix.Config.LoadError, file: file, error: err
+        raise ArgumentError, 
+          "expected valid import_config path expression in #{file}: " <> 
+          "#{inspect err}"
 
       path ->
         path = Path.join(Path.dirname(file), Path.relative_to(path, file))

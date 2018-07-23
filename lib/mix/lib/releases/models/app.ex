@@ -95,13 +95,13 @@ defmodule Mix.Releases.App do
   def valid_start_type?(start_type) when start_type in @valid_start_types, do: true
 
   def valid_start_type?(_), do: false
-
+  
   Code.ensure_loaded(Mix.Dep)
   if function_exported?(Mix.Dep, :filter_by_name, 3) do
     defp loaded_by_name(name, deps, opts),
       do: Mix.Dep.filter_by_name([name], deps, opts)
   else
-    defp loaded_by_name(name, deps, opts),
+    defp loaded_by_name(name, deps, opts), 
       do: Mix.Dep.loaded_by_name([name], deps, opts)
   end
 

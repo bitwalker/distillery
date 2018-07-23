@@ -12,7 +12,7 @@ defmodule Mix.Releases.Utils do
       ...> String.contains?(contents, "erts-8.0")
       true
   """
-  @spec template(atom | String.t(), Keyword.t()) :: {:ok, String.t()} | {:error, String.t()}
+  @spec template(atom | String.t, Keyword.t) :: {:ok, String.t} | {:error, term}
   def template(name, params \\ []) do
     Application.app_dir(:distillery, Path.join("priv", "templates"))
     |> Path.join("#{name}.eex")
@@ -29,17 +29,17 @@ defmodule Mix.Releases.Utils do
       ...> String.contains?(contents, "erts-8.0")
       true
   """
-  @spec template_path(String.t(), Keyword.t()) :: {:ok, String.t()} | {:error, String.t()}
+  @spec template_path(String.t, Keyword.t) :: {:ok, String.t} | {:error, term}
   def template_path(template_path, params \\ []) do
     {:ok, EEx.eval_file(template_path, params)}
   rescue
-    e -> {:error, {:template, e}}
+    e -> 
+      {:error, {:template, e}}
   end
 
   @doc """
   Writes an Elixir/Erlang term to the provided path
   """
-  @spec write_term(String.t(), term) :: :ok | {:error, term}
   def write_term(path, term) do
     path = String.to_charlist(path)
     contents = :io_lib.fwrite('~p.\n', [term])
@@ -56,7 +56,6 @@ defmodule Mix.Releases.Utils do
   @doc """
   Writes a collection of Elixir/Erlang terms to the provided path
   """
-  @spec write_terms(String.t(), [term]) :: :ok | {:error, term}
   def write_terms(path, terms) when is_list(terms) do
     contents =
       String.duplicate("~p.\n\n", Enum.count(terms))
@@ -75,7 +74,7 @@ defmodule Mix.Releases.Utils do
   @doc """
   Reads a file as Erlang terms
   """
-  @spec read_terms(String.t()) :: {:ok, [term]} :: {:error, String.t()}
+  @spec read_terms(String.t) :: {:ok, [term]} :: {:error, term}
   def read_terms(path) do
     case :file.consult(String.to_charlist(path)) do
       {:ok, _} = result ->
@@ -86,12 +85,12 @@ defmodule Mix.Releases.Utils do
     end
   end
 
-  @type write_all_template_spec :: {:template, atom | String.t(), Keyword.t()}
+  @type write_all_template_spec :: {:template, atom | String.t, Keyword.t}
   @type write_all_pair ::
-          {String.t(), binary}
-          | {String.t(), binary, pos_integer}
-          | {String.t(), write_all_template_spec}
-          | {String.t(), write_all_template_spec, pos_integer}
+          {String.t, binary}
+          | {String.t, binary, pos_integer}
+          | {String.t, write_all_template_spec}
+          | {String.t, write_all_template_spec, pos_integer}
 
   @doc """
   Given a list of tuples containing paths to write, either
@@ -151,7 +150,7 @@ defmodule Mix.Releases.Utils do
   @doc """
   Determines the current ERTS version
   """
-  @spec erts_version() :: String.t()
+  @spec erts_version() :: String.t
   def erts_version, do: "#{:erlang.system_info(:version)}"
 
   @doc """
@@ -159,7 +158,7 @@ defmodule Mix.Releases.Utils do
   If no ERTS path is specified it's fine. Distillery will work out
   the system ERTS
   """
-  @spec validate_erts(String.t() | nil | boolean) :: :ok | {:error, [{:error, term}]}
+  @spec validate_erts(String.t | nil | boolean) :: :ok | {:error, [{:error, term}]}
   def validate_erts(path) when is_binary(path) do
     erts =
       case Path.join(path, "erts-*") |> Path.wildcard() |> Enum.count() do
@@ -198,7 +197,7 @@ defmodule Mix.Releases.Utils do
   @doc """
   Detects the version of ERTS in the given directory
   """
-  @spec detect_erts_version(String.t()) :: {:ok, Stringt} | {:error, term}
+  @spec detect_erts_version(String.t) :: {:ok, String.t} | {:error, term}
   def detect_erts_version(path) when is_binary(path) do
     entries =
       path
@@ -219,7 +218,7 @@ defmodule Mix.Releases.Utils do
   @doc """
   Same as `insecure_mkdir_temp/0`, but raises on failure
   """
-  @spec insecure_mkdir_temp!() :: String.t() | no_return
+  @spec insecure_mkdir_temp!() :: String.t | no_return
   def insecure_mkdir_temp!() do
     case insecure_mkdir_temp() do
       {:ok, dir} ->
@@ -238,7 +237,7 @@ defmodule Mix.Releases.Utils do
   Returns an ok tuple with the path of the temp directory, or an error
   tuple with the reason it failed.
   """
-  @spec insecure_mkdir_temp() :: {:ok, String.t()} | {:error, term}
+  @spec insecure_mkdir_temp() :: {:ok, String.t} | {:error, term}
   def insecure_mkdir_temp() do
     :rand.seed(:exs64)
     unique_num = :rand.uniform(1_000_000_000)
@@ -264,7 +263,6 @@ defmodule Mix.Releases.Utils do
   @doc """
   Deletes the given path, if it exists.
   """
-  @spec remove_if_exists(String.t()) :: :ok | {:error, term}
   def remove_if_exists(path) do
     if File.exists?(path) do
       case File.rm_rf(path) do
@@ -282,7 +280,6 @@ defmodule Mix.Releases.Utils do
   @doc """
   Deletes the given path properly, depending on whether it is a symlink or not
   """
-  @spec remove_symlink_or_dir!(String.t()) :: :ok | {:error, term}
   def remove_symlink_or_dir!(path) do
     case File.exists?(path) do
       true ->
@@ -297,13 +294,13 @@ defmodule Mix.Releases.Utils do
     :ok
   rescue
     e in [File.Error] ->
-      {:error, e}
+      {:error, {:assembler, :file, {e.reason, e.path}}}
   end
 
   @doc """
   Returns true if the given path is a symlink, otherwise false
   """
-  @spec symlink?(String.t()) :: boolean
+  @spec symlink?(String.t) :: boolean
   def symlink?(path) do
     case :file.read_link_info('#{path}') do
       {:ok, info} ->
@@ -326,7 +323,7 @@ defmodule Mix.Releases.Utils do
       ["0.2.2", "0.2.1-1-d3adb3f", "0.2.1", "0.2.0", "0.1.0"]
   """
   @valid_version_pattern ~r/^\d+.*$/
-  @spec get_release_versions(String.t()) :: list(String.t())
+  @spec get_release_versions(String.t) :: list(String.t)
   def get_release_versions(output_dir) do
     releases_path = Path.join([output_dir, "releases"])
 
@@ -355,7 +352,7 @@ defmodule Mix.Releases.Utils do
       iex> #{__MODULE__}.sort_versions(["0.0.1", "0.0.2", "0.0.1-2-a1d2g3f", "0.0.1-1-deadbeef"])
       ["0.0.2", "0.0.1-2-a1d2g3f", "0.0.1-1-deadbeef", "0.0.1"]
   """
-  @spec sort_versions(list(String.t())) :: list(String.t())
+  @spec sort_versions(list(String.t)) :: list(String.t)
   def sort_versions(versions) do
     versions
     |> Enum.map(fn ver ->
@@ -411,11 +408,13 @@ defmodule Mix.Releases.Utils do
 
   defp parse_version(ver) do
     case Version.parse(ver) do
-      {:ok, semver} -> {:semantic, semver}
-      :error -> {:unsemantic, ver}
+      {:ok, semver} -> 
+        {:semantic, semver}
+      :error -> 
+        {:unsemantic, ver}
     end
   end
-
+  
   Code.ensure_loaded(Mix.Dep)
   if function_exported?(Mix.Dep, :load_on_environment, 1) do
     defp loaded_deps(opts), do: Mix.Dep.load_on_environment(opts)
@@ -428,7 +427,7 @@ defmodule Mix.Releases.Utils do
 
   An optional second parameter enables/disables debug logging of discovered apps.
   """
-  @spec get_apps(Mix.Releases.Release.t()) :: [{atom, String.t()}] | {:error, String.t()}
+  @spec get_apps(Mix.Releases.Release.t) :: [{atom, String.t}] | {:error, term}
   # Gets all applications which are part of the release application tree
   def get_apps(%Release{name: name, applications: apps} = release) do
     loaded_deps = loaded_deps([])
@@ -665,13 +664,13 @@ defmodule Mix.Releases.Utils do
   end
 
   # Determines if the given application directory is part of the Erlang installation
-  @spec is_erts_lib?(String.t()) :: boolean
-  @spec is_erts_lib?(String.t(), String.t()) :: boolean
+  @spec is_erts_lib?(String.t) :: boolean
+  @spec is_erts_lib?(String.t, String.t) :: boolean
   def is_erts_lib?(app_dir), do: is_erts_lib?(app_dir, "#{:code.lib_dir()}")
   def is_erts_lib?(app_dir, lib_dir), do: String.starts_with?(app_dir, lib_dir)
 
   @doc false
-  @spec newline() :: String.t()
+  @spec newline() :: String.t
   def newline() do
     case :os.type() do
       {:win32, _} -> "\r\n"

@@ -182,8 +182,8 @@ defmodule Mix.Releases.Plugin do
 
     call(plugins, callback, release)
   catch
-    :throw, {:error, {:plugin, _}} = err ->
-      err
+    :throw, {:error, {:plugin, {kind, err}}} ->
+      {:error, {:plugin, {kind, err, System.stacktrace}}}
   end
 
   defp call([], _, release), do: {:ok, release}
@@ -192,10 +192,10 @@ defmodule Mix.Releases.Plugin do
     apply_plugin(plugin, callback, release, opts)
   rescue
     e ->
-      {:error, {:plugin, e}}
+      {:error, {:plugin, {e, System.stacktrace}}}
   catch
     kind, err ->
-      {:error, {:plugin, {kind, err}}}
+      {:error, {:plugin, {kind, err, System.stacktrace}}}
   else
     nil ->
       call(plugins, callback, release)
@@ -204,7 +204,7 @@ defmodule Mix.Releases.Plugin do
       call(plugins, callback, updated)
 
     result ->
-      {:error, {:plugin, {:plugin_failed, :bad_return_value, result}}}
+      {:error, {:plugin, {:plugin_failed, :bad_return_value, plugin, result}}}
   end
 
   # TODO: remove once the /1 plugins are deprecated
@@ -223,10 +223,10 @@ defmodule Mix.Releases.Plugin do
     apply_plugin(plugin, callback, args, opts)
   rescue
     e ->
-      {:error, {:plugin, e}}
+      {:error, {:plugin, {e, System.stacktrace}}}
   catch
     kind, err ->
-      {:error, {:plugin, {kind, err}}}
+      {:error, {:plugin, {kind, err, System.stacktrace}}}
   else
     _ ->
       run(plugins, callback, args)

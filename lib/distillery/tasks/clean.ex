@@ -21,7 +21,7 @@ defmodule Mix.Tasks.Release.Clean do
   use Mix.Task
   alias Mix.Releases.{Logger, App, Utils, Plugin, Release, Config, Profile, Errors}
 
-  @spec run(OptionParser.argv()) :: no_return
+  @spec run(OptionParser.argv) :: no_return
   def run(args) do
     # Parse options
     opts = parse_args(args)
@@ -86,7 +86,7 @@ defmodule Mix.Tasks.Release.Clean do
     end
   end
 
-  @spec clean_all!(String.t()) :: :ok | no_return
+  @spec clean_all!(String.t) :: :ok | no_return
   defp clean_all!(output_dir) do
     Logger.info("Cleaning all releases..")
 
@@ -106,7 +106,7 @@ defmodule Mix.Tasks.Release.Clean do
       System.halt(1)
   end
 
-  @spec clean!(Mix.Releases.Config.t(), [String.t()]) :: :ok | no_return
+  @spec clean!(Mix.Releases.Config.t, [String.t]) :: :ok | no_return
   defp clean!(%Config{releases: releases}, args) do
     # load release configuration
     Logger.info("Cleaning last release..")
@@ -119,7 +119,7 @@ defmodule Mix.Tasks.Release.Clean do
     Logger.success("Clean successful!")
   end
 
-  @spec clean_release(Release.t(), [String.t()]) :: :ok | :no_return
+  @spec clean_release(Release.t, [String.t]) :: :ok | {:error, term}
   defp clean_release(%Release{profile: %Profile{output_dir: output_dir}} = release, args) do
     # Remove erts
     output_dir
@@ -152,7 +152,7 @@ defmodule Mix.Tasks.Release.Clean do
       System.halt(1)
   end
 
-  @spec parse_args([String.t()]) :: Keyword.t() | no_return
+  @spec parse_args([String.t]) :: Keyword.t | no_return
   defp parse_args(argv) do
     opts = [
       strict: [
@@ -187,7 +187,6 @@ defmodule Mix.Tasks.Release.Clean do
     parse_args(rest, Map.put(acc, :no_confirm, true))
   end
 
-  @spec confirm_implode?() :: boolean
   defp confirm_implode? do
     Distillery.IO.confirm("""
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!

@@ -16,7 +16,7 @@ defmodule Distillery.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env),
       test_coverage: [tool: ExCoveralls],
       dialyzer: [
-        flags: ["-Wunmatched_returns", :error_handling, :race_conditions, :underspecs]
+        flags: [:error_handling, :race_conditions, :underspecs]
       ]
     ]
   end
@@ -52,7 +52,7 @@ defmodule Distillery.Mixfile do
   end
 
   defp aliases do
-    ["compile-check": "do compile, credo --strict"]
+    ["compile-check": "do compile, dialyzer --halt-exit-status --format=dialyxir"]
   end
 
   defp docs do

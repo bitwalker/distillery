@@ -199,9 +199,9 @@ defmodule Mix.Releases.Assembler do
     end
   rescue
     e in [File.Error] ->
-      {:error, {:assembler, e}}
+      {:error, {:assembler, {e, System.stacktrace}}}
   catch
-    :error, {:assembler, _, _} = err ->
+    :error, {:assembler, _mod, _reason} = err ->
       {:error, err}
   end
 
@@ -707,7 +707,7 @@ defmodule Mix.Releases.Assembler do
       {:error, {:assembler, {:invalid_sys_config, error_info}}}
 
     :throw, {:error, error_info} when is_tuple(error_info) ->
-      {:error, {:ssembler, {:invalid_sys_config, error_info}}}
+      {:error, {:assembler, {:invalid_sys_config, error_info}}}
   end
 
   defp generate_base_config(base_config_path, config_providers) do

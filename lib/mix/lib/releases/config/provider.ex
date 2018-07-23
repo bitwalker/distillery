@@ -106,7 +106,7 @@ defmodule Mix.Releases.Config.Provider do
 
   defp get([], _key), do: nil
 
-  defp get([provider | providers], key) do
+  defp get([{provider, _args} | providers], key) do
     case provider.get(key) do
       nil ->
         get(providers, key)

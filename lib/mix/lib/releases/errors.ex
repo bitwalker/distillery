@@ -23,7 +23,6 @@ defmodule Mix.Releases.Errors do
   Formats errors produced during a release into human-friendly messages
   This expects an `{:error, _}` tuple, and will convert it to a String
   """
-  @spec format_error(term()) :: String.t()
   def format_error(err)
 
   def format_error({:error, {:write_terms, mod, err}}) do
@@ -68,17 +67,18 @@ defmodule Mix.Releases.Errors do
       Enum.join(Enum.map(meta, fn {k, v} -> "    #{k}: #{v}" end), "\n")
   end
 
-  def format_error({:error, {:plugin, {:plugin_failed, :bad_return_value, value}}}) do
-    "Plugin failed: invalid result returned\n" <>
+  def format_error({:error, {:plugin, {:plugin_failed, :bad_return_value, plugin, value}}}) do
+    "Plugin #{inspect plugin} failed: invalid result returned\n" <>
       "    expected: nil or Release.t\n    got: #{inspect(value)}"
   end
 
-  def format_error({:error, {:plugin, {kind, err}}}) do
-    "Plugin failed: #{Exception.format(kind, err, System.stacktrace())}"
+  def format_error({:error, {:plugin, {kind, err, trace}}}) do
+    "Plugin failed:\n#{Exception.format(kind, err, trace)}"
   end
 
-  def format_error({:error, {:plugin, e}}) when is_map(e) do
-    "Plugin failed: #{Exception.message(e)}"
+  def format_error({:error, {:plugin, {e, trace}}}) when is_map(e) do
+    "Plugin failed: #{Exception.message(e)}\n" <>
+      Exception.format_stacktrace(trace)
   end
 
   def format_error({:error, {:invalid_overlay, overlay}}) do
@@ -216,12 +216,13 @@ defmodule Mix.Releases.Errors do
     "Release failed with multiple errors:\n" <> err
   end
 
-  def format_error({:error, {:assembler, e}}) when is_map(e) do
-    "Release failed during assembly:\n    #{Exception.message(e)}"
+  def format_error({:error, {:assembler, {e, trace}}}) when is_map(e) do
+    "Release failed during assembly: #{Exception.message(e)}\n" <>
+      Exception.format_stacktrace(trace)
   end
 
   def format_error({:error, {:assembler, {:error, reason}}}) do
-    "Release failed: #{Exception.format(:error, reason, System.stacktrace())}"
+    "Release failed: #{Exception.format(:error, reason)}"
   end
 
   def format_error({:error, {:assembler, {area, err}}}) when is_map(err) do
@@ -285,10 +286,14 @@ defmodule Mix.Releases.Errors do
       "    `erts-*`, please confirm the path is correct."
   end
 
-  def format_error({:error, errors}) when is_list(errors), do: format_errors(errors)
+  def format_error({:error, errors}) when is_list(errors), 
+    do: format_errors(errors)
 
   def format_error({:error, reason}) do
-    e = Exception.message(Exception.normalize(:error, reason))
-    "#{e}:\n#{Exception.format_stacktrace(System.stacktrace())}"
+    "Unknown error: #{inspect reason}"
+  end
+  
+  def format_error(err) do
+    "Unknown error: #{inspect err}"
   end
 end

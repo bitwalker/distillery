@@ -450,7 +450,7 @@ defmodule Mix.Releases.Runtime.Control do
           end
       end
 
-    has_sysconfig? = length(sysconfig)
+    has_sysconfig? = length(sysconfig) > 0
 
     case rpc_call(peer, :application_controller, :prep_config_change) do
       {:badrpc, reason} ->
