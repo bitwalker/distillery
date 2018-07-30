@@ -45,6 +45,9 @@ defmodule Mix.Releases.App do
     cond do
       is_nil(dep) ->
         do_new(name, start_type, loaded_deps)
+        
+      name == :distillery ->
+        do_new(name, start_type, loaded_deps)
 
       Keyword.get(dep.opts, :runtime) === false ->
         nil
@@ -140,7 +143,9 @@ defmodule Mix.Releases.App do
   end
 
   defp include_dep?({_, _}), do: true
+  defp include_dep?({:distillery, _, _}), do: true
   defp include_dep?({_, _, opts}), do: include_dep?(opts)
+  defp include_dep?(%Mix.Dep{app: :distillery}), do: true
   defp include_dep?(%Mix.Dep{opts: opts}), do: include_dep?(opts)
 
   defp include_dep?(opts) when is_list(opts) do
