@@ -1075,7 +1075,7 @@ defmodule Mix.Releases.Assembler do
         dev_mode: release.profile.dev_mode,
         include_erts: release.profile.include_erts,
         include_src: release.profile.include_src,
-        include_system_libs: release.profile.include_system_libs,
+        include_system_libs: release.profile.include_erts,
         erl_opts: release.profile.erl_opts,
         run_erl_env: release.profile.run_erl_env,
         erts_vsn: erts_vsn,

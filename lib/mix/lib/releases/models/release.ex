@@ -275,11 +275,14 @@ defmodule Mix.Releases.Release do
               throw(err)
 
             vsn ->
-              %{profile | erts_version: vsn}
+              %{profile | erts_version: vsn, include_system_libs: true}
           end
 
+        true ->
+          %{profile | erts_version: Utils.erts_version(), include_system_libs: true}
+
         _ ->
-          %{profile | erts_version: Utils.erts_version()}
+          %{profile | erts_version: Utils.erts_version(), include_system_libs: false}
       end
 
     profile =
