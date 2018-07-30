@@ -14,6 +14,16 @@ defmodule Distillery.Mixfile do
       docs: docs(),
       aliases: aliases(),
       elixirc_paths: elixirc_paths(Mix.env),
+      preferred_cli_env: [
+        docs: :docs,
+        "hex.publish": :docs,
+        "eqc.mini": :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test,
+        "coveralls.post": :test,
+      ],
       test_coverage: [tool: ExCoveralls],
       dialyzer: [
         flags: [:error_handling, :race_conditions, :underspecs]
@@ -28,10 +38,9 @@ defmodule Distillery.Mixfile do
   defp deps do
     [
       {:artificery, "~> 0.2"},
-      {:ex_doc, "~> 0.13", only: [:dev]},
-      {:excoveralls, "~> 0.6", only: [:dev, :test]},
-      {:credo, "~> 0.6", only: [:dev]},
-      {:eqc_ex, "~> 1.4", only: [:dev, :test]},
+      {:ex_doc, "~> 0.13", only: [:docs]},
+      {:excoveralls, "~> 0.6", only: [:test]},
+      {:eqc_ex, "~> 1.4", only: [:test]},
       {:dialyxir, "~> 1.0.0-rc.2", only: [:dev], runtime: false}
     ]
   end
