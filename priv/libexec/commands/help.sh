@@ -50,7 +50,7 @@ __has_commands=0
 for command in "$REL_DIR"/commands/*.sh; do
     [ -f "$command" ] || continue
     __has_commands=1
-    echo "$command"
+    echo "$(basename ${command%.*})"
 done
 if [ "$__has_commands" -eq 0 ]; then
     echo "No custom commands found."
