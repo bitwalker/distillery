@@ -507,7 +507,9 @@ defmodule Mix.Releases.Runtime.Control do
           Console.debug("Running config providers..")
 
           case rpc_call(peer, Mix.Releases.Config.Provider, :init, [providers], :infinity) do
-            {:badrpc, reason} ->
+            {:badrpc, {:EXIT, {reason, trace}}} ->
+              Console.error("Failed to run config providers: #{Exception.format(:exit, reason, trace)}")
+            {:badrpc, reason}
               Console.error("Failed to run config providers: #{inspect(reason)}")
 
             _ ->
@@ -931,12 +933,12 @@ defmodule Mix.Releases.Runtime.Control do
   # Ensures runtime_tools is present on the remote node
   defp check_runtime_tools!(peer) do
     # Check for runtime tools
-    case :rpc.call(peer, :erlang, :function_exported, [:observer_backend, :module_info, 0]) do
+    case :rpc.call(peer, :code, :ensure_loaded, [:observer_backend]) do
       {:badrpc, reason} ->
         Console.error("Failed during remote call with: #{inspect(reason)}")
 
-      false ->
-        Console.error("Runtime tools unavailable on the remote node!")
+      {:error, _} ->
+        Console.error("Observer backend unavailable on the remote node!")
 
       _ ->
         Console.info("Runtime tools detected, requesting info..")
