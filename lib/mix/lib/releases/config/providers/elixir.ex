@@ -7,14 +7,17 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
   alias Mix.Releases.Logger
 
-  @impl Mix.Releases.Config.Provider
+  @impl Provider
   def init([path]) do
-    if File.exists?(path) do
+    with {:ok, path} <- Provider.expand_path(path) do
       path
-      |> eval!()
+      |> IO.inspect(label: :path)
+      |> eval!() 
+      |> IO.inspect(label: :eval)
       |> Mix.Config.persist()
     else
-      :ok
+      {:error, reason} ->
+        exit(reason)
     end
   end
 
