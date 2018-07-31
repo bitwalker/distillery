@@ -32,7 +32,7 @@ defmodule Distillery.Mixfile do
   end
 
   def application do
-    [extra_applications: [:runtime_tools]]
+    [extra_applications: [:runtime_tools, :logger]]
   end
 
   defp deps do
@@ -41,6 +41,7 @@ defmodule Distillery.Mixfile do
       {:ex_doc, "~> 0.13", only: [:docs]},
       {:excoveralls, "~> 0.6", only: [:test]},
       {:eqc_ex, "~> 1.4", only: [:test]},
+      {:ex_unit_clustered_case, "~> 0.3", only: [:test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.2", only: [:dev], runtime: false}
     ]
   end
