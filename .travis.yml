@@ -4,14 +4,15 @@ git:
   depth: 3
 elixir:
   - 1.6
+  - 1.7
 otp_release:
-  - 20.0
   - 21.0
 env:
   - MIX_ENV=test VERBOSE_TESTS=true
 script:
   - epmd -daemon
   - mix do deps.get, eqc.install --mini
+  - mix do clean, compile
   - mix test --exclude=expensive
   - mix test --only=expensive
 notifications:
