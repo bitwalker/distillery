@@ -7,6 +7,8 @@ defmodule Mix.Releases.Config.Provider do
     quote do
       @behaviour unquote(__MODULE__)
       
+      alias unquote(__MODULE__)
+      
       def get([app | keypath]) do
         config = Application.get_all_env(app)
         case get_in(config, keypath) do
@@ -114,5 +116,53 @@ defmodule Mix.Releases.Config.Provider do
       {:ok, _} = val ->
         val
     end
+  end
+  
+  @doc """
+  Given a file path, this function expands it to an absolute path,
+  while also expanding any environment variable references in the
+  path.
+
+  ## Examples
+
+      iex> var = String.replace("#{__MODULE__}", ".", "_")
+      ...> System.put_env(var, "hello")
+      ...> {:ok, "var/hello/test"} = #{__MODULE__}.expand_path("var/${" <> var <> "}/test")
+      
+      iex> {:ok, "/" <> _} = #{__MODULE__}.expand_path("~/")
+      
+      iex> {:error, :unclosed_var_expansion} = #{__MODULE__}.expand_path("var/${FOO/test")
+ 
+  """
+  def expand_path(path) when is_binary(path) do
+    case expand_path(path, <<>>) do
+      {:ok, p} ->
+        {:ok, Path.expand(p)}
+      {:error, _} = err ->
+        err
+    end
+  end
+  defp expand_path(<<>>, acc), 
+    do: {:ok, acc}
+  defp expand_path(<<?$, ?\{, rest::binary>>, acc) do
+    case expand_var(rest) do
+      {:ok, var, rest} ->
+        expand_path(rest, acc <> var)
+      {:error, _} = err ->
+        err
+    end
+  end
+  defp expand_path(<<c::utf8, rest::binary>>, acc) do
+    expand_path(rest, <<acc::binary, c::utf8>>)
+  end
+  
+  defp expand_var(bin), 
+    do: expand_var(bin, <<>>)
+  defp expand_var(<<>>, _acc), 
+    do: {:error, :unclosed_var_expansion}
+  defp expand_var(<<?\}, rest::binary>>, acc), 
+    do: {:ok, System.get_env(acc) || "", rest}
+  defp expand_var(<<c::utf8, rest::binary>>, acc) do
+    expand_var(rest, <<acc::binary, c::utf8>>)
   end
 end
