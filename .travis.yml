@@ -1,6 +1,7 @@
 sudo: false
 language: elixir
 git:
+  quiet: true
   depth: 3
 elixir:
   - 1.6
@@ -9,12 +10,15 @@ otp_release:
   - 21.0
 env:
   - MIX_ENV=test VERBOSE_TESTS=true
-script:
+cache:
+  directories:
+    - _build
+    - deps
+before_script:
   - epmd -daemon
   - mix do deps.get, eqc.install --mini
-  - mix do clean, compile
-  - mix test --exclude=expensive
-  - mix test --only=expensive
+script:
+  - mix do test --exclude=integration, test --only=integration
 notifications:
   email:
     - paulschoenfelder@gmail.com
