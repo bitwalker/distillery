@@ -14,10 +14,10 @@ defmodule Mix.Releases.Appup.Transform do
   alias Mix.Releases.Appup.Utils
   alias Mix.Releases.Appup.TransformError
 
-  @type app :: Appup.app
-  @type version :: Appup.appup_ver
+  @type app :: Appup.app()
+  @type version :: Appup.appup_ver()
   @type options :: [term]
-  @type instruction :: Appup.instruction
+  @type instruction :: Appup.instruction()
   @type transform :: module | {module, options}
 
   @callback up(app, version, version, [instruction], options) :: [instruction]

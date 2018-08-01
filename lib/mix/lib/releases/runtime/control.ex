@@ -508,8 +508,11 @@ defmodule Mix.Releases.Runtime.Control do
 
           case rpc_call(peer, Mix.Releases.Config.Provider, :init, [providers], :infinity) do
             {:badrpc, {:EXIT, {reason, trace}}} ->
-              Console.error("Failed to run config providers: #{Exception.format(:exit, reason, trace)}")
-            {:badrpc, reason}
+              Console.error(
+                "Failed to run config providers: #{Exception.format(:exit, reason, trace)}"
+              )
+
+              {:badrpc, reason}
               Console.error("Failed to run config providers: #{inspect(reason)}")
 
             _ ->

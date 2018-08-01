@@ -105,14 +105,17 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Copies a specific application to the output directory
-  defp copy_app(app, %Release{
-         profile: %Profile{
-           dev_mode: dev_mode?,
-           executable: executable?,
-           include_src: include_src?,
-           include_erts: include_erts?
-         }
-       } = rel) do
+  defp copy_app(
+         app,
+         %Release{
+           profile: %Profile{
+             dev_mode: dev_mode?,
+             executable: executable?,
+             include_src: include_src?,
+             include_erts: include_erts?
+           }
+         } = rel
+       ) do
     dev_mode? = if(executable?, do: false, else: dev_mode?)
     app_name = app.name
     app_version = app.vsn
@@ -198,7 +201,7 @@ defmodule Mix.Releases.Assembler do
     end
   rescue
     e in [File.Error] ->
-      {:error, {:assembler, {e, System.stacktrace}}}
+      {:error, {:assembler, {e, System.stacktrace()}}}
   catch
     :error, {:assembler, _mod, _reason} = err ->
       {:error, err}
@@ -645,22 +648,28 @@ defmodule Mix.Releases.Assembler do
   defp generate_sys_config(%Release{profile: %Profile{} = profile} = rel) do
     overlay_vars = profile.overlay_vars
     config_exs_path = profile.config
-    
+
     # Construct path to provided sys.config, if one was provided
     sys_config_path =
       case profile.sys_config do
         nil ->
           Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_exs_path)}")
           nil
-        p when is_binary(p) -> 
+
+        p when is_binary(p) ->
           case Overlays.template_str(p, overlay_vars) do
             {:ok, p} ->
               relative_config_exs_path = Path.relative_to_cwd(config_exs_path)
               relative_p = Path.relative_to_cwd(p)
-              Logger.debug("Generating sys.config from #{relative_config_exs_path} and #{relative_p}")
+
+              Logger.debug(
+                "Generating sys.config from #{relative_config_exs_path} and #{relative_p}"
+              )
+
               p
+
             {:error, _} = err ->
-              throw err
+              throw(err)
           end
       end
 
@@ -668,12 +677,13 @@ defmodule Mix.Releases.Assembler do
     base_config =
       config_exs_path
       |> generate_base_config(profile.config_providers)
-    
+
     # If sys.config was provided, template it and merge over base config
     sys_config =
       case sys_config_path do
         nil ->
           base_config
+
         _ ->
           with {:ok, templated} <- Overlays.template_file(sys_config_path, overlay_vars),
                {:ok, tokens, _} <- :erl_scan.string(String.to_charlist(templated)),
@@ -683,13 +693,13 @@ defmodule Mix.Releases.Assembler do
             merged
           else
             err ->
-              throw err
+              throw(err)
           end
       end
-    
+
     # Append any included configs to generated sys.config
     sys_config = append_included_configs(sys_config, profile.included_configs)
-    
+
     # Write result
     Utils.write_term(Path.join(Release.version_path(rel), "sys.config"), sys_config)
   catch

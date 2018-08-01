@@ -6,20 +6,22 @@ defmodule Mix.Releases.Config.Provider do
   defmacro __using__(_) do
     quote do
       @behaviour unquote(__MODULE__)
-      
+
       alias unquote(__MODULE__)
-      
+
       def get([app | keypath]) do
         config = Application.get_all_env(app)
+
         case get_in(config, keypath) do
           nil ->
             nil
+
           v ->
             {:ok, v}
         end
       end
-      
-      defoverridable [get: 1]
+
+      defoverridable get: 1
     end
   end
 
@@ -31,28 +33,28 @@ defmodule Mix.Releases.Config.Provider do
   cannot expect supervisors and processes to be running. You may need to start them manually,
   or start entire applications manually, but it is critical that you stop them before returning
   from `init/1`, or the boot sequence will fail post-configuration.
-  
+
   The arguments given to `init/1` are the same as given in the `config_providers` setting in
   your release configuration file.
-  
+
   NOTE: It is recommended that you use `init/1` to load configuration and then
   persist it into the application environment, e.g. with
   `Application.put_env/3`. This ensures that applications need not be aware of
   your specific configuration provider.
-  
+
   """
   @callback init(args :: [term]) :: :ok | no_return
 
   @doc """
   Called when the provider is being asked to supply a value for the given key
-  
+
   Keys supplied to providers are a list of atoms which represent the path of the
   configuration key, beginning with the application name:
-  
+
   NOTE: This is currently unused, but provides an API for fetching config values
   from specific providers, which may come in handy down the road. A default implementation
   is provided for you, which fetches values from the application environment.
-  
+
   ## Examples
 
       > MyProvider.get([:myapp, :server, :port])
@@ -117,7 +119,7 @@ defmodule Mix.Releases.Config.Provider do
         val
     end
   end
-  
+
   @doc """
   Given a file path, this function expands it to an absolute path,
   while also expanding any environment variable references in the
@@ -132,36 +134,44 @@ defmodule Mix.Releases.Config.Provider do
       iex> {:ok, "/" <> _} = #{__MODULE__}.expand_path("~/")
       
       iex> {:error, :unclosed_var_expansion} = #{__MODULE__}.expand_path("var/${FOO/test")
- 
+
   """
   def expand_path(path) when is_binary(path) do
     case expand_path(path, <<>>) do
       {:ok, p} ->
         {:ok, Path.expand(p)}
+
       {:error, _} = err ->
         err
     end
   end
-  defp expand_path(<<>>, acc), 
+
+  defp expand_path(<<>>, acc),
     do: {:ok, acc}
+
   defp expand_path(<<?$, ?\{, rest::binary>>, acc) do
     case expand_var(rest) do
       {:ok, var, rest} ->
         expand_path(rest, acc <> var)
+
       {:error, _} = err ->
         err
     end
   end
+
   defp expand_path(<<c::utf8, rest::binary>>, acc) do
     expand_path(rest, <<acc::binary, c::utf8>>)
   end
-  
-  defp expand_var(bin), 
+
+  defp expand_var(bin),
     do: expand_var(bin, <<>>)
-  defp expand_var(<<>>, _acc), 
+
+  defp expand_var(<<>>, _acc),
     do: {:error, :unclosed_var_expansion}
-  defp expand_var(<<?\}, rest::binary>>, acc), 
+
+  defp expand_var(<<?\}, rest::binary>>, acc),
     do: {:ok, System.get_env(acc) || "", rest}
+
   defp expand_var(<<c::utf8, rest::binary>>, acc) do
     expand_var(rest, <<acc::binary, c::utf8>>)
   end

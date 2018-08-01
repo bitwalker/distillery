@@ -169,31 +169,51 @@ defmodule Mix.Tasks.Release do
     bin = Path.join([relative_output_dir, "bin", app])
 
     Logger.success("Release succesfully built!\n")
-    IO.puts(
-      """
-      #{Logger.colorize("To start the release you have built, you can use one of the following tasks:", IO.ANSI.green)}
 
-          # start a shell, like 'iex -S mix'
-          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("console", IO.ANSI.white)}
+    IO.puts("""
+    #{
+      Logger.colorize(
+        "To start the release you have built, you can use one of the following tasks:",
+        IO.ANSI.green()
+      )
+    }
 
-          # start in the foreground, like 'mix run --no-halt'
-          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("foreground", IO.ANSI.white)}
+        # start a shell, like 'iex -S mix'
+        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
+      Logger.colorize("console", IO.ANSI.white())
+    }
 
-          # start in the background, must be stopped with the 'stop' command
-          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("start", IO.ANSI.white)}
+        # start in the foreground, like 'mix run --no-halt'
+        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
+      Logger.colorize("foreground", IO.ANSI.white())
+    }
 
-      #{Logger.colorize("If you started a release elsewhere, and wish to connect to it:", IO.ANSI.green)}
+        # start in the background, must be stopped with the 'stop' command
+        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
+      Logger.colorize("start", IO.ANSI.white())
+    }
 
-          # connects a local shell to the running node
-          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("remote_console", IO.ANSI.white)}
+    #{
+      Logger.colorize(
+        "If you started a release elsewhere, and wish to connect to it:",
+        IO.ANSI.green()
+      )
+    }
 
-          # connects directly to the running node's shell
-          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("attach", IO.ANSI.white)}
+        # connects a local shell to the running node
+        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
+      Logger.colorize("remote_console", IO.ANSI.white())
+    }
 
-      #{Logger.colorize("For a complete listing of commands and their use:", IO.ANSI.green)}
+        # connects directly to the running node's shell
+        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
+      Logger.colorize("attach", IO.ANSI.white())
+    }
 
-          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("help", IO.ANSI.white)}
-      """)
+    #{Logger.colorize("For a complete listing of commands and their use:", IO.ANSI.green())}
+
+        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{Logger.colorize("help", IO.ANSI.white())}
+    """)
   end
 
   @doc false

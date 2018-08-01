@@ -46,8 +46,8 @@ defmodule Mix.Releases.Config do
   end
 
   @doc false
-  @spec get() :: {:ok, t} | {:error, {:config, :not_found | String.t}}
-  @spec get(Keyword.t) :: {:ok, t} | {:error, {:config, :not_found | String.t}}
+  @spec get() :: {:ok, t} | {:error, {:config, :not_found | String.t()}}
+  @spec get(Keyword.t()) :: {:ok, t} | {:error, {:config, :not_found | String.t()}}
   def get(opts \\ []) do
     config_path = Path.join([File.cwd!(), "rel", "config.exs"])
 

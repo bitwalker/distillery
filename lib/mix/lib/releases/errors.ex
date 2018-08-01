@@ -68,7 +68,7 @@ defmodule Mix.Releases.Errors do
   end
 
   def format_error({:error, {:plugin, {:plugin_failed, :bad_return_value, plugin, value}}}) do
-    "Plugin #{inspect plugin} failed: invalid result returned\n" <>
+    "Plugin #{inspect(plugin)} failed: invalid result returned\n" <>
       "    expected: nil or Release.t\n    got: #{inspect(value)}"
   end
 
@@ -77,8 +77,7 @@ defmodule Mix.Releases.Errors do
   end
 
   def format_error({:error, {:plugin, {e, trace}}}) when is_map(e) do
-    "Plugin failed: #{Exception.message(e)}\n" <>
-      Exception.format_stacktrace(trace)
+    "Plugin failed: #{Exception.message(e)}\n" <> Exception.format_stacktrace(trace)
   end
 
   def format_error({:error, {:invalid_overlay, overlay}}) do
@@ -286,14 +285,14 @@ defmodule Mix.Releases.Errors do
       "    `erts-*`, please confirm the path is correct."
   end
 
-  def format_error({:error, errors}) when is_list(errors), 
+  def format_error({:error, errors}) when is_list(errors),
     do: format_errors(errors)
 
   def format_error({:error, reason}) do
-    "Unknown error: #{inspect reason}"
+    "Unknown error: #{inspect(reason)}"
   end
-  
+
   def format_error(err) do
-    "Unknown error: #{inspect err}"
+    "Unknown error: #{inspect(err)}"
   end
 end

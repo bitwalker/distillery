@@ -160,6 +160,7 @@ defmodule Mix.Releases.Archiver do
       |> Archive.add(Path.join([output_dir, "releases", version, "libexec"]))
 
     config_providers = release.profile.config_providers
+
     archive =
       if Provider.enabled?(config_providers, Providers.Elixir) do
         Archive.add(archive, Path.join([output_dir, "releases", version, "config.exs"]))

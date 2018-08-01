@@ -11,7 +11,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   def init([path]) do
     with {:ok, path} <- Provider.expand_path(path) do
       path
-      |> eval!() 
+      |> eval!()
       |> Mix.Config.persist()
     else
       {:error, reason} ->
@@ -35,10 +35,11 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
   @doc false
   def eval!(path, imported_paths \\ [])
-  
+
   Code.ensure_loaded(Mix.Config)
+
   if function_exported?(Mix.Config, :eval!, 2) do
-    def eval!(path, imported_paths) do 
+    def eval!(path, imported_paths) do
       {config, _} = Mix.Config.eval!(path, imported_paths)
       config
     end
@@ -137,9 +138,8 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   defp merge_imports([{:import_config, _, [path_expr]} | block], acc, file, loaded_paths) do
     case eval_path(acc, path_expr) do
       {:error, err} ->
-        raise ArgumentError, 
-          "expected valid import_config path expression in #{file}: " <> 
-          "#{inspect err}"
+        raise ArgumentError,
+              "expected valid import_config path expression in #{file}: " <> "#{inspect(err)}"
 
       path ->
         path = Path.join(Path.dirname(file), Path.relative_to(path, file))

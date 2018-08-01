@@ -48,19 +48,19 @@ defmodule Mix.Releases.Release do
 
   @type t :: %__MODULE__{
           name: atom,
-          version: String.t,
-          applications: list(atom | {atom, App.start_type} | App.t),
-          output_dir: String.t,
+          version: String.t(),
+          applications: list(atom | {atom, App.start_type()} | App.t()),
+          output_dir: String.t(),
           is_upgrade: boolean,
-          upgrade_from: nil | String.t | :latest,
-          resolved_overlays: [Overlays.overlay],
-          profile: Profile.t,
+          upgrade_from: nil | String.t() | :latest,
+          resolved_overlays: [Overlays.overlay()],
+          profile: Profile.t(),
           env: atom
         }
 
   @type app_resource ::
           {atom, app_version :: charlist}
-          | {atom, app_version :: charlist, App.start_type}
+          | {atom, app_version :: charlist, App.start_type()}
   @type resource ::
           {:release, {name :: charlist, version :: charlist}, {:erts, erts_version :: charlist},
            [app_resource]}
@@ -68,8 +68,8 @@ defmodule Mix.Releases.Release do
   @doc """
   Creates a new Release with the given name, version, and applications.
   """
-  @spec new(atom, String.t) :: t
-  @spec new(atom, String.t, [atom]) :: t
+  @spec new(atom, String.t()) :: t
+  @spec new(atom, String.t(), [atom]) :: t
   def new(name, version, apps \\ []) do
     build_path = Mix.Project.build_path()
     output_dir = Path.relative_to_cwd(Path.join([build_path, "rel", "#{name}"]))
@@ -86,7 +86,7 @@ defmodule Mix.Releases.Release do
   """
   @spec get(atom) :: {:ok, t} | {:error, term}
   @spec get(atom, atom) :: {:ok, t} | {:error, term}
-  @spec get(atom, atom, Keyword.t) :: {:ok, t} | {:error, term}
+  @spec get(atom, atom, Keyword.t()) :: {:ok, t} | {:error, term}
   def get(name, env \\ :default, opts \\ [])
 
   def get(name, env, opts) when is_atom(name) and is_atom(env) do
@@ -140,7 +140,7 @@ defmodule Mix.Releases.Release do
   @doc """
   Get the path to which release binaries will be output
   """
-  @spec bin_path(t) :: String.t
+  @spec bin_path(t) :: String.t()
   def bin_path(%__MODULE__{profile: %Profile{output_dir: output_dir}}) do
     [output_dir, "bin"]
     |> Path.join()
@@ -150,7 +150,7 @@ defmodule Mix.Releases.Release do
   @doc """
   Get the path to which versioned release data will be output
   """
-  @spec version_path(t) :: String.t
+  @spec version_path(t) :: String.t()
   def version_path(%__MODULE__{profile: %Profile{output_dir: output_dir}} = r) do
     [output_dir, "releases", "#{r.version}"]
     |> Path.join()
@@ -160,17 +160,17 @@ defmodule Mix.Releases.Release do
   @doc """
   Get the path to which compiled applications will be output
   """
-  @spec lib_path(t) :: String.t
+  @spec lib_path(t) :: String.t()
   def lib_path(%__MODULE__{profile: %Profile{output_dir: output_dir}}) do
     [output_dir, "lib"]
-    |> Path.join() 
+    |> Path.join()
     |> Path.expand()
   end
 
   @doc """
   Get the path to which the release tarball will be output
   """
-  @spec archive_path(t) :: String.t
+  @spec archive_path(t) :: String.t()
   def archive_path(%__MODULE__{profile: p} = r) do
     cond do
       p.executable ->
@@ -183,11 +183,14 @@ defmodule Mix.Releases.Release do
 
   # Returns the environment that the provided Config has selected
   @doc false
-  @spec select_environment(Config.t) :: {:ok, Environment.t} | {:error, :missing_environment}
-  def select_environment(%Config{selected_environment: :default, default_environment: :default} = c) do
+  @spec select_environment(Config.t()) :: {:ok, Environment.t()} | {:error, :missing_environment}
+  def select_environment(
+        %Config{selected_environment: :default, default_environment: :default} = c
+      ) do
     case Map.get(c.environments, :default) do
       nil ->
         {:error, :missing_environment}
+
       env ->
         {:ok, env}
     end
@@ -200,6 +203,7 @@ defmodule Mix.Releases.Release do
     case Map.get(c.environments, name) do
       nil ->
         {:error, :missing_environment}
+
       env ->
         {:ok, env}
     end
@@ -207,7 +211,7 @@ defmodule Mix.Releases.Release do
 
   # Returns the release that the provided Config has selected
   @doc false
-  @spec select_release(Config.t) :: {:ok, t} | {:error, :missing_release}
+  @spec select_release(Config.t()) :: {:ok, t} | {:error, :missing_release}
   def select_release(%Config{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
 
@@ -218,6 +222,7 @@ defmodule Mix.Releases.Release do
     case Map.get(c.releases, name) do
       nil ->
         {:error, :missing_release}
+
       release ->
         {:ok, release}
     end
@@ -225,7 +230,7 @@ defmodule Mix.Releases.Release do
 
   # Applies the environment settings to a release
   @doc false
-  @spec apply_environment(t, Environment.t) :: t
+  @spec apply_environment(t, Environment.t()) :: t
   def apply_environment(%__MODULE__{profile: rel_profile} = r, %Environment{name: env_name} = env) do
     env_profile = Map.from_struct(env.profile)
 
@@ -241,7 +246,7 @@ defmodule Mix.Releases.Release do
   end
 
   @doc false
-  @spec validate_configuration(t) :: :ok | {:error, term} | {:ok, warning :: String.t}
+  @spec validate_configuration(t) :: :ok | {:error, term} | {:ok, warning :: String.t()}
   def validate_configuration(%__MODULE__{version: _, profile: profile}) do
     with :ok <- Utils.validate_erts(profile.include_erts),
          :ok <- validate_cookie(profile.cookie) do
@@ -259,8 +264,8 @@ defmodule Mix.Releases.Release do
 
   # Applies global configuration options to the release profile
   @doc false
-  @spec apply_configuration(t, Config.t) :: {:ok, t} | {:error, term}
-  @spec apply_configuration(t, Config.t, log? :: boolean) :: {:ok, t} | {:error, term}
+  @spec apply_configuration(t, Config.t()) :: {:ok, t} | {:error, term}
+  @spec apply_configuration(t, Config.t(), log? :: boolean) :: {:ok, t} | {:error, term}
   def apply_configuration(%__MODULE__{} = release, %Config{} = config, log? \\ false) do
     profile = release.profile
 
