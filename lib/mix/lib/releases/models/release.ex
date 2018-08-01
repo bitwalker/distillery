@@ -142,7 +142,9 @@ defmodule Mix.Releases.Release do
   """
   @spec bin_path(t) :: String.t
   def bin_path(%__MODULE__{profile: %Profile{output_dir: output_dir}}) do
-    Path.join([output_dir, "bin"])
+    [output_dir, "bin"]
+    |> Path.join()
+    |> Path.expand()
   end
 
   @doc """
@@ -150,7 +152,9 @@ defmodule Mix.Releases.Release do
   """
   @spec version_path(t) :: String.t
   def version_path(%__MODULE__{profile: %Profile{output_dir: output_dir}} = r) do
-    Path.join([output_dir, "releases", "#{r.version}"])
+    [output_dir, "releases", "#{r.version}"]
+    |> Path.join()
+    |> Path.expand()
   end
 
   @doc """
@@ -158,7 +162,9 @@ defmodule Mix.Releases.Release do
   """
   @spec lib_path(t) :: String.t
   def lib_path(%__MODULE__{profile: %Profile{output_dir: output_dir}}) do
-    Path.join([output_dir, "lib"])
+    [output_dir, "lib"]
+    |> Path.join() 
+    |> Path.expand()
   end
 
   @doc """

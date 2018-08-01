@@ -107,18 +107,17 @@ defmodule Mix.Releases.Assembler do
   # Copies a specific application to the output directory
   defp copy_app(app, %Release{
          profile: %Profile{
-           output_dir: output_dir,
            dev_mode: dev_mode?,
            executable: executable?,
            include_src: include_src?,
            include_erts: include_erts?
          }
-       }) do
+       } = rel) do
     dev_mode? = if(executable?, do: false, else: dev_mode?)
     app_name = app.name
     app_version = app.vsn
     app_dir = app.path
-    lib_dir = Path.join(output_dir, "lib")
+    lib_dir = Release.lib_path(rel)
     target_dir = Path.join(lib_dir, "#{app_name}-#{app_version}")
     Utils.remove_symlink_or_dir!(target_dir)
 
@@ -1100,8 +1099,10 @@ defmodule Mix.Releases.Assembler do
   defp make_paths(%Release{} = release) do
     rel_dir = Release.version_path(release)
     bin_dir = Release.bin_path(release)
+    lib_dir = Release.lib_path(release)
 
     with {_, :ok} <- {rel_dir, File.mkdir_p(rel_dir)},
+         {_, :ok} <- {lib_dir, File.mkdir_p(lib_dir)},
          {_, :ok} <- {bin_dir, File.mkdir_p(bin_dir)} do
       :ok
     else
