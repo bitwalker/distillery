@@ -2,7 +2,6 @@
 
 [![Master](https://travis-ci.org/bitwalker/distillery.svg?branch=master)](https://travis-ci.org/bitwalker/distillery)
 [![Hex.pm Version](http://img.shields.io/hexpm/v/distillery.svg?style=flat)](https://hex.pm/packages/distillery)
-[![Coverage Status](https://coveralls.io/repos/github/bitwalker/distillery/badge.svg?branch=master)](https://coveralls.io/github/bitwalker/distillery?branch=master)
 
 Every alchemist requires good tools, and one of the greatest tools in the alchemist's disposal
 is the distillery. The purpose of the distillery is to take something and break it down to its
@@ -16,11 +15,11 @@ It is currently a standalone package, but may be integrated into Mix at some poi
 
 ## Installation
 
-Distillery requires Elixir 1.3 or greater. It works with Erlang 18+.
+Distillery requires Elixir 1.6 or greater. It works with Erlang 18+.
 
 ```elixir
 defp deps do
-  [{:distillery, "~> 1.5", runtime: false}]
+  [{:distillery, "~> 2.0"}]
 end
 ```
 
