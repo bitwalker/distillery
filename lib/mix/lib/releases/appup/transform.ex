@@ -8,16 +8,7 @@ defmodule Mix.Releases.Appup.Transform do
   The job of a transform is to, well, apply a transformation to the instruction set, in
   order to accomplish some objective that one desires to be automated. A trivial example
   of one such transform would be a transform which ensures the purge mode is set to `:soft_purge`
-  for all `:update` instructions, and would look like so:
-
-  #{
-    File.read!(
-      Path.join([__DIR__, "..", "..", "..", "..", "..", "test", "support", "purge_transform.ex"])
-    )
-    |> String.split("\n")
-    |> Enum.map(fn line -> "    " <> line end)
-    |> Enum.join("\n")
-  }
+  for all `:update` instructions. To see an example of such a transform, look in `test/support/purge_transform.ex`
   """
   alias Mix.Releases.Appup
   alias Mix.Releases.Appup.Utils
