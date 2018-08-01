@@ -62,7 +62,17 @@ defmodule Distillery.Mixfile do
   end
 
   defp aliases do
-    ["compile-check": "do compile, dialyzer --halt-exit-status --format=dialyxir"]
+    [
+      c: [
+        "compile",
+        "format --check-equivalent",
+      ],
+      "compile-check": [
+        "compile",
+        "format --check-formatted --dry-run",
+        "dialyzer --halt-exit-status"
+      ]
+    ]
   end
 
   defp docs do
