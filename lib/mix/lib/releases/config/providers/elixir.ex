@@ -11,9 +11,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   def init([path]) do
     with {:ok, path} <- Provider.expand_path(path) do
       path
-      |> IO.inspect(label: :path)
       |> eval!() 
-      |> IO.inspect(label: :eval)
       |> Mix.Config.persist()
     else
       {:error, reason} ->
