@@ -17,7 +17,7 @@ defmodule Distillery.Test.Runtime.CLI do
   setup do
     {:ok, pid} = NodeManager.start_nolink([
       boot_timeout: 30_000, 
-      post_start_functions: [&start_apps/0],
+      post_start_functions: [{Application, :ensure_all_started, [:distillery]}],
       stdout: :standard_error
     ])
     on_exit fn -> 
@@ -290,10 +290,9 @@ defmodule Distillery.Test.Runtime.CLI do
     # Add the extra code path for the slave node
     args = ["-pa", ebin_path]
     post_start_funs = [
-      fn -> 
-        Application.ensure_all_started(:distillery) 
-        Application.ensure_all_started(app)
-      end]
+      {Application, :ensure_all_started, [:distillery]},
+      {Application, :ensure_all_started, [app]}
+    ]
     # Start the node
     {:ok, pid} = NodeManager.start_nolink([
       boot_timeout: 30_000, 
@@ -317,9 +316,5 @@ defmodule Distillery.Test.Runtime.CLI do
     else
       :ok = fun.(name)
     end
-  end
-  
-  defp start_apps() do
-    Application.ensure_all_started(:distillery)
   end
 end
