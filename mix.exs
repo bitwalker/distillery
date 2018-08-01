@@ -68,8 +68,8 @@ defmodule Distillery.Mixfile do
         "format --check-equivalent",
       ],
       "compile-check": [
-        "compile",
-        "format --check-formatted --dry-run",
+        "compile", 
+        "format --check-formatted --dry-run", 
         "dialyzer --halt-exit-status"
       ]
     ]
@@ -86,6 +86,7 @@ defmodule Distillery.Mixfile do
         "Files": ~r/docs\/files\/.?/,
         "Plugins": ~r/docs\/plugins\/.?/,
         "Overlays": ~r/docs\/overlays\/.?/,
+        "Configuration": ~r/docs\/config\/.?/,
         "Other": ~r/docs\/[^\.]+.md/
       ],
       extras: [
@@ -102,12 +103,13 @@ defmodule Distillery.Mixfile do
         "docs/guides/appups.md",
         "docs/guides/systemd.md",
         "docs/guides/configuration.md",
-        "docs/overlays/overlays.md",
+        "docs/files/vm.args.md",
         "docs/plugins/release_plugins.md",
         "docs/plugins/config_providers.md",
         "docs/plugins/custom_commands.md",
         "docs/plugins/boot_hooks.md",
-        "docs/files/vm.args.md",
+        "docs/overlays/overlays.md",
+        "docs/config/handling_config.md",
         "docs/faq.md",
         "docs/cli.md",
         "docs/shell_scripts.md",

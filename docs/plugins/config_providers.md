@@ -83,6 +83,10 @@ defmodule JsonConfigProvider do
   use Mix.Releases.Config.Provider
 
   def init([config_path]) do
+    # Helper which expands paths to absolute form
+    # and expands env vars in the path of the form `${VAR}`
+    # to their value in the system environment
+    config_path = Provider.expand_path(config_path)
     # All applications are already loaded at this point
     if File.exists?(config_path) do
       config_path

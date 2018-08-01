@@ -28,7 +28,7 @@ Next we will add Distillery to the deps function of our `mix.exs` file.
 ```elixir
   defp deps do
     [ ...,
-     {:distillery, "~> MAJ.MIN", runtime: false},
+     {:distillery, "~> 2.0"},
       ...,
     ]
   end
