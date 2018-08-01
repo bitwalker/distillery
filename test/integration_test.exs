@@ -4,6 +4,9 @@ defmodule IntegrationTest do
   alias Mix.Releases.Utils
   import MixTestHelper
 
+  @moduletag integration: true
+  @moduletag timeout: 60_000 * 5
+
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
   @standard_output_path Path.join([
                           __DIR__,
@@ -107,9 +110,6 @@ defmodule IntegrationTest do
   end
 
   describe "standard application" do
-    @tag :expensive
-    # 5m
-    @tag timeout: 60_000 * 5
     test "can build release and start it" do
       with_standard_app do
         # Build release
@@ -180,9 +180,6 @@ defmodule IntegrationTest do
       end
     end
 
-    @tag :expensive
-    # 5m
-    @tag timeout: 60_000 * 5
     test "can build and deploy hot upgrade" do
       with_standard_app do
         # Build v1 release
@@ -257,9 +254,6 @@ defmodule IntegrationTest do
       end
     end
 
-    @tag :expensive
-    # 5m
-    @tag timeout: 60_000 * 5
     test "can build and deploy hot upgrade with previously generated appup" do
       with_standard_app do
         # Build v1 release
@@ -335,9 +329,6 @@ defmodule IntegrationTest do
       end
     end
 
-    @tag :expensive
-    # 5m
-    @tag timeout: 60_000 * 5
     test "when installation directory contains a space" do
       with_standard_app do
         # Build v1 release
