@@ -16,7 +16,7 @@ defmodule Distillery.Test.Runtime.CLI do
   
   setup do
     {:ok, pid} = NodeManager.start_nolink([
-      boot_timeout: 5_000, 
+      boot_timeout: 30_000, 
       post_start_functions: [&start_apps/0],
       stdout: :standard_error
     ])
@@ -296,7 +296,7 @@ defmodule Distillery.Test.Runtime.CLI do
       end]
     # Start the node
     {:ok, pid} = NodeManager.start_nolink([
-      boot_timeout: 10_000, 
+      boot_timeout: 30_000, 
       erl_flags: args, 
       post_start_functions: post_start_funs, 
       heart: use_heart?,
