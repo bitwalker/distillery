@@ -1,4 +1,4 @@
-defmodule ArchiveTest do
+defmodule Distillery.Test.ArchiveTest do
   use ExUnit.Case
 
   alias Mix.Releases.Utils

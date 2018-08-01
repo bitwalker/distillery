@@ -1,5 +1,5 @@
-defmodule Distillery.IO.Test do
-  use ExUnit.Case, async: false
+defmodule Distillery.Test.IOTest do
+  use ExUnit.Case
 
   import ExUnit.CaptureIO
 

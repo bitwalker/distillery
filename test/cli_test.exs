@@ -1,4 +1,4 @@
-defmodule Distillery.Test.Runtime.CLI do
+defmodule Distillery.Test.CliTest do
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureIO

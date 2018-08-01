@@ -1,4 +1,4 @@
-defmodule InitTest do
+defmodule Distillery.Test.InitTest do
   use ExUnit.Case
 
   import MixTestHelper

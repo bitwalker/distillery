@@ -1,4 +1,4 @@
-defmodule ConfigTest do
+defmodule Distillery.Test.ConfigTest do
   use ExUnit.Case
 
   alias Mix.Releases.{Config, Environment, Release, Profile}

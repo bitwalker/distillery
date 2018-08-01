@@ -1,5 +1,5 @@
-defmodule LoggerTest do
-  use ExUnit.Case, async: false
+defmodule Distillery.Test.LoggerTest do
+  use ExUnit.Case
   import ExUnit.CaptureIO
   alias Mix.Releases.Logger
 

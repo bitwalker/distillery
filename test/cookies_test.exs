@@ -1,4 +1,4 @@
-defmodule Distillery.Cookies.Test do
+defmodule Distillery.Test.CookiesTest do
   use ExUnit.Case, async: true
   use EQC.ExUnit
 
@@ -37,7 +37,7 @@ defmodule Distillery.Cookies.Test do
   defp is_parsed_by_command_line(cookie) do
     cookie = Atom.to_string(cookie)
 
-    case System.cmd("erl", ["-hidden", "-setcookie", cookie, "-noshell", "-s", "init", "stop"]) do
+    case System.cmd("erl", ["-hidden", "-setcookie", cookie, "-noshell", "-s", "erlang", "halt"]) do
       {_, 0} -> true
       _ -> false
     end

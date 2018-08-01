@@ -1,4 +1,4 @@
-defmodule ProviderTest do
+defmodule Distillery.Test.ProviderTest do
   use ExUnit.Case
   
   alias Mix.Releases.Config.Providers

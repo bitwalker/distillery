@@ -1,4 +1,4 @@
-defmodule AppupTest do
+defmodule Distillery.Test.AppupTest do
   use ExUnit.Case
   alias Mix.Releases.Appup
   alias Mix.Releases.Appup.Transform

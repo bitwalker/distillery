@@ -1,4 +1,4 @@
-defmodule OverlayTest do
+defmodule Distillery.Test.OverlayTest do
   use ExUnit.Case
   alias Mix.Releases.{Utils, Overlays}
 

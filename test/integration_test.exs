@@ -1,4 +1,4 @@
-defmodule IntegrationTest do
+defmodule Distillery.Test.IntegrationTest do
   use ExUnit.Case, async: false
 
   alias Mix.Releases.Utils
