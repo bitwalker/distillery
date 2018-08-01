@@ -2,57 +2,69 @@ defmodule Mix.Tasks.Release do
   @moduledoc """
   Build a release for the current mix application.
 
-  ## Examples
+  ## Command line options
 
-      # Build a release using defaults
+    * `--name`    - selects a specific release to build
+    * `--env`     - selects a specific release environment to build with
+    * `--profile` - selects both a release and environment, syntax for profiles is `name:env`
+
+  Releases and environments are defined in `rel/config.exs`, created via
+  `release.init`. When determining the name and environment to use, refer to the
+  definitions in that file if you are not sure what options are available.
+
+    * `--erl`     - provide extra flags to `erl` when running the release, expects a string
+    * `--dev`     - this switch indicates whether to build the release in "dev mode", which
+      symlinks build artifacts into the release rather than copying them, both significantly
+      speeding up release builds, as well as making it possible to recompile the project and
+      have the release pick up the changes without rebuilding the release.
+    * `--silent`  - mutes all logging output
+    * `--quiet`   - reduce logging output to essentials
+    * `--verbose` - produce detailed output about release assembly
+    * `--no-tar`  - skip packaging the release in a tarball after assembly
+    * `--warnings-as-errors` - treat any release-time warnings as errors which fail the build
+    * `--no-warn-missing`    - ignore any errors about missing applications
+
+  ### Upgrades
+
+  You can tell Distillery to build an upgrade with `--upgrade`.
+
+  Upgrades require a source version and a target version (the current version).
+  Distillery will automatically determine a source version by looking at previously
+  built releases in the output directory, and selecting the most recent. If none
+  are available, building the upgrade will fail. You can specify a specific version
+  to upgrade from with `--upfrom`, which expects a version string. If the selected
+  version cannot be found, the upgrade build will fail.
+
+  ### Executables
+
+  Distillery can build pseudo-executable files as an artifact, rather than plain
+  tarballs. These executables are not true executables, but rather self-extracting
+  TAR archives, which handle extraction and passing any command-line arguments to
+  the appropriate shell scripts in the release. The following flags are used for
+  these executables:
+
+    * `--executable`  - tells Distillery to produce a self-extracting archive
+    * `--transient`   - tells Distillery to produce a self-extracting archive which
+      will remove the extracted contents from disk after execution
+
+  ## Usage
+
+  You are generally recommended to use `rel/config.exs` to configure Distillery, and
+  simply run `mix release` with `MIX_ENV` set to the Mix environment you are targeting.
+  The following are some usage examples:
+
+      # Builds a release with MIX_ENV=dev (the default)
       mix release
 
-      # Build an executable release
-      mix release --executable
+      # Builds a release with MIX_ENV=prod
+      MIX_ENV=prod mix release
 
-      # Build an executable release which will cleanup after itself after it runs
-      mix release --executable --transient
+      # Builds a release for a specific release environment
+      MIX_ENV=prod mix release --env=dev
 
-      # Build an upgrade release
-      mix release --upgrade
-
-      # Build an upgrade release from a specific version
-      mix release --upgrade --upfrom=0.1.0
-
-      # Build a specific release
-      mix release --name=myapp
-
-      # Build a release for a specific environment
-      mix release --env=staging
-
-      # Build a specific profile
-      mix release --profile=myapp:staging
-
-      # Pass args to erlexec when running the release
-      mix release --erl="-env TZ UTC"
-
-      # Enable dev mode. Make changes, compile using MIX_ENV=prod
-      # and execute your release again to pick up the changes
-      mix release --dev
-
-      # Mute logging output
-      mix release --silent
-
-      # Quiet logging output
-      mix release --quiet
-
-      # Verbose logging output
-      mix release --verbose
-
-      # Do not package release, just assemble it
-      mix release --no-tar
-
-      # Treat warnings as errors
-      mix release --warnings-as-errors
-
-      # Skip warnings about missing applications
-      mix release --no-warn-missing
-
+  The default configuration produced by `release.init` will result in `mix release`
+  selecting the first release in the config file (`rel/config.exs`), and the
+  environment which matches the current Mix environment (i.e. the value of `MIX_ENV`).
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
@@ -154,13 +166,34 @@ defmodule Mix.Tasks.Release do
         end
       end
 
-    Logger.success(
-      "Release successfully built!\n    " <>
-        "You can run it in one of the following ways:\n      " <>
-        "Interactive: #{relative_output_dir}/bin/#{app} console\n      " <>
-        "Foreground: #{relative_output_dir}/bin/#{app} foreground\n      " <>
-        "Daemon: #{relative_output_dir}/bin/#{app} start"
-    )
+    bin = Path.join([relative_output_dir, "bin", app])
+
+    Logger.success("Release succesfully built!\n")
+    IO.puts(
+      """
+      #{Logger.colorize("To start the release you have built, you can use one of the following tasks:", IO.ANSI.green)}
+
+          # start a shell, like 'iex -S mix'
+          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("console", IO.ANSI.white)}
+
+          # start in the foreground, like 'mix run --no-halt'
+          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("foreground", IO.ANSI.white)}
+
+          # start in the background, must be stopped with the 'stop' command
+          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("start", IO.ANSI.white)}
+
+      #{Logger.colorize("If you started a release elsewhere, and wish to connect to it:", IO.ANSI.green)}
+
+          # connects a local shell to the running node
+          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("remote_console", IO.ANSI.white)}
+
+          # connects directly to the running node's shell
+          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("attach", IO.ANSI.white)}
+
+      #{Logger.colorize("For a complete listing of commands and their use:", IO.ANSI.green)}
+
+          #{Logger.colorize("> #{bin} ", IO.ANSI.cyan)}#{Logger.colorize("help", IO.ANSI.white)}
+      """)
   end
 
   @doc false
