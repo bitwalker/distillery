@@ -102,7 +102,6 @@ defmodule Distillery.Mixfile do
         "docs/guides/upgrades_and_downgrades.md",
         "docs/guides/appups.md",
         "docs/guides/systemd.md",
-        "docs/guides/configuration.md",
         "docs/files/vm.args.md",
         "docs/plugins/release_plugins.md",
         "docs/plugins/config_providers.md",
