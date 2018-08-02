@@ -635,7 +635,7 @@ defmodule Mix.Releases.Utils do
           |> Enum.map(fn %App{name: a} -> a end)
         required_transitively = require_transitively(apps, requiring_apps)
 
-        if loaded_but_required != [] do
+        if Enum.any?(loaded_but_required) do
           Logger.warn(
             "You have specified a start type of :load for the following orphan applications:\n\n" <>
             Enum.join(Enum.map(loaded_but_required, fn a -> "        #{inspect(a)}" end), "\n") <>
