@@ -112,6 +112,7 @@ defmodule Mix.Tasks.Release do
     end
   rescue
     e ->
+      IO.inspect(e)
       Logger.error(
         "Release failed: #{Exception.message(e)}\n" <>
           Exception.format_stacktrace(System.stacktrace())
