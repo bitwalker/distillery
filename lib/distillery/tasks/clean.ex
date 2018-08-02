@@ -165,7 +165,8 @@ defmodule Mix.Tasks.Release.Clean do
       strict: [
         implode: :boolean,
         no_confirm: :boolean,
-        verbose: :boolean
+        verbose: :boolean,
+        silent: :boolean
       ]
     ]
 
@@ -184,6 +185,10 @@ defmodule Mix.Tasks.Release.Clean do
 
   defp parse_args([{:verbose, _} | rest], acc) do
     parse_args(rest, Map.put(acc, :verbosity, :verbose))
+  end
+
+  defp parse_args([{:silent, _} | rest], acc) do
+    parse_args(rest, Map.put(acc, :verbosity, :silent))
   end
 
   defp parse_args([{:implode, _} | rest], acc) do

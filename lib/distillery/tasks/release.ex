@@ -177,37 +177,39 @@ defmodule Mix.Tasks.Release do
 
     bin = Path.join([relative_output_dir, "bin", app])
 
-    Shell.writef("Release succesfully built!\n", :green)
+    unless Shell.verbosity() == :silent do
+      Shell.writef("Release succesfully built!\n", :green)
 
-    Shell.writef(
-      "To start the release you have built, you can use one of the following tasks:\n\n",
-      :green
-    )
+      Shell.writef(
+        "To start the release you have built, you can use one of the following tasks:\n\n",
+        :green
+      )
 
-    Shell.writef("    # start a shell, like 'iex -S mix'\n", :normal)
-    Shell.writef("    > #{bin} #{Shell.colorf("console", :white)}", :cyan)
-    Shell.write("\n\n")
-    Shell.writef("    # start in the foreground, like 'mix run --no-halt'\n", :normal)
-    Shell.writef("    > #{bin} #{Shell.colorf("foreground", :white)}", :cyan)
-    Shell.write("\n\n")
+      Shell.writef("    # start a shell, like 'iex -S mix'\n", :normal)
+      Shell.writef("    > #{bin} #{Shell.colorf("console", :white)}", :cyan)
+      Shell.write("\n\n")
+      Shell.writef("    # start in the foreground, like 'mix run --no-halt'\n", :normal)
+      Shell.writef("    > #{bin} #{Shell.colorf("foreground", :white)}", :cyan)
+      Shell.write("\n\n")
 
-    Shell.writef(
-      "    # start in the background, must be stopped with the 'stop' command\n",
-      :normal
-    )
+      Shell.writef(
+        "    # start in the background, must be stopped with the 'stop' command\n",
+        :normal
+      )
 
-    Shell.writef("    > #{bin} #{Shell.colorf("start", :white)}", :cyan)
-    Shell.write("\n\n")
-    Shell.writef("If you started a release elsewhere, and wish to connect to it:\n\n", :green)
-    Shell.writef("    # connects a local shell to the running node\n", :normal)
-    Shell.writef("    > #{bin} #{Shell.colorf("remote_console", :white)}", :cyan)
-    Shell.write("\n\n")
-    Shell.writef("    # connects directly to the running node's console\n", :normal)
-    Shell.writef("    > #{bin} #{Shell.colorf("attach", :white)}", :cyan)
-    Shell.write("\n\n")
-    Shell.writef("For a complete listing of commands and their use:\n\n", :green)
-    Shell.writef("    > #{bin} #{Shell.colorf("help", :white)}", :cyan)
-    Shell.write("\n")
+      Shell.writef("    > #{bin} #{Shell.colorf("start", :white)}", :cyan)
+      Shell.write("\n\n")
+      Shell.writef("If you started a release elsewhere, and wish to connect to it:\n\n", :green)
+      Shell.writef("    # connects a local shell to the running node\n", :normal)
+      Shell.writef("    > #{bin} #{Shell.colorf("remote_console", :white)}", :cyan)
+      Shell.write("\n\n")
+      Shell.writef("    # connects directly to the running node's console\n", :normal)
+      Shell.writef("    > #{bin} #{Shell.colorf("attach", :white)}", :cyan)
+      Shell.write("\n\n")
+      Shell.writef("For a complete listing of commands and their use:\n\n", :green)
+      Shell.writef("    > #{bin} #{Shell.colorf("help", :white)}", :cyan)
+      Shell.write("\n")
+    end
   end
 
   @doc false

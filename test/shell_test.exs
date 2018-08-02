@@ -63,7 +63,7 @@ defmodule Distillery.Test.ShellTest do
   end
 
   describe "silent mode" do
-    test "non errors should be supressed" do
+    test "all output should be supressed" do
       Shell.configure(:silent)
 
       assert capture_io(fn ->
@@ -89,14 +89,10 @@ defmodule Distillery.Test.ShellTest do
       assert capture_io(fn ->
                Shell.notice("notice message")
              end) == ""
-    end
-
-    test "errors should be logged" do
-      Shell.configure(:silent)
 
       assert capture_io(fn ->
                Shell.error("error message")
-             end) == "#{IO.ANSI.red()}==> error message\n#{IO.ANSI.reset()}"
+             end) == ""
     end
   end
 

@@ -17,6 +17,10 @@ defmodule Mix.Releases.Shell.Macros do
 
   defmacro __before_compile__(_env) do
     quote do
+      @doc "Returns the current verbosity setting"
+      def verbosity(), 
+        do: Application.get_env(:mix, :release_logger_verbosity, :normal)
+
       @doc "Print a message formatted with the default formatting for the given log level"
       def levelf(level, message) do
         # Applies level-specific formatting generically, taking verbosity into account
@@ -31,8 +35,7 @@ defmodule Mix.Releases.Shell.Macros do
 
       # Filter a message by log level and verbosity, returning iodata to write
       defp verbosityf(level, message) do
-        verbosity = Application.get_env(:mix, :release_logger_verbosity, :normal)
-        vlevel = verbosity_to_level(verbosity)
+        vlevel = verbosity_to_level(verbosity())
 
         if gte(level, vlevel) do
           message
@@ -49,11 +52,10 @@ defmodule Mix.Releases.Shell.Macros do
                      Map.get(@levels, :notice),
                      Map.fetch!(@inverted_levels, 3)
                    )
-      @silent_level elem(Enum.max_by(@levels, fn {_, v} -> v end), 0)
       defp verbosity_to_level(:verbose), do: @verbose_level
       defp verbosity_to_level(:normal), do: @normal_level
       defp verbosity_to_level(:quiet), do: @quiet_level
-      defp verbosity_to_level(:silent), do: @silent_level
+      defp verbosity_to_level(:silent), do: :suppress_all
 
       # Map log levels to a default prefix
       defp level_to_prefix(level) do
@@ -66,9 +68,10 @@ defmodule Mix.Releases.Shell.Macros do
       end
 
       # Compare log levels
-      defp gte(a, b) do
-        Map.get(@levels, a) >= Map.get(@levels, b)
-      end
+      defp gte(a, :suppress_all), 
+        do: false
+      defp gte(a, b),
+        do: Map.get(@levels, a) >= Map.get(@levels, b)
     end
   end
 
