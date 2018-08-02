@@ -72,13 +72,26 @@ defmodule Mix.Releases.Config do
             environments =
               base_config.environments
               |> Enum.map(fn {name, %{profile: profile} = e} ->
+                executable_opts = get_opt(opts, :exec_opts, transient: false)
+
+                executable =
+                  case get_opt(opts, :executable, profile.executable) do
+                    false ->
+                      Keyword.put(executable_opts, :enabled, false)
+
+                    true ->
+                      Keyword.put(executable_opts, :enabled, true)
+
+                    opts when is_list(opts) ->
+                      Keyword.merge(executable_opts, opts)
+                  end
+
                 profile =
                   profile
                   |> Map.put(:dev_mode, get_opt(opts, :dev_mode, profile.dev_mode))
-                  |> Map.put(:executable, get_opt(opts, :executable, profile.executable))
+                  |> Map.put(:executable, executable)
                   |> Map.put(:erl_opts, get_opt(opts, :erl_opts, profile.erl_opts))
                   |> Map.put(:run_erl_env, get_opt(opts, :run_erl_env, profile.run_erl_env))
-                  |> Map.put(:exec_opts, Map.new(get_opt(opts, :exec_opts, profile.exec_opts)))
 
                 {name, %{e | :profile => profile}}
               end)
@@ -143,7 +156,6 @@ defmodule Mix.Releases.Config do
       release :myapp do
         set version: "0.1.0",
         set applications: [:other_app]
-        set code_paths: ["/some/code/path"]
       end
 
   """
@@ -433,18 +445,10 @@ defmodule Mix.Releases.Config do
                 }"
       end
 
-      paths_valid? = is_nil(profile.code_paths) || Enum.all?(profile.code_paths, &is_binary/1)
-
       cond do
         not is_nil(profile.dev_mode) and not is_boolean(profile.dev_mode) ->
           raise ArgumentError,
                 "expected :dev_mode to be a boolean, but got: #{inspect(profile.dev_mode)}"
-
-        not paths_valid? ->
-          raise ArgumentError,
-                "expected :code_paths to be a list of strings, but got: #{
-                  inspect(profile.code_paths)
-                }"
 
         not is_nil(profile.vm_args) and not is_binary(profile.vm_args) ->
           raise ArgumentError,

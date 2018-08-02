@@ -32,10 +32,9 @@ defmodule Mix.Releases.Release do
             upgrade_from: :latest,
             resolved_overlays: [],
             profile: %Profile{
-              code_paths: [],
               erl_opts: "",
               run_erl_env: "",
-              exec_opts: [transient: false],
+              executable: [enabled: false, transient: false],
               dev_mode: false,
               include_erts: true,
               include_src: false,
@@ -190,14 +189,16 @@ defmodule Mix.Releases.Release do
   Get the path to which the release tarball will be output
   """
   @spec archive_path(t) :: String.t()
-  def archive_path(%__MODULE__{profile: p} = r) do
-    cond do
-      p.executable ->
-        Path.join([bin_path(r), "#{r.name}.run"])
-
-      :else ->
-        Path.join([version_path(r), "#{r.name}.tar.gz"])
+  def archive_path(%__MODULE__{profile: %Profile{executable: e} = p} = r) when is_list(e) do
+    if Keyword.get(e, :enabled, false) do
+      Path.join([bin_path(r), "#{r.name}.run"])
+    else
+      archive_path(%__MODULE__{profile: %{p | executable: false}})
     end
+  end
+
+  def archive_path(%__MODULE__{profile: %Profile{executable: false}} = r) do
+    Path.join([version_path(r), "#{r.name}.tar.gz"])
   end
 
   # Returns the environment that the provided Config has selected

@@ -130,7 +130,8 @@ defmodule Mix.Releases.Overlays do
          do: {:ok, to}
   end
 
-  defp do_overlay(_output_dir, invalid, _), do: {:error, {:invalid_overlay, invalid}}
+  defp do_overlay(_output_dir, invalid, _),
+    do: {:error, {:invalid_overlay, invalid}}
 
   def template_str(str, overlay_vars) do
     {:ok, EEx.eval_string(str, overlay_vars)}

@@ -4,7 +4,7 @@ unset CDPATH
 # The name of the release being extracted
 __EXEC_REL_NAME="<%= release_name %>"
 # Determines if this script should clean up after execution
-__EXEC_CLEANUP_AFTER="<%= exec_options.transient %>"
+__EXEC_CLEANUP_AFTER="<%= executable_options[:transient] %>"
 # The directory to which the release contents will be extracted
 if [ -z "$RELEASE_MUTABLE_DIR" ]; then
     __EXEC_TARGET_DIR="./tmp"

@@ -36,7 +36,7 @@ defmodule Mix.Releases.Archiver do
                  Utils.template(
                    :executable,
                    release_name: release.name,
-                   exec_options: release.profile.exec_opts
+                   executable_options: release.profile.executable
                  ),
                executable = <<header::binary, tar::binary>>,
                :ok <- File.write(binfile, executable),

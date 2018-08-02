@@ -112,18 +112,17 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Copies a specific application to the output directory
-  defp copy_app(
-         app,
-         %Release{
-           profile: %Profile{
-             dev_mode: dev_mode?,
-             executable: executable?,
-             include_src: include_src?,
-             include_erts: include_erts?
-           }
-         } = rel
-       ) do
-    dev_mode? = if(executable?, do: false, else: dev_mode?)
+  defp copy_app(app, %Release{} = rel) do
+    include_src? = rel.profile.include_src
+    include_erts? = rel.profile.include_erts
+
+    dev_mode? =
+      if Release.executable?(rel) do
+        false
+      else
+        rel.profile.dev_mode
+      end
+
     app_name = app.name
     app_version = app.vsn
     app_dir = app.path

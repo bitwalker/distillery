@@ -128,10 +128,6 @@ defmodule Mix.Tasks.Release do
 
   defp do_release(config, archive?: true) do
     case Assembler.assemble(config) do
-      {:ok, %Release{name: name, profile: %Profile{dev_mode: true, executable: false}} = release} ->
-        Logger.warn("You have set dev_mode to true, skipping archival phase")
-        print_success(release, name)
-
       {:ok, %Release{name: name} = release} ->
         if release.profile.dev_mode and not Release.executable?(release) do
           Shell.warn("You have set dev_mode to true, skipping archival phase")
@@ -250,9 +246,8 @@ defmodule Mix.Tasks.Release do
       verbosity: :normal,
       selected_release: :default,
       selected_environment: :default,
-      executable: false,
+      executable: [enabled: false, transient: false],
       is_upgrade: false,
-      exec_opts: [transient: false],
       no_tar: false,
       upgrade_from: :latest
     }
@@ -315,14 +310,19 @@ defmodule Mix.Tasks.Release do
     Shell.fail!("You cannot combine --executable with --upgrade")
   end
 
-  defp do_parse_args([{:executable, _} | rest], acc) do
+  defp do_parse_args([{:executable, val} | rest], acc) do
     case :os.type() do
-      {:win32, _} ->
-        Logger.error("--executable is not supported on Windows")
-        System.halt(1)
+      {:win32, _} when val == true ->
+        Shell.fail!("--executable is not supported on Windows")
 
       _ ->
-        do_parse_args(rest, Map.put(acc, :executable, true))
+        case Map.get(acc, :executable) do
+          nil ->
+            do_parse_args(rest, Map.put(acc, :executable, enabled: val, transient: false))
+
+          opts when is_list(opts) ->
+            do_parse_args(rest, Map.put(acc, :executable, Keyword.put(opts, :enabled, val)))
+        end
     end
   end
 
@@ -339,12 +339,16 @@ defmodule Mix.Tasks.Release do
     do_parse_args(rest, acc)
   end
 
-  defp do_parse_args([{:transient, _} | rest], acc) do
-    exec_opts =
-      acc
-      |> Map.get(:exec_opts, [])
-      |> Keyword.put(:transient, true)
+  defp do_parse_args([{:transient, val} | rest], acc) do
+    executable =
+      case Map.get(acc, :executable) do
+        e when e in [nil, false] ->
+          [enabled: false, transient: val]
 
-    do_parse_args(rest, Map.put(acc, :exec_opts, exec_opts))
+        e when is_list(e) ->
+          Keyword.put(e, :transient, val)
+      end
+
+    do_parse_args(rest, Map.put(acc, :executable, executable))
   end
 end

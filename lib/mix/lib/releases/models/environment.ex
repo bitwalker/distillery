@@ -15,8 +15,6 @@ defmodule Mix.Releases.Environment do
   @doc """
   Creates a new Environment with the given name
   """
-  @spec new(atom()) :: __MODULE__.t()
-  def new(name) do
-    %__MODULE__{name: name}
-  end
+  @spec new(atom()) :: t()
+  def new(name), do: %__MODULE__{name: name}
 end
