@@ -27,7 +27,7 @@ defmodule Distillery.Test.ConfigTest do
                      :iex,
                      :sasl,
                      :runtime_tools,
-                     {:mix, :load},
+                     :mix,
                      :distillery,
                    ]
                  }
