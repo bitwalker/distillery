@@ -200,7 +200,7 @@ defmodule Mix.Releases.Config do
           raise "cannot load plugin #{unquote(name)}, no such module could be found"
 
         _ ->
-          :ok
+          :code.ensure_modules_loaded([name])
       end
 
       conf = var!(config, Mix.Releases.Config)
