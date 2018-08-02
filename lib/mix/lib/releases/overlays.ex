@@ -4,9 +4,10 @@ defmodule Mix.Releases.Overlays do
   Overlays are templated with EEx, with bindings set to the values configured in `overlay_vars`.
 
   There are some preconfigured overlay variables, namely:
-    - `erts_vsn`: The version of ERTS used by this release
-    - `release_name`: The name of the current release
-    - `release_version`: The version of the current release
+
+    * `:erts_vsn`        - The version of ERTS used by this release
+    * `:release_name`    - The name of the current release
+    * `:release_version` - The version of the current release
 
   For example, given a release named `my_release`, version `0.1.0`:
 
@@ -35,10 +36,11 @@ defmodule Mix.Releases.Overlays do
   Returns `{:ok, output_paths}` or `{:error, details}`, where `details` is
   one of the following:
 
-    - {:invalid_overlay, term} - a malformed overlay object
-    - {:template_str, desc} - templating an overlay parameter failed
-    - {:template_file, file, line, desc} - a template overlay failed
-    - {:overlay_failed, term, overlay} - applying an overlay failed
+    * `{:invalid_overlay, term}`           - a malformed overlay object
+    * `{:template_str, desc}`              - templating an overlay parameter failed
+    * `{:template_file, file, line, desc}` - a template overlay failed
+    * `{:overlay_failed, term, overlay}`   - applying an overlay failed
+
   """
   @spec apply(String.t(), list(overlay), Keyword.t()) :: {:ok, [String.t()]} | error
   def apply(_ouput_dir, [], _overlay_vars), do: {:ok, []}
