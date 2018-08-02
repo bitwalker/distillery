@@ -3,17 +3,39 @@
 set -o posix
 set -e
 
-code_paths() {
+__rel_apps() {
     __rel="$RELEASE_ROOT_DIR/releases/$REL_VSN/$REL_NAME.rel"
-    grep -E '[{][A-Za-z_]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"(,[a-z]*)?[}]' "$__rel" \
-        | grep -v "erts" \
+    grep -E '[{][A-Za-z_0-9]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"(,[a-z]*)?[}]' "$__rel" \
+        | grep -v "{erts," \
         | sed -e's/"[^"]*$//' \
               -e's/^[^a-z]*//' \
               -e's/,/-/' \
-              -e's/"//' \
-              -e"s|^|$RELEASE_ROOT_DIR/lib/|" \
-              -e's|$|/ebin|' \
-        | tr '\n' ' '
+              -e's/"//'
+}
+
+code_paths() {
+    result=""
+    apps="$(__rel_apps)"
+    for app in $apps; do
+        if [ -d "$ERTS_LIB_DIR/$app" ]; then
+            if [ -z "$result" ]; then
+                result="$ERTS_LIB_DIR/$app/ebin"
+            else
+                result="$result $ERTS_LIB_DIR/$app/ebin"
+            fi
+        else
+            if [ -d "$RELEASE_ROOT_DIR/lib/$app" ]; then
+                if [ -z "$result" ]; then
+                    result="$RELEASE_ROOT_DIR/lib/$app/ebin"
+                else
+                    result="$result $RELEASE_ROOT_DIR/lib/$app/ebin"
+                fi
+            else
+                fail "Could not locate code path for $app!"
+            fi
+        fi
+    done
+    echo "$result"
 }
 
 # Echoes the path to the current ERTS binaries, e.g. erl
