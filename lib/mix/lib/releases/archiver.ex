@@ -4,7 +4,7 @@ defmodule Mix.Releases.Archiver do
   """
   alias Mix.Releases.Release
   alias Mix.Releases.Utils
-  alias Mix.Releases.Logger
+  alias Mix.Releases.Shell
   alias Mix.Releases.Plugin
   alias Mix.Releases.Archiver.Archive
   alias Mix.Releases.Config.Provider
@@ -18,15 +18,15 @@ defmodule Mix.Releases.Archiver do
   """
   @spec archive(Release.t()) :: {:ok, String.t()} | {:error, term}
   def archive(%Release{} = release) do
-    Logger.debug("Archiving #{release.name}-#{release.version}")
+    Shell.debug("Archiving #{release.name}-#{release.version}")
 
     with {:ok, release} <- Plugin.before_package(release),
          :ok <- make_tar(release),
          {:ok, tarfile} <- update_tar(release),
          {:ok, _} <- Plugin.after_package(release) do
       cond do
-        release.profile.executable ->
-          Logger.debug("Generating executable..")
+        Release.executable?(release) ->
+          Shell.debug("Generating executable..")
           tarfile = List.to_string(tarfile)
           binfile = Release.archive_path(release)
 
@@ -87,7 +87,7 @@ defmodule Mix.Releases.Archiver do
     ]
 
     rel_path = '#{String.trim_trailing(archive_path, ".tar.gz")}'
-    Logger.debug("Writing archive to #{rel_path}.tar.gz")
+    Shell.debug("Writing archive to #{rel_path}.tar.gz")
 
     case :systools.make_tar(rel_path, opts) do
       :ok ->
@@ -110,7 +110,7 @@ defmodule Mix.Releases.Archiver do
   # Applies overlays and adds extra files to release tarball and recreates it
   defp update_tar(%Release{name: name, version: version} = release) do
     output_dir = release.profile.output_dir
-    Logger.debug("Updating archive..")
+    Shell.debug("Updating archive..")
 
     initial_tar_path = Path.join([output_dir, "releases", version, "#{name}.tar.gz"])
 
@@ -218,7 +218,7 @@ defmodule Mix.Releases.Archiver do
   end
 
   defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: false}}, tmpdir) do
-    Logger.debug("Stripping system libs from release archive since ERTS is not included")
+    Shell.debug("Stripping system libs from release archive since ERTS is not included")
 
     # The set of all libs required for this release
     lib_path = Path.join([tmpdir, "lib", "*"])
@@ -249,22 +249,22 @@ defmodule Mix.Releases.Archiver do
   end
 
   defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: true}}, tmpdir) do
-    Logger.debug("Including system libs from current Erlang installation")
+    Shell.debug("Including system libs from current Erlang installation")
     Archive.add(archive, Path.join(tmpdir, "lib"), "lib")
   end
 
   defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: path}}, _tmpdir) do
-    Logger.debug("Including system libs from #{Path.relative_to_cwd(path)}")
+    Shell.debug("Including system libs from #{Path.relative_to_cwd(path)}")
     Archive.add(archive, Path.join(Path.expand(path), "lib"), "lib")
   end
 
   defp save_archive(%Release{version: version, profile: %{output_dir: output_dir}}, archive) do
-    Logger.debug("Saving archive..")
+    Shell.debug("Saving archive..")
     target_dir = Path.join([output_dir, "releases", version])
 
     case Archive.save(archive, target_dir) do
       {:ok, _archive_path} = result ->
-        Logger.debug("Archive saved!")
+        Shell.debug("Archive saved!")
         result
 
       {:error, reason} ->
@@ -284,14 +284,14 @@ defmodule Mix.Releases.Archiver do
 
     cond do
       not upgrade? and strip_debug_info? and not dev_mode? ->
-        Logger.warn(
+        Shell.warn(
           "You have strip_debug_info set to true.\n" <>
             "    Please be aware that if you plan on performing hot upgrades later,\n" <>
             "    this setting will prevent you from doing so without a rolling restart.\n" <>
             "    You may ignore this warning if you have no plans to use hot upgrades."
         )
 
-        Logger.debug("Stripping release (#{path})")
+        Shell.debug("Stripping release (#{path})")
 
         case :beam_lib.strip_release(String.to_charlist(path)) do
           {:ok, _} ->
@@ -302,7 +302,7 @@ defmodule Mix.Releases.Archiver do
         end
 
       upgrade? and strip_debug_info? and not dev_mode? ->
-        Logger.warn(
+        Shell.warn(
           "You have strip_debug_info set in your release configuration,\n" <>
             "    and you are performing an upgrade. This release will not be stripped,\n" <>
             "    however if you built your previous release with stripped debug information\n" <>
@@ -314,7 +314,7 @@ defmodule Mix.Releases.Archiver do
         :ok
 
       strip_debug_info? and dev_mode? ->
-        Logger.warn(
+        Shell.warn(
           "You have strip_debug_info set while dev_mode is true,\n" <>
             "    this release will not be stripped, because it would result in\n" <>
             "    the symlinked BEAM files from Erlang/Elixir to be stripped as well"

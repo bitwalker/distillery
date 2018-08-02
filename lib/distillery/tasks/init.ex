@@ -32,7 +32,9 @@ defmodule Mix.Tasks.Release.Init do
   """
   @shortdoc "initialize a new release configuration"
   use Mix.Task
-  alias Mix.Releases.{Utils, Logger}
+
+  alias Mix.Releases.Utils
+  alias Mix.Releases.Shell
 
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do
@@ -41,7 +43,7 @@ defmodule Mix.Tasks.Release.Init do
     # make sure we're compiled too
     Mix.Task.run("compile", [])
 
-    Logger.configure(:debug)
+    Shell.configure(:debug)
 
     opts = parse_args(args)
 
@@ -82,7 +84,7 @@ defmodule Mix.Tasks.Release.Init do
     )
   rescue
     e in [File.Error] ->
-      Logger.error("Initialization failed:\n    #{Exception.message(e)}")
+      Shell.error("Initialization failed:\n    #{Exception.message(e)}")
       System.halt(1)
   end
 

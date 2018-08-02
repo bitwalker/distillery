@@ -5,7 +5,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
   use Mix.Releases.Config.Provider
 
-  alias Mix.Releases.Logger
+  alias Mix.Releases.Shell
 
   @impl Provider
   def init([path]) do
@@ -172,7 +172,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
     line = Keyword.get(env, :line, "N/A")
     file_path = Path.relative_to_cwd(file)
 
-    Logger.warn(
+    Shell.warn(
       "Found config setting for :kernel application in Mix config!\n" <>
         "    File: #{file_path}\n" <>
         "    Line: #{line}\n" <>

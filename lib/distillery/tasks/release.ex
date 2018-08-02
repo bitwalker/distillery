@@ -68,14 +68,20 @@ defmodule Mix.Tasks.Release do
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
-  alias Mix.Releases.{Config, Release, Profile, Logger, Assembler, Archiver, Errors}
+
+  alias Mix.Releases.Config
+  alias Mix.Releases.Release
+  alias Mix.Releases.Shell
+  alias Mix.Releases.Assembler
+  alias Mix.Releases.Archiver
+  alias Mix.Releases.Errors
 
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do
     # Parse options
     opts = parse_args(args)
     verbosity = Keyword.get(opts, :verbosity)
-    Logger.configure(verbosity)
+    Shell.configure(verbosity)
 
     # make sure we've compiled latest
     Mix.Task.run("compile", [])
@@ -83,20 +89,20 @@ defmodule Mix.Tasks.Release do
     Mix.Task.run("loadpaths", [])
 
     # load release configuration
-    Logger.debug("Loading configuration..")
+    Shell.debug("Loading configuration..")
 
     case Config.get(opts) do
       {:error, {:config, :not_found}} ->
-        Logger.error("You are missing a release config file. Run the release.init task first")
+        Shell.error("You are missing a release config file. Run the release.init task first")
         System.halt(1)
 
       {:error, {:config, reason}} ->
-        Logger.error("Failed to load config:\n    #{reason}")
+        Shell.error("Failed to load config:\n    #{reason}")
         System.halt(1)
 
       {:ok, config} ->
         archive? = not Keyword.get(opts, :no_tar, false)
-        Logger.info("Assembling release..")
+        Shell.info("Assembling release..")
         do_release(config, archive?: archive?)
     end
   end
@@ -107,12 +113,12 @@ defmodule Mix.Tasks.Release do
         print_success(release, name)
 
       {:error, _} = err ->
-        Logger.error(Errors.format_error(err))
+        Shell.error(Errors.format_error(err))
         System.halt(1)
     end
   rescue
     e ->
-      Logger.error(
+      Shell.error(
         "Release failed: #{Exception.message(e)}\n" <>
           Exception.format_stacktrace(System.stacktrace())
       )
@@ -127,24 +133,29 @@ defmodule Mix.Tasks.Release do
         print_success(release, name)
 
       {:ok, %Release{name: name} = release} ->
-        Logger.info("Packaging release..")
+        if release.profile.dev_mode and not Release.executable?(release) do
+          Shell.warn("You have set dev_mode to true, skipping archival phase")
+          print_success(release, name)
+        else
+          Shell.info("Packaging release..")
 
-        case Archiver.archive(release) do
-          {:ok, _archive_path} ->
-            print_success(release, name)
+          case Archiver.archive(release) do
+            {:ok, _archive_path} ->
+              print_success(release, name)
 
-          {:error, _} = err ->
-            Logger.error(Errors.format_error(err))
-            System.halt(1)
+            {:error, _} = err ->
+              Shell.error(Errors.format_error(err))
+              System.halt(1)
+          end
         end
 
       {:error, _} = err ->
-        Logger.error(Errors.format_error(err))
+        Shell.error(Errors.format_error(err))
         System.halt(1)
     end
   rescue
     e ->
-      Logger.error(
+      Shell.error(
         "Release failed: #{Exception.message(e)}\n" <>
           Exception.format_stacktrace(System.stacktrace())
       )
@@ -153,67 +164,54 @@ defmodule Mix.Tasks.Release do
   end
 
   @spec print_success(Release.t(), atom) :: :ok
-  defp print_success(%{profile: %{output_dir: output_dir, executable: executable?}}, app) do
+  defp print_success(%{profile: %{output_dir: output_dir}} = release, app) do
     relative_output_dir = Path.relative_to_cwd(output_dir)
 
     app =
-      if executable? do
-        "#{app}.run"
-      else
-        case :os.type() do
-          {:win32, _} -> "#{app}.bat"
-          {:unix, _} -> "#{app}"
-        end
+      cond do
+        Release.executable?(release) ->
+          "#{app}.run"
+
+        :else ->
+          case :os.type() do
+            {:win32, _} -> "#{app}.bat"
+            {:unix, _} -> "#{app}"
+          end
       end
 
     bin = Path.join([relative_output_dir, "bin", app])
 
-    Logger.success("Release succesfully built!\n")
+    Shell.writef("Release succesfully built!\n", :green)
 
-    IO.puts("""
-    #{
-      Logger.colorize(
-        "To start the release you have built, you can use one of the following tasks:",
-        IO.ANSI.green()
-      )
-    }
+    Shell.writef(
+      "To start the release you have built, you can use one of the following tasks:\n\n",
+      :green
+    )
 
-        # start a shell, like 'iex -S mix'
-        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
-      Logger.colorize("console", IO.ANSI.white())
-    }
+    Shell.writef("    # start a shell, like 'iex -S mix'\n", :normal)
+    Shell.writef("    > #{bin} #{Shell.colorf("console", :white)}", :cyan)
+    Shell.write("\n\n")
+    Shell.writef("    # start in the foreground, like 'mix run --no-halt'\n", :normal)
+    Shell.writef("    > #{bin} #{Shell.colorf("foreground", :white)}", :cyan)
+    Shell.write("\n\n")
 
-        # start in the foreground, like 'mix run --no-halt'
-        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
-      Logger.colorize("foreground", IO.ANSI.white())
-    }
+    Shell.writef(
+      "    # start in the background, must be stopped with the 'stop' command\n",
+      :normal
+    )
 
-        # start in the background, must be stopped with the 'stop' command
-        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
-      Logger.colorize("start", IO.ANSI.white())
-    }
-
-    #{
-      Logger.colorize(
-        "If you started a release elsewhere, and wish to connect to it:",
-        IO.ANSI.green()
-      )
-    }
-
-        # connects a local shell to the running node
-        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
-      Logger.colorize("remote_console", IO.ANSI.white())
-    }
-
-        # connects directly to the running node's shell
-        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{
-      Logger.colorize("attach", IO.ANSI.white())
-    }
-
-    #{Logger.colorize("For a complete listing of commands and their use:", IO.ANSI.green())}
-
-        #{Logger.colorize("> #{bin} ", IO.ANSI.cyan())}#{Logger.colorize("help", IO.ANSI.white())}
-    """)
+    Shell.writef("    > #{bin} #{Shell.colorf("start", :white)}", :cyan)
+    Shell.write("\n\n")
+    Shell.writef("If you started a release elsewhere, and wish to connect to it:\n\n", :green)
+    Shell.writef("    # connects a local shell to the running node\n", :normal)
+    Shell.writef("    > #{bin} #{Shell.colorf("remote_console", :white)}", :cyan)
+    Shell.write("\n\n")
+    Shell.writef("    # connects directly to the running node's console\n", :normal)
+    Shell.writef("    > #{bin} #{Shell.colorf("attach", :white)}", :cyan)
+    Shell.write("\n\n")
+    Shell.writef("For a complete listing of commands and their use:\n\n", :green)
+    Shell.writef("    > #{bin} #{Shell.colorf("help", :white)}", :cyan)
+    Shell.write("\n")
   end
 
   @doc false
@@ -287,8 +285,7 @@ defmodule Mix.Tasks.Release do
         do_parse_args(rest, new_acc)
 
       other ->
-        Logger.error("invalid profile name `#{other}`, must be `name:env`")
-        System.halt(1)
+        Shell.fail!("invalid profile name `#{other}`, must be `name:env`")
     end
   end
 
@@ -315,8 +312,7 @@ defmodule Mix.Tasks.Release do
   end
 
   defp do_parse_args([{:executable, _} | _rest], %{is_upgrade: true}) do
-    Logger.error("You cannot combine --executable with --upgrade")
-    System.halt(1)
+    Shell.fail!("You cannot combine --executable with --upgrade")
   end
 
   defp do_parse_args([{:executable, _} | rest], acc) do
@@ -331,8 +327,7 @@ defmodule Mix.Tasks.Release do
   end
 
   defp do_parse_args([{:upgrade, _} | _rest], %{executable: true}) do
-    Logger.error("You cannot combine --executable with --upgrade")
-    System.halt(1)
+    Shell.fail!("You cannot combine --executable with --upgrade")
   end
 
   defp do_parse_args([{:upgrade, _} | rest], acc) do

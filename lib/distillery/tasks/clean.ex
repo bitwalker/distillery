@@ -19,14 +19,21 @@ defmodule Mix.Tasks.Release.Clean do
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
-  alias Mix.Releases.{Logger, App, Utils, Plugin, Release, Config, Profile, Errors}
+
+  alias Mix.Releases.Shell
+  alias Mix.Releases.App
+  alias Mix.Releases.Plugin
+  alias Mix.Releases.Release
+  alias Mix.Releases.Config
+  alias Mix.Releases.Profile
+  alias Mix.Releases.Errors
 
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do
     # Parse options
     opts = parse_args(args)
     verbosity = Keyword.get(opts, :verbosity)
-    Logger.configure(verbosity)
+    Shell.configure(verbosity)
     Application.put_env(:distillery, :no_warn_missing, true)
 
     Application.load(:distillery)
@@ -37,7 +44,7 @@ defmodule Mix.Tasks.Release.Clean do
     Mix.Task.run("compile", [])
 
     # load release configuration
-    Logger.debug("Loading configuration..")
+    Shell.debug("Loading configuration..")
     config_path = Path.join([File.cwd!(), "rel", "config.exs"])
 
     config =
@@ -50,12 +57,12 @@ defmodule Mix.Tasks.Release.Clean do
               file = Path.relative_to_cwd(e.file)
               message = Exception.message(e)
               message = String.replace(message, "nofile", file)
-              Logger.error("Failed to load config:\n    #{message}")
+              Shell.error("Failed to load config:\n    #{message}")
               System.halt(1)
           end
 
         false ->
-          Logger.error("You are missing a release config file. Run the release.init task first")
+          Shell.error("You are missing a release config file. Run the release.init task first")
           System.halt(1)
       end
 
@@ -80,7 +87,7 @@ defmodule Mix.Tasks.Release.Clean do
       {:error, _reason} = err ->
         err
         |> Errors.format_error()
-        |> Logger.error()
+        |> Shell.error()
 
         System.halt(1)
     end
@@ -88,18 +95,18 @@ defmodule Mix.Tasks.Release.Clean do
 
   @spec clean_all!(String.t()) :: :ok | no_return
   defp clean_all!(output_dir) do
-    Logger.info("Cleaning all releases..")
+    Shell.info("Cleaning all releases..")
 
     unless File.exists?(output_dir) do
-      Logger.warn("Release output directory not found! Nothing to do.")
+      Shell.warn("Release output directory not found! Nothing to do.")
       exit(:normal)
     end
 
     File.rm_rf!(output_dir)
-    Logger.success("Clean successful!")
+    Shell.success("Clean successful!")
   rescue
     e in [File.Error] ->
-      Logger.error(
+      Shell.error(
         "Unable to clean #{Path.relative_to_cwd(output_dir)}:\n\t#{Exception.message(e)}"
       )
 
@@ -109,14 +116,14 @@ defmodule Mix.Tasks.Release.Clean do
   @spec clean!(Mix.Releases.Config.t(), [String.t()]) :: :ok | no_return
   defp clean!(%Config{releases: releases}, args) do
     # load release configuration
-    Logger.info("Cleaning last release..")
+    Shell.info("Cleaning last release..")
     # clean release
     for {name, release} <- releases, File.exists?(release.profile.output_dir) do
-      Logger.notice("    Removing release #{name}:#{release.version}")
+      Shell.notice("    Removing release #{name}:#{release.version}")
       clean_release(release, args)
     end
 
-    Logger.success("Clean successful!")
+    Shell.success("Clean successful!")
   end
 
   @spec clean_release(Release.t(), [String.t()]) :: :ok | {:error, term}
@@ -148,7 +155,7 @@ defmodule Mix.Tasks.Release.Clean do
     File.rm_rf!(path)
   rescue
     e in [File.Error] ->
-      Logger.error("Unable to clean #{path}:\n    #{Exception.message(e)}")
+      Shell.error("Unable to clean #{path}:\n    #{Exception.message(e)}")
       System.halt(1)
   end
 
@@ -188,7 +195,7 @@ defmodule Mix.Tasks.Release.Clean do
   end
 
   defp confirm_implode? do
-    Distillery.IO.confirm("""
+    Mix.Releases.Shell.confirm?("""
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!
     Are you absolutely sure you want to proceed?
     """)

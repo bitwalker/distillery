@@ -4,8 +4,15 @@ defmodule Mix.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by `:systools` and `:release_handler`.
   """
-  alias Mix.Releases.{Config, Release, Environment, Profile}
-  alias Mix.Releases.{Utils, Logger, Appup, Plugin, Overlays}
+  alias Mix.Releases.Config
+  alias Mix.Releases.Release
+  alias Mix.Releases.Environment
+  alias Mix.Releases.Profile
+  alias Mix.Releases.Utils
+  alias Mix.Releases.Shell
+  alias Mix.Releases.Appup
+  alias Mix.Releases.Plugin
+  alias Mix.Releases.Overlays
   alias Mix.Releases.Config.Provider
 
   require Record
@@ -49,7 +56,7 @@ defmodule Mix.Releases.Assembler do
   # Applies the environment profile to the release profile.
   @spec apply_environment(Release.t(), Environment.t()) :: {:ok, Release.t()} | {:error, term}
   def apply_environment(%Release{} = r, %Environment{} = e) do
-    Logger.info("Building release #{r.name}:#{r.version} using environment #{e.name}")
+    Shell.info("Building release #{r.name}:#{r.version} using environment #{e.name}")
     Release.apply_environment(r, e)
   end
 
@@ -57,7 +64,7 @@ defmodule Mix.Releases.Assembler do
   def validate_configuration(%Release{} = release) do
     case Release.validate_configuration(release) do
       {:ok, warning} ->
-        Logger.notice(warning)
+        Shell.notice(warning)
         :ok
 
       other ->
@@ -67,7 +74,7 @@ defmodule Mix.Releases.Assembler do
 
   # Copies application beams to the output directory
   defp copy_applications(%Release{profile: %Profile{output_dir: output_dir}} = release) do
-    Logger.debug("Copying applications to #{output_dir}")
+    Shell.debug("Copying applications to #{output_dir}")
 
     Enum.each(release.applications, &copy_app(&1, release))
 
@@ -285,7 +292,7 @@ defmodule Mix.Releases.Assembler do
     rel_dir = Release.version_path(release)
     output_dir = release.profile.output_dir
 
-    Logger.debug("Generating relup for #{name}")
+    Shell.debug("Generating relup for #{name}")
 
     v1_rel = Path.join([output_dir, "releases", upfrom, "#{name}.rel"])
     v2_rel = Path.join(rel_dir, "#{name}.rel")
@@ -330,12 +337,12 @@ defmodule Mix.Releases.Assembler do
 
             case result do
               {:ok, relup, _mod, []} ->
-                Logger.info("Relup successfully created")
+                Shell.info("Relup successfully created")
                 Utils.write_term(Path.join(rel_dir, "relup"), relup)
 
               {:ok, relup, mod, warnings} ->
-                Logger.warn(format_systools_warning(mod, warnings))
-                Logger.info("Relup successfully created")
+                Shell.warn(format_systools_warning(mod, warnings))
+                Shell.info("Relup successfully created")
                 Utils.write_term(Path.join(rel_dir, "relup"), relup)
 
               {:error, mod, errors} ->
@@ -469,11 +476,11 @@ defmodule Mix.Releases.Assembler do
 
     cond do
       appup_exists? && appup_valid? ->
-        Logger.debug("#{app} requires an appup, and one was provided, skipping generation..")
+        Shell.debug("#{app} requires an appup, and one was provided, skipping generation..")
         generate_appups(release, apps, output_dir)
 
       appup_exists? ->
-        Logger.warn(
+        Shell.warn(
           "#{app} has an appup file, but it is invalid for this release,\n" <>
             "    Backing up appfile with .bak extension and generating new one.."
         )
@@ -486,12 +493,12 @@ defmodule Mix.Releases.Assembler do
 
           {:ok, appup} ->
             :ok = Utils.write_term(target_appup_path, appup)
-            Logger.info("Generated .appup for #{app} #{v1} -> #{v2}")
+            Shell.info("Generated .appup for #{app} #{v1} -> #{v2}")
             generate_appups(release, apps, output_dir)
         end
 
       :else ->
-        Logger.debug(
+        Shell.debug(
           "#{app} requires an appup, but it wasn't provided, one will be generated for you.."
         )
 
@@ -501,7 +508,7 @@ defmodule Mix.Releases.Assembler do
 
           {:ok, appup} ->
             :ok = Utils.write_term(target_appup_path, appup)
-            Logger.info("Generated .appup for #{app} #{v1} -> #{v2}")
+            Shell.info("Generated .appup for #{app} #{v1} -> #{v2}")
             generate_appups(release, apps, output_dir)
         end
     end
@@ -557,14 +564,14 @@ defmodule Mix.Releases.Assembler do
 
   # Generates start_erl.data
   defp generate_start_erl_data(%Release{profile: %{include_erts: false}} = rel) do
-    Logger.debug("Generating start_erl.data")
+    Shell.debug("Generating start_erl.data")
     version = rel.version
     contents = "ERTS_VSN #{version}"
     File.write(Path.join([Release.version_path(rel), "..", "start_erl.data"]), contents)
   end
 
   defp generate_start_erl_data(%Release{profile: %Profile{erts_version: erts}} = release) do
-    Logger.debug("Generating start_erl.data")
+    Shell.debug("Generating start_erl.data")
 
     contents = "#{erts} #{release.version}"
     File.write(Path.join([Release.version_path(release), "..", "start_erl.data"]), contents)
@@ -572,7 +579,7 @@ defmodule Mix.Releases.Assembler do
 
   # Generates vm.args
   defp generate_vm_args(%Release{profile: %Profile{vm_args: nil}} = rel) do
-    Logger.debug("Generating vm.args")
+    Shell.debug("Generating vm.args")
     rel_dir = Release.version_path(rel)
     overlay_vars = rel.profile.overlay_vars
 
@@ -589,7 +596,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp generate_vm_args(%Release{profile: %Profile{vm_args: path}} = rel) do
-    Logger.debug("Generating vm.args from #{Path.relative_to_cwd(path)}")
+    Shell.debug("Generating vm.args from #{Path.relative_to_cwd(path)}")
     rel_dir = Release.version_path(rel)
     overlay_vars = rel.profile.overlay_vars
 
@@ -618,7 +625,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp do_generate_config_exs(%Release{profile: %Profile{config: base_config_path}} = rel) do
-    Logger.debug("Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}")
+    Shell.debug("Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}")
 
     merged =
       base_config_path
@@ -653,7 +660,7 @@ defmodule Mix.Releases.Assembler do
     sys_config_path =
       case profile.sys_config do
         nil ->
-          Logger.debug("Generating sys.config from #{Path.relative_to_cwd(config_exs_path)}")
+          Shell.debug("Generating sys.config from #{Path.relative_to_cwd(config_exs_path)}")
           nil
 
         p when is_binary(p) ->
@@ -662,7 +669,7 @@ defmodule Mix.Releases.Assembler do
               relative_config_exs_path = Path.relative_to_cwd(config_exs_path)
               relative_p = Path.relative_to_cwd(p)
 
-              Logger.debug(
+              Shell.debug(
                 "Generating sys.config from #{relative_config_exs_path} and #{relative_p}"
               )
 
@@ -806,7 +813,7 @@ defmodule Mix.Releases.Assembler do
     erts_vsn = release.profile.erts_version
     erts_dir = Path.join([prefix, "erts-#{erts_vsn}"])
 
-    Logger.info("Including ERTS #{erts_vsn} from #{Path.relative_to_cwd(erts_dir)}")
+    Shell.info("Including ERTS #{erts_vsn} from #{Path.relative_to_cwd(erts_dir)}")
 
     erts_output_dir = Path.join(output_dir, "erts-#{erts_vsn}")
     erl_path = Path.join([erts_output_dir, "bin", "erl"])
@@ -830,7 +837,7 @@ defmodule Mix.Releases.Assembler do
 
   # Generates .boot script
   defp make_boot_script(%Release{profile: %Profile{output_dir: output_dir}} = release) do
-    Logger.debug("Generating boot script")
+    Shell.debug("Generating boot script")
 
     rel_dir = Release.version_path(release)
 
@@ -888,7 +895,7 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:make_boot_script, {:unknown, release_file}}}}
 
       {:ok, mod, warnings} ->
-        Logger.warn(format_systools_warning(mod, warnings))
+        Shell.warn(format_systools_warning(mod, warnings))
         :ok
 
       {:error, mod, errors} ->
@@ -946,7 +953,7 @@ defmodule Mix.Releases.Assembler do
 
   # Generates RELEASES
   defp create_RELEASES(output_dir, relfile) do
-    Logger.debug("Generating RELEASES")
+    Shell.debug("Generating RELEASES")
     # NOTE: The RELEASES file must contain the correct paths to all libs,
     # including ERTS libs. When include_erts: false, the ERTS path, and thus
     # the paths to all ERTS libs, are not known until runtime. That means the
@@ -969,7 +976,7 @@ defmodule Mix.Releases.Assembler do
 
   # Generates a named boot script (like 'start_clean')
   defp create_named_boot(name, rel_dir, output_dir, options) do
-    Logger.debug("Generating #{name}.boot")
+    Shell.debug("Generating #{name}.boot")
 
     case :systools.make_script('#{name}', options) do
       :ok ->
@@ -1004,7 +1011,7 @@ defmodule Mix.Releases.Assembler do
         end
 
       {:ok, mod, warnings} ->
-        Logger.warn(format_systools_warning(mod, warnings))
+        Shell.warn(format_systools_warning(mod, warnings))
         :ok
 
       {:error, mod, errors} ->
@@ -1014,7 +1021,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp apply_overlays(%Release{} = release) do
-    Logger.debug("Applying overlays")
+    Shell.debug("Applying overlays")
     overlay_vars = release.profile.overlay_vars
     hooks_dir = "releases/<%= release_version %>/hooks"
     libexec_source = Path.join("#{:code.priv_dir(:distillery)}", "libexec")
@@ -1091,7 +1098,7 @@ defmodule Mix.Releases.Assembler do
         output_dir: release.profile.output_dir
       ] ++ release.profile.overlay_vars
 
-    Logger.debug("Generated overlay vars:")
+    Shell.debug("Generated overlay vars:")
 
     inspected =
       vars
@@ -1102,7 +1109,7 @@ defmodule Mix.Releases.Assembler do
       |> Enum.reject(&is_nil/1)
       |> Enum.join("\n    ")
 
-    Logger.debug("    #{inspected}", :plain)
+    Shell.debugf("    #{inspected}\n")
     {:ok, %{release | :profile => %{release.profile | :overlay_vars => vars}}}
   end
 

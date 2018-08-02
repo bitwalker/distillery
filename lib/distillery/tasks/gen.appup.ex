@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Release.Gen.Appup do
 
   use Mix.Task
 
-  alias Mix.Releases.Logger
+  alias Mix.Releases.Shell
   alias Mix.Releases.Config
   alias Mix.Releases.Release
   alias Mix.Releases.Errors
@@ -39,7 +39,7 @@ defmodule Mix.Tasks.Release.Gen.Appup do
     secondary_opts = parse_args(args)
     opts = Keyword.merge(primary_opts, secondary_opts)
     verbosity = Keyword.get(opts, :verbosity)
-    Logger.configure(verbosity)
+    Shell.configure(verbosity)
 
     # make sure we've compiled latest
     Mix.Task.run("compile", [])
@@ -47,26 +47,26 @@ defmodule Mix.Tasks.Release.Gen.Appup do
     Mix.Task.run("loadpaths", [])
 
     # load release configuration
-    Logger.debug("Loading configuration..")
+    Shell.debug("Loading configuration..")
 
     case Config.get(opts) do
       {:error, {:config, :not_found}} ->
-        Logger.error("You are missing a release config file. Run the release.init task first")
+        Shell.error("You are missing a release config file. Run the release.init task first")
         System.halt(1)
 
       {:error, {:config, reason}} ->
-        Logger.error("Failed to load config:\n    #{reason}")
+        Shell.error("Failed to load config:\n    #{reason}")
         System.halt(1)
 
       {:ok, config} ->
         with {:ok, release} <- Assembler.pre_assemble(config),
              :ok <- do_gen_appup(release, opts) do
-          Logger.success(
+          Shell.success(
             "You can find your generated appups in rel/appups/<app>/ with the .appup extension"
           )
         else
           {:error, _} = err ->
-            Logger.error(Errors.format_error(err))
+            Shell.error(Errors.format_error(err))
             System.halt(1)
         end
     end
@@ -86,7 +86,7 @@ defmodule Mix.Tasks.Release.Gen.Appup do
         :ok
 
       {:error, _} ->
-        Logger.error("Unable to locate an app called '#{app}'")
+        Shell.error("Unable to locate an app called '#{app}'")
         System.halt(1)
     end
 
@@ -128,7 +128,7 @@ defmodule Mix.Tasks.Release.Gen.Appup do
       )
 
     if map_size(available_versions) == 0 do
-      Logger.error("No available upfrom versions for #{app}")
+      Shell.error("No available upfrom versions for #{app}")
       System.halt(1)
     end
 
@@ -140,7 +140,7 @@ defmodule Mix.Tasks.Release.Gen.Appup do
         version ->
           case Map.get(available_versions, version) do
             nil ->
-              Logger.error("Version #{version} of #{app} is not available!")
+              Shell.error("Version #{version} of #{app} is not available!")
               System.halt(1)
 
             {_, _} = av ->
@@ -153,7 +153,7 @@ defmodule Mix.Tasks.Release.Gen.Appup do
         err
 
       {:ok, appup} ->
-        Logger.info("Generated .appup for #{app} #{v1} -> #{v2}")
+        Shell.info("Generated .appup for #{app} #{v1} -> #{v2}")
         appup_path = Path.join(["rel", "appups", "#{app}", "#{v1}_to_#{v2}.appup"])
         File.mkdir_p!(Path.dirname(appup_path))
         :ok = Utils.write_term(appup_path, appup)
@@ -177,7 +177,7 @@ defmodule Mix.Tasks.Release.Gen.Appup do
   end
 
   defp parse_args([], %{app: nil}) do
-    Logger.error("This task requires --app=<app_name> to be passed")
+    Shell.error("This task requires --app=<app_name> to be passed")
     System.halt(1)
   end
 

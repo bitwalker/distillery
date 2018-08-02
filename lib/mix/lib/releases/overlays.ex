@@ -17,7 +17,7 @@ defmodule Mix.Releases.Overlays do
   relative to the project root, but overlay output paths are relative to the root directory for the current
   release, which is why the directory is created in `rel/my_release`, and not in the project root.
   """
-  alias Mix.Releases.Logger
+  alias Mix.Releases.Shell
 
   @typep overlay ::
            {:mkdir, String.t()}
@@ -76,7 +76,7 @@ defmodule Mix.Releases.Overlays do
   defp do_overlay(output_dir, {:mkdir, path}, vars) when is_binary(path) do
     with {:ok, path} <- template_str(path, vars),
          _ <-
-           Logger.debug(
+           Shell.debug(
              "Applying #{IO.ANSI.reset()}mkdir#{IO.ANSI.cyan()} overlay\n" <>
                "    dst: #{Path.relative_to_cwd(path)}"
            ),
@@ -89,7 +89,7 @@ defmodule Mix.Releases.Overlays do
     with {:ok, from} <- template_str(from, vars),
          {:ok, to} <- template_str(to, vars),
          _ <-
-           Logger.debug(
+           Shell.debug(
              "Applying #{IO.ANSI.reset()}copy#{IO.ANSI.cyan()} overlay\n" <>
                "    src: #{Path.relative_to_cwd(from)}\n" <>
                "    dst: #{Path.relative_to_cwd(to)}"
@@ -103,7 +103,7 @@ defmodule Mix.Releases.Overlays do
     with {:ok, from} <- template_str(from, vars),
          {:ok, to} <- template_str(to, vars),
          _ <-
-           Logger.debug(
+           Shell.debug(
              "Applying #{IO.ANSI.reset()}link#{IO.ANSI.cyan()} overlay\n" <>
                "    src: #{Path.relative_to_cwd(from)}\n" <>
                "    dst: #{Path.relative_to_cwd(to)}"
@@ -121,7 +121,7 @@ defmodule Mix.Releases.Overlays do
          {:ok, templated} <- template_file(tmpl_path, vars),
          expanded_to <- Path.join(output_dir, to),
          _ <-
-           Logger.debug(
+           Shell.debug(
              "Applying #{IO.ANSI.reset()}template#{IO.ANSI.cyan()} overlay\n" <>
                "    src: #{Path.relative_to_cwd(tmpl_path)}\n" <> "    dst: #{to}"
            ),

@@ -23,7 +23,7 @@ defmodule Mix.Releases.Plugin do
     - Your module is marked with `@behaviour Mix.Releases.Plugin`.
     - The `Mix.Releases.Release` struct is aliased to `%Release{}`.
     - The functions `debug/1`, `info/1`, `warn/1`, `notice/1`, and `error/1`
-      are imported from `Mix.Releases.Logger`. These should be used to present
+      are imported from `Mix.Releases.Shell`. These should be used to present
       output to the user.
 
   The first four callbacks (`c:before_assembly/2`, `c:after_assembly/2`,
@@ -113,8 +113,9 @@ defmodule Mix.Releases.Plugin do
   defmacro __using__(_opts) do
     quote do
       @behaviour Mix.Releases.Plugin
-      alias Mix.Releases.{Logger, Release}
-      import Mix.Releases.Logger, only: [debug: 1, info: 1, warn: 1, notice: 1, error: 1]
+      alias Mix.Releases.Shell
+      alias Mix.Releases.Release
+      import Mix.Releases.Shell, only: [debug: 1, info: 1, warn: 1, notice: 1, error: 1]
 
       Module.register_attribute(__MODULE__, :name, accumulate: false, persist: true)
       Module.register_attribute(__MODULE__, :moduledoc, accumulate: false, persist: true)

@@ -2,7 +2,13 @@ defmodule Mix.Releases.Release do
   @moduledoc """
   Represents metadata about a release
   """
-  alias Mix.Releases.{App, Profile, Overlays, Config, Utils, Environment, Logger}
+  alias Mix.Releases.App
+  alias Mix.Releases.Profile
+  alias Mix.Releases.Overlays
+  alias Mix.Releases.Config
+  alias Mix.Releases.Utils
+  alias Mix.Releases.Environment
+  alias Mix.Releases.Shell
 
   defstruct name: nil,
             version: "0.1.0",
@@ -136,6 +142,19 @@ defmodule Mix.Releases.Release do
       end
     }
   end
+
+  @doc """
+  Returns true if the release is executable
+  """
+  @spec executable?(t) :: boolean()
+  def executable?(%__MODULE__{profile: %Profile{executable: false}}),
+    do: false
+
+  def executable?(%__MODULE__{profile: %Profile{executable: true}}),
+    do: true
+
+  def executable?(%__MODULE__{profile: %Profile{executable: e}}),
+    do: Keyword.get(e, :enabled, false)
 
   @doc """
   Get the path to which release binaries will be output
@@ -350,7 +369,7 @@ defmodule Mix.Releases.Release do
     case upfrom do
       :no_upfrom ->
         if log? do
-          Logger.warn(
+          Shell.warn(
             "An upgrade was requested, but there are no " <>
               "releases to upgrade from, no upgrade will be performed."
           )
@@ -375,7 +394,7 @@ defmodule Mix.Releases.Release do
     current_version = release.version
 
     if log?,
-      do: Logger.debug("Upgrading #{name} from #{v} to #{current_version}")
+      do: Shell.debug("Upgrading #{name} from #{v} to #{current_version}")
 
     upfrom_path = Path.join([release.profile.output_dir, "releases", v])
 

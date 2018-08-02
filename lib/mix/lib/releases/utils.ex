@@ -1,6 +1,5 @@
 defmodule Mix.Releases.Utils do
   @moduledoc false
-  alias Mix.Releases.{Logger, Release, App}
 
   @doc """
   Loads a template from :distillery's `priv/templates` directory based on the provided name.
