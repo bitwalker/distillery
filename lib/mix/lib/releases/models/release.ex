@@ -16,7 +16,7 @@ defmodule Mix.Releases.Release do
               # required for some command tooling
               :runtime_tools,
               # required for config providers
-              {:mix, :load},
+              :mix,
               :distillery
               # can also use `app_name: type`, as in `some_dep: load`,
               # to only load the application, not start it
