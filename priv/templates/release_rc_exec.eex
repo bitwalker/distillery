@@ -11,7 +11,7 @@ RELEASES_DIR="$RELEASE_ROOT_DIR/releases"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
 REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "$RELEASES_DIR"/start_erl.data)}"
 ERTS_VSN="${ERTS_VSN:-$(cut -d' ' -f1 "$RELEASES_DIR"/start_erl.data)}"
-<%= if (not include_erts or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
+<%= if (include_erts == false or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
 # The location of consolidated protocol .beams
 CONSOLIDATED_DIR="$ROOT/lib/${REL_NAME}-${REL_VSN}/consolidated"
 
