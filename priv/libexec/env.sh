@@ -40,7 +40,6 @@ POST_UPGRADE_HOOKS="$REL_DIR/hooks/post_upgrade.d"
 # Exported environment variables
 export BINDIR="$ERTS_DIR/bin"
 export LD_LIBRARY_PATH="$ERTS_DIR/lib:$LD_LIBRARY_PATH"
-export ERTS_LIB_DIR="$ERTS_DIR/../lib"
 export EMU="beam"
 export PROGNAME="erl"
 

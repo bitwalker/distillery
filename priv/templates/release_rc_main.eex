@@ -29,7 +29,7 @@ export DISTILLERY_VSN
 
 # If readlink has no -f option, or greadlink is not available,
 # This function behaves like `readlink -f`
-readlink_f() {
+__bootstrap_readlink_f() {
     __target_file="$1"
     cd "$(dirname "$__target_file")"
     __target_file=$(basename "$__target_file")
@@ -55,7 +55,7 @@ if uname | grep -q 'Darwin'; then
     if command -v greadlink >/dev/null 2>&1; then
         SCRIPT="${SCRIPT:-$(greadlink -f "$0")}"
     else
-        SCRIPT="${SCRIPT:-$(readlink_f "$0")}"
+        SCRIPT="${SCRIPT:-$(__bootstrap_readlink_f "$0")}"
     fi
 else
     SCRIPT="${SCRIPT:-$(readlink -f "$0" )}"
@@ -71,6 +71,8 @@ RELEASE_ROOT_DIR="${RELEASE_ROOT_DIR:-$(dirname "$(dirname "${SCRIPT_DIR}")")}"
 # The location of builtin command scripts
 RELEASE_LIBEXEC_DIR="$SCRIPT_DIR/libexec"
 
+# shellcheck source=../libexec/readlink.sh
+. "$RELEASE_LIBEXEC_DIR/readlink.sh"
 # shellcheck source=../libexec/logger.sh
 . "$RELEASE_LIBEXEC_DIR/logger.sh"
 # shellcheck source=../libexec/erts.sh

@@ -217,7 +217,7 @@ if erl -eval 'io:format("ok~n", [])' -noshell -boot start_clean -s erlang halt 2
     export BINDIR
     BINDIR="$ERTS_DIR/bin"
     export ERTS_LIB_DIR
-    ERTS_LIB_DIR="$ERTS_DIR/../lib"
+    ERTS_LIB_DIR="$(readlink_f "$ERTS_DIR/../lib")"
     export EMU="beam"
     export PROGNAME="erl"
 else

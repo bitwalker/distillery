@@ -39,6 +39,8 @@ fi
 
 # Include helpers, if the current release version supports it
 if [ -d "$RELEASES_DIR/$REL_VSN/libexec" ]; then
+    # shellcheck source=../libexec/readlink.sh
+    . "$RELEASES_DIR/$REL_VSN/libexec/readlink.sh"
     # shellcheck source=../libexec/logger.sh
     . "$RELEASES_DIR/$REL_VSN/libexec/logger.sh"
     # shellcheck source=../libexec/erts.sh
