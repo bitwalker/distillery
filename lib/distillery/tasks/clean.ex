@@ -136,7 +136,7 @@ defmodule Mix.Tasks.Release.Clean do
 
     # Remove libs
     release
-    |> Utils.get_apps()
+    |> Release.apps()
     |> Enum.map(fn %App{name: name, vsn: vsn} ->
       clean_path(Path.join([output_dir, "lib", "#{name}-#{vsn}"]))
     end)

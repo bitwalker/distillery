@@ -24,8 +24,8 @@ defmodule Mix.Releases.Assembler do
     with {:ok, environment} <- Release.select_environment(config),
          {:ok, release} <- Release.select_release(config),
          release <- apply_environment(release, environment),
-         :ok <- validate_configuration(release),
          {:ok, release} <- Release.apply_configuration(release, config, true),
+         :ok <- validate_configuration(release),
          :ok <- make_paths(release),
          {:ok, release} <- Plugin.before_assembly(release) do
       {:ok, release}
@@ -62,7 +62,7 @@ defmodule Mix.Releases.Assembler do
 
   @spec validate_configuration(Release.t()) :: :ok | {:error, term}
   def validate_configuration(%Release{} = release) do
-    case Release.validate_configuration(release) do
+    case Release.validate(release) do
       {:ok, warning} ->
         Shell.notice(warning)
         :ok

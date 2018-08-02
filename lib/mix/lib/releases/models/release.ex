@@ -265,21 +265,7 @@ defmodule Mix.Releases.Release do
   end
 
   @doc false
-  @spec validate_configuration(t) :: :ok | {:error, term} | {:ok, warning :: String.t()}
-  def validate_configuration(%__MODULE__{version: _, profile: profile}) do
-    with :ok <- Utils.validate_erts(profile.include_erts),
-         :ok <- validate_cookie(profile.cookie) do
-      # Warn if not including ERTS when not obviously running in a dev configuration
-      if profile.dev_mode == false and profile.include_erts == false do
-        {:ok,
-         "IMPORTANT: You have opted to *not* include the Erlang runtime system (ERTS).\n" <>
-           "You must ensure that the version of Erlang this release is built with matches\n" <>
-           "the version the release will be run with once deployed. It will fail to run otherwise."}
-      else
-        :ok
-      end
-    end
-  end
+  defdelegate validate(release), to: Mix.Releases.Checks, as: :run
 
   # Applies global configuration options to the release profile
   @doc false
@@ -333,7 +319,7 @@ defmodule Mix.Releases.Release do
     release = %{release | profile: profile}
 
     release =
-      case Utils.get_apps(release) do
+      case apps(release) do
         {:error, _} = err ->
           throw(err)
 
@@ -405,29 +391,6 @@ defmodule Mix.Releases.Release do
     end
   end
 
-  defp validate_cookie(nil) do
-    warning =
-      "Attention! You did not provide a cookie for the erlang distribution protocol in rel/config.exs\n" <>
-        "    For backwards compatibility, the release name will be used as a cookie, which is potentially a security risk!\n" <>
-        "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs.\n" <>
-        "    This will be an error in a future release."
-
-    {:ok, warning}
-  end
-
-  defp validate_cookie(cookie) when is_atom(cookie) do
-    if String.contains?(Atom.to_string(cookie), "insecure") do
-      warning =
-        "Attention! You have an insecure cookie for the erlang distribution protocol in rel/config.exs\n" <>
-          "    This is probably because a secure cookie could not be auto-generated.\n" <>
-          "    Please generate a secure cookie and use it with `set cookie: <cookie>` in rel/config.exs."
-
-      {:ok, warning}
-    else
-      :ok
-    end
-  end
-
   @doc """
   Returns a list of all code_paths of all appliactions included in the release
   """
@@ -438,5 +401,214 @@ defmodule Mix.Releases.Release do
       lib_dir = Path.join([output_dir, "lib", "#{name}-#{version}", "ebin"])
       [String.to_charlist(lib_dir), String.to_charlist(Path.join(path, "ebin"))]
     end)
+  end
+
+  @doc """
+  Gets a list of {app, vsn} tuples for the current release.
+
+  An optional second parameter enables/disables debug logging of discovered apps.
+  """
+  @spec apps(t()) :: [{atom, String.t()}] | {:error, term}
+  # Gets all applications which are part of the release application tree
+  def apps(%__MODULE__{name: name, applications: apps} = release) do
+    loaded_deps = loaded_deps([])
+
+    apps =
+      if Enum.member?(apps, name) do
+        apps
+      else
+        apps ++ [name]
+      end
+
+    base_apps =
+      apps
+      |> Enum.reduce([], fn
+        _, {:error, reason} ->
+          {:error, {:apps, reason}}
+
+        {a, start_type}, acc ->
+          cond do
+            App.valid_start_type?(start_type) ->
+              if Enum.any?(acc, fn %App{name: app} -> a == app end) do
+                # Override start type
+                Enum.map(acc, fn
+                  %App{name: ^a} = app -> %{app | start_type: start_type}
+                  app -> app
+                end)
+              else
+                do_apps(App.new(a, start_type, loaded_deps), loaded_deps, acc)
+              end
+
+            :else ->
+              {:error, {:apps, {:invalid_start_type, a, start_type}}}
+          end
+
+        a, acc when is_atom(a) ->
+          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
+            acc
+          else
+            do_apps(App.new(a, loaded_deps), loaded_deps, acc)
+          end
+      end)
+
+    # Correct any ERTS libs which should be pulled from the correct
+    # ERTS directory, not from the current environment.
+    apps =
+      case release.profile.include_erts do
+        true ->
+          base_apps
+
+        false ->
+          base_apps
+
+        p when is_binary(p) ->
+          lib_dir = Path.expand(Path.join(p, "lib"))
+
+          Enum.reduce(base_apps, [], fn
+            _, {:error, {:apps, _}} = err ->
+              err
+
+            _, {:error, reason} ->
+              {:error, {:apps, reason}}
+
+            %App{name: a} = app, acc ->
+              if Utils.is_erts_lib?(app.path) do
+                case Path.wildcard(Path.join(lib_dir, "#{a}-*")) do
+                  [corrected_app_path | _] ->
+                    [_, corrected_app_vsn] =
+                      String.split(Path.basename(corrected_app_path), "-", trim: true)
+
+                    [%{app | :vsn => corrected_app_vsn, :path => corrected_app_path} | acc]
+
+                  _ ->
+                    {:error, {:apps, {:missing_required_lib, a, lib_dir}}}
+                end
+              else
+                [app | acc]
+              end
+          end)
+      end
+
+    case apps do
+      {:error, _} = err ->
+        err
+
+      apps when is_list(apps) ->
+        apps = Enum.reverse(apps)
+
+        # Print apps
+        Shell.debug("Discovered applications:")
+
+        for app <- apps, where = Path.relative_to_cwd(app.path) do
+          Shell.debugf("  > #{Shell.colorf("#{app.name}-#{app.vsn}", :white)}")
+          Shell.debugf("\n  |\n  |  from: #{where}\n")
+
+          case app.applications do
+            [] ->
+              Shell.debugf("  |  applications: none\n")
+
+            apps ->
+              display_apps =
+                apps
+                |> Enum.map(&inspect/1)
+                |> Enum.join("\n  |      ")
+
+              Shell.debugf("  |  applications:\n  |      #{display_apps}\n")
+          end
+
+          case app.included_applications do
+            [] ->
+              Shell.debugf("  |  includes: none\n")
+
+            included_apps ->
+              display_apps =
+                included_apps
+                |> Enum.map(&inspect/1)
+                |> Enum.join("\n  |  ")
+
+              Shell.debugf("  |  includes:\n  |      #{display_apps}")
+          end
+
+          Shell.debugf("  |_____\n\n")
+        end
+
+        apps
+    end
+  end
+
+  defp do_apps(nil, _loaded_deps, acc),
+    do: Enum.uniq(acc)
+
+  defp do_apps({:error, _} = err, _loaded_deps, _acc),
+    do: err
+
+  defp do_apps(%App{} = app, loaded_deps, acc) do
+    new_acc =
+      app.applications
+      |> Enum.concat(app.included_applications)
+      |> Enum.reduce(acc, fn
+        {:error, _} = err, _acc ->
+          err
+
+        {a, load_type}, acc ->
+          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
+            acc
+          else
+            case App.new(a, load_type, loaded_deps) do
+              nil ->
+                acc
+
+              %App{} = app ->
+                case do_apps(app, loaded_deps, acc) do
+                  {:error, _} = err ->
+                    err
+
+                  children ->
+                    Enum.concat(children, acc)
+                end
+
+              {:error, _} = err ->
+                err
+            end
+          end
+
+        a, acc ->
+          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
+            acc
+          else
+            case App.new(a, loaded_deps) do
+              nil ->
+                acc
+
+              %App{} = app ->
+                case do_apps(app, loaded_deps, acc) do
+                  {:error, _} = err ->
+                    err
+
+                  children ->
+                    Enum.concat(children, acc)
+                end
+
+              {:error, _} = err ->
+                err
+            end
+          end
+      end)
+
+    case new_acc do
+      {:error, _} = err ->
+        err
+
+      apps ->
+        Enum.uniq([app | apps])
+    end
+  end
+
+  Code.ensure_loaded(Mix.Dep)
+
+  if function_exported?(Mix.Dep, :load_on_environment, 1) do
+    defp loaded_deps(opts), do: Mix.Dep.load_on_environment(opts)
+  else
+    defp loaded_deps(opts), do: Mix.Dep.loaded(opts)
   end
 end
