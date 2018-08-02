@@ -177,7 +177,7 @@ defmodule Mix.Tasks.Release do
 
     bin = Path.join([relative_output_dir, "bin", app])
 
-    unless Shell.verbosity() == :silent do
+    unless Shell.verbosity() in [:silent, :quiet] do
       Shell.writef("Release succesfully built!\n", :green)
 
       Shell.writef(
