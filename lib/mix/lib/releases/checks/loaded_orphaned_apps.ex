@@ -85,7 +85,7 @@ defmodule Mix.Releases.Checks.LoadedOrphanedApps do
     # the applications which are loaded and required
     required_transitively = require_transitively(apps, requiring_apps)
 
-    if loaded_but_required == [] do
+    if Enum.empty?(loaded_but_required) do
       :ok
     else
       warning = """
