@@ -135,7 +135,13 @@ defmodule Mix.Releases.Assembler do
         copy_app(app_dir, target_dir, dev_mode?, include_src?)
 
       p when is_binary(p) ->
-        app_dir = Path.join([p, "lib", "#{app_name}-#{app_version}"])
+        app_dir = 
+          if Utils.is_erts_lib?(app_dir) do
+            Path.join([p, "lib", "#{app_name}-#{app_version}"])
+          else
+            app_dir
+          end
+
         copy_app(app_dir, target_dir, dev_mode?, include_src?)
 
       _ ->
