@@ -291,7 +291,7 @@ defmodule Mix.Releases.Release do
             {:error, _} = err ->
               throw(err)
 
-            vsn ->
+            {:ok, vsn} ->
               %{profile | erts_version: vsn, include_system_libs: true}
           end
 
