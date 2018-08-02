@@ -218,6 +218,8 @@ defmodule Mix.Tasks.Release.Init do
 
     def env, do: :dev
 
+    def compilers, do: []
+
     # We override defmodule so that we can make sure the modules
     # don't conflict with any already loaded
     defmacro defmodule(name, do: body) do
