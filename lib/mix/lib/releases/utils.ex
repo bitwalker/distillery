@@ -536,9 +536,12 @@ defmodule Mix.Releases.Utils do
 
         missing =
           case ignore_missing do
-            false -> missing
-            true -> []
-            ignore -> Enum.reject(missing, &Enum.member?(ignore, &1))
+            false -> 
+              missing
+            true -> 
+              []
+            ignore -> 
+              Enum.reject(missing, &Enum.member?(ignore, &1))
           end
 
         case missing do
@@ -557,43 +560,100 @@ defmodule Mix.Releases.Utils do
         end
 
         # Print apps
-        if is_list(apps) do
-          Logger.debug("Discovered applications:")
+        Logger.debug("Discovered applications:")
 
-          Enum.each(apps, fn %App{} = app ->
-            where = Path.relative_to_cwd(app.path)
+        Enum.each(apps, fn %App{} = app ->
+          where = Path.relative_to_cwd(app.path)
 
-            Logger.debug(
-              "  #{IO.ANSI.reset()}#{app.name}-#{app.vsn}#{IO.ANSI.cyan()}\n\tfrom: #{where}",
-              :plain
-            )
+          Logger.debug(
+            "  #{IO.ANSI.reset()}#{app.name}-#{app.vsn}#{IO.ANSI.cyan()}\n\tfrom: #{where}",
+            :plain
+          )
 
-            case app.applications do
-              [] ->
-                Logger.debug("    applications: none", :plain)
+          case app.applications do
+            [] ->
+              Logger.debug("    applications: none", :plain)
 
-              apps ->
-                display_apps =
-                  apps
-                  |> Enum.map(&inspect/1)
-                  |> Enum.join("\n\t")
+            apps ->
+              display_apps =
+                apps
+                |> Enum.map(&inspect/1)
+                |> Enum.join("\n\t")
 
-                Logger.debug("    applications:\n\t#{display_apps}", :plain)
-            end
+              Logger.debug("    applications:\n\t#{display_apps}", :plain)
+          end
 
-            case app.included_applications do
-              [] ->
-                Logger.debug("    includes: none\n", :plain)
+          case app.included_applications do
+            [] ->
+              Logger.debug("    includes: none\n", :plain)
 
-              included_apps ->
-                display_apps =
-                  included_apps
-                  |> Enum.map(&inspect/1)
-                  |> Enum.join("\n\t")
+            included_apps ->
+              display_apps =
+                included_apps
+                |> Enum.map(&inspect/1)
+                |> Enum.join("\n\t")
 
-                Logger.debug("    includes:\n\t#{display_apps}", :plain)
-            end
+              Logger.debug("    includes:\n\t#{display_apps}", :plain)
+          end
+        end)
+
+        # Determine if any applications with start type :load are not included
+        # and are also depended upon by other applications. This condition is
+        # likely to result in a release which appears to be started, but is not
+        # actually fully operational
+        loaded =
+          apps
+          |> Enum.filter(fn %App{start_type: type} -> type == :load end)
+          |> Enum.map(fn %App{name: name} -> name end)
+          |> MapSet.new
+        included_apps =
+          apps
+          |> Enum.flat_map(fn %App{included_applications: ia} -> ia end)
+          |> Enum.uniq
+          |> MapSet.new
+        required_apps =
+          apps
+          |> Enum.flat_map(fn %App{applications: a} -> a end)
+          |> Enum.uniq
+          |> MapSet.new
+        loaded_not_included = 
+          loaded
+          |> MapSet.difference(included_apps)
+        loaded_but_required =
+          loaded_not_included
+          |> MapSet.intersection(required_apps)
+        requiring_apps =
+          apps
+          |> Enum.filter(fn %App{applications: a} -> 
+            required_loaded =
+              a
+              |> MapSet.new
+              |> MapSet.intersection(loaded_but_required)
+              |> MapSet.to_list
+            required_loaded != []
           end)
+          |> Enum.map(fn %App{name: a} -> a end)
+        required_transitively = require_transitively(apps, requiring_apps)
+
+        if loaded_but_required != [] do
+          Logger.warn(
+            "You have specified a start type of :load for the following orphan applications:\n\n" <>
+            Enum.join(Enum.map(loaded_but_required, fn a -> "        #{inspect(a)}" end), "\n") <>
+            "\n\n    These applications are considered orphaned because they are not included by another\n" <>
+            "    application (i.e. present in the included_applications list). Since they are only loaded,\n" <>
+            "    neither the runtime, or any application is responsible for ensuring they are started." <>
+            "\n\n    This is a problem because the following applications - either directly or transitively -\n" <>
+            "    depend on the above applications to be started before they can start; and this cannot\n" <>
+            "    be guaranteed:\n\n" <>
+            Enum.join(Enum.map(required_transitively, fn a -> "        #{inspect(a)}" end), "\n") <>
+            "\n\n    If you do not address this, your release may appear to start successfully, but may\n" <>
+            "    in fact only be partially started, which can manifest as portions of your application\n" <>
+            "    not working as expected. For example, a Phoenix endpoint not binding to it's configured port." <>
+            "\n\n    You should either add all of these applications to :included_applications, and ensure\n" <>
+            "    they are started as part of your application; or you should change the start type of the\n" <>
+            "    first set of applications to :permanent or leave the start type unspecified. The latter\n" <>
+            "    is the best approach when possible.\n"
+          )
         end
 
         apps
@@ -663,6 +723,19 @@ defmodule Mix.Releases.Utils do
       apps ->
         Enum.uniq([app | apps])
     end
+  end
+  
+  defp require_transitively(all, requiring) do
+    require_transitively(all, requiring, requiring)
+  end
+  defp require_transitively(_all, [], acc), do: acc
+  defp require_transitively(all, [app | rest], acc) do
+    requiring =
+      all
+      |> Enum.filter(fn %App{applications: a} -> Enum.member?(a, app) end)
+      |> Enum.reject(fn %App{name: a} -> Enum.member?(acc, a) end)
+      |> Enum.map(fn %App{name: a} -> a end)
+    require_transitively(all, rest ++ requiring, acc ++ requiring)
   end
 
   # Determines if the given application directory is part of the Erlang installation
