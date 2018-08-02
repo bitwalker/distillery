@@ -170,7 +170,7 @@ defmodule Mix.Tasks.Release do
 
     Logger.success("Release succesfully built!\n")
 
-    IO.puts("""
+    Logger.info("""
     #{
       Logger.colorize(
         "To start the release you have built, you can use one of the following tasks:",
