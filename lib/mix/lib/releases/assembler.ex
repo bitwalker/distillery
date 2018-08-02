@@ -603,6 +603,7 @@ defmodule Mix.Releases.Assembler do
 
   defp generate_vm_args(%Release{profile: %Profile{vm_args: path}} = rel) do
     Shell.debug("Generating vm.args from #{Path.relative_to_cwd(path)}")
+    path = Path.expand(path)
     rel_dir = Release.version_path(rel)
     overlay_vars = rel.profile.overlay_vars
 
