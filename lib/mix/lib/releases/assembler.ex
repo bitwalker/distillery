@@ -24,10 +24,10 @@ defmodule Mix.Releases.Assembler do
     with {:ok, environment} <- Release.select_environment(config),
          {:ok, release} <- Release.select_release(config),
          release <- apply_environment(release, environment),
+         {:ok, release} <- Plugin.before_assembly(release),
          {:ok, release} <- Release.apply_configuration(release, config, true),
          :ok <- validate_configuration(release),
-         :ok <- make_paths(release),
-         {:ok, release} <- Plugin.before_assembly(release) do
+         :ok <- make_paths(release) do 
       {:ok, release}
     end
   end
