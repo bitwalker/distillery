@@ -25,9 +25,9 @@ defmodule Distillery.Test.ConfigTest do
                    applications: [
                      :elixir,
                      :iex,
+                     :mix,
                      :sasl,
                      :runtime_tools,
-                     :mix,
                      :distillery,
                    ]
                  }
