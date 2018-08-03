@@ -29,11 +29,10 @@ run_hooks pre_start
 
 # Build an array of arguments to pass to exec later on
 # Build it here because this command will be used for logging.
-__code_path="$(code_paths)"
 set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
     -boot "$REL_DIR/$BOOTFILE" \
     -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-    -pa $__code_path \
+    "${code_paths[@]}" \
     -pa "$CONSOLIDATED_DIR" \
     -args_file "$VMARGS_PATH" \
     -config "$SYS_CONFIG_PATH" \

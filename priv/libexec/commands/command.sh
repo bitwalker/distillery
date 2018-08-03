@@ -21,8 +21,6 @@ FUNCTION="$1"; shift
 # Save extra arguments
 ARGS=$*
 
-__code_paths=$(code_paths)
-
 # Checks is a module/function pair is defined
 is_function_defined() {
     if [ -z "$1" ]; then
@@ -36,7 +34,7 @@ is_function_defined() {
         -boot "$RELEASE_ROOT_DIR/bin/start_clean" \
         -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
         -pa "$CONSOLIDATED_DIR" \
-        -pa ${__code_paths}
+        "${code_paths[@]}"
 }
 
 # Build arguments for erlexec
@@ -45,7 +43,7 @@ set -- "$@" -noshell
 set -- "$@" -boot "$RELEASE_ROOT_DIR/bin/start_clean"
 set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
 set -- "$@" -pa "$CONSOLIDATED_DIR"
-set -- "$@" -pa ${__code_paths}
+set -- "$@" "${code_paths[@]}"
 set -- "$@" -s "$MODULE" "$FUNCTION"
 set -- "$@" -s erlang halt
 
