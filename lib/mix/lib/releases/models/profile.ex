@@ -25,7 +25,7 @@ defmodule Mix.Releases.Profile do
     * `:include_erts`        - Sets the strategy for locating ERTS in a release to one of the following:
       * `true`               - Bundles the current ERTS into the release (located by asking `erl` where it lives)
       * `false`              - Skips bundling an ERTS completely, but requires that one be provided on the target system
-      * `"path/to/erlang"    - As indicated, a path to the ERTS you wish to bundle. Useful for cross-compiling. 
+      * `"path/to/erlang"`   - As indicated, a path to the ERTS you wish to bundle. Useful for cross-compiling. 
                                This path can be found with `:code.root_dir()`
     * `:include_src`         - Boolean indicating whether to bundle source files in the release. (default: false)
     * `:config_providers`    - A list of custom configuration providers to use. See `Mix.Releases.Config.Provider` for details.
