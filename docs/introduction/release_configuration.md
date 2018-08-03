@@ -86,9 +86,6 @@ and environments.
         symlink compiled files into the release, rather than copy them.
         this allows you to recompile and the release will be automatically
         updated. Use only for development.
-    - code_paths (list of strings);
-        a list of additional code paths to use when searching
-        for applications/modules
     - vm_args (string);
         a path to a custom vm.args file
     - config_providers (list of `module` or `{module, [term]}`):
