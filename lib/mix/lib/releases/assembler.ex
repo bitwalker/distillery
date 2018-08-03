@@ -702,13 +702,12 @@ defmodule Mix.Releases.Assembler do
     config =
       case Keyword.get(config, :sasl) do
         nil ->
-          Keyword.put(config, :sasl, errlog_type: :error)
+          put_in(config, [:sasl], [errlog_type: :error, sasl_error_logger: false])
 
         sasl ->
-          case Keyword.get(sasl, :errlog_type) do
-            nil -> put_in(config, [:sasl, :errlog_type], :error)
-            _ -> config
-          end
+          config
+          |> put_in([:sasl, :sasl_error_logger], Keyword.get(sasl, :sasl_error_logger, false))
+          |> put_in([:sasl, :errlog_type], Keyword.get(sasl, :errlog_type, :error))
       end
 
     case Keyword.get(config, :distillery) do
