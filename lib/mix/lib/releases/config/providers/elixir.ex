@@ -54,8 +54,8 @@ defmodule Mix.Releases.Config.Providers.Elixir do
     {final_quoted, new_loaded_paths} =
       path
       |> Path.wildcard()
-      |> Enum.reduce({nil, loaded_paths}, fn
-        f, {nil, loaded_paths} ->
+      |> Enum.reduce({[], loaded_paths}, fn
+        f, {[], loaded_paths} ->
           # Extract the quoted body of the top-level block for merging
           {{:__block__, _, quoted}, new_loaded_paths} = do_read_quoted!(f, loaded_paths)
           {quoted, new_loaded_paths}
