@@ -17,12 +17,13 @@ defmodule Mix.Releases.Release do
               :elixir,
               # included so the elixir shell works
               :iex,
+              # required for Mix config provider
+              :mix,
               # required for upgrades
               :sasl,
               # required for some command tooling
               :runtime_tools,
-              # required for config providers
-              :mix,
+              # needed for config provider API
               :distillery
               # can also use `app_name: type`, as in `some_dep: load`,
               # to only load the application, not start it

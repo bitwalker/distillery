@@ -123,7 +123,6 @@ defmodule Mix.Releases.Runtime.Control do
     option(:release_root_dir, :string, "The root directory for all releases")
     option(:sysconfig, :string, "The path to the sys.config file used by the release")
     option(:vmargs, :string, "The path to the vm.args file used by the release")
-    option(:config, :string, "The path to the config.exs file used by the release")
     option(:erl_opts, :string, "Extra options for erl")
     option(:run_erl_env, :string, "Extra configuration for run_erl")
   end
@@ -209,7 +208,6 @@ defmodule Mix.Releases.Runtime.Control do
     Console.info("Working Directory: #{opts.release_root_dir}")
     Console.info("System Config:     #{opts.sysconfig}")
     Console.info("VM Config:         #{opts.vmargs}")
-    Console.info("App Config:        #{opts.config}")
     Console.info("Extra Erl Flags:   #{opts.erl_opts || "N/A"}")
     Console.info("Run Erl Env:       #{opts.run_erl_env || "N/A"}\n")
 

@@ -13,7 +13,6 @@ defmodule Mix.Releases.Assembler do
   alias Mix.Releases.Appup
   alias Mix.Releases.Plugin
   alias Mix.Releases.Overlays
-  alias Mix.Releases.Config.Provider
 
   require Record
   Record.defrecordp(:file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl"))
@@ -271,7 +270,6 @@ defmodule Mix.Releases.Assembler do
     with :ok <- Utils.write_all(scripts),
          :ok <- generate_start_erl_data(release),
          :ok <- generate_vm_args(release),
-         :ok <- generate_config_exs(release),
          :ok <- generate_sys_config(release),
          :ok <- include_erts(release),
          :ok <- make_boot_script(release) do
@@ -617,41 +615,6 @@ defmodule Mix.Releases.Assembler do
 
       {:error, {:template_str, _}} = err ->
         err
-
-      {:error, reason} ->
-        {:error, {:assembler, :file, reason}}
-    end
-  end
-
-  defp generate_config_exs(%Release{profile: %Profile{config_providers: ps}} = rel) do
-    if Provider.enabled?(ps, Mix.Releases.Config.Providers.Elixir) do
-      do_generate_config_exs(rel)
-    else
-      :ok
-    end
-  end
-
-  defp do_generate_config_exs(%Release{profile: %Profile{config: base_config_path}} = rel) do
-    Shell.debug("Generating merged config.exs from #{Path.relative_to_cwd(base_config_path)}")
-
-    merged =
-      base_config_path
-      |> Mix.Releases.Config.Providers.Elixir.read_quoted!()
-      |> Macro.to_string()
-
-    formatted =
-      if function_exported?(Code, :format_string!, 1) do
-        apply(Code, :format_string!, [merged])
-      else
-        merged
-      end
-
-    rel_dir = Release.version_path(rel)
-
-    case File.write(Path.join(rel_dir, "config.exs"), formatted) do
-      :ok ->
-        Utils.write_term(Path.join(rel_dir, "sys.config"), [{:sasl, [errlog_type: :error]}])
-        :ok
 
       {:error, reason} ->
         {:error, {:assembler, :file, reason}}

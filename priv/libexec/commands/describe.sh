@@ -15,6 +15,5 @@ release_ctl describe \
             --cookie="$COOKIE" \
             --sysconfig="$SYS_CONFIG_PATH" \
             --vmargs="$VMARGS_PATH" \
-            --config="$CONFIG_EXS_PATH" \
             --erl_opts="$ERL_OPTS" \
             --run_erl_env="$RUN_ERL_ENV"

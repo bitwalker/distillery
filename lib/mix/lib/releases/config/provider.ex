@@ -86,19 +86,40 @@ defmodule Mix.Releases.Config.Provider do
     end
 
     for provider <- providers do
-      case provider do
-        p when is_atom(p) ->
-          :ets.insert(__MODULE__, {p, []})
-          p.init([])
+      try do
+        case provider do
+          p when is_atom(p) ->
+            :ets.insert(__MODULE__, {p, []})
+            p.init([])
 
-        {p, args} ->
-          :ets.insert(__MODULE__, provider)
-          p.init(args)
+          {p, args} ->
+            :ets.insert(__MODULE__, provider)
+            p.init(args)
 
-        p ->
-          raise ArgumentError,
-            message:
-              "Invalid #{__MODULE__}: Expected module or `{module, args}` tuple, got #{inspect(p)}"
+          p ->
+            raise ArgumentError,
+                msg: "Invalid #{__MODULE__}: Expected module or `{module, args}` tuple, got #{inspect(p)}"
+        end
+      rescue
+        err ->
+          trace = System.stacktrace()
+          msg =
+            Exception.message(err) <>
+            "\n" <>
+            Exception.format_stacktrace(trace)
+          print_err(msg)
+          reraise err, trace
+      catch
+        kind, err ->
+          print_err(Exception.format(kind, err, System.stacktrace))
+          case kind do
+            :throw ->
+              throw err
+            :exit ->
+              exit(err)
+            :error ->
+              :erlang.error(err)
+          end
       end
     end
   end
@@ -174,5 +195,13 @@ defmodule Mix.Releases.Config.Provider do
 
   defp expand_var(<<c::utf8, rest::binary>>, acc) do
     expand_var(rest, <<acc::binary, c::utf8>>)
+  end
+
+  defp print_err(msg) when is_binary(msg) do
+    if IO.ANSI.enabled? do
+      IO.puts(IO.ANSI.format([IO.ANSI.red(), msg, IO.ANSI.reset()]))
+    else
+      IO.puts(msg)
+    end
   end
 end

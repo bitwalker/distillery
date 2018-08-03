@@ -6,7 +6,7 @@ providers are able to replace the use of `sys.config` and `config.exs` if
 desired. The one exception is if you need to configure the `:kernel`
 application, you will need to do so via `sys.config`, `config.exs`, or `vm.args`.
 
-## Implementing A Provider
+## Implementing a Provider
 
 To implement a new configuration provider, there are two callbacks you need to
 implement currently, `init/1` and `get/1`.

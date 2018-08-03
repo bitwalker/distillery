@@ -126,14 +126,13 @@ output). You can use it like so:
 ```elixir
 environment :prod do
   set config_providers: [
-    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/var/config.exs"]}
+    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+  ]
+  set overlays: [
+    {:copy, "config/config.exs", "etc/config.exs"}
   ]
 end
 ```
-
-The path given here is where Distillery will place the `config.exs` which is
-built for the release (it combines `config.exs` and any of it's imported files
-for the environment the release is built in, to a single file).
 
 ## Kernel Configuration
 

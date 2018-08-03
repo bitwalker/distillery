@@ -27,7 +27,7 @@ configure_release() {
     #    become effectively permanent.
     # 2. We must not generate files when RELEASE_READ_ONLY is set
     # 3. We must respect the public shell script API, which includes SYS_CONFIG_PATH,
-    #    VMARGS_PATH, and CONFIG_EXS_PATH. This means that if provided, we must use
+    #    and VMARGS_PATH. This means that if provided, we must use
     #    them as the source file, but we must update them to point to the m
     # 4. The upgrade installer script unpacks new config files, but attempts to use
     #    the sources defined here, rather than those included in the release. This is
@@ -97,34 +97,6 @@ configure_release() {
         fi
     fi
     export SYS_CONFIG_PATH="${DEST_SYS_CONFIG_PATH:-$SYS_CONFIG_PATH}"
-
-    # If config.exs isn't present, the provider is disabled, so skip this block
-    if [ -f "$REL_DIR/config.exs" ]; then
-        # Set CONFIG_EXS_PATH, the path to the config.exs file to use
-        # Use $RELEASE_CONFIG_DIR/config.exs if it exists, otherwise releases/VSN/config.exs
-        if [ -z "$CONFIG_EXS_PATH" ] || [ ! -f "$CONFIG_EXS_PATH" ]; then
-            if [ -f "$RELEASE_CONFIG_DIR/config.exs" ]; then
-                export SRC_CONFIG_EXS_PATH="$RELEASE_CONFIG_DIR/config.exs"
-            else
-                export SRC_CONFIG_EXS_PATH="$REL_DIR/config.exs"
-            fi
-        else
-            export SRC_CONFIG_EXS_PATH="$CONFIG_EXS_PATH"
-        fi
-        if [ "$SRC_CONFIG_EXS_PATH" != "$RELEASE_MUTABLE_DIR/config.exs" ]; then
-            if [ -z "$RELEASE_READ_ONLY" ]; then
-                echo "# Generated - edit/create $RELEASE_CONFIG_DIR/config.exs instead." \
-                    > "$RELEASE_MUTABLE_DIR/config.exs"
-                cat "$SRC_CONFIG_EXS_PATH" \
-                    >> "$RELEASE_MUTABLE_DIR/config.exs"
-                export DEST_CONFIG_EXS_PATH="$RELEASE_MUTABLE_DIR/config.exs"
-            else
-                export DEST_CONFIG_EXS_PATH="$SRC_CONFIG_EXS_PATH"
-            fi
-        fi
-        # We do not do replacements on this file, it is not necessary
-        export CONFIG_EXS_PATH="${DEST_CONFIG_EXS_PATH:-$CONFIG_EXS_PATH}"
-    fi
 
     # Need to ensure post_configure is run here, but
     # prevent recursion if the hook calls back to the run control script
