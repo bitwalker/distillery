@@ -55,13 +55,20 @@ defmodule Mix.Releases.Runtime.Pidfile do
     end
   end
 
-  defp loop(state, parent) do
+  defp loop(%{pidfile: path} = state, parent) do
     receive do
       {:EXIT, ^parent, reason} ->
         terminate(reason, parent, state)
 
       _ ->
         loop(state, parent)
+    after
+      5_000 ->
+        if File.exists?(path) do
+          loop(state, parent)
+        else
+          :init.stop()
+        end
     end
   end
 
