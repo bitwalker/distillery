@@ -15,7 +15,7 @@ It is currently a standalone package, but may be integrated into Mix at some poi
 
 ## Installation
 
-Distillery requires Elixir 1.6 or greater. It works with Erlang 18+.
+Distillery requires Elixir 1.6 or greater. It works with Erlang 20+.
 
 ```elixir
 defp deps do
@@ -23,9 +23,10 @@ defp deps do
 end
 ```
 
-Just add as a mix dependency and use `mix release`. This is a replacement for exrm, but is in beta at this time.
+Just add as a mix dependency and use `mix release`.
 
-If you are new to releases, please review the [documentation](https://hexdocs.pm/distillery).
+If you are new to releases or Distillery, please review the [documentation](https://hexdocs.pm/distillery),
+it covers just about any question you may have!
 
 ## Community/Questions/etc.
 
