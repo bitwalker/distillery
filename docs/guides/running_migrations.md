@@ -117,7 +117,7 @@ Create the following shell scripts at `rel/commands/`:
 ```bash
 #!/bin/sh
 
-$RELEASE_ROOT_DIR/bin/myapp command Elixir.MyApp.ReleaseTasks migrate
+"${RELEASE_ROOT_DIR}"/bin/myapp eval "MyApp.ReleaseTasks.migrate()"
 ```
 
 * `rel/commands/seed.sh`
@@ -125,7 +125,7 @@ $RELEASE_ROOT_DIR/bin/myapp command Elixir.MyApp.ReleaseTasks migrate
 ```bash
 #!/bin/sh
 
-$RELEASE_ROOT_DIR/bin/myapp command Elixir.MyApp.ReleaseTasks seed
+"${RELEASE_ROOT_DIR}"/bin/myapp eval "MyApp.ReleaseTasks.seed()"
 ```
 
 For more info on shell variables look at the [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html#environment-variables).

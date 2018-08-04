@@ -194,7 +194,7 @@ environment :prod do
   # The template for vm.args
   set vm_args: "rel/prod.vm.args"
   # The hook to mutate the template
-  set pre_configure_hooks: ["rel/hooks/pre_configure.d/generate_vm_args.sh"]
+  set pre_configure_hooks: "rel/hooks/pre_configure.d"
 end
 ```
 
