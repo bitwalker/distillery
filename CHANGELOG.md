@@ -1,13 +1,48 @@
-## 2.0
+## 2.0.0
 
-This is a major release with a number of large changes and some of which are breaking,
-please read these notes carefully!
+This is a major release with a number of significant changes and some of which are breaking,
+please read these notes carefully! There are a great many improvements and bug
+fixes. Unfortunately the bug fixes are so numerous that I can't list them all
+here, but if you are interested, the git history is clean, and should
+provide a good overview of what has been addressed.
 
 ### Added
 
-- Support for Mix.Config (ie. `config.exs`) in releases
-- `Mix.Releases.Config.Provider` behaviour for custom runtime configuration providers
-- A new `config_providers` setting for defining which custom config providers to include
+- The `Mix.Releases.Config.Provider` behavior and API. Referred to as
+  "Config Providers" in more general terms, this provides a format and source
+  agnostic way to configure your application at runtime. Providers are executed
+  during boot/init, after all application code is loaded, but before any
+  applications are started (with the exception of `kernel`, `stdlib`,
+  `compiler`, and `elixir`, as these are required to provide basic standard
+  library functionality to providers). They are executed in the order listed in
+  your config, and should push their configuration into the application
+  environment (e.g. via `Application.put_env/3`). It is expected that when
+  running multiple providers, the last one to run "wins" in the case of
+  conflicting configuration keys, so they should be ordered by their priority.
+- A `Mix.Config` config provider, supporting `config.exs` scripts in releases.
+  You can find more information in the `Mix.Releases.Config.Providers.Elixir`
+  module docs, or in the Distillery documentation about config providers.
+- A new `config_providers` setting for defining which config providers to
+  execute in a release (can be set in either `environment` or `release` blocks).
+- Support for writing a PID file to disk (useful for running under systemd in
+  particular). It is enabled with `-kernel pidfile "path/to/pidfile"` or by
+  exporting `PIDFILE` in the environment. When enabled, the file is written to
+  disk and then checked every 5s - if the file is deleted, the node is
+  terminated as soon as the next check is performed. This process is executed as
+  a kernel process, and so should survive `:init.restart/0`.
+- Provide `release.gen.appup` task, for generating `.appup` files for a given
+  application and version. This can be used to generate appups under `rel` for
+  safe keeping, and easy modification. See `mix help release.gen.appup` for more
+  details, it is a huge improvement if you are using hot upgrades!
+- Provide "read-only" mode for management scripts, which do not write any files
+  when `RELEASE_READ_ONLY` is exported in the environment. This is intended to
+  be used for executing commands as a user other than the one used to start the
+  release via `foreground`, `start`, or `console`,
+- Raise a friendlier error when the ERTS specified was compiled for another OS when
+  booting the release
+- Provide appup transforms - a plugin system for modifying appups
+  programmatically during release builds.
+
 
 ### Fixed
 
@@ -15,22 +50,46 @@ please read these notes carefully!
 
 ### Changed
 
+- **BREAKING:** Distillery now requires Elixir 1.6+ and OTP 20+ - if you are on
+  older versions, you may be able to use Distillery, but it is not guaranteed to
+  compile - if it does, it should work. Distillery is upping the compat
+  requirements in order to stay lean for integration with the core tooling.
+- **BREAKING:** The `rpc` command now takes an Elixir expression as a string, and evals it on the remote node
+- **BREAKING:** The `eval` command now takes an Elixir expression as a string, and evals it locally in a clean node
 - The `release_utils` and `nodetool` scripts have been rewritten in Elixir
-- The `rpc` command now takes an Elixir expression as a string, and evals it on the remote node
-- The `eval` command now takes an Elixir expression as a string, and evals it locally in a clean node
-- `config.exs` is no longer translated to `sys.config`, instead `sys.config` is only used for early boot
-  config settings, such as those for `kernel`
 - The `include_system_libs` option is deprecated, as it is automatically determined based on other settings
 - The `include_src` option now includes `lib` directory (i.e. Elixir code)
+- The `:silent` verbosity level is now completely silent except for errors
+- The `:quiet` verbosity level now only shows warnings/errors
+- SASL logs are disabled by default, with level set to `:error`. SASL is still
+  required. In OTP 21, you may still see SASL reports if the kernel `logger`
+  module is configured with a `info` level - SASL no longer has it's own logger,
+  these now go through the new logger module, so there is no longer a
+  distinction made for these reports.
+- Significant internal refactoring and clean up to move to a more modular,
+  maintainable structure.
+- **IMPORTANT:** Distillery is now bundled into releases, as Elixir code for the
+  command-line tooling and config providers are part of Distillery, and needs to be available on the
+  code path. This means that you should remove `runtime: false` from the
+  Distillery dependency - to ease the transition, Distillery will ignore this
+  flag when set on itself, and bundle into the release anyway, but you should
+  remove it to prevent confusion.
+- Support `:no_dot_erlang` option for systools
+- Performance optimizations for applications with many dependencies
+- Don't guess application names in umbrella projects
 
-### Removed
+### Deprecations
 
-- The `rpcterms` command has been removed as it is no longer necessary
-- All of the `<event>_hook` config options have been removed in favor of `<event>_hooks`, for example
+- **BREAKING:** The `rpcterms` command has been removed as it is no longer necessary
+- **BREAKING:** All of the `<event>_hook` config options have been removed in favor of `<event>_hooks`, for example
   `pre_start_hook` is a path to a single script for the `pre_start` hook, you would now place that script
   in a new directory, perhaps `rel/pre_start_hooks`, and change the config to point to that directory rather
   than the script. This allows you to define multiple hooks for a given event. This config has been in place
-  for a long time now, but I'm finally removing the old options.
+  for a long time now, but this release finally removes the old options
+- The `exec_opts` option for setting executable options has been deprecated in
+  favor of just `executable`, which now expects a Keyword list of `[enabled:
+  boolean, transient: boolean]`, you can use `executable: true` to imply
+  `enabled: true`, `transient` still defaults to false.
 
 ## 1.5
 
