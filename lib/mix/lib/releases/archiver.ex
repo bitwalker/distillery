@@ -25,7 +25,6 @@ defmodule Mix.Releases.Archiver do
       cond do
         Release.executable?(release) ->
           Shell.debug("Generating executable..")
-          tarfile = List.to_string(tarfile)
           binfile = Release.archive_path(release)
 
           with {:ok, tar} <- File.read(tarfile),
