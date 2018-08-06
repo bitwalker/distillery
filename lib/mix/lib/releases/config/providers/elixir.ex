@@ -43,6 +43,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
       with {:ok, path} <- Provider.expand_path(path) do
         path
         |> eval!()
+        |> merge_config()
         |> Mix.Config.persist()
       else
         {:error, reason} ->
@@ -55,6 +56,16 @@ defmodule Mix.Releases.Config.Providers.Elixir do
         :ok = Application.stop(:mix)
       end
     end
+  end
+
+  def merge_config(runtime_config) do
+    Enum.map(runtime_config, fn {app, app_config} ->
+      merged_app_config =
+        app
+        |> Application.get_all_env()
+        |> Mix.Config.merge(app_config)
+      {app, merged_app_config}
+    end)
   end
 
   @doc false
