@@ -58,8 +58,8 @@ defmodule Distillery.Test.CliTest do
 
     test "eval and args" do
       assert is_success(fn ->
-        Control.main(["eval", "IO.inspect(:init.get_plain_arguments())"])
-      end) =~ "#{inspect :init.get_plain_arguments()}"
+        Control.main(["eval", "IO.inspect(:init.get_plain_arguments(), width: :infinity)"])
+      end) =~ "#{inspect(:init.get_plain_arguments(), width: :infinity)}"
     end
 
     test "eval --file" do
