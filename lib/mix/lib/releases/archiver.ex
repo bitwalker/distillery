@@ -31,7 +31,7 @@ defmodule Mix.Releases.Archiver do
                :ok <- File.rm(tarfile),
                {:ok, header} <-
                  Utils.template(
-                   :executable,
+                   :executable_header,
                    release_name: release.name,
                    executable_options: release.profile.executable
                  ),
