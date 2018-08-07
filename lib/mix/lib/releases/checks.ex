@@ -57,6 +57,12 @@ defmodule Mix.Releases.Checks do
   def run(checks, release),
     do: do_run(checks, release, [])
 
+  defp do_run([], _release, warnings) do
+    for warning <- Enum.reverse(warnings) do
+      Mix.Releases.Shell.notice(warning)
+    end
+    :ok
+  end
   defp do_run([check | checks], %Release{} = release, warnings) do
     Mix.Releases.Shell.debugf("    > #{Enum.join(Module.split(check), ".")}")
     check.run(release)
