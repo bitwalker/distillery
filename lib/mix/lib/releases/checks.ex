@@ -54,21 +54,26 @@ defmodule Mix.Releases.Checks do
   @spec run([module], Release.t()) :: :ok | {:ok, warning} | {:error, term}
   def run([], _release),
     do: :ok
+  def run(checks, release),
+    do: do_run(checks, release, [])
 
-  def run([check | checks], %Release{} = release) do
+  defp do_run([check | checks], %Release{} = release, warnings) do
     Mix.Releases.Shell.debugf("    > #{Enum.join(Module.split(check), ".")}")
     check.run(release)
   else
     :ok ->
       Mix.Releases.Shell.debugf(" * PASS\n", :green)
-      run(checks, release)
+      do_run(checks, release, warnings)
 
-    {:ok, warning} = warn when is_binary(warning) ->
+    {:ok, warning} when is_binary(warning) ->
       Mix.Releases.Shell.debugf(" * WARN\n\n", :yellow)
-      warn
+      do_run(checks, release, [warning | warnings])
 
     {:error, _} = err ->
       Mix.Releases.Shell.debugf(" * FAILED\n", :red)
+      for warning <- Enum.reverse(warnings) do
+        Mix.Releases.Shell.notice(warning)
+      end
       err
 
     other ->
