@@ -90,6 +90,7 @@ defmodule Distillery.Mixfile do
         "Other": ~r/docs\/[^\.]+.md/
       ],
       extras: [
+        "CHANGELOG.md",
         "docs/introduction/overview.md",
         "docs/introduction/up_and_running.md",
         "docs/introduction/understanding_releases.md",
