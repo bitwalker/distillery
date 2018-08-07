@@ -56,6 +56,12 @@ defmodule Distillery.Test.CliTest do
       end) =~ "Hello from primary@127.0.0.1!"
     end
 
+    test "eval and args" do
+      assert is_success(fn ->
+        Control.main(["eval", "IO.inspect(:init.get_plain_arguments())"])
+      end) =~ "#{inspect :init.get_plain_arguments()}"
+    end
+
     test "eval --file" do
       assert is_success(fn ->
         Control.main(["eval", "--file", Path.join([__DIR__, "support", "eval_file_example.exs"]) |> Path.expand])
