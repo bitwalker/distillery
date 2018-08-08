@@ -57,7 +57,10 @@ defmodule Distillery.Mixfile do
       files: ["lib", "priv", "mix.exs", "README.md", "LICENSE.md"],
       maintainers: ["Paul Schoenfelder"],
       licenses: ["MIT"],
-      links: %{Github: "https://github.com/bitwalker/distillery"}
+      links: %{
+        Changelog: "https://github.com/bitwalker/distillery/blob/master/CHANGELOG.md",
+        GitHub: "https://github.com/bitwalker/distillery"
+      }
     ]
   end
 
@@ -90,6 +93,7 @@ defmodule Distillery.Mixfile do
         "Other": ~r/docs\/[^\.]+.md/
       ],
       extras: [
+        "CHANGELOG.md",
         "docs/introduction/overview.md",
         "docs/introduction/up_and_running.md",
         "docs/introduction/understanding_releases.md",

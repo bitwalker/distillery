@@ -1,4 +1,11 @@
-## 2.0.0
+# Changelog
+
+All notable changes to this project will be documented in this file (at least to the extent possible, I am not infallible sadly).
+
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
+and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html)
+
+## [2.0.0] - Unreleased
 
 This is a major release with a number of significant changes and some of which are breaking,
 please read these notes carefully! There are a great many improvements and bug
@@ -91,7 +98,7 @@ provide a good overview of what has been addressed.
   boolean, transient: boolean]`, you can use `executable: true` to imply
   `enabled: true`, `transient` still defaults to false.
 
-## 1.5
+## [1.5] - 2017-08-15
 
 **IMPORTANT**: Distillery now requires that Bash be installed on the target system.
 It turns out that this had been an implied dependency due to some of the features used
@@ -122,7 +129,7 @@ explicit rather than implicit.
 - Fix handling of consolidation path (#307)
 
 
-## 1.4
+## [1.4] - 2017-05-10
 
 ### Changed
 
@@ -137,7 +144,7 @@ explicit rather than implicit.
 - Various potential bugs reported by shellcheck in boot scripts
 - Compilation was broken on 1.3, it is now fixed
 
-## 1.3
+## [1.3] - 2017-03-24
 
 ### Added
 
@@ -152,19 +159,19 @@ explicit rather than implicit.
 - #212 - missing profile option for release task
 - #214 - run post_stop hooks after foreground exit
 
-## 1.2.2
+## [1.2.2] - 2017-02-27
 
 ### Fixed
 
 - Handling of configs during upgrades (#139)
 
-## 1.2.1
+## [1.2.1] - 2017-02-27
 
 ### Fixed
 
 - Handling of ERTS detection in boot script
 
-## 1.2.0
+## [1.2.0] - 2017-02-27
 
 ### Added
 
@@ -192,13 +199,13 @@ explicit rather than implicit.
 - Fix win32 executable exit conditions (#202) - Matt Enlow
 - Ensure code_change/4 is detected for special processes
 
-## 1.1.2
+## [1.1.2] - 2017-02-11
 
 ### Fixed
 
 - Handling of removed applications during hot upgrades
 
-## 1.1.1
+## [1.1.1] - 2017-02-09
 
 ### Changed
 
@@ -211,7 +218,7 @@ explicit rather than implicit.
 - Reduce chance of invalid sys.config during boot (#188) (Hugh Watkins)
 - Expose some additional boot script variables so plugins can access them
 
-## 1.1.0
+## [1.1.0] - 2017-01-11
 
 ### Added
 
@@ -231,7 +238,7 @@ explicit rather than implicit.
 - #165 - Ensure trapped signals wait for node to completely shut down before exiting (Paul Schoenfelder)
 - #134 - Dependency order issues can cause kernel/stdlib to be undefined
 
-## 1.0.0
+## [1.0.0] - 2016-12-05
 
 *NOTE*: This release contains breaking changes!
 
@@ -268,7 +275,7 @@ explicit rather than implicit.
 - 6bebdb6 - Properly handle symlinks when copying apps - Paul Schoenfelder
 - 8beae24 - Fix missing option in clean task - Paul Schoenfelder
 
-## 0.10.0
+## [0.10.0] - 2016-10-02
 
 ### Added
 
@@ -307,7 +314,7 @@ explicit rather than implicit.
 - 016a184 - (docs) Missing a `do` in mix command - Kyle Oba
 - e01cacb - (docs) Adds Phoenix walkthrough and Use document - supernullset
 
-## 0.9.3
+## [0.9.3] - 2016-08-17
 
 ### Fixed
 
