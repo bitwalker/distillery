@@ -71,7 +71,7 @@ run_hooks() {
 # Private. Run hooks from directory.
 _run_hooks_from_dir() {
     if [ -d "$1" ]; then
-        for file in $1/[0-9a-zA-Z]*.sh; do
+        for file in $1/[0-9a-zA-Z._-]*; do
             [ -f "$file" ] || continue
             . "$file"
         done
