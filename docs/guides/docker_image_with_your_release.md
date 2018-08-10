@@ -4,6 +4,17 @@ Now that we have seen how to build a release, let's build one in a docker image.
 
 A prerequisite step to this, is to initialize your release (`mix release.init`) and configure your [vm.args](/files/vm.args).
 
+in order to customize the application release version when building the docker image, change the following in your `mix.exs` file
+
+```
+# add this
+@version System.get_env("APP_VERSION") || "0.0.0"
+
+def project do
+  app: :my_app,
+  version: @version, # change this line
+```
+
 once that is done add a `dockerfile` to your project with the following content
 
 ```
@@ -54,5 +65,10 @@ COPY --from=0 /opt/release .
 CMD ["/opt/app/bin/start_app", "foreground"]
 ```
 
+verify that you can build your image with the following command
+`docker build -t my_tag --build-arg APP_VERSION="0.0.1" .`
+(it's common to tag images with your docker-hub username and repo name like `-t my_username/my_repo_name:version_number`)
+
+a couple of things to note:
 - this is just the image for your application. If your application has external dependencies (like a database for example), it doesn't matter here, and will be handled in the deployment part of the guide.
 - Make sure that the alpine image version you use, matches the one used in your elixir image. For example, elixir-1.7.2 is based on erlang-21 which is currently based on alpine-3.8. erlang-21 could be bumped to alpine-3.9 when it comes out.
