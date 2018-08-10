@@ -120,6 +120,7 @@ defmodule Mix.Releases.Runtime.Control do
   command :describe, "Describes the currently installed release" do
     option(:name)
     option(:cookie)
+    option(:release, :string, "The name of the release")
     option(:release_root_dir, :string, "The root directory for all releases")
     option(:sysconfig, :string, "The path to the sys.config file used by the release")
     option(:vmargs, :string, "The path to the vm.args file used by the release")
