@@ -59,12 +59,8 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   end
 
   def merge_config(runtime_config) do
-    Enum.map(runtime_config, fn {app, app_config} ->
-      merged_app_config =
-        app
-        |> Application.get_all_env()
-        |> Mix.Config.merge(app_config)
-      {app, merged_app_config}
+    Enum.flat_map(runtime_config, fn {app, app_config} ->
+      Mix.Config.merge([{app, Application.get_all_env(app)}], [{app, app_config}])
     end)
   end
 
