@@ -1,4 +1,4 @@
-# Running Migrations, etc.
+# Running migrations
 
 A very common task as part of deployment is the ability to run migrations, or other
 automated prep work prior to starting the new version. There are a number of approaches
@@ -8,12 +8,12 @@ much more comfortable to use.
 
 The approach is the following:
 
-- Define a module which will execute the migrations, this is a common
-  requirement of all approaches to running migrations in a release.
-- Define a custom command which will execute this module for you without
-  requiring that you type the module, function, and arguments yourself.
+  * Define a module which will execute the migrations, this is a common
+    requirement of all approaches to running migrations in a release.
+  * Define a custom command which will execute this module for you without
+    requiring that you type the module, function, and arguments yourself.
 
-## Migration Module
+## Migration module
 
 The following code is an example of a module which will run your Ecto migrations:
 
@@ -108,7 +108,7 @@ defmodule MyApp.ReleaseTasks do
 end
 ```
 
-## Custom Command
+## Custom command
 
 Create the following shell scripts at `rel/commands/`:
 
@@ -117,7 +117,7 @@ Create the following shell scripts at `rel/commands/`:
 ```bash
 #!/bin/sh
 
-"${RELEASE_ROOT_DIR}"/bin/myapp eval "MyApp.ReleaseTasks.migrate()"
+release_ctl eval "MyApp.ReleaseTasks.migrate()"
 ```
 
 * `rel/commands/seed.sh`
@@ -125,10 +125,10 @@ Create the following shell scripts at `rel/commands/`:
 ```bash
 #!/bin/sh
 
-"${RELEASE_ROOT_DIR}"/bin/myapp eval "MyApp.ReleaseTasks.seed()"
+release_ctl eval "MyApp.ReleaseTasks.seed()"
 ```
 
-For more info on shell variables look at the [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html#environment-variables).
+For more info on the shell API look at the [Shell Scripts](../extensibility/shell_scripts.md) document.
 
 ## Tying it all together
 
@@ -140,15 +140,16 @@ Now that we have our custom command and migrator module defined, we just need to
 release :myapp do
   ...
   set commands: [
-    "migrate": "rel/commands/migrate.sh",
-    "seed": "rel/commands/seed.sh",
+    migrate: "rel/commands/migrate.sh",
+    seed: "rel/commands/seed.sh",
   ]
 end
 
 ...
 ```
 
-Now, once you've deployed your application, you can run migrations/seeds with `bin/myapp migrate` and `bin/myapp seed`. Easy as pie.
+Now, once you've deployed your application, you can run migrations/seeds with
+`bin/myapp migrate` and `bin/myapp seed`.
 
 ## Thoughts
 
@@ -157,4 +158,4 @@ by defining a pre-start hook which does basically the same thing as above, just 
 even define the command, and execute the command as part of the hook, giving you the flexibility of both approaches.
 
 Custom commands give you a lot of power to express potentially complex operations as a terse statement. I would encourage
-you to use them for these types of tasks rather than using the raw `rpc` and `command` constructs!
+you to use them for these types of tasks rather than using the raw `rpc` and `eval` tasks!

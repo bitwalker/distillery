@@ -6,14 +6,14 @@ previous iterations of the release tooling, it was certainly more difficult to
 deal with some edge cases; particularly dealing with applications that abuse the
 application env for configuration, rather than using parameterized processes and
 functions. This pain was due to the fact that Mix's config file, `config.exs`,
-was not usable directly in releases. 
+was not usable directly in releases.
 
 ## Background
 
 Releases instead required a `sys.config` file, essentially a static form of
 configuration defined in Erlang syntax. In order to build releases for Elixir
 applications, older tooling compiled the results of evaluating the Mix config
-file to `sys.config` format, and bundled that into the release. 
+file to `sys.config` format, and bundled that into the release.
 
 This meant that some constructs for runtime configuration, namely dynamic
 things, like `System.get_env/1` would be evaluated at build time, not runtime,
@@ -173,7 +173,7 @@ replaced with the value of the system `HOSTNAME` environment variable.
 
 The downside is that it still relies on some degree of static information, e.g.
 the nodes in the `sync_nodes_mandatory` list above are known in advance in the
-example, but what about when the node names are not known? 
+example, but what about when the node names are not known?
 
 ### Option 3: sys.config
 
@@ -272,7 +272,7 @@ parameters first, rather than using the application environment (e.g.
 
 For non-OTP applications, this is simple, have all your API functions which
 require configuration, accept a list of options as a parameter, and pass it down
-the stack to where it's needed. 
+the stack to where it's needed.
 
 You can make this parameter default to an empty list, or some predetermined set
 of defaults with `opts \\ []` or `opts \\ @defaults`, like so:
@@ -281,7 +281,7 @@ of defaults with `opts \\ []` or `opts \\ @defaults`, like so:
 defmodule Log do
   @default_device :standard_io
   @default_opts [device: @default_device]
-  
+
   def info(msg, opts \\ @default_opts) do
     device = Keyword.get(opts, :device, @default_device)
     IO.puts(device, msg)
@@ -302,11 +302,11 @@ in the application callback module, namely in the `start/2` callback:
 ```elixir
 defmodule MyApp do
   use Application
-  
+
   def start(_type, _args) do
     Supervisor.start_link(__MODULE__, [], name: __MODULE__.Supervisor)
   end
-  
+
   def init(_) do
     all = Application.get_all_env(:myapp)
     config = [

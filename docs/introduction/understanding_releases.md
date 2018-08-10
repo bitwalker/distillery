@@ -1,4 +1,4 @@
-# Understanding OTP Releases
+# Understanding OTP releases
 
 Fundamentally, OTP releases are the means by which one or more applications are bundled up together
 for execution as a single unit. In terms of Elixir projects, an OTP release is the same whether the
@@ -6,7 +6,7 @@ underlying project is an umbrella or not, in both cases, the application or appl
 defines (and their associated dependencies), are compiled, bundled up together in a single package,
 and upon startup, loaded and then started in dependency order.
 
-## Why Releases?
+## Why releases?
 
 Releases enable simplified deployment: they are self-contained, and provide everything needed to
 boot the release; they are easily administered via the provided shell script to open up a remote console,
@@ -28,9 +28,9 @@ source and running via Mix, you have to take extra steps to make sure the node i
 
 Now that we've looked at what releases are, and why they are worth using, let's dig in to how they work in more
 detail. If you are not interested in this right now, and would rather see how to get started with a walkthrough,
-take a look at the [Phoenix Walkthrough](../phoenix_walkthrough.md).
+take a look at the [Phoenix Walkthrough](../guides/phoenix_walkthrough.md).
 
-## Startup and Lifecycle
+## Startup and lifecycle
 
 Mix itself loads/starts things a little differently than OTP releases, in order to provide `Mix.Config`,
 as well as its task infrastructure. For example, when using `mix run` to start your project, Mix compiles, 
@@ -108,12 +108,15 @@ As you can see this script operates at a very low level, instructing the runtime
 checkpointing major events, using `apply` instructions to load and start applications, and more that is
 not shown here for brevity.
 
-**TIP**: In an OTP release, this script is actually converted to a binary form, which is stored with a `.boot` extension,
-but all this file is, is the result of calling `:erlang.term_to_binary/1` on the data structure in the `.script` file.
-If you ever need to see exactly what is in the `.boot`, just run `:erlang.binary_to_term/1` on the contents to see the
-data structure itself.
+!!! tip
+    In an OTP release, this script is actually converted to a binary form,
+    which is stored with a `.boot` extension, but all this file is, is the
+    result of calling `:erlang.term_to_binary/1` on the data structure in the
+    `.script` file. If you ever need to see exactly what is in the `.boot`, just
+    run `:erlang.binary_to_term/1` on the contents to see the data structure
+    itself.
 
-## Release Descriptor
+## Release descriptor
 
 An OTP release at its most basic level describes the applications and their versions, that it needs to run.
 The file in which this is described is stored with a `.rel` extension, and looks like so:
@@ -145,8 +148,11 @@ files required by the applications contained in the release, the target ERTS (if
 such as `config.exs`, `sys.config`, `vm.args`, as well as the shell script used to set up the environment and run the release - 
 into a gzipped tarball for easy deployment.
 
-## Next Steps
+## Next steps
 
-Take a look at either the [Walkthrough](walkthrough.md) or [Comparisons](comparisons.md) pages for more
-introductory information. Otherwise, there are a number of topics available via the sidebar, and if you are unable
-to find what you are looking for, please open an issue [here](https://github.com/bitwalker/issues).
+You may want to take a look at one of the following next:
+
+  * See a walkthrough of deploying an application in [Walkthrough](walkthrough.md)
+  * See a walkthrough of deploying a Phoenix application in detail in [Phoenix Walkthrough](../guides/phoenix_walkthrough.md)
+  * Compare releases against other deployment tools you may know in [Comparisons](comparison.md)
+  * Check out one of our in-depth deployment guides by looking under Guides in the side bar

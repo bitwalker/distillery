@@ -37,5 +37,5 @@ When you build your release, you can then call your command like so:
 hi
 ```
 
-You have access to anything defined in the management scripts environment, see 
+You have access to anything defined in the management scripts environment, see
 [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for details.

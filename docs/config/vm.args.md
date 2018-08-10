@@ -60,4 +60,3 @@ want to use this approach.
 
 For more information on `vm.args`, please see the documentation on [erl](http://erlang.org/doc/man/erl.html),
 specifically the Flags section.
-

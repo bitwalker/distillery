@@ -66,57 +66,26 @@ defmodule Distillery.Mixfile do
 
   defp aliases do
     [
-      c: [
-        "compile",
-        "format --check-equivalent",
-      ],
+      docs: [&mkdocs/1, "docs"],
+      c: ["compile", "format --check-equivalent"],
       "compile-check": [
         "compile", 
         "format --check-formatted --dry-run", 
         "dialyzer --halt-exit-status"
-      ]
+      ],
     ]
+  end
+
+  defp mkdocs(_args) do
+    docs = Path.join([File.cwd!, "bin", "docs"])
+    {_, 0} = System.cmd(docs, ["build"], into: IO.stream(:stdio, :line))
   end
 
   defp docs do
     [
-      main: "overview",
-      extra_section: "GUIDES",
-      groups_for_extras: [
-        "Introduction": ~r/docs\/introduction\/.?/,
-        "Guides": ~r/docs\/guides\/.?/,
-        "Deployment": ~r/docs\/deployment\/.?/,
-        "Files": ~r/docs\/files\/.?/,
-        "Plugins": ~r/docs\/plugins\/.?/,
-        "Overlays": ~r/docs\/overlays\/.?/,
-        "Configuration": ~r/docs\/config\/.?/,
-        "Other": ~r/docs\/[^\.]+.md/
-      ],
-      extras: [
-        "CHANGELOG.md",
-        "docs/introduction/overview.md",
-        "docs/introduction/up_and_running.md",
-        "docs/introduction/understanding_releases.md",
-        "docs/introduction/walkthrough.md",
-        "docs/introduction/release_configuration.md",
-        "docs/introduction/umbrella_projects.md",
-        "docs/introduction/terminology.md",
-        "docs/guides/phoenix_walkthrough.md",
-        "docs/guides/running_migrations.md",
-        "docs/guides/upgrades_and_downgrades.md",
-        "docs/guides/appups.md",
-        "docs/guides/systemd.md",
-        "docs/files/vm.args.md",
-        "docs/plugins/release_plugins.md",
-        "docs/plugins/config_providers.md",
-        "docs/plugins/custom_commands.md",
-        "docs/plugins/boot_hooks.md",
-        "docs/overlays/overlays.md",
-        "docs/config/handling_config.md",
-        "docs/faq.md",
-        "docs/cli.md",
-        "docs/shell_scripts.md",
-      ]
+      source_url: "https://github.com/bitwalker/distillery",
+      homepage_url: "https://github.com/bitwalker/distillery",
+      main: "home"
     ]
   end
 

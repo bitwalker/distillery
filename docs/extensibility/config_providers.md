@@ -24,7 +24,7 @@ until one returns a non-nil value, or nil if no value was found. I am
 considering some features which may take advantage of this API in the future,
 but currently it is just a placeholder.
 
-There are some important properties you must keep in mind when designing and 
+There are some important properties you must keep in mind when designing and
 implementing a provider:
 
 - You have access to the code of all applications in the release, _but_, only
@@ -39,7 +39,7 @@ implementing a provider:
   needs configuration, you have a circular dependency problem. In order to solve
   this, you need to have users provide the initial configuration via
   `sys.config` or `config.exs`, that way you can bootstrap the provider.
-  
+
 In general, it is highly recommended to avoid starting applications as part of
 your provider. The one exception to this is providers which may make HTTP
 requests, as some applications are necessary to start in that case if using `:httpc`,
@@ -50,7 +50,7 @@ or have Distillery manage their temporary lifecycle for you.
 
 ## Example: JSON
 
-The following is a relatively simple example, which allows one to represent the 
+The following is a relatively simple example, which allows one to represent the
 typical `config.exs` structure in JSON, so given the following Mix config file:
 
 ```elixir
@@ -66,13 +66,13 @@ config :myapp, :settings,
 The JSON representation expected by this provider would be:
 
 ```json
-{ 
-  "myapp": { 
-    "port": 8080, 
-    "settings": { 
-      "foo": "bar" 
-    } 
-  } 
+{
+  "myapp": {
+    "port": 8080,
+    "settings": {
+      "foo": "bar"
+    }
+  }
 }
 ```
 
@@ -105,7 +105,7 @@ defmodule JsonConfigProvider do
     end
   end
   defp to_keyword(config), do: config
-  
+
   defp persist(config) when is_map(config) do
     config = to_keyword(config)
     for {app, app_config} <- config do
@@ -117,7 +117,7 @@ defmodule JsonConfigProvider do
     end
     :ok
   end
-  
+
   defp merge_config(a, b) do
     Keyword.merge(a, b, fn _, app1, app2 ->
       Keyword.merge(app1, app2, &merge_config/3)

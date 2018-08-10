@@ -1,0 +1,63 @@
+site_name: Distillery Documentation
+docs_dir: 'docs'
+site_dir: 'doc'
+theme: 'material'
+use_directory_urls: false
+markdown_extensions:
+    - markdown.extensions.toc(permalink=true)
+    - markdown.extensions.admonition
+    - markdown.extensions.smarty
+    - markdown.extensions.wikilinks
+    - markdown.extensions.codehilite(linenums=true)
+    - pymdownx.caret
+    - pymdownx.details
+    - pymdownx.inlinehilite
+    - pymdownx.magiclink
+    - pymdownx.mark
+    - pymdownx.smartsymbols
+    - pymdownx.superfences
+    - pymdownx.tasklist(custom_checkbox=true)
+    - pymdownx.tilde
+extra:
+    palette:
+        primary: '#087da1'
+        accent: '#00a889'
+    font:
+        text: 'Source Sans Pro'
+    social:
+        - type: 'github'
+          link: 'https://github.com/bitwalker/distillery'
+repo_name: 'bitwalker/distillery'
+repo_url: 'https://github.com/bitwalker/distillery'
+copyright: 'Copyright 2018 Paul Schoenfelder'
+pages:
+    - Home: 'home.md'
+    - Installation: 'introduction/installation.md'
+    - 'Getting Started':
+        - 'Command Line Interface': 'tooling/cli.md'
+        - 'Understanding Releases': 'introduction/understanding_releases.md'
+        - 'Compare To Other Tools': 'introduction/comparison.md'
+        - 'Walkthrough': 'introduction/walkthrough.md'
+        - 'Umbrella Projects': 'introduction/umbrella_projects.md'
+        - 'Terminology': 'introduction/terminology.md'
+    - Guides:
+        - 'Phoenix': 'guides/phoenix_walkthrough.md'
+        - 'Deploying To AWS': 'guides/deploying_to_aws.md'
+        - 'Upgrades and Downgrades': 'guides/upgrades_and_downgrades.md'
+        - 'Appups': 'guides/appups.md'
+        - 'Migrations': 'guides/running_migrations.md'
+        - 'systemd': 'guides/systemd.md'
+    - Configuration:
+        - 'Configuring Distillery': 'config/distillery.md'
+        - 'Runtime Configuration': 'config/runtime.md'
+        - 'VM Args': 'config/vm.args.md'
+    - Extensibility:
+        - 'Release Plugins': 'extensibility/release_plugins.md'
+        - 'Config Providers': 'extensibility/config_providers.md'
+        - 'Custom Commands': 'extensibility/custom_commands.md'
+        - 'Overlays': 'extensibility/overlays.md'
+        - 'Boot Hooks': 'extensibility/boot_hooks.md'
+        - 'Shell Scripts': 'extensibility/shell_scripts.md'
+    - 'Module Documentation': 'api-reference.html'
+    - Changelog: 'changelog.md'
+    - FAQ: 'faq.md'

@@ -1,0 +1,4 @@
+mkdocs==1.0
+git+git://github.com/bitwalker/mkdocs-material.git@master#egg=mkdocs-material
+pygments
+pymdown-extensions

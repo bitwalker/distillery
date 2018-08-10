@@ -18,3 +18,5 @@ erl_crash.dump
 
 .eqc-info
 *.eqc
+
+/_venv
