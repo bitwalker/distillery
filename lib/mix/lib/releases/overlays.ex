@@ -95,6 +95,7 @@ defmodule Mix.Releases.Overlays do
                "    dst: #{Path.relative_to_cwd(to)}"
            ),
          expanded_to <- Path.join(output_dir, to),
+         :ok <- File.mkdir_p(Path.dirname(expanded_to)),
          {:ok, _} <- File.cp_r(from, expanded_to),
          do: {:ok, to}
   end
@@ -110,6 +111,7 @@ defmodule Mix.Releases.Overlays do
            ),
          expanded_to <- Path.join(output_dir, to),
          _ <- File.rm(expanded_to),
+         :ok <- File.mkdir_p(Path.dirname(expanded_to)),
          :ok <- File.ln_s(from, expanded_to),
          do: {:ok, to}
   end
