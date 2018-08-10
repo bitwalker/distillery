@@ -51,10 +51,6 @@ if you have external dependencies this is the place to add them. For example if 
 ```
 version: '3.5'
 
-volumes:
-    prometheus_data: {}
-    grafana_data: {}
-
 networks:
   webnet:
     driver: overlay
