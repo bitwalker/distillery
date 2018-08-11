@@ -845,8 +845,8 @@ defmodule Mix.Releases.Assembler do
                  output_dir,
                  Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
                ),
-             :ok <- create_named_boot(:start_clean, rel_dir, output_dir, options),
-             :ok <- create_named_boot(:no_dot_erlang, rel_dir, output_dir, options),
+             :ok <- create_named_boot(release, :start_clean, rel_dir, output_dir, options),
+             :ok <- create_named_boot(release, :no_dot_erlang, rel_dir, output_dir, options),
              do: :ok
 
       {:ok, _, []} ->
@@ -856,8 +856,8 @@ defmodule Mix.Releases.Assembler do
                  output_dir,
                  Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
                ),
-             :ok <- create_named_boot(:start_clean, rel_dir, output_dir, options),
-             :ok <- create_named_boot(:no_dot_erlang, rel_dir, output_dir, options),
+             :ok <- create_named_boot(release, :start_clean, rel_dir, output_dir, options),
+             :ok <- create_named_boot(release, :no_dot_erlang, rel_dir, output_dir, options),
              do: :ok
 
       :error ->
@@ -944,18 +944,20 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates a named boot script (like 'start_clean')
-  defp create_named_boot(name, rel_dir, output_dir, options) do
+  defp create_named_boot(release, name, rel_dir, output_dir, options) do
     Shell.debug("Generating #{name}.boot")
+
+    script_path = Path.join(rel_dir, "#{name}.script")
+    rel_path = Path.join(rel_dir, "#{name}.rel")
+    src_boot = Path.join(rel_dir, "#{name}.boot")
+    target_boot = Path.join([output_dir, "bin", "#{name}.boot"])
 
     case :systools.make_script('#{name}', options) do
       :ok ->
-        with :ok <-
-               File.cp(
-                 Path.join(rel_dir, "#{name}.boot"),
-                 Path.join([output_dir, "bin", "#{name}.boot"])
-               ),
-             :ok <- File.rm(Path.join(rel_dir, "#{name}.rel")),
-             :ok <- File.rm(Path.join(rel_dir, "#{name}.script")) do
+        with :ok <- extend_script(release, script_path),
+             :ok <- File.cp(src_boot, target_boot),
+             :ok <- File.rm(script_path),
+             :ok <- File.rm(rel_path) do
           :ok
         else
           {:error, reason} ->
@@ -966,13 +968,10 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:named_boot, name, :unknown}}}
 
       {:ok, _, []} ->
-        with :ok <-
-               File.cp(
-                 Path.join(rel_dir, "#{name}.boot"),
-                 Path.join([output_dir, "bin", "#{name}.boot"])
-               ),
-             :ok <- File.rm(Path.join(rel_dir, "#{name}.rel")),
-             :ok <- File.rm(Path.join(rel_dir, "#{name}.script")) do
+        with :ok <- extend_script(release, script_path),
+             :ok <- File.cp(src_boot, target_boot),
+             :ok <- File.rm(script_path),
+             :ok <- File.rm(rel_path) do
           :ok
         else
           {:error, reason} ->
