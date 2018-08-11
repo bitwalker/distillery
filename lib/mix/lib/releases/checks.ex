@@ -54,6 +54,7 @@ defmodule Mix.Releases.Checks do
   @spec run([module], Release.t()) :: :ok | {:ok, warning} | {:error, term}
   def run([], _release),
     do: :ok
+
   def run(checks, release),
     do: do_run(checks, release, [])
 
@@ -61,8 +62,10 @@ defmodule Mix.Releases.Checks do
     for warning <- Enum.reverse(warnings) do
       Mix.Releases.Shell.notice(warning)
     end
+
     :ok
   end
+
   defp do_run([check | checks], %Release{} = release, warnings) do
     Mix.Releases.Shell.debugf("    > #{Enum.join(Module.split(check), ".")}")
     check.run(release)
@@ -77,9 +80,11 @@ defmodule Mix.Releases.Checks do
 
     {:error, _} = err ->
       Mix.Releases.Shell.debugf(" * FAILED\n", :red)
+
       for warning <- Enum.reverse(warnings) do
         Mix.Releases.Shell.notice(warning)
       end
+
       err
 
     other ->

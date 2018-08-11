@@ -26,7 +26,7 @@ defmodule Mix.Releases.Assembler do
          {:ok, release} <- Plugin.before_assembly(release),
          {:ok, release} <- Release.apply_configuration(release, config, true),
          :ok <- validate_configuration(release),
-         :ok <- make_paths(release) do 
+         :ok <- make_paths(release) do
       {:ok, release}
     end
   end
@@ -134,7 +134,7 @@ defmodule Mix.Releases.Assembler do
         copy_app(app_dir, target_dir, dev_mode?, include_src?)
 
       p when is_binary(p) ->
-        app_dir = 
+        app_dir =
           if Utils.is_erts_lib?(app_dir) do
             Path.join([p, "lib", "#{app_name}-#{app_version}"])
           else
@@ -702,7 +702,7 @@ defmodule Mix.Releases.Assembler do
     config =
       case Keyword.get(config, :sasl) do
         nil ->
-          put_in(config, [:sasl], [errlog_type: :error, sasl_error_logger: false])
+          put_in(config, [:sasl], errlog_type: :error, sasl_error_logger: false)
 
         sasl ->
           config

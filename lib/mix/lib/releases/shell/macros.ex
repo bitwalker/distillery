@@ -18,7 +18,7 @@ defmodule Mix.Releases.Shell.Macros do
   defmacro __before_compile__(_env) do
     quote do
       @doc "Returns the current verbosity setting"
-      def verbosity(), 
+      def verbosity(),
         do: Application.get_env(:mix, :release_logger_verbosity, :normal)
 
       @doc "Print a message formatted with the default formatting for the given log level"
@@ -68,8 +68,9 @@ defmodule Mix.Releases.Shell.Macros do
       end
 
       # Compare log levels
-      defp gte(a, :suppress_all), 
+      defp gte(a, :suppress_all),
         do: false
+
       defp gte(a, b),
         do: Map.get(@levels, a) >= Map.get(@levels, b)
     end

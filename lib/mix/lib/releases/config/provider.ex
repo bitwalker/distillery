@@ -98,25 +98,27 @@ defmodule Mix.Releases.Config.Provider do
 
           p ->
             raise ArgumentError,
-                msg: "Invalid #{__MODULE__}: Expected module or `{module, args}` tuple, got #{inspect(p)}"
+              msg:
+                "Invalid #{__MODULE__}: " <>
+                  "Expected module or `{module, args}` tuple, got #{inspect(p)}"
         end
       rescue
         err ->
           trace = System.stacktrace()
-          msg =
-            Exception.message(err) <>
-            "\n" <>
-            Exception.format_stacktrace(trace)
+          msg = Exception.message(err) <> "\n" <> Exception.format_stacktrace(trace)
           print_err(msg)
           reraise err, trace
       catch
         kind, err ->
-          print_err(Exception.format(kind, err, System.stacktrace))
+          print_err(Exception.format(kind, err, System.stacktrace()))
+
           case kind do
             :throw ->
-              throw err
+              throw(err)
+
             :exit ->
               exit(err)
+
             :error ->
               :erlang.error(err)
           end
@@ -198,7 +200,7 @@ defmodule Mix.Releases.Config.Provider do
   end
 
   defp print_err(msg) when is_binary(msg) do
-    if IO.ANSI.enabled? do
+    if IO.ANSI.enabled?() do
       IO.puts(IO.ANSI.format([IO.ANSI.red(), msg, IO.ANSI.reset()]))
     else
       IO.puts(msg)

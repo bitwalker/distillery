@@ -32,6 +32,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
   def init([path]) do
     # Start Mix if not started to allow calling Mix APIs
     started? = List.keymember?(Application.started_applications(), :mix, 0)
+
     unless started? do
       :ok = Application.start(:mix)
       # Always set MIX_ENV to :prod, unless otherwise given
@@ -39,16 +40,21 @@ defmodule Mix.Releases.Config.Providers.Elixir do
       System.put_env("MIX_ENV", env)
       Mix.env(String.to_atom(env))
     end
+
     try do
       with {:ok, path} <- Provider.expand_path(path) do
         path
         |> eval!()
+        |> IO.inspect
         |> merge_config()
         |> Mix.Config.persist()
       else
         {:error, reason} ->
           exit(reason)
       end
+    else
+      _ ->
+        :ok
     after
       unless started? do
         # Do not leave Mix started if it was started here
@@ -60,7 +66,8 @@ defmodule Mix.Releases.Config.Providers.Elixir do
 
   def merge_config(runtime_config) do
     Enum.flat_map(runtime_config, fn {app, app_config} ->
-      Mix.Config.merge([{app, Application.get_all_env(app)}], [{app, app_config}])
+      all_env = Application.get_all_env(app)
+      Mix.Config.merge([{app, all_env}], [{app, app_config}])
     end)
   end
 
