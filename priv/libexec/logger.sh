@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
 set -o posix
-
 set -e
+if [ ! -z "$DEBUG_BOOT" ]; then
+    # Disable debug mode in this file
+    set +x
+fi
 
 IS_TTY=false
 if [ -t 1 ]; then
@@ -45,3 +48,8 @@ success() {
 info() {
     printf "%s\n" "${*}"
 }
+
+if [ ! -z "$DEBUG_BOOT" ]; then
+    # Re-enable it after
+    set -x
+fi
