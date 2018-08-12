@@ -45,7 +45,6 @@ defmodule Mix.Releases.Config.Providers.Elixir do
       with {:ok, path} <- Provider.expand_path(path) do
         path
         |> eval!()
-        |> IO.inspect
         |> merge_config()
         |> Mix.Config.persist()
       else
