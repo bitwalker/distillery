@@ -6,8 +6,7 @@ set -e
 __rel_apps() {
     __rel="$RELEASE_ROOT_DIR/releases/$REL_VSN/$REL_NAME.rel"
     grep -E '[{][A-Za-z_0-9]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"(,[a-z]*)?[}]' "$__rel" \
-        | grep -v "{erts," \
-        | sed -e's/"[^"]*$//' \
+        | grep -v "{erts," \ | sed -e's/"[^"]*$//' \
               -e's/^[^a-z]*//' \
               -e's/,/-/' \
               -e's/"//'
@@ -79,19 +78,20 @@ erl() {
             # Host ERTS
             if echo "$@" | grep -v '\-boot ' >/dev/null; then
                 "$__erl" -boot start_clean \
+                         "${code_paths[@]}" \
                          -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
                          -pa "${CONSOLIDATED_DIR}" \
                          -pa "${EXTRA_CODE_PATHS}" \
                          "$@"
             else
                 if [ -z "$ERTS_LIB_DIR" ]; then
-                    "$__erl" -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                    "$__erl" "${code_paths[@]}" \
                              -pa "${CONSOLIDATED_DIR}" \
                              -pa "${EXTRA_CODE_PATHS}" \
                              "$@"
                 else
                     "$__erl" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-                             -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                             "${code_paths[@]}" \
                              -pa "${CONSOLIDATED_DIR}" \
                              -pa "${EXTRA_CODE_PATHS}" \
                              "$@"
