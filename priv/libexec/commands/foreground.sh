@@ -29,11 +29,8 @@ run_hooks pre_start
 
 # Build an array of arguments to pass to exec later on
 # Build it here because this command will be used for logging.
-set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
+set -- $FOREGROUNDOPTIONS \
     -boot "$REL_DIR/$BOOTFILE" \
-    -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-    "${code_paths[@]}" \
-    -pa "$CONSOLIDATED_DIR" \
     -args_file "$VMARGS_PATH" \
     -config "$SYS_CONFIG_PATH" \
     -mode "$CODE_LOADING_MODE" \
@@ -44,22 +41,12 @@ set -- "$BINDIR/erlexec" $FOREGROUNDOPTIONS \
 if [ ! -z "$VERBOSE" ]; then
     echo "Exec: $*" -- "${1+$ARGS}"
     echo "Root: $ROOTDIR"
-fi;
+fi
 
 post_start_fg() {
     sleep 2
     run_hooks post_start
 }
 
-if [ ! -z "$OTP_VER" ] && [ "$OTP_VER" -ge 20 ]; then
-    post_start_fg &
-    exec "$@" -- "${1+$ARGS}"
-else
-    "$@" -- "${1+$ARGS}" &
-    __bg_pid=$!
-    run_hooks post_start
-    wait $__bg_pid
-    __exit_code=$?
-    run_hooks post_stop
-    exit $__exit_code
-fi
+post_start_fg &
+erlexec "$@" -- "${1+$ARGS}"

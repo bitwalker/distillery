@@ -61,7 +61,65 @@ erl() {
     if [ -z "$__erl" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     else
-        "$__erl" "$@"
+        if [[ "$__erl" =~ ^$RELEASE_ROOT_DIR ]]; then
+            # Bundled ERTS
+            if echo "$@" | grep -v '\-boot ' >/dev/null; then
+                # No boot script specified, use start_none
+                "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
+                         -boot "$RELEASE_ROOT_DIR/bin/start_none" \
+                         -pa "${EXTRA_CODE_PATHS}" \
+                         "$@"
+            else
+                "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
+                         -pa "${CONSOLIDATED_DIR}" \
+                         -pa "${EXTRA_CODE_PATHS}" \
+                         "$@"
+            fi
+        else
+            # Host ERTS
+            if echo "$@" | grep -v '\-boot ' >/dev/null; then
+                "$__erl" -boot start_clean \
+                         -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                         -pa "${CONSOLIDATED_DIR}" \
+                         -pa "${EXTRA_CODE_PATHS}" \
+                         "$@"
+            else
+                if [ -z "$ERTS_LIB_DIR" ]; then
+                    "$__erl" -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                             -pa "${CONSOLIDATED_DIR}" \
+                             -pa "${EXTRA_CODE_PATHS}" \
+                             "$@"
+                else
+                    "$__erl" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
+                             -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                             -pa "${CONSOLIDATED_DIR}" \
+                             -pa "${EXTRA_CODE_PATHS}" \
+                             "$@"
+                fi
+            fi
+        fi
+    fi
+}
+
+erlexec(){
+    __erl="$(whereis_erts_bin)/erl"
+    if [ -z "$__erl" ]; then
+        fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
+    else
+        if [[ "$__erl" =~ ^$RELEASE_ROOT_DIR ]]; then
+            # Bundled ERTS
+            exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
+                                   -pa "${CONSOLIDATED_DIR}" \
+                                   -pa "${EXTRA_CODE_PATHS}" \
+                                   "$@"
+        else
+            # Host ERTS
+            exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
+                                   -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                                   -pa "${CONSOLIDATED_DIR}" \
+                                   -pa "${EXTRA_CODE_PATHS}" \
+                                   "$@"
+        fi
     fi
 }
 
@@ -153,11 +211,7 @@ elixir() {
         I=$(expr $I + $S)
     done
     if [ "$MODE" != "iex" ]; then ERL="-noshell -s elixir start_cli $ERL"; fi
-    erl -boot_var ERTS_LIB_DIR "$ERTS_DIR/../lib" \
-        -boot "$RELEASE_ROOT_DIR/bin/start_clean" \
-        "${code_paths[@]}"\
-        -pa "$CONSOLIDATED_DIR" \
-        $ELIXIR_ERL_OPTIONS $ERL -extra "$@"
+    erl $ELIXIR_ERL_OPTIONS $ERL -extra "$@"
 }
 
 # Run IEx
@@ -167,17 +221,17 @@ iex() {
 
 # Echoes the current ERTS version
 erts_vsn() {
-    erl -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver])' -noshell -boot start_clean -s erlang halt
+    erl -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver])' -noshell -s erlang halt
 }
 
 # Echoes the current ERTS root directory
 erts_root() {
-    erl -eval 'io:format("~s~n", [code:root_dir()]).' -noshell -boot start_clean -s erlang halt
+    erl -eval 'io:format("~s~n", [code:root_dir()]).' -noshell -s erlang halt
 }
 
 # Echoes the current OTP version
 otp_vsn() {
-    erl -eval 'Ver = erlang:system_info(otp_release), io:format("~s~n", [Ver])' -noshell -boot start_clean -s erlang halt
+    erl -eval 'Ver = erlang:system_info(otp_release), io:format("~s~n", [Ver])' -noshell -s erlang halt
 }
 
 # Use release_ctl for local operations
@@ -185,6 +239,7 @@ otp_vsn() {
 release_ctl() {
     command="$1"; shift
     elixir -e "Mix.Releases.Runtime.Control.main" \
+           --erl "-boot $RELEASE_ROOT_DIR/bin/start_clean" \
            -- \
            "$command" "$@"
 }
@@ -217,9 +272,11 @@ escript() {
 }
 
 # Test erl to make sure it works
-if erl -eval 'io:format("ok~n", [])' -noshell -boot start_clean -s erlang halt 2>/dev/null | grep "ok" >/dev/null; then
+if erl -noshell -s erlang halt 2>/dev/null; then
     export ROOTDIR
     ROOTDIR="$(erts_root)"
+    export ROOT
+    ROOT="$ROOTDIR"
     export ERTS_VSN
     if [ -z "$ERTS_VSN" ]; then
         # Update start_erl.data
@@ -235,8 +292,6 @@ if erl -eval 'io:format("ok~n", [])' -noshell -boot start_clean -s erlang halt 2
     ERTS_LIB_DIR="$(readlink_f "$ERTS_DIR/../lib")"
     export EMU="beam"
     export PROGNAME="erl"
-    # Initialize code paths
-    __set_code_paths
 else
     fail "Unusable Erlang runtime system! This is likely due to being compiled for another system than the host is running"
 fi

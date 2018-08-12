@@ -31,19 +31,13 @@ is_function_defined() {
     fi
     erl -eval "code:ensure_modules_loaded(['$1']), io:format(\"~p~n\", [erlang:function_exported('$1', $2, 0)]), halt()" \
         -noshell \
-        -boot "$RELEASE_ROOT_DIR/bin/start_clean" \
-        -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-        -pa "$CONSOLIDATED_DIR" \
-        "${code_paths[@]}"
+        -boot "$RELEASE_ROOT_DIR/bin/start_clean"
 }
 
 # Build arguments for erlexec
 [ "$SYS_CONFIG_PATH" ] && set -- -config "$SYS_CONFIG_PATH"
 set -- "$@" -noshell
 set -- "$@" -boot "$RELEASE_ROOT_DIR/bin/start_clean"
-set -- "$@" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR"
-set -- "$@" -pa "$CONSOLIDATED_DIR"
-set -- "$@" "${code_paths[@]}"
 set -- "$@" -s "$MODULE" "$FUNCTION"
 set -- "$@" -s erlang halt
 
@@ -52,5 +46,4 @@ if [ "$__is_defined" = "false" ]; then
     fail "$MODULE.$FUNCTION is either not defined or has a non-zero arity"
 fi
 
-"$BINDIR"/erlexec "$@" $ERL_OPTS -extra $ARGS
-exit "$?"
+erlexec "$@" $ERL_OPTS -extra $ARGS
