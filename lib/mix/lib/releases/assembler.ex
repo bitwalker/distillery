@@ -225,6 +225,7 @@ defmodule Mix.Releases.Assembler do
 
     release_file = Path.join(rel_dir, "#{relname}.rel")
     start_clean_file = Path.join(rel_dir, "start_clean.rel")
+    start_none_file = Path.join(rel_dir, "start_none.rel")
     no_dot_erlang_file = Path.join(rel_dir, "no_dot_erlang.rel")
 
     clean_apps =
@@ -241,6 +242,7 @@ defmodule Mix.Releases.Assembler do
 
     with :ok <- Utils.write_term(release_file, Release.to_resource(release)),
          :ok <- Utils.write_term(start_clean_file, Release.to_resource(clean_release)),
+         :ok <- Utils.write_term(start_none_file, Release.to_resource(clean_release)),
          :ok <- Utils.write_term(no_dot_erlang_file, Release.to_resource(clean_release)),
          :ok <- generate_relup(release) do
       :ok
@@ -847,6 +849,7 @@ defmodule Mix.Releases.Assembler do
                ),
              :ok <- create_named_boot(release, :start_clean, rel_dir, output_dir, options),
              :ok <- create_named_boot(release, :no_dot_erlang, rel_dir, output_dir, options),
+             :ok <- create_named_boot(release, :start_none, rel_dir, output_dir, options, false),
              do: :ok
 
       {:ok, _, []} ->
@@ -858,6 +861,7 @@ defmodule Mix.Releases.Assembler do
                ),
              :ok <- create_named_boot(release, :start_clean, rel_dir, output_dir, options),
              :ok <- create_named_boot(release, :no_dot_erlang, rel_dir, output_dir, options),
+             :ok <- create_named_boot(release, :start_none, rel_dir, output_dir, options, false),
              do: :ok
 
       :error ->
@@ -944,7 +948,7 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates a named boot script (like 'start_clean')
-  defp create_named_boot(release, name, rel_dir, output_dir, options) do
+  defp create_named_boot(release, name, rel_dir, output_dir, options, extend? \\ true) do
     Shell.debug("Generating #{name}.boot")
 
     script_path = Path.join(rel_dir, "#{name}.script")
@@ -954,7 +958,7 @@ defmodule Mix.Releases.Assembler do
 
     case :systools.make_script('#{name}', options) do
       :ok ->
-        with :ok <- extend_script(release, script_path),
+        with :ok <- (if extend?, do: extend_script(release, script_path), else: :ok),
              :ok <- File.cp(src_boot, target_boot),
              :ok <- File.rm(script_path),
              :ok <- File.rm(rel_path) do
@@ -968,7 +972,7 @@ defmodule Mix.Releases.Assembler do
         {:error, {:assembler, {:named_boot, name, :unknown}}}
 
       {:ok, _, []} ->
-        with :ok <- extend_script(release, script_path),
+        with :ok <- (if extend?, do: extend_script(release, script_path), else: :ok),
              :ok <- File.cp(src_boot, target_boot),
              :ok <- File.rm(script_path),
              :ok <- File.rm(rel_path) do
