@@ -6,7 +6,8 @@ set -e
 __rel_apps() {
     __rel="$RELEASE_ROOT_DIR/releases/$REL_VSN/$REL_NAME.rel"
     grep -E '[{][A-Za-z_0-9]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"(,[a-z]*)?[}]' "$__rel" \
-        | grep -v "{erts," \ | sed -e's/"[^"]*$//' \
+        | grep -v "{erts," \
+        | sed -e's/"[^"]*$//' \
               -e's/^[^a-z]*//' \
               -e's/,/-/' \
               -e's/"//'
@@ -57,6 +58,10 @@ whereis_erts_bin() {
 # Invokes erl with the provided arguments
 erl() {
     __erl="$(whereis_erts_bin)/erl"
+    __extra_paths=""
+    if [ ! -z "$EXTRA_CODE_PATHS" ]; then
+        __extra_paths="-pa ${EXTRA_CODE_PATHS}"
+    fi
     if [ -z "$__erl" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     else
@@ -66,12 +71,12 @@ erl() {
                 # No boot script specified, use start_none
                 "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
                          -boot "$RELEASE_ROOT_DIR/bin/start_none" \
-                         -pa "${EXTRA_CODE_PATHS}" \
+                         ${__extra_paths} \
                          "$@"
             else
                 "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
                          -pa "${CONSOLIDATED_DIR}" \
-                         -pa "${EXTRA_CODE_PATHS}" \
+                         ${__extra_paths} \
                          "$@"
             fi
         else
@@ -81,19 +86,19 @@ erl() {
                          "${code_paths[@]}" \
                          -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
                          -pa "${CONSOLIDATED_DIR}" \
-                         -pa "${EXTRA_CODE_PATHS}" \
+                         ${__extra_paths} \
                          "$@"
             else
                 if [ -z "$ERTS_LIB_DIR" ]; then
                     "$__erl" "${code_paths[@]}" \
                              -pa "${CONSOLIDATED_DIR}" \
-                             -pa "${EXTRA_CODE_PATHS}" \
+                             ${__extra_paths} \
                              "$@"
                 else
                     "$__erl" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
                              "${code_paths[@]}" \
                              -pa "${CONSOLIDATED_DIR}" \
-                             -pa "${EXTRA_CODE_PATHS}" \
+                             ${__extra_paths} \
                              "$@"
                 fi
             fi
@@ -103,6 +108,10 @@ erl() {
 
 erlexec(){
     __erl="$(whereis_erts_bin)/erl"
+    __extra_paths=""
+    if [ ! -z "$EXTRA_CODE_PATHS" ]; then
+        __extra_paths="-pa ${EXTRA_CODE_PATHS}"
+    fi
     if [ -z "$__erl" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     else
@@ -110,14 +119,14 @@ erlexec(){
             # Bundled ERTS
             exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
                                    -pa "${CONSOLIDATED_DIR}" \
-                                   -pa "${EXTRA_CODE_PATHS}" \
+                                   ${__extra_paths} \
                                    "$@"
         else
             # Host ERTS
             exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
                                    -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
                                    -pa "${CONSOLIDATED_DIR}" \
-                                   -pa "${EXTRA_CODE_PATHS}" \
+                                   ${__extra_paths} \
                                    "$@"
         fi
     fi
@@ -292,6 +301,8 @@ if erl -noshell -s erlang halt 2>/dev/null; then
     ERTS_LIB_DIR="$(readlink_f "$ERTS_DIR/../lib")"
     export EMU="beam"
     export PROGNAME="erl"
+    # Initialize code paths
+    __set_code_paths
 else
     fail "Unusable Erlang runtime system! This is likely due to being compiled for another system than the host is running"
 fi
