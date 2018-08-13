@@ -18,9 +18,7 @@ for %%A in ("%script_dir%\..\..") do (
 )
 set rel_dir=%release_root_dir%\releases\%rel_vsn%
 
-set ROOTDIR=%release_root_dir%
 set ROOT=%release_root_dir%
-set ERTS_LIB_DIR=%release_root_dir%\lib
 set EMU=beam
 
 if "%RELEASE_MUTABLE_DIR%"=="" (
@@ -172,20 +170,22 @@ if %system_erl%=="" (
   exit /b 1
 )
 set system_root_dir_cmd=%system_erl% -noshell -eval "io:format(\"~s\", [filename:nativename(code:root_dir())])." -s init stop
-for /f "delims=" %%i in (`%%system_root_dir_cmd%%`) do set system_root=%%i
+for /f "delims=" %%i in ('%%system_root_dir_cmd%%') do set system_root=%%i
 set system_erts_vsn_cmd=%system_erl% -noshell -eval "Ver=erlang:system_info(version),io:format(\"~s\", [Ver])" -s init stop
-for /f "delims=" %%i in (`%%system_erts_vsn_cmd%%`) do set system_erts_vsn=%%i
+for /f "delims=" %%i in ('%%system_erts_vsn_cmd%%') do set system_erts_vsn=%%i
 set erl=%system_erl%
 set erts_vsn=%system_erts_vsn%
-set rootdir=%system_root%
+set ROOTDIR=%system_root%
 set erts_dir=%rootdir%\erts-%erts_vsn%
+set ERTS_LIB_DIR=%ROOTDIR%\lib
 goto :eof
 
 :: Load bundled ERTS info
 :use_bundled_erts
-set erts_dir=%release_root_dir%\erts-%erts_vsn%
 set erl=%erts_dir%\bin\erl
-set rootdir=%release_root_dir%
+set erts_dir=%release_root_dir%\erts-%erts_vsn%
+set ROOTDIR=%release_root_dir%
+set ERTS_LIB_DIR=%release_root_dir%\lib
 goto :eof
 
 :: Find the sys.config file
@@ -226,13 +226,15 @@ goto :eof
 
 :: Write the erl.ini file
 :write_ini
-set erl_ini=%erts_dir%\bin\erl.ini
-set converted_bindir=%bindir:\=\\%
-set converted_rootdir=%rootdir:\=\\%
-echo [erlang] > "%erl_ini%"
-echo Bindir=%converted_bindir% >> "%erl_ini%"
-echo Progname=%progname% >> "%erl_ini%"
-echo Rootdir=%converted_rootdir% >> "%erl_ini%"
+if "%system_erl%" == "" (
+  set erl_ini=%erts_dir%\bin\erl.ini
+  set converted_bindir=%bindir:\=\\%
+  set converted_rootdir=%rootdir:\=\\%
+  echo [erlang] > "%erl_ini%"
+  echo Bindir=%converted_bindir% >> "%erl_ini%"
+  echo Progname=%progname% >> "%erl_ini%"
+  echo Rootdir=%converted_rootdir% >> "%erl_ini%"
+)
 goto :eof
 
 :: Display usage information
@@ -451,9 +453,8 @@ call :release_remote_ctl rpc %args%
 endlocal
 goto :eof
 
-:: Eval an expression on the running node
+:: Eval an expression locally
 :eval
-call :ping>NUL
 if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 call :release_ctl eval !args!
