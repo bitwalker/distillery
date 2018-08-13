@@ -22,12 +22,12 @@ __set_code_paths() {
         for app in $apps; do
             if [ -d "${ERTS_LIB_DIR}/$app" ]; then
                 code_paths+=(-pa "${ERTS_LIB_DIR}/$app/ebin")
+            elif [ -d "${RELEASE_ROOT_DIR}/lib/$app" ]; then
+                code_paths+=(-pa "${RELEASE_ROOT_DIR}/lib/$app/ebin")
+            elif [ -L "${RELEASE_ROOT_DIR}/lib/$app" ]; then
+                code_paths+=(-pa "${RELEASE_ROOT_DIR}/lib/$app/ebin")
             else
-                if [ -d "${RELEASE_ROOT_DIR}/lib/$app" ]; then
-                    code_paths+=(-pa "${RELEASE_ROOT_DIR}/lib/$app/ebin")
-                else
-                    fail "Could not locate code path for $app!"
-                fi
+                fail "Could not locate code path for $app!"
             fi
         done
     fi
@@ -40,111 +40,118 @@ whereis_erts_bin() {
         __erts_bin="$(dirname "$(type -P erl)")"
         set -e
         echo "$__erts_bin"
-    else
-        if [ -z "$USE_HOST_ERTS" ]; then
-            __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
-            if [ -d "$__erts_dir" ]; then
-                echo "$__erts_dir/bin"
-            else
-                ERTS_VSN=
-                whereis_erts_bin
-            fi
+    elif [ -z "$USE_HOST_ERTS" ]; then
+        __erts_dir="$RELEASE_ROOT_DIR/erts-$ERTS_VSN"
+        if [ -d "$__erts_dir" ]; then
+            echo "$__erts_dir/bin"
         else
             ERTS_VSN=
             whereis_erts_bin
         fi
+    else
+        ERTS_VSN=
+        whereis_erts_bin
     fi
 }
 
 # Invokes erl with the provided arguments
 erl() {
     __erl="$(whereis_erts_bin)/erl"
+    if [ -z "$__erl" ]; then
+        fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
+    fi
+    # If EXTRA_CODE_PATHS is given, add -pa flag for the paths
     __extra_paths=""
     if [ ! -z "$EXTRA_CODE_PATHS" ]; then
         __extra_paths="-pa ${EXTRA_CODE_PATHS}"
     fi
+    # If SYS_CONFIG_PATH is set, add the -config flag to erl
     __sysconfig=""
     if [ ! -z "$SYS_CONFIG_PATH" ]; then
         __sysconfig="-config ${SYS_CONFIG_PATH}"
     fi
-    if [ -z "$__erl" ]; then
-        fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
+    # Set flag for whether a boot script was provided by the caller
+    __boot_provided=0
+    if echo "$@" | grep '\-boot ' >/dev/null; then
+        __boot_provided=1
+    fi
+    # Set flag for whether the current erl is from a bundled ERTS
+    __erts_included=0
+    if [[ "$__erl" =~ ^$RELEASE_ROOT_DIR ]]; then
+        __erts_included=1
+    fi
+    if [ $__erts_included -eq 1 ] && [ $__boot_provided -eq 1 ]; then
+        # Bundled ERTS with -boot set
+        "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
+                 ${__sysconfig} \
+                 -pa "${CONSOLIDATED_DIR}" \
+                 ${__extra_paths} \
+                 "$@"
+    elif [ $__erts_included -eq 1 ]; then
+        # Bundled ERTS, using default boot script 'start_none'
+        "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
+                 -boot "$RELEASE_ROOT_DIR/bin/start_none" \
+                 ${__sysconfig} \
+                 ${__extra_paths} \
+                 "$@"
+    elif [ $__boot_provided -eq 0 ]; then
+        # Host ERTS with -boot not set
+        "$__erl" -boot start_clean \
+                 ${__sysconfig} \
+                 "${code_paths[@]}" \
+                 -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                 -pa "${CONSOLIDATED_DIR}" \
+                 ${__extra_paths} \
+                 "$@"
+    elif [ -z "$ERTS_LIB_DIR" ]; then
+        # Host ERTS, -boot set, no ERTS_LIB_DIR available
+        "$__erl" \
+                 ${__sysconfig} \
+                 "${code_paths[@]}" \
+                 -pa "${CONSOLIDATED_DIR}" \
+                 ${__extra_paths} \
+                 "$@"
     else
-        if [[ "$__erl" =~ ^$RELEASE_ROOT_DIR ]]; then
-            # Bundled ERTS
-            if echo "$@" | grep -v '\-boot ' >/dev/null; then
-                # No boot script specified, use start_none
-                "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
-                         -boot "$RELEASE_ROOT_DIR/bin/start_none" \
-                         ${__sysconfig} \
-                         ${__extra_paths} \
-                         "$@"
-            else
-                "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
-                         -pa "${CONSOLIDATED_DIR}" \
-                         ${__extra_paths} \
-                         "$@"
-            fi
-        else
-            # Host ERTS
-            if echo "$@" | grep -v '\-boot ' >/dev/null; then
-                "$__erl" -boot start_clean \
-                         ${__sysconfig} \
-                         "${code_paths[@]}" \
-                         -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
-                         -pa "${CONSOLIDATED_DIR}" \
-                         ${__extra_paths} \
-                         "$@"
-            else
-                if [ -z "$ERTS_LIB_DIR" ]; then
-                    "$__erl" \
-                             ${__sysconfig} \
-                             "${code_paths[@]}" \
-                             -pa "${CONSOLIDATED_DIR}" \
-                             ${__extra_paths} \
-                             "$@"
-                else
-                    "$__erl" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-                             ${__sysconfig} \
-                             "${code_paths[@]}" \
-                             -pa "${CONSOLIDATED_DIR}" \
-                             ${__extra_paths} \
-                             "$@"
-                fi
-            fi
-        fi
+        # Host ERTS, -boot set, ERTS_LIB_DIR available
+        "$__erl" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
+                 ${__sysconfig} \
+                 "${code_paths[@]}" \
+                 -pa "${CONSOLIDATED_DIR}" \
+                 ${__extra_paths} \
+                 "$@"
     fi
 }
 
 erlexec(){
     __erl="$(whereis_erts_bin)/erl"
     __extra_paths=""
+    # If EXTRA_CODE_PATHS is set, add -pa flag for the paths
     if [ ! -z "$EXTRA_CODE_PATHS" ]; then
         __extra_paths="-pa ${EXTRA_CODE_PATHS}"
     fi
+    # If SYS_CONFIG_PATH is set, add -config flag to erl
     __sysconfig=""
     if [ ! -z "$SYS_CONFIG_PATH" ]; then
         __sysconfig="-config ${SYS_CONFIG_PATH}"
     fi
     if [ -z "$__erl" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
+    fi
+    if [[ "$__erl" =~ ^$RELEASE_ROOT_DIR ]]; then
+        # Bundled ERTS
+        exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
+                               ${__sysconfig} \
+                               -pa "${CONSOLIDATED_DIR}" \
+                               ${__extra_paths} \
+                               "$@"
     else
-        if [[ "$__erl" =~ ^$RELEASE_ROOT_DIR ]]; then
-            # Bundled ERTS
-            exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
-                                   ${__sysconfig} \
-                                   -pa "${CONSOLIDATED_DIR}" \
-                                   ${__extra_paths} \
-                                   "$@"
-        else
-            # Host ERTS
-            exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-                                   ${__sysconfig} \
-                                   -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
-                                   -pa "${CONSOLIDATED_DIR}" \
-                                   ${__extra_paths} \
-                                   "$@"
-        fi
+        # Host ERTS
+        exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
+                               ${__sysconfig} \
+                               -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
+                               -pa "${CONSOLIDATED_DIR}" \
+                               ${__extra_paths} \
+                               "$@"
     fi
 }
 
