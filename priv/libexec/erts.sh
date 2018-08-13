@@ -310,8 +310,6 @@ escript() {
 if erl -noshell -s erlang halt 2>/dev/null; then
     export ROOTDIR
     ROOTDIR="$(erts_root)"
-    export ROOT
-    ROOT="$ROOTDIR"
     export ERTS_VSN
     if [ -z "$ERTS_VSN" ]; then
         # Update start_erl.data
