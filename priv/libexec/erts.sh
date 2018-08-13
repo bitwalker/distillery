@@ -4,13 +4,14 @@ set -o posix
 set -e
 
 __rel_apps() {
-    __rel="$RELEASE_ROOT_DIR/releases/$REL_VSN/$REL_NAME.rel"
-    grep -E '[{][A-Za-z_0-9]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"(,[a-z]*)?[}]' "$__rel" \
-        | grep -v "{erts," \
+    __rel="$RELEASE_ROOT_DIR/releases/RELEASES"
+    grep -E '[{][A-Za-z_0-9]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"' "$__rel" \
+        | tail -n +2 \
         | sed -e's/"[^"]*$//' \
               -e's/^[^a-z]*//' \
               -e's/,/-/' \
-              -e's/"//'
+              -e's/"//' \
+              -e's/","[^"]*$//'
 }
 
 code_paths=()
