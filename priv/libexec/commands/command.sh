@@ -35,7 +35,6 @@ is_function_defined() {
 }
 
 # Build arguments for erlexec
-[ "$SYS_CONFIG_PATH" ] && set -- -config "$SYS_CONFIG_PATH"
 set -- "$@" -noshell
 set -- "$@" -boot "$RELEASE_ROOT_DIR/bin/start_clean"
 set -- "$@" -s "$MODULE" "$FUNCTION"

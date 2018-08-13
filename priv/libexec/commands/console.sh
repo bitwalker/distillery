@@ -50,7 +50,6 @@ run_hooks pre_start
 set -- \
     -boot "$BOOTFILE" \
     -args_file "$VMARGS_PATH" \
-    -config "$SYS_CONFIG_PATH" \
     -mode "$CODE_LOADING_MODE" \
     ${ERL_OPTS} \
     -user Elixir.IEx.CLI \

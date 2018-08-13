@@ -32,7 +32,6 @@ run_hooks pre_start
 set -- $FOREGROUNDOPTIONS \
     -boot "$REL_DIR/$BOOTFILE" \
     -args_file "$VMARGS_PATH" \
-    -config "$SYS_CONFIG_PATH" \
     -mode "$CODE_LOADING_MODE" \
     ${ERL_OPTS} \
     -extra ${EXTRA_OPTS}

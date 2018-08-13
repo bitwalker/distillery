@@ -63,6 +63,10 @@ erl() {
     if [ ! -z "$EXTRA_CODE_PATHS" ]; then
         __extra_paths="-pa ${EXTRA_CODE_PATHS}"
     fi
+    __sysconfig=""
+    if [ ! -z "$SYS_CONFIG_PATH" ]; then
+        __sysconfig="-config ${SYS_CONFIG_PATH}"
+    fi
     if [ -z "$__erl" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     else
@@ -72,6 +76,7 @@ erl() {
                 # No boot script specified, use start_none
                 "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
                          -boot "$RELEASE_ROOT_DIR/bin/start_none" \
+                         ${__sysconfig} \
                          ${__extra_paths} \
                          "$@"
             else
@@ -84,6 +89,7 @@ erl() {
             # Host ERTS
             if echo "$@" | grep -v '\-boot ' >/dev/null; then
                 "$__erl" -boot start_clean \
+                         ${__sysconfig} \
                          "${code_paths[@]}" \
                          -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
                          -pa "${CONSOLIDATED_DIR}" \
@@ -91,12 +97,15 @@ erl() {
                          "$@"
             else
                 if [ -z "$ERTS_LIB_DIR" ]; then
-                    "$__erl" "${code_paths[@]}" \
+                    "$__erl" \
+                             ${__sysconfig} \
+                             "${code_paths[@]}" \
                              -pa "${CONSOLIDATED_DIR}" \
                              ${__extra_paths} \
                              "$@"
                 else
                     "$__erl" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
+                             ${__sysconfig} \
                              "${code_paths[@]}" \
                              -pa "${CONSOLIDATED_DIR}" \
                              ${__extra_paths} \
@@ -113,18 +122,24 @@ erlexec(){
     if [ ! -z "$EXTRA_CODE_PATHS" ]; then
         __extra_paths="-pa ${EXTRA_CODE_PATHS}"
     fi
+    __sysconfig=""
+    if [ ! -z "$SYS_CONFIG_PATH" ]; then
+        __sysconfig="-config ${SYS_CONFIG_PATH}"
+    fi
     if [ -z "$__erl" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     else
         if [[ "$__erl" =~ ^$RELEASE_ROOT_DIR ]]; then
             # Bundled ERTS
             exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
+                                   ${__sysconfig} \
                                    -pa "${CONSOLIDATED_DIR}" \
                                    ${__extra_paths} \
                                    "$@"
         else
             # Host ERTS
             exec "$BINDIR/erlexec" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
+                                   ${__sysconfig} \
                                    -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
                                    -pa "${CONSOLIDATED_DIR}" \
                                    ${__extra_paths} \
