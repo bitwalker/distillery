@@ -67,7 +67,18 @@ The following is a list of config options specific to releases
   also specify the start type of an application by providing the application
   and start type as a tuple. Valid start types are `:load`, `:permanent`,
   `:temporary` and `:transient`.  See [this doc](http://erlang.org/doc/design_principles/applications.html),
-  section 8.9, for more information.
+  section 7.9, for more information.
+
+!!! warning
+    Using a start type of `:load` is dangerous, as it can result in a release which
+    cannot completely boot up, but which never raises an error. Distillery will warn you
+    if you use a start type of `:load` in a situation where it should be allowed to start
+    normally (due to being declared as a dependency of another app, which is not an included
+    application). You must add applications with a start type of `:load` to `:included_applications`
+    in `mix.exs`, as well as any applications which depend on that application being started. If
+    you do not, it is very likely your release will only partially boot, as a deadlock cycle is formed
+    between your application, the "load-only" applications, and dependencies which depend on those "load-only"
+    applications being started.
 
 ## Environment/Release settings
 
