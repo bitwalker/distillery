@@ -7,7 +7,7 @@
 :: Set variables that describe the release
 set rel_name=<%= release_name %>
 set rel_vsn=<%= release_version %>
-set erts_vsn=<%= erts_vsn %>
+set erts_vsn=<%= if ((is_binary(include_erts) or include_erts) and not is_nil(erts_vsn)) do %><%= erts_vsn %><% end %>
 set erl_opts=<%= erl_opts %>
 
 :: Discover the release root directory from the directory
@@ -17,6 +17,10 @@ for %%A in ("%script_dir%\..\..") do (
   set release_root_dir=%%~fA
 )
 set rel_dir=%release_root_dir%\releases\%rel_vsn%
+set libexec_dir=%rel_dir%\libexec\win
+
+set ROOT=%release_root_dir%
+set EMU=beam
 
 if "%RELEASE_MUTABLE_DIR%"=="" (
   set mutable_dir=%release_root_dir%\var
@@ -50,7 +54,6 @@ set erlsrv="%bindir%\erlsrv.exe"
 set epmd="%bindir%\epmd.exe"
 set escript="%bindir%\escript.exe"
 set werl="%bindir%\werl.exe"
-set nodetool="%release_root_dir%\bin\nodetool"
 set consolidated_dir=%rootdir%\lib\%rel_name%-%rel_vsn%\consolidated
 set hook_dir=%rel_dir%\hooks
 set command_dir=%rel_dir%\commands
@@ -75,22 +78,38 @@ if not exist "%rel_dir%\start.boot" (
 )
 
 
+:: Get the first argument as the task name, shift the remaining arguments
 set taskname="%1"
 shift /1
-set args=
 
+set args=
 setlocal EnableDelayedExpansion
 :parse_args
-set param=%1
-if "!param!"=="" goto :args_parsed
+:: Get next arg
+set param=%~1
+
+:: Escape parens in parameter
+set param=%param:(=^^(%
+set param=%param:)=^^)%
+
+:: If there is no value for this argument, we're done
+if "%~1"=="" goto :args_parsed
+
+:: If we have arguments, append to them, start them otherwise
+:: Also, when expanding the argument, escape quotes
 if "!largs!"=="" (
-  set largs=%param%
+  set largs=%param:"=\"%
 ) else (
-  set largs=%largs% %param%
+  set largs=%largs% %param:"=\"%
 )
+
+:: Set space as the argument delimiter
 set "delim= "
+
+:: Shift to the next argument and loop
 shift /1
 goto :parse_args
+
 :args_parsed
 endlocal & set args=%largs%
 
@@ -112,7 +131,6 @@ if %taskname%=="ping" goto ping
 if %taskname%=="pingpeer" goto pingpeer
 if %taskname%=="escript" goto escript
 if %taskname%=="rpc" goto rpc
-if %taskname%=="rpcterms" goto rpcterms
 if %taskname%=="eval" goto eval
 if %taskname%=="command" goto command
 if %taskname%=="describe" goto describe
@@ -141,20 +159,22 @@ if %system_erl%=="" (
   exit /b 1
 )
 set system_root_dir_cmd=%system_erl% -noshell -eval "io:format(\"~s\", [filename:nativename(code:root_dir())])." -s init stop
-for /f "delims=" %%i in (`%%system_root_dir_cmd%%`) do set system_root=%%i
+for /f "delims=" %%i in ('%%system_root_dir_cmd%%') do set system_root=%%i
 set system_erts_vsn_cmd=%system_erl% -noshell -eval "Ver=erlang:system_info(version),io:format(\"~s\", [Ver])" -s init stop
-for /f "delims=" %%i in (`%%system_erts_vsn_cmd%%`) do set system_erts_vsn=%%i
+for /f "delims=" %%i in ('%%system_erts_vsn_cmd%%') do set system_erts_vsn=%%i
 set erl=%system_erl%
 set erts_vsn=%system_erts_vsn%
-set rootdir=%system_root%
+set ROOTDIR=%system_root%
 set erts_dir=%rootdir%\erts-%erts_vsn%
+set ERTS_LIB_DIR=%ROOTDIR%\lib
 goto :eof
 
 :: Load bundled ERTS info
 :use_bundled_erts
 set erts_dir=%release_root_dir%\erts-%erts_vsn%
 set erl=%erts_dir%\bin\erl
-set rootdir=%release_root_dir%
+set ROOTDIR=%release_root_dir%
+set ERTS_LIB_DIR=%release_root_dir%\lib
 goto :eof
 
 :: Find the sys.config file
@@ -195,6 +215,7 @@ goto :eof
 
 :: Write the erl.ini file
 :write_ini
+if not "%system_erl%"=="" goto :eof
 set erl_ini=%erts_dir%\bin\erl.ini
 set converted_bindir=%bindir:\=\\%
 set converted_rootdir=%rootdir:\=\\%
@@ -364,7 +385,8 @@ set EMU=beam
 set PROGNAME=%~n0
 start "" /B "%erl%" -noshell -noinput +Bd ^
        -boot "%boot_script%" ^
-       -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
+       -boot_var ERTS_LIB_DIR %ERTS_LIB_DIR% ^
+       -boot_var ROOT %ROOT% ^
        -env ERL_LIBS "%release_root_dir%\lib%" ^
        -pa "%consolidated_dir%" ^
        -args_file "%vm_args%" ^
@@ -388,7 +410,7 @@ goto :eof
 :: Ping the running node
 :ping
 setlocal EnableDelayedExpansion
-%escript% %nodetool% ping %node_type% "%node_name%" -setcookie "!cookie!"
+call %libexec_dir%\release_ctl.bat ping --peer="%node_name%" --cookie="!cookie!"
 endlocal
 goto :eof
 
@@ -400,7 +422,7 @@ if "%args"=="" (
   echo "Peer name is required!"
   exit /b 1
 ) else (
-  %escript% %nodetool% ping %node_type% "%args%" -setcookie "!cookie!"
+  call %libexec_dir%\release_ctl.bat ping --peer="%args%" --cookie="!cookie!"
 )
 endlocal
 goto :eof
@@ -413,31 +435,18 @@ goto :eof
 :: Execute an RPC command
 :rpc
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-%escript% %nodetool% rpc %node_type% %node_name% -setcookie "!cookie!" %args%
+call %libexec_dir%\release_remote_ctl.bat rpc !args!
 endlocal
 goto :eof
 
-:: Execute an RPC command where args are expressed
-:: in the form of an Erlang expression
-:rpcterms
-call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
-setlocal EnableDelayedExpansion
-%escript% %nodetool% rpcterms %node_type% %node_name% -setcookie "!cookie!" %args%
-endlocal
-goto :eof
-
-:: Eval an expression on the running node
+:: Eval an expression locally
 :eval
-call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-%escript% %nodetool% eval %node_type% %node_name% -setcookie "!cookie!" !args!
+call %libexec_dir%\release_ctl.bat eval !args!
 endlocal
 goto :eof
-
 
 :: Execute a command in a clean Erlang VM
 :command
@@ -447,42 +456,43 @@ for /f "tokens=1-2*" %%a in ("%args%") do (
   set function=%%b
   set command_args=%%c
 )
-%erl% -boot_var ERTS_LIB_DIR "%erts_dir%\..\lib" ^
-       -config %sys_config% ^
-       -hidden -noshell -boot start_clean ^
-       -pa "%consolidated_dir%" ^
-       -s %module% %function% -s init stop ^
-       -extra %command_args%
+%erl% -boot_var ERTS_LIB_DIR %ERTS_LIB_DIR%^
+      -config %sys_config% ^
+      -hidden ^
+      -noshell ^
+      -boot %clean_boot_script% ^
+      -pa "%consolidated_dir%" ^
+      -s %module% %function% ^
+      -s init stop ^
+      -extra %command_args%
 endlocal
 goto :eof
 
 :: Get the process id of the running node
 :pid
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-%escript% %nodetool% eval %node_type% %node_name% -setcookie "!cookie!" "erlang:list_to_integer(os:getpid())."
+call %libexec_dir%\release_remote_ctl.bat rpc "IO.inspect(:erlang.list_to_integer(:os.getpid()))"
 endlocal
 goto :eof
 
 :set_pid
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-set get_pid_cmd=%escript% %nodetool% eval %node_type% %node_name% -setcookie "!cookie!" "erlang:list_to_integer(os:getpid())."
-for /f "usebackq delims=" %%i in (`%%get_pid_cmd%%`) do set pid=%%i
+set get_pid_cmd=call :pid
+for /f "usebackq delims=" %%i in ('%%get_pid_cmd%%') do set pid=%%i
 endlocal & set pid=%pid%
 goto :eof
 
 :: Reload the running configuration
 :reload_config
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 call :pre_configure_hooks
 call :post_configure_hooks
-setlocal EnableDelayedExpansion
-%escript% %nodetool% reload_config %node_type% %node_name% -setcookie "!cookie!" "%sys_config%"
-endlocal
+call %libexec_dir%\release_remote_ctl.bat reload_config --sysconfig="%sys_config%"
 goto :eof
 
 :: Describe this release
@@ -518,7 +528,7 @@ goto :eof
 :: Remote shell to a running node
 :remote_console
 call :ping
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 set id=remsh%RANDOM%-%node_name%
 start "%node_name% attach" %werl% -hidden -noshell -boot "%clean_boot_script%" ^

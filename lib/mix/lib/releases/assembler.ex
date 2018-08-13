@@ -75,7 +75,7 @@ defmodule Mix.Releases.Assembler do
   defp copy_applications(%Release{profile: %Profile{output_dir: output_dir}} = release) do
     Shell.debug("Copying applications to #{output_dir}")
 
-    Enum.each(release.applications, &copy_app(&1, release))
+    copy_applications(release, release.applications)
 
     case copy_consolidated(release) do
       :ok ->
@@ -83,6 +83,19 @@ defmodule Mix.Releases.Assembler do
 
       {:error, _} = err ->
         err
+    end
+  catch
+    :throw, {:error, _reason} = err ->
+      err
+  end
+
+  defp copy_applications(_release, []), do: :ok
+  defp copy_applications(release, [app | apps]) do
+    case copy_app(app, release) do
+      :ok ->
+        copy_applications(release, apps)
+      {:error, _} = err ->
+        throw err
     end
   end
 
