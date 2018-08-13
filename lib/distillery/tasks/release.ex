@@ -353,4 +353,8 @@ defmodule Mix.Tasks.Release do
 
     do_parse_args(rest, Map.put(acc, :executable, executable))
   end
+
+  defp do_parse_args([{:upfrom, version} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :upgrade_from, version))
+  end
 end
