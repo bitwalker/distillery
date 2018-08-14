@@ -410,7 +410,7 @@ goto :eof
 :: Ping the running node
 :ping
 setlocal EnableDelayedExpansion
-call :release_ctl ping --peer="%node_name%" --cookie="!cookie!"
+call %libexec_dir%\release_ctl.bat ping --peer="%node_name%" --cookie="!cookie!"
 endlocal
 goto :eof
 
@@ -422,7 +422,7 @@ if "%args"=="" (
   echo "Peer name is required!"
   exit /b 1
 ) else (
-  call :release_ctl ping --peer="%args%" --cookie="!cookie!"
+  call %libexec_dir%\release_ctl.bat ping --peer="%args%" --cookie="!cookie!"
 )
 endlocal
 goto :eof
