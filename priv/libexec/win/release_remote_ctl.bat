@@ -1,5 +1,3 @@
-@echo off
-
 :: Execute rc command remotely
 
 set rc_cmd="%~1"

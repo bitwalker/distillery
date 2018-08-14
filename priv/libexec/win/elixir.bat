@@ -1,4 +1,4 @@
-@echo off
+:: Provide a subset of the 'elixir' script functionality
 
 %erl% -boot_var ERTS_LIB_DIR "%ERTS_LIB_DIR%" ^
       -boot "%clean_boot_script%" ^
