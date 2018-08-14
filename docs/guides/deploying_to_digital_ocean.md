@@ -9,10 +9,10 @@ There are multiple ways to deploy to Digital Ocean. We will deploy with docker s
 
 Prerequisites:
 
-- make sure you have completed the docker deployment guide
-- you know how to create a 'one-click app' droplet
-- you know how to ssh in a Digital Ocean droplet
-- you have published your image to Docker Hub
+- Make sure you have completed the guide related to building a docker image (you'll need the image and the docker-compose.yml file)
+- You know how to create a 'one-click app' droplet
+- You know how to ssh in a Digital Ocean droplet
+- You have published your image to Docker Hub
 
 Start by creating a new droplet. Click on the 'one-click apps' and choose Docker. It will create a droplet for you with docker already installed
 
