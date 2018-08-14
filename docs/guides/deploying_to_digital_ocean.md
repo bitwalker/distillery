@@ -32,6 +32,6 @@ Deploy your stack with `docker stack deploy -c docker-compose.yml my_app_name`
 
 If you have tagged your image with `latest`, the chances are, when you want to upgrade to the next version of your app, it won't pull the new image. Here is how to force the upgrade
 
-- pull the latest image version `docker pull dockerhub_usersname/my_repo:latest`
+- pull the latest image version `docker pull dockerhub_username/my_repo:latest`
 
-- update your service `docker service update --image dockerhub_usersname/my_repo:latest --force my_service_name`. (to find out your service name, user `docker service ls`. Basically it will be something like my_app_name_web if you have followed exactly the docker deploy guide)
+- update your service `docker service update --image dockerhub_username/my_repo:latest --force my_service_name`. (to find out your service name, user `docker service ls`. Basically it will be something like my_app_name_web if you have followed exactly the docker deploy guide)
