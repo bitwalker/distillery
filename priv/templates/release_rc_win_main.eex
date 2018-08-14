@@ -17,6 +17,7 @@ for %%A in ("%script_dir%\..\..") do (
   set release_root_dir=%%~fA
 )
 set rel_dir=%release_root_dir%\releases\%rel_vsn%
+set libexec_dir=%rel_dir%\libexec\win
 
 set ROOT=%release_root_dir%
 set EMU=beam
@@ -77,22 +78,38 @@ if not exist "%rel_dir%\start.boot" (
 )
 
 
+:: Get the first argument as the task name, shift the remaining arguments
 set taskname="%1"
 shift /1
-set args=
 
+set args=
 setlocal EnableDelayedExpansion
 :parse_args
-set param=%1
-if "!param!"=="" goto :args_parsed
+:: Get next arg
+set param=%~1
+
+:: Escape parens in parameter
+set param=%param:(=^^(%
+set param=%param:)=^^)%
+
+:: If there is no value for this argument, we're done
+if "%~1"=="" goto :args_parsed
+
+:: If we have arguments, append to them, start them otherwise
+:: Also, when expanding the argument, escape quotes
 if "!largs!"=="" (
-  set largs=%param%
+  set largs=%param:"=\"%
 ) else (
-  set largs=%largs% %param%
+  set largs=%largs% %param:"=\"%
 )
+
+:: Set space as the argument delimiter
 set "delim= "
+
+:: Shift to the next argument and loop
 shift /1
 goto :parse_args
+
 :args_parsed
 endlocal & set args=%largs%
 
@@ -114,7 +131,6 @@ if %taskname%=="ping" goto ping
 if %taskname%=="pingpeer" goto pingpeer
 if %taskname%=="escript" goto escript
 if %taskname%=="rpc" goto rpc
-if %taskname%=="rpcterms" goto rpcterms
 if %taskname%=="eval" goto eval
 if %taskname%=="command" goto command
 if %taskname%=="describe" goto describe
@@ -126,32 +142,6 @@ if exist "%command_dir%\%taskname%.bat" (
 )
 goto :eof
 
-:: Execute a command like you would with 'elixir'
-:elixir
-%erl% -boot_var ERTS_LIB_DIR "%ERTS_LIB_DIR%" ^
-      -boot "%clean_boot_file%" ^
-      -pa "%consolidated_dir%" ^
-      -noshell -s elixir start_cli ^
-      -extra %*
-goto :eof
-
-:: Execute rc command locally
-:release_ctl
-call :elixir -e "Mix.Releases.Runtime.Control.main" -- %*
-goto :eof
-
-:: Execute rc command remotely
-:release_remote_ctl
-set rc_cmd="%~1"
-setlocal EnableDelayedExpansion
-call :elixir -e "Mix.Releases.Runtime.Control.main" -- ^
-             "%rc_cmd" ^
-             --name="%node_name%" ^
-             --cookie="!cookie!" ^
-             %*
-endlocal
-goto :eof
-      
 :: Find the ERTS dir
 :find_erts_dir
 if "%erts_vsn%"=="" (
@@ -448,18 +438,16 @@ goto :eof
 call :ping>NUL
 if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-call :release_remote_ctl rpc %args%
+call %libexec_dir%\release_remote_ctl.bat rpc !args!
 endlocal
 goto :eof
 
 :: Eval an expression locally
 :eval
-if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-call :release_ctl eval !args!
+call %libexec_dir%\release_ctl.bat eval !args!
 endlocal
 goto :eof
-
 
 :: Execute a command in a clean Erlang VM
 :command
@@ -470,40 +458,42 @@ for /f "tokens=1-2*" %%a in ("%args%") do (
   set command_args=%%c
 )
 %erl% -boot_var ERTS_LIB_DIR %ERTS_LIB_DIR%^
-      -boot_var ROOT %ROOT% ^
-       -config %sys_config% ^
-       -hidden -noshell -boot start_clean ^
-       -pa "%consolidated_dir%" ^
-       -s %module% %function% -s init stop ^
-       -extra %command_args%
+      -config %sys_config% ^
+      -hidden ^
+      -noshell ^
+      -boot %clean_boot_script% ^
+      -pa "%consolidated_dir%" ^
+      -s %module% %function% ^
+      -s init stop ^
+      -extra %command_args%
 endlocal
 goto :eof
 
 :: Get the process id of the running node
 :pid
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-call :release_remote_ctl rpc "IO.inspect(:erlang.list_to_integer(:os.getpid()))"
+call %libexec_dir%\release_remote_ctl.bat rpc "IO.inspect(:erlang.list_to_integer(:os.getpid()))"
 endlocal
 goto :eof
 
 :set_pid
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 set get_pid_cmd=call :pid
-for /f "usebackq delims=" %%i in (`%%get_pid_cmd%%`) do set pid=%%i
+for /f "usebackq delims=" %%i in ('%%get_pid_cmd%%') do set pid=%%i
 endlocal & set pid=%pid%
 goto :eof
 
 :: Reload the running configuration
 :reload_config
 call :ping>NUL
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 call :pre_configure_hooks
 call :post_configure_hooks
-call :release_remote_ctl reload_config --sysconfig="%sys_config%"
+call %libexec_dir%\release_remote_ctl.bat reload_config --sysconfig="%sys_config%"
 goto :eof
 
 :: Describe this release
@@ -539,7 +529,7 @@ goto :eof
 :: Remote shell to a running node
 :remote_console
 call :ping
-if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
 set id=remsh%RANDOM%-%node_name%
 start "%node_name% attach" %werl% -hidden -noshell -boot "%clean_boot_script%" ^
