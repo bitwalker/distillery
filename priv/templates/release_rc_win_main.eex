@@ -215,15 +215,14 @@ goto :eof
 
 :: Write the erl.ini file
 :write_ini
-if "%system_erl%" == "" (
-  set erl_ini=%erts_dir%\bin\erl.ini
-  set converted_bindir=%bindir:\=\\%
-  set converted_rootdir=%rootdir:\=\\%
-  echo [erlang] > "%erl_ini%"
-  echo Bindir=%converted_bindir% >> "%erl_ini%"
-  echo Progname=%progname% >> "%erl_ini%"
-  echo Rootdir=%converted_rootdir% >> "%erl_ini%"
-)
+if not "%system_erl%"=="" goto :eof
+set erl_ini=%erts_dir%\bin\erl.ini
+set converted_bindir=%bindir:\=\\%
+set converted_rootdir=%rootdir:\=\\%
+echo [erlang] > "%erl_ini%"
+echo Bindir=%converted_bindir% >> "%erl_ini%"
+echo Progname=%progname% >> "%erl_ini%"
+echo Rootdir=%converted_rootdir% >> "%erl_ini%"
 goto :eof
 
 :: Display usage information
