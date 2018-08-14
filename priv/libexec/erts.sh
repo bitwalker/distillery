@@ -100,7 +100,7 @@ erl() {
         # Host ERTS, -boot set, no ERTS_LIB_DIR available
         "$__erl" \
                  ${SYS_CONFIG_PATH:+-config "${SYS_CONFIG_PATH}"} \
-                 "${code_paths[@]}" \
+                 -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
                  -pa "${CONSOLIDATED_DIR}" \
                  ${EXTRA_CODE_PATHS:+-pa "${EXTRA_CODE_PATHS}"} \
                  "$@"
@@ -108,7 +108,7 @@ erl() {
         # Host ERTS, -boot set, ERTS_LIB_DIR available
         "$__erl" -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
                  ${SYS_CONFIG_PATH:+-config "${SYS_CONFIG_PATH}"} \
-                 "${code_paths[@]}" \
+                 -pa "${RELEASE_ROOT_DIR}"/lib/*/ebin \
                  -pa "${CONSOLIDATED_DIR}" \
                  ${EXTRA_CODE_PATHS:+-pa "${EXTRA_CODE_PATHS}"} \
                  "$@"
