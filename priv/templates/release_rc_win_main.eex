@@ -50,6 +50,7 @@ set service_name=%rel_name%_%rel_vsn%
 set bindir=%erts_dir%\bin
 set progname=erl.exe
 set clean_boot_script=%release_root_dir%\bin\start_clean
+set none_boot_script=%release_root_dir%\bin\start_none
 set erlsrv="%bindir%\erlsrv.exe"
 set epmd="%bindir%\epmd.exe"
 set escript="%bindir%\escript.exe"
@@ -395,6 +396,8 @@ start "" /B "%erl%" -noshell -noinput +Bd ^
        -extra %extra_opts%
 call :set_pid
 call :post_start_hooks
+call :wait_for_exit
+goto :eof
 
 :wait_for_exit
 tasklist /FI "PID eq %pid%" | find /I "erl.exe" > nul
@@ -407,24 +410,12 @@ if %ERRORLEVEL% geq 1 (
 )
 goto :eof
 
-:: Ping the running node
 :ping
-setlocal EnableDelayedExpansion
-call %libexec_dir%\release_ctl.bat ping --peer="%node_name%" --cookie="!cookie!"
-endlocal
+call %libexec_dir%\ping.bat
 goto :eof
 
-:: Ping a peer node
-:: Ping a peer node
 :pingpeer
-setlocal EnableDelayedExpansion
-if "%args"=="" (
-  echo "Peer name is required!"
-  exit /b 1
-) else (
-  call %libexec_dir%\release_ctl.bat ping --peer="%args%" --cookie="!cookie!"
-)
-endlocal
+call %libexec_dir%\pingpeer.bat %args%
 goto :eof
 
 :: Execute an escript
@@ -470,21 +461,24 @@ goto :eof
 
 :: Get the process id of the running node
 :pid
-call :ping>NUL
-if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
-setlocal EnableDelayedExpansion
-call %libexec_dir%\release_remote_ctl.bat rpc "IO.inspect(:erlang.list_to_integer(:os.getpid()))"
-endlocal
+call %libexec_dir%\pid.bat
 goto :eof
 
 :set_pid
 call :ping>NUL
 if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
 setlocal EnableDelayedExpansion
-set get_pid_cmd=call :pid
-for /f "usebackq delims=" %%i in ('%%get_pid_cmd%%') do set pid=%%i
+set get_pid_cmd=%libexec_dir%\pid.bat
+for /f "usebackq delims=" %%i in (`%get_pid_cmd%`) do set pid=%%i
 endlocal & set pid=%pid%
-goto :eof
+if %pid% equ +%pid% (
+  goto :eof
+) else (
+  echo "Invalid PID: %pid%"
+  echo "Node must be down, or pid detection returned non-numeric value"
+  exit /b 1
+)
+exit /b 1
 
 :: Reload the running configuration
 :reload_config
