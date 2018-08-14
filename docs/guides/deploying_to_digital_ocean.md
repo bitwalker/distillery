@@ -1,6 +1,6 @@
 # Deploying to digital ocean
 
-There are multiple ways to deploy to Digital Ocean. We will deploy with docker swarm in this guide for simplicity (as opposed to a little more involved setup with kubernetes for example).
+While there are multiple ways one can deploy to Digital Ocean, for this guide we're choosing to use Docker Swarm (installed as a one-click app). This choice was made because it is easy to get started with on Digital Ocean, and makes for a good foundation for small production applications due to it's convenience and feature set.
 (note: while it's possible to use docker-compose it's generally not recommended for production.)
 
 ## single machine with docker
