@@ -49,9 +49,23 @@ COPY --from=0 /opt/release .
 CMD ["/opt/app/bin/start_app", "foreground"]
 ```
 
-verify that you can build your image with the following command
-`docker build -t my_tag --build-arg APP_VERSION="0.0.1" .`
-(it's common to tag images with your docker-hub username and repo name like `-t my_username/my_repo_name:version_number`)
+Verify that you can build your image
+
+Add the following `makefile` to your project
+
+```makefile
+BUILD ?= `git describe --always`
+IMAGE ?= `grep 'app:' mix.exs | sed -e 's/ //g' -e 's/app://' -e 's/[:,]//g'`
+VERSION ?= `grep 'version' mix.exs | sed -e 's/ //g' -e 's/version://' -e 's/[",]//g'`
+
+image:
+  docker build -t $(IMAGE):$(VERSION)-$(BUILD) .
+```
+
+Run `make` to build your image
+
+!!!warning
+    If you get the following error when running the makefile `makefile:6: *** multiple target patterns.  Stop.`, verify that the `docker build` has a tab and not spaces in front of it.
 
 !!!info
     Yarn is optional, it is used instead of npm to reduce dependency fetching by a consequent amount of time.
