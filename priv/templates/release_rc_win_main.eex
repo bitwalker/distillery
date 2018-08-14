@@ -128,9 +128,8 @@ goto :eof
 
 :: Execute a command like you would with 'elixir'
 :elixir
-%erl% -boot_var ERTS_LIB_DIR %ERTS_LIB_DIR% ^
-      -boot_var ROOT %ROOT% ^
-      -boot "%start_clean%" ^
+%erl% -boot_var ERTS_LIB_DIR "%ERTS_LIB_DIR%" ^
+      -boot "%clean_boot_file%" ^
       -pa "%consolidated_dir%" ^
       -noshell -s elixir start_cli ^
       -extra %*
