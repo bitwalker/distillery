@@ -60,6 +60,13 @@ can find out more about these in [Configuring Distillery](../config/distillery.m
 
 ## Your first release
 
+!!! warning
+    If you are on Windows, building a release with `MIX_ENV=dev` will try to
+    create symlinks, which requires administrator privileges. Elixir gotchas on
+    Windows in general are described
+    [here](https://github.com/elixir-lang/elixir/wiki/Windows#gotchas). There is
+    also a solution for enabling normal users to create symlinks [see here for more](https://superuser.com/a/125981).
+
 Now that you have an initial configuration generated, you are ready to start building releases!
 The command used to do so is `mix release`:
 
