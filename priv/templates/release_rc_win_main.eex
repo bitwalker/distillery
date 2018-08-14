@@ -171,8 +171,8 @@ goto :eof
 
 :: Load bundled ERTS info
 :use_bundled_erts
-set erl=%erts_dir%\bin\erl
 set erts_dir=%release_root_dir%\erts-%erts_vsn%
+set erl=%erts_dir%\bin\erl
 set ROOTDIR=%release_root_dir%
 set ERTS_LIB_DIR=%release_root_dir%\lib
 goto :eof
