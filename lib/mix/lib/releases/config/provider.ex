@@ -2,26 +2,13 @@ defmodule Mix.Releases.Config.Provider do
   @moduledoc """
   This defines the behaviour for custom configuration providers.
   """
+  alias Mix.Releases.Utils
 
   defmacro __using__(_) do
     quote do
       @behaviour unquote(__MODULE__)
 
       alias unquote(__MODULE__)
-
-      def get([app | keypath]) do
-        config = Application.get_all_env(app)
-
-        case get_in(config, keypath) do
-          nil ->
-            nil
-
-          v ->
-            {:ok, v}
-        end
-      end
-
-      defoverridable get: 1
     end
   end
 
@@ -45,27 +32,6 @@ defmodule Mix.Releases.Config.Provider do
   """
   @callback init(args :: [term]) :: :ok | no_return
 
-  @doc """
-  Called when the provider is being asked to supply a value for the given key
-
-  Keys supplied to providers are a list of atoms which represent the path of the
-  configuration key, beginning with the application name:
-
-  NOTE: This is currently unused, but provides an API for fetching config values
-  from specific providers, which may come in handy down the road. A default implementation
-  is provided for you, which fetches values from the application environment.
-
-  ## Examples
-
-      > MyProvider.get([:myapp, :server, :port])
-      {:ok, 8080}
-      
-      > MyProvider.get([:maypp, :invalid, :key])
-      nil
-
-  """
-  @callback get(key :: [atom]) :: {:ok, term} | nil
-
   @doc false
   def enabled?(providers, provider) when is_list(providers) and is_atom(provider) do
     Enum.any?(providers, fn
@@ -76,24 +42,13 @@ defmodule Mix.Releases.Config.Provider do
 
   @doc false
   def init(providers) when is_list(providers) do
-    # If called later, reset the table
-    case :ets.info(__MODULE__, :size) do
-      :undefined ->
-        :ets.new(__MODULE__, [:public, :set, :named_table])
-
-      _ ->
-        :ets.delete_all_objects(__MODULE__)
-    end
-
     for provider <- providers do
       try do
         case provider do
           p when is_atom(p) ->
-            :ets.insert(__MODULE__, {p, []})
             p.init([])
 
           {p, args} ->
-            :ets.insert(__MODULE__, provider)
             p.init(args)
 
           p ->
@@ -124,25 +79,30 @@ defmodule Mix.Releases.Config.Provider do
           end
       end
     end
-  end
-
-  @doc false
-  def get(key) do
-    get(:ets.tab2list(__MODULE__), key)
-  end
-
-  defp get([], _key), do: nil
-
-  defp get([{provider, _args} | providers], key) do
-    case provider.get(key) do
-      nil ->
-        get(providers, key)
-
-      {:ok, _} = val ->
-        val
+    
+    # Build up configuration
+    env =
+      for {app, _, _} <- :application.loaded_applications() do
+        {app, :application.get_all_env(app)}
+      end
+    # Get config path
+    config_path = 
+      case Keyword.get(:init.get_arguments(), :config, []) do
+        [] ->
+          Path.join(System.get_env("RELEASE_CONFIG_DIR") || "", "sys.config")
+        [path] ->
+          List.to_string(path)
+      end
+    # Persist sys.config
+    case Utils.write_term(config_path, env) do
+      :ok ->
+        :ok
+      {:error, {:write_terms, mod, reason}} ->
+        print_err("Unable to write sys.config to #{config_path}: #{mod.format_error(reason)}")
+        :erlang.halt(1)
     end
   end
-
+  
   @doc """
   Given a file path, this function expands it to an absolute path,
   while also expanding any environment variable references in the

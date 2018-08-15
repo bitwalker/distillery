@@ -8,6 +8,7 @@ defmodule Mix.Releases.Assembler do
   alias Mix.Releases.Release
   alias Mix.Releases.Environment
   alias Mix.Releases.Profile
+  alias Mix.Releases.BootScript
   alias Mix.Releases.Utils
   alias Mix.Releases.Shell
   alias Mix.Releases.Appup
@@ -233,30 +234,12 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Creates release metadata files
-  defp write_release_metadata(%Release{name: relname} = release) do
-    rel_dir = Release.version_path(release)
-
-    release_file = Path.join(rel_dir, "#{relname}.rel")
-    start_clean_file = Path.join(rel_dir, "start_clean.rel")
-    start_none_file = Path.join(rel_dir, "start_none.rel")
-    no_dot_erlang_file = Path.join(rel_dir, "no_dot_erlang.rel")
-
-    clean_apps =
-      release.applications
-      |> Enum.map(fn %{name: n} = a ->
-        if not (n in [:kernel, :stdlib, :compiler, :elixir, :iex]) do
-          %{a | start_type: :load}
-        else
-          a
-        end
-      end)
-
-    clean_release = %{release | applications: clean_apps}
-
-    with :ok <- Utils.write_term(release_file, Release.to_resource(release)),
-         :ok <- Utils.write_term(start_clean_file, Release.to_resource(clean_release)),
-         :ok <- Utils.write_term(start_none_file, Release.to_resource(clean_release)),
-         :ok <- Utils.write_term(no_dot_erlang_file, Release.to_resource(clean_release)),
+  defp write_release_metadata(%Release{name: name} = release) do
+    resource_path = 
+      release
+      |> Release.version_path()
+      |> Path.join("#{name}.rel")
+    with :ok <- Utils.write_term(resource_path, Release.to_resource(release)),
          :ok <- generate_relup(release) do
       :ok
     end
@@ -287,7 +270,7 @@ defmodule Mix.Releases.Assembler do
          :ok <- generate_vm_args(release),
          :ok <- generate_sys_config(release),
          :ok <- include_erts(release),
-         :ok <- make_boot_script(release) do
+         :ok <- make_boot_scripts(release) do
       :ok
     else
       {:error, {:assembler, _}} = err ->
@@ -360,40 +343,16 @@ defmodule Mix.Releases.Assembler do
                 Utils.write_term(Path.join(rel_dir, "relup"), relup)
 
               {:ok, relup, mod, warnings} ->
-                Shell.warn(format_systools_warning(mod, warnings))
+                Shell.warn(Utils.format_systools_warning(mod, warnings))
                 Shell.info("Relup successfully created")
                 Utils.write_term(Path.join(rel_dir, "relup"), relup)
 
               {:error, mod, errors} ->
-                error = format_systools_error(mod, errors)
+                error = Utils.format_systools_error(mod, errors)
                 {:error, {:assembler, error}}
             end
         end
     end
-  end
-
-  defp format_systools_warning(mod, warnings) do
-    warning =
-      mod.format_warning(warnings)
-      |> IO.iodata_to_binary()
-      |> String.split("\n")
-      |> Enum.map(fn e -> "    " <> e end)
-      |> Enum.join("\n")
-      |> String.trim_trailing()
-
-    "#{warning}"
-  end
-
-  defp format_systools_error(mod, errors) do
-    error =
-      mod.format_error(errors)
-      |> IO.iodata_to_binary()
-      |> String.split("\n")
-      |> Enum.map(fn e -> "    " <> e end)
-      |> Enum.join("\n")
-      |> String.trim_trailing()
-
-    "#{error}"
   end
 
   # Get a list of applications from the .rel file at the given path
@@ -820,123 +779,40 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates .boot script
-  defp make_boot_script(%Release{profile: %Profile{output_dir: output_dir}} = release) do
-    Shell.debug("Generating boot script")
+  defp make_boot_scripts(%Release{name: name, profile: %Profile{output_dir: output_dir}} = release) do
+    Shell.debug("Generating boot scripts")
 
-    rel_dir = Release.version_path(release)
+    with {:ok, boot} <- BootScript.new(release) do
+      clean_boot =
+        boot
+        |> BootScript.start_only([:kernel, :stdlib, :compiler, :elixir])
 
-    erts_lib_dir =
-      case release.profile.include_erts do
-        false -> :code.lib_dir()
-        true -> :code.lib_dir()
-        p -> String.to_charlist(Path.expand(Path.join(p, "lib")))
-      end
+      providers = release.profile.config_providers
+      config_boot = 
+        clean_boot
+        |> BootScript.after_started(:elixir, [
+            {:apply, {Mix.Releases.Config.Provider, :init, [providers]}},
+          ])
+        
+      app_boot =
+        boot
+        |> BootScript.add_kernel_proc({Mix.Releases.Runtime.Pidfile, :start, []})
 
-    options = [
-      {:path, ['#{rel_dir}' | Release.get_code_paths(release)]},
-      {:outdir, '#{rel_dir}'},
-      {:variables, [{'ERTS_LIB_DIR', erts_lib_dir}]},
-      :no_warn_sasl,
-      :no_module_tests,
-      :silent
-    ]
-
-    options =
-      if release.profile.no_dot_erlang do
-        [:no_dot_erlang | options]
-      else
-        options
-      end
-
-    rel_name = '#{release.name}'
-    release_file = Path.join(rel_dir, "#{release.name}.rel")
-    script_path = Path.join([rel_dir, "#{release.name}.script"])
-
-    case :systools.make_script(rel_name, options) do
-      :ok ->
-        with :ok <- extend_script(release, script_path),
-             :ok <-
-               create_RELEASES(
-                 output_dir,
-                 Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
-               ),
-             :ok <- create_named_boot(release, :start_clean, rel_dir, output_dir, options),
-             :ok <- create_named_boot(release, :no_dot_erlang, rel_dir, output_dir, options),
-             :ok <- create_named_boot(release, :start_none, rel_dir, output_dir, options, false),
-             do: :ok
-
-      {:ok, _, []} ->
-        with :ok <- extend_script(release, script_path),
-             :ok <-
-               create_RELEASES(
-                 output_dir,
-                 Path.join(["releases", "#{release.version}", "#{release.name}.rel"])
-               ),
-             :ok <- create_named_boot(release, :start_clean, rel_dir, output_dir, options),
-             :ok <- create_named_boot(release, :no_dot_erlang, rel_dir, output_dir, options),
-             :ok <- create_named_boot(release, :start_none, rel_dir, output_dir, options, false),
-             do: :ok
-
-      :error ->
-        {:error, {:assembler, {:make_boot_script, {:unknown, release_file}}}}
-
-      {:ok, mod, warnings} ->
-        Shell.warn(format_systools_warning(mod, warnings))
+      rel_dir = Release.version_path(release)
+      bin_dir = Path.join(output_dir, "bin")
+      with :ok <- BootScript.write(app_boot),
+           :ok <- BootScript.write(clean_boot, :start_clean),
+           :ok <- BootScript.write(clean_boot, :no_dot_erlang),
+           :ok <- BootScript.write(config_boot, :config),
+           # These two need to be copied to bin/ for ERTS
+           :ok <- File.cp(Path.join(rel_dir, "start_clean.boot"), Path.join(bin_dir, "start_clean.boot")),
+           :ok <- File.cp(Path.join(rel_dir, "no_dot_erlang.boot"), Path.join(bin_dir, "no_dot_erlang.boot")),
+           :ok <- create_RELEASES(output_dir, Path.join(rel_dir, "#{name}.rel")) do
         :ok
-
-      {:error, mod, errors} ->
-        error = format_systools_error(mod, errors)
-        {:error, {:assembler, {:make_boot_script, error}}}
+      end
     end
   end
-
-  # Extend boot script instructions
-  defp extend_script(%Release{profile: %Profile{config_providers: providers}}, script_path) do
-    alias Mix.Releases.Runtime.Pidfile
-
-    kernel_procs = [
-      # Starts the pidfile kernel process
-      {:kernelProcess, Pidfile, {Pidfile, :start, []}}
-    ]
-
-    extras = [
-      # Applies the config hook for executing config providers on boot
-      {:apply, {Mix.Releases.Config.Provider, :init, [providers]}}
-    ]
-
-    with {:ok, [{:script, {_relname, _relvsn} = header, ixns}]} <- Utils.read_terms(script_path),
-         # Inject kernel processes
-         {before_app_ctrl, after_app_ctrl} <-
-           Enum.split_while(ixns, fn
-             {:kernelProcess, {:application_controller, {:application_controller, :start, _}}} ->
-               false
-
-             _ ->
-               true
-           end),
-         ixns = before_app_ctrl ++ kernel_procs ++ after_app_ctrl,
-         # Inject extras after Elixir is started
-         {before_elixir, [elixir | after_elixir]} <-
-           Enum.split_while(ixns, fn
-             {:apply, {:application, :start_boot, [:elixir | _]}} -> false
-             _ -> true
-           end),
-         ixns = before_elixir ++ [elixir | extras] ++ after_elixir,
-         # Put script back together
-         extended_script = {:script, header, ixns},
-         # Write script to .script file
-         :ok <- Utils.write_term(script_path, extended_script),
-         # Write binary script to .boot file
-         boot_path =
-           Path.join(Path.dirname(script_path), Path.basename(script_path, ".script") <> ".boot"),
-         :ok <- File.write(boot_path, :erlang.term_to_binary(extended_script)) do
-      :ok
-    else
-      {:error, reason} ->
-        {:error, {:assembler, {:make_boot_script, reason}}}
-    end
-  end
-
+  
   # Generates RELEASES
   defp create_RELEASES(output_dir, relfile) do
     Shell.debug("Generating RELEASES")
@@ -958,51 +834,6 @@ defmodule Mix.Releases.Assembler do
     :ok = :release_handler.create_RELEASES('./', 'releases', '#{relfile}', [])
     File.cd!(old_cwd)
     :ok
-  end
-
-  # Generates a named boot script (like 'start_clean')
-  defp create_named_boot(release, name, rel_dir, output_dir, options, extend? \\ true) do
-    Shell.debug("Generating #{name}.boot")
-
-    script_path = Path.join(rel_dir, "#{name}.script")
-    rel_path = Path.join(rel_dir, "#{name}.rel")
-    src_boot = Path.join(rel_dir, "#{name}.boot")
-    target_boot = Path.join([output_dir, "bin", "#{name}.boot"])
-
-    case :systools.make_script('#{name}', options) do
-      :ok ->
-        with :ok <- (if extend?, do: extend_script(release, script_path), else: :ok),
-             :ok <- File.cp(src_boot, target_boot),
-             :ok <- File.rm(script_path),
-             :ok <- File.rm(rel_path) do
-          :ok
-        else
-          {:error, reason} ->
-            {:error, {:assembler, :file, {name, reason}}}
-        end
-
-      :error ->
-        {:error, {:assembler, {:named_boot, name, :unknown}}}
-
-      {:ok, _, []} ->
-        with :ok <- (if extend?, do: extend_script(release, script_path), else: :ok),
-             :ok <- File.cp(src_boot, target_boot),
-             :ok <- File.rm(script_path),
-             :ok <- File.rm(rel_path) do
-          :ok
-        else
-          {:error, reason} ->
-            {:error, {:assembler, :file, {name, reason}}}
-        end
-
-      {:ok, mod, warnings} ->
-        Shell.warn(format_systools_warning(mod, warnings))
-        :ok
-
-      {:error, mod, errors} ->
-        error = format_systools_error(mod, errors)
-        {:error, {:assembler, {:named_boot, name, error}}}
-    end
   end
 
   defp apply_overlays(%Release{} = release) do

@@ -429,4 +429,30 @@ defmodule Mix.Releases.Utils do
       {:unix, _} -> "\n"
     end
   end
+  
+  @doc false
+  def format_systools_warning(mod, warnings) do
+    warning =
+      mod.format_warning(warnings)
+      |> IO.iodata_to_binary()
+      |> String.split("\n")
+      |> Enum.map(fn e -> "    " <> e end)
+      |> Enum.join("\n")
+      |> String.trim_trailing()
+
+    "#{warning}"
+  end
+
+  @doc false
+  def format_systools_error(mod, errors) do
+    error =
+      mod.format_error(errors)
+      |> IO.iodata_to_binary()
+      |> String.split("\n")
+      |> Enum.map(fn e -> "    " <> e end)
+      |> Enum.join("\n")
+      |> String.trim_trailing()
+
+    "#{error}"
+  end
 end

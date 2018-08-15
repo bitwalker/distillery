@@ -53,36 +53,4 @@ else
 fi
 export OTP_VER
 
-# Handles graceful shutdown in OTP <20
-__pid=""
-_cleanup() {
-    trap - HUP INT TERM QUIT EXIT USR1 USR2
-    set +e
-    if "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" rpc init stop >/dev/null; then
-        wait $__pid
-        exit $?
-    else
-        exit 0
-    fi
-}
-
-if [ "$OTP_VER" -ge 20 ]; then
-    # Use OTP break handler
-    exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@"
-else
-    # Use our own break handling
-    case "$1" in
-        foreground)
-            trap '_cleanup' HUP INT TERM QUIT EXIT USR1 USR2
-
-            "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@" &
-            __pid=$!
-
-            wait $__pid
-            exit $?
-            ;;
-        *)
-            exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@"
-            ;;
-    esac
-fi
+exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@"

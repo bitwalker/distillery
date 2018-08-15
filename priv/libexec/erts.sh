@@ -91,9 +91,9 @@ erl() {
                  ${__extra_paths} \
                  "$@"
     elif [ $__erts_included -eq 1 ]; then
-        # Bundled ERTS, using default boot script 'start_none'
+        # Bundled ERTS, using default boot script 'start_clean'
         "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
-                 -boot "$RELEASE_ROOT_DIR/bin/start_none" \
+                 -boot "$RELEASE_ROOT_DIR/bin/start_clean" \
                  ${__sysconfig} \
                  ${__extra_paths} \
                  "$@"

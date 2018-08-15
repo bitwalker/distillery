@@ -50,7 +50,7 @@ set service_name=%rel_name%_%rel_vsn%
 set bindir=%erts_dir%\bin
 set progname=erl.exe
 set clean_boot_script=%release_root_dir%\bin\start_clean
-set none_boot_script=%release_root_dir%\bin\start_none
+set config_boot_script=%rel_dir%\config
 set erlsrv="%bindir%\erlsrv.exe"
 set epmd="%bindir%\epmd.exe"
 set escript="%bindir%\escript.exe"
@@ -190,6 +190,13 @@ set sys_config_target=%config_dir%\sys.config
 :: Replace environment variables
 powershell -command "$content = get-content %sys_config_src%; [regex]::matches($content, '\${[\w\d_-]+}') | foreach { $content = $content.Replace($_.value, [System.Environment]::GetEnvironmentVariable($_.value)) }; out-file -filepath %sys_config_target% -inputobject $content -encoding ascii"
 set sys_config=%sys_config_target%
+:: Run config providers
+%erl% -boot_var ERTS_LIB_DIR "%ERTS_LIB_DIR%" ^
+      -boot "%config_boot_script%" ^
+      -config "%sys_config%" ^
+      -pa "%consolidated_dir%" ^
+      -noshell ^
+      -s erlang halt
 goto :eof
 
 :find_vm_args
