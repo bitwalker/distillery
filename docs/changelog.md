@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file (at least to
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html)
 
-## [2.0.0] - Unreleased
+## [2.1.0] - Unreleased
+
+TODO
+
+## [2.0.0]
 
 This is a major release with a number of significant changes and some of which are breaking,
 please read these notes carefully! There are a great many improvements and bug
@@ -18,10 +22,9 @@ provide a good overview of what has been addressed.
 - The `Mix.Releases.Config.Provider` behavior and API. Referred to as
   "Config Providers" in more general terms, this provides a format and source
   agnostic way to configure your application at runtime. Providers are executed
-  during boot/init, after all application code is loaded, but before any
-  applications are started (with the exception of `kernel`, `stdlib`,
-  `compiler`, and `elixir`, as these are required to provide basic standard
-  library functionality to providers). They are executed in the order listed in
+  prior to boot/init, in an environment with all application code loaded, with
+  only `kernel`, `stdlib`, `compiler`, and `elixir` applications started.
+  They are executed in the order listed in
   your config, and should push their configuration into the application
   environment (e.g. via `Application.put_env/3`). It is expected that when
   running multiple providers, the last one to run "wins" in the case of

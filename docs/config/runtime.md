@@ -72,15 +72,8 @@ just modules which implement a behavior, and are configured via
 `rel/config.exs`. You can have no config providers (using just `sys.config`) or
 many providers (running in order and applying configuration on top of the last).
 
-Config providers are executed during boot after all applications are loaded, but
-before any applications have been started - with the exception of required
-applications `kernel`, `stdlib`, `compiler`, and `elixir`. This means config
-providers are operating in a highly restrive environment, where many things may
-not be available. However, they are executing early enough in the boot process
-to configure any application except those mentioned above (of which only
-`kernel` has associated configuration parameters, most of which are static or
-not typical for many applications, we will detail the approach to configuring
-`kernel` below).
+Config providers are executed prior to boot, and the resulting application env
+is then persisted to a final `sys.config`, which is then used by the release itself.
 
 Config providers can be used by adding the provider module and it's
 configuration to `rel/config.exs` like so:
@@ -99,7 +92,7 @@ end
 The above (using the provider from
 [toml](https://github.com/bitwalker/toml-elixir)) instructs Distillery to modify
 the boot script for the release to execute the provider with
-`Toml.Provider.init([path: "..."])` at the appropriate point during boot. If you
+`Toml.Provider.init([path: "..."])`. If you
 are wondering how to get a config file in the release, the above example also
 shows how you might use an overlay to copy a default config file into the
 release, to a location which will not overwrite a previous config when the
@@ -116,7 +109,7 @@ scenarios, such as reading from files like `.toml`, `.yaml`, or `.json`; using
 ## Mix Config Provider
 
 Out of the box, Distillery also includes a provider for `Mix.Config`, which
-allows you to use your `config.exs` files with a release. You have to opt in to
+allows you to use `config.exs` files with a release. You have to opt in to
 this provider, because `Mix.Config` blends compile-time and runtime
 configuration options into one file, and many legacy configs make assumptions
 about the environment the config is evaluated in (namely that a Mix project is
@@ -129,14 +122,24 @@ environment :prod do
     {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
   ]
   set overlays: [
-    {:copy, "config/config.exs", "etc/config.exs"}
+    {:copy, "rel/config/config.exs", "etc/config.exs"}
   ]
 end
 ```
 
-## Kernel Configuration
+You may notice above that I'm pulling in a Mix config from
+`rel/config/config.exs`, this is the recommended way to deal with runtime
+configuration using `Mix.Config`; create a dedicated config which handles
+fetching runtime configuration _only_, and place it in `rel/config`. Use the
+standard `config/*.exs` files for compile-time configuration (of course, feel
+free to use `dev.exs` or it's equivalent for development runtime config).
 
-To configure the `kernel` application, you have a few options:
+You _can_ copy configs straight from `config/`, but I would avoid doing so.
+
+## Alternative Configuration
+
+There are some additional methods for providing configuration, either for the VM
+or for applications:
 
 ### Option 1: erl_opts
 
@@ -175,14 +178,7 @@ The downside is that it still relies on some degree of static information, e.g.
 the nodes in the `sync_nodes_mandatory` list above are known in advance in the
 example, but what about when the node names are not known?
 
-### Option 3: sys.config
-
-When Distillery builds a release, a `sys.config` file is still generated, and
-contains values from `config.exs`. You can configure `:kernel` there, and the
-settings will come through. Unfortunately this is not much better than the
-`vm.args` solution, as you are limited by information known when the release is built.
-
-### Option 4: Runtime Generation
+### Option 3: Runtime Generation
 
 If none of the above are workable solutions, you are likely in a situation where
 you will need to construct `vm.args` or `sys.config` dynamically as part of your
@@ -238,7 +234,7 @@ something like the following, given `NODES="foo,bar,baz"` and `HOSTNAME=host.loc
 -kernel sync_nodes_mandatory '[\'foo@host.local\',\'bar@host.local\',\'baz@host.local\']'
 ```
 
-### Option 5: Configuration Management
+### Option 4: Configuration Management
 
 Last, but not least, using configuration management systems like Salt, Puppet,
 Chef, Ansible, etc., are great ways to handle generating the `vm.args` or other
@@ -250,11 +246,10 @@ above options.
 
 ### Wrap up
 
-As you can see, configuring `kernel` is not particuarly easy, compared to the
-methods for configuring the rest of the system; luckily this is a special case
-scenario, which most applications may never encounter. But if you do have a
-need, I hope the above gives you a good lay of the land, and some options for
-working around the discomfort.
+As you can see, there are a variety of ways to configure your release at
+runtime. In general, you should reach for config providers for app config, and `vm.args`
+for VM config - if those approaches aren't viable, one of these others may work
+for you.
 
 ## Configuring Applications
 

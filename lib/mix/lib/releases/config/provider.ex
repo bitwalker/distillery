@@ -15,20 +15,13 @@ defmodule Mix.Releases.Config.Provider do
   @doc """
   Called when the provider is initialized.
 
-  This function is called early during the boot sequence, after all applications are loaded,
-  but only `:kernel`, `:stdlib`, `:compiler`, and `:elixir` are started. This means that you
-  cannot expect supervisors and processes to be running. You may need to start them manually,
-  or start entire applications manually, but it is critical that you stop them before returning
-  from `init/1`, or the boot sequence will fail post-configuration.
+  Providers are invoked pre-boot, in a dedicated VM, with all application code loaded,
+  and kernel, stdlib, compiler, and elixir applications started. Providers must use
+  this callback to push configuration into the application environment, which will be
+  persisted to a final `sys.config` for the release itself.
 
   The arguments given to `init/1` are the same as given in the `config_providers` setting in
   your release configuration file.
-
-  NOTE: It is recommended that you use `init/1` to load configuration and then
-  persist it into the application environment, e.g. with
-  `Application.put_env/3`. This ensures that applications need not be aware of
-  your specific configuration provider.
-
   """
   @callback init(args :: [term]) :: :ok | no_return
 

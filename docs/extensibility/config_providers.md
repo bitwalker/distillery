@@ -3,26 +3,26 @@
 Distillery now provides the capability to implement custom configuration
 providers for loading and persisting runtime configuration during boot. These
 providers are able to replace the use of `sys.config` and `config.exs` if
-desired. The one exception is if you need to configure the `:kernel`
-application, you will need to do so via `sys.config`, `config.exs`, or `vm.args`.
+desired.
 
 ## Implementing a Provider
 
-To implement a new configuration provider, there are two callbacks you need to
-implement currently, `init/1` and `get/1`.
+To implement a new configuration provider, a module must implement the
+`Mix.Releases.Config.Provider` behavior, which has a single callback, `init/1`.
 
-The `init/1` function is called during startup, before any applications are
-started, with the exception of core applications required for things to work,
-namely `:kernel`, `:stdlib`, `:compiler`, and `:elixir`. Everything is loaded in
-a release, but you may still want to be explicit about loading applications just
-in case the provider ends up running in a relaxed code loading environment.
+Config providers are executed in a pre-boot phase, in their own instance of the
+VM, where all applications are loaded, and only kernel, stdlib, compiler, and
+elixir are started. Providers may start any application needed to do config provisioning,
+e.g. inets/crypto/ssl, as long as the application is part of the release.
+Providers are expected to push configuration into the application environment
+(e.g. using `Application.put_env/3`). Once all providers have run, the
+application environment will be dumped to a final sys.config file, which is
+subsequently used when booting the "real" release.
 
-Currently, `get/1` is not used by anything directly, but you can use it yourself
-to ask for a configured value, simply by calling
-`Mix.Releases.Config.Provider.get/1`. This will try all of the config providers
-until one returns a non-nil value, or nil if no value was found. I am
-considering some features which may take advantage of this API in the future,
-but currently it is just a placeholder.
+!!! warning
+    Since config providers only execute pre-boot, you must restart the release to
+    pick up configuration changes. If using hot upgrades, the config providers
+    will run during the upgrade, and so will pick up any config changes at that time.
 
 There are some important properties you must keep in mind when designing and
 implementing a provider:
@@ -31,23 +31,13 @@ implementing a provider:
   `:kernel`, `:stdlib`, `:compiler`, and `:elixir` are started when the
   provider's `init` callback is invoked.
 - If you must start an application in order to accomplish some goal, at present,
-  you must manually start them with `Application.start/2`, and before returning
-  from `init`, you must stop them with `Application.stop/1`. If you do not do
-  this, the boot script will fail when attempting to start the release
-  post-configuration.
+  you must manually start them with `Application.start/2` or
+  `Application.ensure_all_started/1`
 - If you need to start an application to run the provider, and the application
   needs configuration, you have a circular dependency problem. In order to solve
   this, you need to have users provide the initial configuration via
   `sys.config` or `config.exs`, that way you can bootstrap the provider.
-
-In general, it is highly recommended to avoid starting applications as part of
-your provider. The one exception to this is providers which may make HTTP
-requests, as some applications are necessary to start in that case if using `:httpc`,
-namely `:inets`, and possibly `:crypto` and `:ssl`. In a future release,
-Distillery may make it possible to express application dependencies like this,
-so that configuration can either be moved to take place after they are started,
-or have Distillery manage their temporary lifecycle for you.
-
+  
 ## Example: JSON
 
 The following is a relatively simple example, which allows one to represent the
