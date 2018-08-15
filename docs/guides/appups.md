@@ -27,7 +27,7 @@ still want to review these to make sure the application will be upgraded the way
     control it.
 
 !!! tip
-    You can programmatically apply changes to appups with [Appup Transforms](../plugins/appup_transforms.md)
+    You can programmatically apply changes to appups with [Appup Transforms](../extensibility/appup_transforms.md)
 
 ## Reviewing generated appups
 
