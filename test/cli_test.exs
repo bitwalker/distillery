@@ -243,12 +243,14 @@ defmodule Distillery.Test.CliTest do
     end
 
     test "with a simple config is applied successfully", %{node: peer} do
-      output = is_success(fn ->
+      is_success(fn ->
+        assert :undefined = :rpc.call(peer, :application, :get_env, [:distillery, :simple])
         path = Path.join([__DIR__, "support", "simple.sys.config"])
         Control.main(["reload_config", "--name", "#{peer}", "--cookie", "#{Node.get_cookie}", "--sysconfig", path])
+        assert {:ok, :success} = :rpc.call(peer, :application, :get_env, [:distillery, :simple])
       end)
-      assert output =~ "Config changes applied successfully!"
-      assert output =~ "Hi from simple.config.exs!"
+      #assert output =~ "Config changes applied successfully!"
+      #assert output =~ "Hi from simple.config.exs!"
     end
   end
 
