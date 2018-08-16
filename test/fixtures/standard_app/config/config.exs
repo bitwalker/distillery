@@ -3,6 +3,7 @@
 use Mix.Config
 
 config :standard_app,
+  source: :default,
   num_procs: 2
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

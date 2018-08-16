@@ -147,6 +147,9 @@ defmodule Distillery.Test.IntegrationTest do
           assert {:ok, "2\n"} =
                    run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
 
+          assert {:ok, ":config_provider\n"} =
+                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :source)"])
+
           # Additional config items should exist
           assert {:ok, ":bar\n"} =
                    run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :foo)"])
@@ -222,6 +225,8 @@ defmodule Distillery.Test.IntegrationTest do
 
           assert {:ok, "4\n"} =
                    run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
+          assert {:ok, ":config_provider_update\n"} =
+                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :source)"])
 
           case :os.type() do
             {:win32, _} ->
@@ -417,6 +422,13 @@ defmodule Distillery.Test.IntegrationTest do
       File.rm!(config_path)
     end
 
+    config_provider_config_path = Path.join([@standard_app_path, "rel", "config", "config.exs.v1"])
+
+    if File.exists?(config_provider_config_path) do
+      File.cp!(config_provider_config_path, Path.join([@standard_app_path, "rel", "config", "config.exs"]))
+      File.rm!(config_provider_config_path)
+    end
+
     rel_config_path = Path.join([@standard_app_path, "rel", "config.exs.v1"])
 
     if File.exists?(rel_config_path) do
@@ -449,6 +461,8 @@ defmodule Distillery.Test.IntegrationTest do
     project = File.read!(project_config_path)
     config_path = Path.join([@standard_app_path, "config", "config.exs"])
     config = File.read!(config_path)
+    config_provider_config_path = Path.join([@standard_app_path, "rel", "config", "config.exs"])
+    config_provider_config = File.read!(config_provider_config_path)
     rel_config_path = Path.join([@standard_app_path, "rel", "config.exs"])
     rel_config = File.read!(rel_config_path)
     # Write updates to modules
@@ -459,18 +473,21 @@ defmodule Distillery.Test.IntegrationTest do
     # Save orig
     File.cp!(project_config_path, Path.join(@standard_app_path, "mix.exs.v1"))
     File.cp!(config_path, Path.join([@standard_app_path, "config", "config.exs.v1"]))
+    File.cp!(config_provider_config_path, Path.join([@standard_app_path, "rel", "config", "config.exs.v1"]))
     File.cp!(rel_config_path, Path.join([@standard_app_path, "rel", "config.exs.v1"]))
     File.cp!(a_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "a.ex.v1"]))
     File.cp!(b_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "b.ex.v1"]))
     # Write new config
     new_project_config = String.replace(project, "version: \"0.0.1\"", "version: \"0.0.2\"")
     new_config = String.replace(config, "num_procs: 2", "num_procs: 4")
-
+    new_config_provider_config = 
+      String.replace(config_provider_config, "source: :config_provider", "source: :config_provider_update")
     new_rel_config =
-    String.replace(rel_config, "set version: \"0.0.1\"", "set version: \"0.0.2\"")
+      String.replace(rel_config, "set version: \"0.0.1\"", "set version: \"0.0.2\"")
 
     File.write!(project_config_path, new_project_config)
     File.write!(config_path, new_config)
+    File.write!(config_provider_config_path, new_config_provider_config)
     File.write!(rel_config_path, new_rel_config)
     # Write updated modules
     new_a_mod = String.replace(a_mod, "{:ok, {1, []}}", "{:ok, {2, []}}")
