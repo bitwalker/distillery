@@ -58,7 +58,7 @@ defmodule Distillery.Mixfile do
       maintainers: ["Paul Schoenfelder"],
       licenses: ["MIT"],
       links: %{
-        Changelog: "https://github.com/bitwalker/distillery/blob/master/CHANGELOG.md",
+        Changelog: "https://hexdocs.pm/distillery/changelog.html",
         GitHub: "https://github.com/bitwalker/distillery"
       }
     ]
