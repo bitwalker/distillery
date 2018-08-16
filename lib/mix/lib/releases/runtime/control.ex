@@ -478,47 +478,6 @@ defmodule Mix.Releases.Runtime.Control do
           end
         end
 
-        providers =
-          case Keyword.get(sysconfig, :distillery) do
-            nil ->
-              Console.debug("Trying to fetch config providers from peer..")
-
-              case rpc_call(peer, :application, :get_env, [:distillery, :config_providers]) do
-                {:badrpc, reason} ->
-                  Console.error(
-                    "Failed to fetch provider configuration from remote: #{inspect(reason)}"
-                  )
-
-                providers when is_list(providers) ->
-                  providers
-
-                _ ->
-                  []
-              end
-
-            opts ->
-              Keyword.get(opts, :config_providers, [])
-          end
-
-        if length(providers) == 0 do
-          Console.debug("No config providers defined, skipping..")
-        else
-          Console.debug("Running config providers..")
-
-          case rpc_call(peer, Mix.Releases.Config.Provider, :init, [providers], :infinity) do
-            {:badrpc, {:EXIT, {reason, trace}}} ->
-              Console.error(
-                "Failed to run config providers: #{Exception.format(:exit, reason, trace)}"
-              )
-
-              {:badrpc, reason}
-              Console.error("Failed to run config providers: #{inspect(reason)}")
-
-            _ ->
-              Console.debug("Config providers executed successfully!")
-          end
-        end
-
         Console.debug("Applying config change via :application_controller..")
 
         case rpc_call(peer, :application_controller, :config_change, [oldenv]) do
@@ -852,7 +811,6 @@ defmodule Mix.Releases.Runtime.Control do
 
       {:ok, _, _} ->
         Console.info("Installed release #{release}:#{version}")
-        update_config(peer)
         permafy(peer, release, version)
         :ok
 
@@ -893,26 +851,6 @@ defmodule Mix.Releases.Runtime.Control do
       :ok ->
         File.cp(Path.join("bin", "#{release}-#{version}"), Path.join("bin", release))
         Console.info("Made release #{release}:#{version} permanent")
-    end
-  end
-
-  defp update_config(peer) do
-    Console.info("Updating config..")
-
-    with {:ok, providers} <-
-           rpc_call(peer, :application, :get_env, [:distillery, :config_providers]),
-         oldenv <- rpc_call(peer, :application_controller, :prep_config_change),
-         _ <- rpc_call(peer, Mix.Releases.Config.Provider, :init, [providers], :infinity),
-         _ <- rpc_call(peer, :application_controller, :config_change, [oldenv]) do
-      :ok
-    else
-      {:badrpc, reason} ->
-        Console.error("Failed during remote call with: #{inspect(reason)}")
-
-      :undefined ->
-        Console.info("No config providers, skipping config update")
-        # No config providers
-        :ok
     end
   end
 
