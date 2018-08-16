@@ -30,7 +30,7 @@ extra:
 repo_name: 'bitwalker/distillery'
 repo_url: 'https://github.com/bitwalker/distillery'
 copyright: 'Copyright 2018 Paul Schoenfelder'
-pages:
+nav:
     - Home: 'home.md'
     - Installation: 'introduction/installation.md'
     - 'Getting Started':
@@ -58,6 +58,7 @@ pages:
         - 'Overlays': 'extensibility/overlays.md'
         - 'Boot Hooks': 'extensibility/boot_hooks.md'
         - 'Shell Scripts': 'extensibility/shell_scripts.md'
+        - 'Appup Transforms': 'extensibility/appup_transforms.md'
     - 'Module Documentation': 'api-reference.html'
     - Changelog: 'changelog.md'
     - FAQ: 'faq.md'
