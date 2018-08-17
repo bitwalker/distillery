@@ -38,7 +38,7 @@ to configure Distillery and your releases. Depending on your project type, it wi
 an appropriate default release configuration, along with two environments, `:dev` and `:prod`,
 with typical configuration for both. You can leave this configuration untouched,
 or modify it as desired. We will look at this file and discuss its contents briefly. Check out
-[Configuration](../distillery/configuration.md) for more information on this file
+[Configuration](../config/distillery.md) for more information on this file
 and available settings.
 
 To initialize Distillery, just run `mix release.init`.
