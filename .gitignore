@@ -20,3 +20,4 @@ erl_crash.dump
 *.eqc
 
 /_venv
+/bin/parse_releases
