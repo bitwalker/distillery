@@ -18,7 +18,7 @@ before_script:
   - epmd -daemon
   - mix do deps.get, eqc.install --mini
 script:
-  - mix do test --exclude=integration, test --only=integration
+  - bin/travis
 notifications:
   email:
     - paulschoenfelder@gmail.com

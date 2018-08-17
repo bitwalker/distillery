@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -e
+
+SKIP_CI=1
+
+for changed in $(git diff-tree --no-commit-id --name-only -r HEAD); do
+    if [[ "$changed" =~ ^docs/ ]]; then
+        continue
+    elif [[ "$changed" =~ ^README ]]; then
+        continue
+    elif [[ "$changed" =~ ^LICENSE ]]; then
+        continue
+    elif [[ "$changed" =~ ^TODO ]]; then
+        continue
+    elif [[ "$changed" =~ ^mkdocs ]]; then
+        continue
+    elif [[ "$changed" =~ ^requirements ]]; then
+        continue
+    elif [[ "$changed" =~ ^.github ]]; then
+        continue
+    elif [[ "$changed" =~ ^bin/ ]]; then
+        continue
+    else
+        SKIP_CI=0
+    fi
+done
+
+if [ $SKIP_CI -eq 0 ]; then
+    if mix do test --exclude=integration, test --only=integration; then
+        exit 0
+    else
+        exit 1
+    fi
+else
+    echo "Only documentation changes, skipping tests.."
+    exit 0
+fi
