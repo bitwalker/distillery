@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -e
+
+SCRIPT_DIR="$(dirname "$(dirname "$0")")"
+
+cd "$SCRIPT_DIR" || exit 1
+
+if ! docker run --rm -it -v $SCRIPT_DIR:/opt/distillery distillery-ubuntu:latest; then
+    docker build -t distillery-ubuntu:latest -f "$SCRIPT_DIR"/Dockerfile.ubuntu .
+    docker run --rm -v $SCRIPT_DIR:/opt/distillery -it distillery-ubuntu:latest
+else
+    exit 0
+fi

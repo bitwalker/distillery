@@ -21,6 +21,8 @@ for changed in $(git diff-tree --no-commit-id --name-only -r HEAD); do
         continue
     elif [[ "$changed" =~ ^bin/ ]]; then
         continue
+    elif [[ "$changed" =~ ^Dockerfile ]]; then
+        continue
     else
         SKIP_CI=0
     fi
