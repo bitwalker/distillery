@@ -33,6 +33,7 @@ copyright: 'Copyright 2018 Paul Schoenfelder'
 nav:
     - Home: 'home.md'
     - Installation: 'introduction/installation.md'
+    - 'Upgrading to 2.x': 'upgrading_to_2_0.md'
     - 'Getting Started':
         - 'Command Line Interface': 'tooling/cli.md'
         - 'Understanding Releases': 'introduction/understanding_releases.md'
