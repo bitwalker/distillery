@@ -33,5 +33,4 @@ end
 ```
 
 That's all there is to it! You can define many different releases, with arbitrary combinations of applications
-as you see fit. To build all releases at once, just run `mix release --all`, otherwise use 
-`mix release --name=<release_name>` to build a specific release.
+as you see fit. To build a named release use `mix release --name=<release_name>`.
