@@ -38,7 +38,7 @@ to configure Distillery and your releases. Depending on your project type, it wi
 an appropriate default release configuration, along with two environments, `:dev` and `:prod`,
 with typical configuration for both. You can leave this configuration untouched,
 or modify it as desired. We will look at this file and discuss its contents briefly. Check out
-[Configuration](../distillery/configuration.html) for more information on this file
+[Configuration](../distillery/configuration.md) for more information on this file
 and available settings.
 
 To initialize Distillery, just run `mix release.init`.
@@ -75,7 +75,7 @@ end
 Let's talk about what these settings do from top to bottom.
 
 !!! tip
-    See [Configuring Distillery](../config/distillery.html) if you want to explore settings not covered in this guide.
+    See [Configuring Distillery](../config/distillery.md) if you want to explore settings not covered in this guide.
 
 ```elixir
 use Mix.Releases.Config,
