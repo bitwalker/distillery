@@ -22,7 +22,7 @@ Just add the following to your deps list in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:distillery, "~> MAJ.MIN", runtime: false}]
+  [{:distillery, "~> 2.0"}]
 end
 ```
 
@@ -31,21 +31,21 @@ Then run `mix do deps.get, compile`, and you're ready to go!
 ## Initializing Distillery
 
 To set up your project for releases, Distillery will create a `rel` directory in your
-project root, all files related to releases will be in this directory.
+project root. All files related to releases will be in this directory.
 
 Distillery also creates `rel/config.exs`, which is the configuration file you will use
 to configure Distillery and your releases. Depending on your project type, it will create
 an appropriate default release configuration, along with two environments, `:dev` and `:prod`,
-with typical configuration for those two environments. You can leave this configuration untouched,
-or modify it as desired. We will look at this file and discuss its contents briefly, check out
-[Configuration](https://hexdocs.pm/distillery/configuration.html) for more information on this file
+with typical configuration for both. You can leave this configuration untouched,
+or modify it as desired. We will look at this file and discuss its contents briefly. Check out
+[Configuration](../distillery/configuration.md) for more information on this file
 and available settings.
 
 To initialize Distillery, just run `mix release.init`.
 
 !!! note
-    In this walkthrough, we're making the assumption that this is a non-umbrella application,
-    though there are no significant differences, see [Umbrella Projects](umbrella_projects.md)
+    In this walkthrough, we're making the assumption that this is not an umbrella application,
+    though there are no significant differences. See [Umbrella Projects](umbrella_projects.md)
     for more details on configuration specific to that setup.
 
 ## Configuring your release
@@ -84,16 +84,15 @@ use Mix.Releases.Config,
 ```
 
 This loads the configuration macros required by Distillery, and sets a few
-optional global settings: `default_release`, which specifies which release to
-build by default if one is not specified to `mix release`, and
-`default_environment`, which specifies which environment to build by default if
-one is not specified to `mix release`.
+optional global settings: `default_release` and `default_environment`. These
+setting specify which release and which environment to build by default if they
+are not specified as options to `mix release`.
 
 If `default_release` is set to `:default`, then the first release definition in
 the file will be used. If `default_environment` is set to `:default`, then an
-"empty" environment will be used, and the only settings used will be those set
-within a `release` block. By default, Distillery sets `default_environment` to
-be the same as the name of the current Mix environment.
+"empty" environment will be used, in which case the only settings applied will
+be those set within a `release` block. By default, Distillery sets
+`default_environment` to be the same as the name of the current Mix environment.
 
 ```elixir
 environment :dev do
@@ -153,12 +152,12 @@ a release named `myapp`, and an environment called `dev`, the profile would be
 Now that we've configured our application we can build it! Just run `mix release`. There are a few flags
 to `mix release` that you may be interested in using right now:
 
-  * `--verbose` - log detailed information about what Distillery is doing and
+  * `--verbose` – log detailed information about what Distillery is doing and
   metadata it discovers. If you encounter issues, you should always turn this on
   to help troubleshoot.
-  * `--name=<name>` - build the release with the given name, as defined in `rel/config.exs`
-  * `--env=<env>` - build the release using the given environment, as defined in `rel/config.exs`
-  * `--profile=<name:env>` - build the given release profile (release + environment)
+  * `--name=<name>` – build the release with the given name, as defined in `rel/config.exs`
+  * `--env=<env>` – build the release using the given environment, as defined in `rel/config.exs`
+  * `--profile=<name:env>` – build the given release profile (release + environment)
 
 !!! tip
     See `mix help release` for more usage information and additional flags.
