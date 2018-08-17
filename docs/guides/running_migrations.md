@@ -29,7 +29,7 @@ defmodule MyApp.ReleaseTasks do
   @app :my_app
   @repos Application.get_env(@app, :ecto_repos, [])
 
-  def migrate do
+  def migrate(_argv) do
     start_services()
 
     run_migrations()
@@ -37,7 +37,7 @@ defmodule MyApp.ReleaseTasks do
     stop_services()
   end
 
-  def seed do
+  def seed(_argv) do
     start_services()
 
     run_migrations()
@@ -117,7 +117,7 @@ Create the following shell scripts at `rel/commands/`:
 ```bash
 #!/bin/sh
 
-release_ctl eval "MyApp.ReleaseTasks.migrate()"
+release_ctl eval --mfa "MyApp.ReleaseTasks.migrate/1" -- "$@"
 ```
 
 * `rel/commands/seed.sh`
@@ -125,7 +125,7 @@ release_ctl eval "MyApp.ReleaseTasks.migrate()"
 ```bash
 #!/bin/sh
 
-release_ctl eval "MyApp.ReleaseTasks.seed()"
+release_ctl eval --mfa "MyApp.ReleaseTasks.seed/1" -- "$@"
 ```
 
 For more info on the shell API look at the [Shell Scripts](../extensibility/shell_scripts.md) document.

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 TODO
 
+## [2.0.3]
+
+### Added
+
+- Added `--mfa` flag to `rpc` and `eval` commands, which specifies a module/function/arity
+  string to apply, using arguments provided to the command. Arguments are not transformed in
+  any way, but applied as string values. You can also pass `--argv` with `--mfa` to change the
+  behavior such that all arguments are passed as a single list of arguments, much like you'd get
+  in a Mix task; using `--argv` implies an arity of 1, so if you pass an mfa string with a different
+  arity, an error will be returned.
+
 ## [2.0.0]
 
 This is a major release with a number of significant changes and some of which are breaking,

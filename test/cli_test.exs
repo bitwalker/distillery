@@ -56,10 +56,22 @@ defmodule Distillery.Test.CliTest do
       end) =~ "Hello from primary@127.0.0.1!"
     end
 
-    test "eval and args" do
+    test "eval --mfa --argv" do
       assert is_success(fn ->
-        Control.main(["eval", "IO.inspect(:init.get_plain_arguments(), width: :infinity)"])
-      end) =~ "#{inspect(:init.get_plain_arguments(), width: :infinity)}"
+        Control.main(["eval", "--mfa", "IO.inspect/1", "--argv", "--", "foo", "bar"])
+      end) =~ "[\"foo\", \"bar\"]"
+    end
+
+    test "eval --mfa correct args" do
+      assert is_success(fn ->
+        Control.main(["eval", "--mfa", "Distillery.Test.Tasks.run/2", "--", "foo", "bar"])
+      end) =~ "[arg1: \"foo\", arg2: \"bar\"]"
+    end
+
+    test "eval --mfa incorrect args" do
+      assert is_failure(fn ->
+        Control.main(["eval", "--mfa", "Distillery.Test.Tasks.run/2", "--", "foo", "bar", "baz"])
+      end) =~ "function has a different arity!"
     end
 
     test "eval --file" do
@@ -85,6 +97,24 @@ defmodule Distillery.Test.CliTest do
         path = Path.join([__DIR__, "support", "eval_file_example.exs"]) |> Path.expand
         Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "--file", path])
       end) =~ ~r/ok from #{peer}\n/
+    end
+
+    test "rpc --mfa --argv", %{node: peer} do
+      assert is_success(fn ->
+        Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "--mfa", "IO.inspect/1", "--argv", "--", "foo", "bar"])
+      end) =~ "[\"foo\", \"bar\"]"
+    end
+
+    test "rpc --mfa correct args", %{node: peer} do
+      assert is_success(fn ->
+        Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "--mfa", "Distillery.Test.Tasks.run/2", "--", "foo", "bar"])
+      end) =~ "[arg1: \"foo\", arg2: \"bar\"]"
+    end
+
+    test "rpc --mfa incorrect args", %{node: peer} do
+      assert is_failure(fn ->
+        Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "--mfa", "Distillery.Test.Tasks.run/2", "--", "foo", "bar", "baz"])
+      end) =~ "function has a different arity!"
     end
 
     test "rpc error produces friendly error", %{node: peer} do

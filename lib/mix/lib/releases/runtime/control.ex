@@ -89,12 +89,17 @@ defmodule Mix.Releases.Runtime.Control do
     option(:name)
     option(:cookie)
     option(:file, :string, "Evaluate a file instead of an expression")
+    option(:mfa, :string, "A module/function/arity string, e.g. IO.inspect/1")
+    option(:argv, :boolean, "When used with --argv, passes all plain arguments to the MFA as a list")
 
     argument(:expr, :string, "The expression to evaluate", required: true)
   end
 
   command(:eval, "Executes the provided expression in a clean node") do
     option(:file, :string, "Evaluate a file instead of an expression")
+    option(:mfa, :string, "A module/function/arity string, e.g. IO.inspect/1")
+    option(:argv, :boolean, "When used with --argv, passes all plain arguments to the MFA as a list")
+
     argument(:expr, :string, "The expression to evaluate")
   end
 
@@ -505,6 +510,93 @@ defmodule Mix.Releases.Runtime.Control do
     end
   end
 
+  def rpc(argv, %{mfa: mfa, peer: peer} = opts) do
+    use_argv? = Map.get(opts, :argv, false)
+    argv =
+      case Map.get(opts, :expr) do
+        nil ->
+          argv
+        arg ->
+          [arg | argv]
+      end
+    case Mix.Utils.parse_mfa(mfa) do
+      {:ok, [module, fun, arity]} when arity in [0, 1] and use_argv? ->
+        args =
+          if arity == 0 do
+            []
+          else
+            [argv]
+          end
+        case rpc_call(peer, module, fun, args, :infinity) do
+          {:badrpc, {:EXIT, {type, trace}}} ->
+            Console.error("""
+            The following call failed: #{module}.#{fun}.(#{inspect args})
+
+            #{Exception.format(:exit, type, trace)}
+            """)
+          {:badrpc, {kind, {type, trace}}} when kind in [:exit, :throw, :error] ->
+            Console.error("""
+            The following call failed: #{module}.#{fun}.(#{inspect args})
+
+            #{Exception.format(kind, type, trace)}
+            """)
+          {:badrpc, reason} ->
+            Console.error("Remote call failed with: #{inspect(reason)}")
+          result ->
+            IO.inspect(result)
+        end
+      {:ok, [_module, _fun, _arity]} when use_argv? ->
+        Console.error("""
+        You tried to invoke #{mfa} with only one argument (#{inspect argv}),
+        but the function has a different arity!
+        """)
+      {:ok, [module, fun, arity]} ->
+        args =
+          if arity == 0 do
+            []
+          else
+            argv
+          end
+        if length(args) != arity do
+          Console.error("""
+          You tried to invoke #{mfa} with #{length(args)} arguments (#{inspect args}),
+          but the function has a different arity!
+          """)
+        else
+          case rpc_call(peer, module, fun, args, :infinity) do
+            {:badrpc, {:EXIT, {type, trace}}} ->
+              called =
+                quote do
+                  unquote(module).unquote(fun)(unquote_splicing(args))
+                end
+              Console.error("""
+              The following call failed: #{Macro.to_string(called)}
+
+              #{Exception.format(:exit, type, trace)}
+              """)
+            {:badrpc, {kind, {type, trace}}} when kind in [:exit, :throw, :error] ->
+              called =
+                quote do
+                  unquote(module).unquote(fun)(unquote_splicing(args))
+                end
+              Console.error("""
+              The following call failed: #{Macro.to_string(called)}
+
+              #{Exception.format(kind, type, trace)}
+              """)
+            {:badrpc, reason} ->
+              Console.error("Remote call failed with: #{inspect(reason)}")
+            result ->
+              IO.inspect(result)
+          end
+        end
+      {:ok, _parts} ->
+        Console.error("Incomplete module/function/arity specification for --mfa!: #{inspect mfa}")
+      :error ->
+        Console.error("Invalid module/function/arity specification for --mfa!: #{inspect mfa}")
+    end
+  end
+
   def rpc(_argv, %{expr: expr, peer: peer}) do
     case Code.string_to_quoted(expr) do
       {:ok, quoted} ->
@@ -556,14 +648,68 @@ defmodule Mix.Releases.Runtime.Control do
       Console.error("""
       Could not load #{Path.expand(file)}: #{Exception.message(err)}
 
-      #{Exception.format_stacktrace(err)}
+      #{Exception.format_stacktrace(System.stacktrace())}
       """)
 
     err ->
       Console.error("""
       Evaluation failed: #{Exception.message(err)}
 
-      #{Exception.format_stacktrace(err)}
+      #{Exception.format_stacktrace(System.stacktrace())}
+      """)
+  end
+
+  def eval(argv, %{mfa: mfa} = opts) do
+    use_argv? = Map.get(opts, :argv, false)
+    # Since this command can receive positional args
+    # We need to reconstitute the argument list with those accounted for
+    argv =
+      case Map.get(opts, :expr) do
+        nil ->
+          argv
+        arg ->
+          [arg | argv]
+      end
+    case Mix.Utils.parse_mfa(mfa) do
+      {:ok, [module, fun, arity]} when arity in [0, 1] and use_argv? ->
+        args =
+          if arity == 0 do
+            []
+          else
+            [argv]
+          end
+        apply(module, fun, args)
+      {:ok, [_module, _fun, _arity]} when use_argv? ->
+        Console.error("""
+        You tried to invoke #{mfa} with only one argument (#{inspect argv}),
+        but the function has a different arity!
+        """)
+      {:ok, [module, fun, arity]} ->
+        args =
+          if arity == 0 do
+            []
+          else
+            argv
+          end
+        if length(args) != arity do
+          Console.error("""
+          You tried to invoke #{mfa} with #{length(args)} arguments (#{inspect args}),
+          but the function has a different arity!
+          """)
+        else
+          apply(module, fun, args)
+        end
+      {:ok, _parts} ->
+        Console.error("Incomplete module/function/arity specification for --mfa!: #{inspect mfa}")
+      :error ->
+        Console.error("Invalid module/function/arity specification for --mfa!: #{inspect mfa}")
+    end
+  rescue
+    err ->
+      Console.error("""
+      Evaluation failed: #{Exception.message(err)}
+
+      #{Exception.format_stacktrace(System.stacktrace())}
       """)
   end
 
