@@ -20,6 +20,13 @@ In the root of your project, create a new file named `Dockerfile` with the
 following content:
 
 ```docker
+# The version of Alpine to use for the final image
+# This should match the version of Alpine that the `elixir:1.7.2-alpine` image uses
+ARG ALPINE_VERSION=3.8
+
+FROM elixir:1.7.2-alpine AS builder
+
+# The following are build arguments used to change variable parts of the image.
 # The name of your application/release (required)
 ARG APP_NAME
 # The version of the application we are building (required)
@@ -28,13 +35,6 @@ ARG APP_VSN
 ARG MIX_ENV=prod
 # Set this to true if this release is not a Phoenix app
 ARG SKIP_PHOENIX=false
-# The version of Alpine to use for the final image
-# This should match the version of Alpine that the `elixir:1.7.2-alpine` image uses
-ARG ALPINE_VERSION=3.8
-
-FROM elixir:1.7.2-alpine AS builder
-
-# The following are build arguments used to change variable parts of the image.
 
 # If you are using an umbrella project, you can change this
 # argument to the directory the Phoenix app is in so that the assets
@@ -64,10 +64,10 @@ RUN mix do deps.get, deps.compile, compile
 # If you aren't building a Phoenix app, pass `--build-arg SKIP_PHOENIX=true`
 # This is mostly here for demonstration purposes
 IF $SKIP_PHOENIX==false
-RUN pushd ${PHOENIX_SUBDIR}/assets && \
+RUN cd ${PHOENIX_SUBDIR}/assets && \
   yarn install && \
   yarn deploy && \
-  popd && \
+  cd .. && \
   mix phx.digest
 ELSE
 RUN echo "This is not a Phoenix project, skipping.."
@@ -76,13 +76,15 @@ DONE
 RUN \
   mkdir -p /opt/built && \
   mix release --verbose && \
-  cp _build/${MIX_ENV}/rel/${APP_NAME}/releases/${REL_VSN}/${APP_NAME}.tar.gz /opt/built && \
-  pushd /opt/built && \
+  cp _build/${MIX_ENV}/rel/${APP_NAME}/releases/${APP_VSN}/${APP_NAME}.tar.gz /opt/built && \
+  cd /opt/built && \
   tar -xzf ${APP_NAME}.tar.gz && \
   rm ${APP_NAME}.tar.gz
 
 # From this line onwards, we're in a new image, which will be the image used in production
 FROM alpine:${ALPINE_VERSION}
+
+ARG APP_NAME
 
 RUN apk update && \
     apk add --no-cache \
@@ -103,7 +105,7 @@ CMD /opt/app/bin/${APP_NAME} foreground
     This guide uses Alpine Linux, but you can use a different base image, you
     can find official Elixir base images [here](https://hub.docker.com/_/elixir).
 
-!!! warning 
+!!! warning
     Make sure that the version of Linux that you use for the final image
     matches the one used by the builder image (in this case,
     `elixir:1.7.2-alpine`, which uses Alpine Linux 3.8). If you use a different
@@ -111,7 +113,7 @@ CMD /opt/app/bin/${APP_NAME} foreground
     against a different version of libc (or musl in Alpine's case)
 
 !!! info
-    Our use of `yarn` above is optional, you can use whatever your project uses, 
+    Our use of `yarn` above is optional, you can use whatever your project uses,
     just modify the Dockerfile as necessary. The choice to use `yarn` over `npm`
     is to take advantage of Yarn's significantly faster dependency fetching.
 
@@ -119,7 +121,7 @@ CMD /opt/app/bin/${APP_NAME} foreground
     While this Dockerfile enables `REPLACE_OS_VARS`, you will probably want to
     take advantage of the config provider for `Mix.Config` instead, see the [Handling
     Configuration](../config/runtime.md) document for more information.
-    
+
 ## Building the image
 
 To help automate building images, it is recommended to use a Makefile or shell
@@ -271,7 +273,7 @@ db:
     Be careful what you name the service! This name will be the hostname used to
     talk to the service. In this case, it will be `db`. You will also need to
     make sure the name used matches what is in `config/docker.env`.
-    
+
 Notice again that we're feeding the service `docker.env` so that we can
 configure it.
 
@@ -292,14 +294,14 @@ You should now be able to open your browser to `http://localhost:4000` to see
 the running app.
 
 !!! tip
-    You can also use Docker Swarm, by first initializing Swarm: 
-    
+    You can also use Docker Swarm, by first initializing Swarm:
+
     ```
     $ docker swarm init
     ```
-    
+
     And then deploying a new stack:
-    
+
     ```
     $ docker stack deploy -c docker-compose.yml myapp
     ```
