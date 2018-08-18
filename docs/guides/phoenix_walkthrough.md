@@ -1,6 +1,6 @@
 # Phoenix Walkthrough
 
-It is recommended that you review the [Advanced Deployment Guide](http://phoenixframework.org/docs/advanced-deployment),
+It is recommended that you review the [Deployment Guide](https://hexdocs.pm/phoenix/deployment.html#content),
 which covers Phoenix specific configurations that need to be provided in order for your application to work within a release.
 The guide below will walk you through a working example of using Distillery with a Phoenix 1.3 application to create a release.
 
