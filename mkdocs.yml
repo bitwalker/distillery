@@ -43,6 +43,8 @@ nav:
         - 'Terminology': 'introduction/terminology.md'
     - Guides:
         - 'Phoenix': 'guides/phoenix_walkthrough.md'
+        - 'Working With Docker': 'guides/working_with_docker.md'
+        - 'Deploying To Digital Ocean': 'guides/deploying_to_digital_ocean.md'
         - 'Deploying To AWS': 'guides/deploying_to_aws.md'
         - 'Upgrades and Downgrades': 'guides/upgrades_and_downgrades.md'
         - 'Appups': 'guides/appups.md'
