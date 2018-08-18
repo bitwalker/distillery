@@ -20,6 +20,13 @@ In the root of your project, create a new file named `Dockerfile` with the
 following content:
 
 ```docker
+# The version of Alpine to use for the final image
+# This should match the version of Alpine that the `elixir:1.7.2-alpine` image uses
+ARG ALPINE_VERSION=3.8
+
+FROM elixir:1.7.2-alpine AS builder
+
+# The following are build arguments used to change variable parts of the image.
 # The name of your application/release (required)
 ARG APP_NAME
 # The version of the application we are building (required)
@@ -28,18 +35,15 @@ ARG APP_VSN
 ARG MIX_ENV=prod
 # Set this to true if this release is not a Phoenix app
 ARG SKIP_PHOENIX=false
-# The version of Alpine to use for the final image
-# This should match the version of Alpine that the `elixir:1.7.2-alpine` image uses
-ARG ALPINE_VERSION=3.8
-
-FROM elixir:1.7.2-alpine AS builder
-
-# The following are build arguments used to change variable parts of the image.
-
 # If you are using an umbrella project, you can change this
 # argument to the directory the Phoenix app is in so that the assets
 # can be built
 ARG PHOENIX_SUBDIR=.
+
+ENV SKIP_PHOENIX=${SKIP_PHOENIX} \
+    APP_NAME=${APP_NAME} \
+    APP_VSN=${APP_VSN} \
+    MIX_ENV=${MIX_ENV}
 
 # By convention, /opt is typically used for applications
 WORKDIR /opt/app
@@ -63,26 +67,27 @@ RUN mix do deps.get, deps.compile, compile
 # This step builds assets for the Phoenix app (if there is one)
 # If you aren't building a Phoenix app, pass `--build-arg SKIP_PHOENIX=true`
 # This is mostly here for demonstration purposes
-IF $SKIP_PHOENIX==false
-RUN pushd ${PHOENIX_SUBDIR}/assets && \
+RUN if [ ! "$SKIP_PHOENIX" = "true" ]; then \
+  cd ${PHOENIX_SUBDIR}/assets && \
   yarn install && \
   yarn deploy && \
-  popd && \
-  mix phx.digest
-ELSE
-RUN echo "This is not a Phoenix project, skipping.."
-DONE
+  cd .. && \
+  mix phx.digest; \
+fi
 
 RUN \
   mkdir -p /opt/built && \
   mix release --verbose && \
-  cp _build/${MIX_ENV}/rel/${APP_NAME}/releases/${REL_VSN}/${APP_NAME}.tar.gz /opt/built && \
-  pushd /opt/built && \
+  cp _build/${MIX_ENV}/rel/${APP_NAME}/releases/${APP_VSN}/${APP_NAME}.tar.gz /opt/built && \
+  cd /opt/built && \
   tar -xzf ${APP_NAME}.tar.gz && \
   rm ${APP_NAME}.tar.gz
 
 # From this line onwards, we're in a new image, which will be the image used in production
 FROM alpine:${ALPINE_VERSION}
+
+# The name of your application/release (required)
+ARG APP_NAME
 
 RUN apk update && \
     apk add --no-cache \
@@ -96,7 +101,7 @@ WORKDIR /opt/app
 
 COPY --from=builder /opt/built .
 
-CMD /opt/app/bin/${APP_NAME} foreground
+CMD trap 'exit' INT; /opt/app/bin/${APP_NAME} foreground
 ```
 
 !!! tip
@@ -119,6 +124,22 @@ CMD /opt/app/bin/${APP_NAME} foreground
     While this Dockerfile enables `REPLACE_OS_VARS`, you will probably want to
     take advantage of the config provider for `Mix.Config` instead, see the [Handling
     Configuration](../config/runtime.md) document for more information.
+
+To prevent reperforming steps when not necessary, add a `.dockerignore` to your project with the following:
+
+```
+_build/
+deps/
+.git/
+.gitignore
+Dockerfile
+Makefile
+README*
+test/
+priv/static/
+```
+
+Feel free to extend it as necessary - ideally you want to ignore anything not involved in the build.
     
 ## Building the image
 
@@ -130,8 +151,8 @@ when you run just `make` in the project directory:
 ```makefile
 .PHONY: help
 
-APP_NAME ?= `grep 'app:' mix.exs | sed -e 's/ //g' -e 's/app://' -e 's/[:,]//g'`
-APP_VSN ?= `grep 'version:' mix.exs | sed -e 's/ //g' -e 's/version://' -e 's/[",]//g'`
+APP_NAME ?= `grep 'app:' mix.exs | sed -e 's/\[//g' -e 's/ //g' -e 's/app://' -e 's/[:,]//g'`
+APP_VSN ?= `grep 'version:' mix.exs | cut -d '"' -f2`
 BUILD ?= `git rev-parse --short HEAD`
 
 help:
@@ -143,6 +164,9 @@ build: ## Build the Docker image
     --build-arg APP_VSN=$(APP_VSN) \
     -t $(APP_NAME):$(APP_VSN)-$(BUILD) \
     -t $(APP_NAME):latest .
+
+run: ## Run the app in Docker
+    docker run --rm -it $(APP_NAME):latest
 ```
 
 Now that those files have been created, we can build our image! The next step is
