@@ -3,6 +3,12 @@
 [![Master](https://travis-ci.org/bitwalker/distillery.svg?branch=master)](https://travis-ci.org/bitwalker/distillery)
 [![Hex.pm Version](http://img.shields.io/hexpm/v/distillery.svg?style=flat)](https://hex.pm/packages/distillery)
 
+  * [Documentation](https://hexdocs.pm/distillery)
+  * [CHANGELOG](https://hexdocs.pm/distillery/changelog.html)
+  * [Upgrading to 2.x](https://hexdocs.pm/distillery/upgrading_to_2_0.html)
+
+## About
+
 Every alchemist requires good tools, and one of the greatest tools in the alchemist's disposal
 is the distillery. The purpose of the distillery is to take something and break it down to its
 component parts, reassembling it into something better, more powerful. That is exactly
@@ -26,7 +32,7 @@ end
 Just add as a mix dependency and use `mix release`.
 
 If you are new to releases or Distillery, please review the [documentation](https://hexdocs.pm/distillery),
-it covers just about any question you may have!
+it is extensive and covers just about any question you may have!
 
 ## Community/Questions/etc.
 
