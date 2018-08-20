@@ -28,10 +28,10 @@ get_pid() {
 # Generate a unique nodename
 gen_nodename() {
     id="longname$(gen_id)-${NAME}"
-    "$BINDIR/erl" -noshell \
-                  -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host])' \
-                  "${NAME_TYPE}" "$id" \
-                  -s erlang halt
+    erl -noshell \
+        "${NAME_TYPE}" "$id" \
+        -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host])' \
+        -s erlang halt
 }
 
 # Generate a random id
