@@ -781,12 +781,14 @@ defmodule Mix.Releases.Assembler do
   # Generates .boot script
   defp make_boot_scripts(%Release{name: name, profile: %Profile{output_dir: output_dir}} = release) do
     Shell.debug("Generating boot scripts")
-
+    
     with {:ok, boot} <- BootScript.new(release) do
+      # This boot script contains all applications, only starting the minimal set
       clean_boot =
         boot
         |> BootScript.start_only([:kernel, :stdlib, :compiler, :elixir])
 
+      # The config boot is like the clean boot, but executes all config providers once started
       providers = release.profile.config_providers
       config_boot = 
         clean_boot
@@ -794,6 +796,7 @@ defmodule Mix.Releases.Assembler do
             {:apply, {Mix.Releases.Config.Provider, :init, [providers]}},
           ])
         
+      # Finally, this is the "real" boot script for the app itself
       app_boot =
         boot
         |> BootScript.add_kernel_proc({Mix.Releases.Runtime.Pidfile, :start, []})
