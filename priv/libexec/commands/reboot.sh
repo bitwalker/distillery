@@ -5,13 +5,15 @@
 set -e
 
 require_cookie
-run_hooks pre_start
 
 if ! release_remote_ctl reboot; then
     exit 1
 fi
 
+sleep 1
+
+# Check to see if node is back, if not, restart it without heart
 # Node needs to be brought back up without heart
 if ! release_ctl ping --peer="$NAME" --cookie="$COOKIE" >/dev/null; then
-    exec "$RELEASE_ROOT_DIR/bin/$REL_NAME" start
+    exec "$REL_DIR/libexec/commands/start.sh" start
 fi
