@@ -295,17 +295,18 @@ escript() {
     "$__escript" "$ROOTDIR/$scriptpath" "$@"
 }
 
-# Test erl to make sure it works
-if erl -noshell -s erlang halt 2>/dev/null; then
+# Test erl to make sure it works, extract key info about runtime while doing so
+if __info="$(erl -noshell -eval 'io:format("~s~n~s~n", [code:root_dir(), erlang:system_info(version)]).' -s erlang halt)"; then
     export ROOTDIR
-    ROOTDIR="$(erts_root)"
+    ROOTDIR="$(echo "$__info" | head -n1)"
     export ERTS_VSN
     if [ -z "$ERTS_VSN" ]; then
         # Update start_erl.data
-        ERTS_VSN="$(erts_vsn)"
+        ERTS_VSN="$(echo "$__info" | tail -n1)"
         echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
+    else
+        ERTS_VSN="$(echo "$__info" | tail -n1)"
     fi
-    ERTS_VSN="$(erts_vsn)"
     export ERTS_DIR
     ERTS_DIR="$ROOTDIR/erts-$ERTS_VSN"
     export BINDIR
