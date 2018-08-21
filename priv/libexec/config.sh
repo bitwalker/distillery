@@ -180,10 +180,8 @@ _configure_node() {
 
 # Ensure that cookie is set.
 require_cookie() {
-    # Attempt reloading cookie in case it has been set in a hook
-    if [ -z "$COOKIE" ]; then
-        _load_cookie
-    fi
+    # Load cookie, if not already loaded
+    _load_cookie
     # Die if cookie is still not set, as connecting via distribution will fail
     if [ -z "$COOKIE" ]; then
         fail "a secret cookie must be provided in one of the following ways:\n  - with vm.args using the -setcookie parameter,\n  or\n  by writing the cookie to '$DEFAULT_COOKIE_FILE', with permissions set to 0400"
@@ -193,21 +191,25 @@ require_cookie() {
 
 # Load target cookie, either from vm.args or $HOME/.cookie
 _load_cookie() {
+    if [ ! -z "$COOKIE" ]; then
+        return 0
+    fi
     COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
     DEFAULT_COOKIE_FILE="$HOME/.erlang.cookie"
-    if [ -z "$COOKIE_ARG" ]; then
-        if [ -f "$DEFAULT_COOKIE_FILE" ]; then
-            COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
-        else
-            # Try generating one by starting the VM
-            if erl -noshell -name "$NAME" -s erlang halt >/dev/null; then
-                if [ -f "$DEFAULT_COOKIE_FILE" ]; then
-                    COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
-                fi
+    if [ ! -z "$COOKIE_ARG" ]; then
+        COOKIE="$(echo "$COOKIE_ARG" | awk '{ print $2 }')"
+    elif [ -f "$DEFAULT_COOKIE_FILE" ]; then
+        COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
+    elif [ -z "$RELEASE_READ_ONLY" ]; then
+        # Try generating one by starting the VM
+        if erl -noshell -name "$NAME" -s erlang halt >/dev/null; then
+            if [ -f "$DEFAULT_COOKIE_FILE" ]; then
+                COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
+                return 0
             fi
         fi
+        return 1
     else
-        # Extract cookie name from COOKIE_ARG
-        COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
+        return 1
     fi
 }
