@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 ## This command is used to install upgrades/downgrades.
 ## It takes two arguments, the type of install (i.e. upgrade/downgrade),
 ## and the version to install.
@@ -16,7 +14,6 @@ if [ ! -z "$RELEASE_READ_ONLY" ]; then
     fail "Cannot install a release upgrade with RELEASE_READ_ONLY set!"
 fi
 
-require_cookie
 require_live_node
 
 SOURCE_VERSION="$REL_VSN"

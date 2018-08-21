@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
 set -e
 
 __rel_apps() {
@@ -117,7 +116,6 @@ erl() {
 
 erlexec(){
     __erl="$(whereis_erts_bin)/erl"
-    __extra_paths=""
     if [ -z "$__erl" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     fi

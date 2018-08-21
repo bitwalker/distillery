@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 ## Pings the running node, or an arbitrary peer node
 ## by supplying `--peer` and `--cookie` flags.
 ##

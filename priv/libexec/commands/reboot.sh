@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 ## Restart the VM completely
 
 set -e

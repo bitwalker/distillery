@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
 set -e
 if [ ! -z "$DEBUG_BOOT" ]; then
     # Disable debug mode in this file

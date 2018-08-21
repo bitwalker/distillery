@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 ## Start a daemon in the background with an attachable shell
 
 set -e
@@ -46,7 +44,6 @@ export HEART_COMMAND
 
 PIPE_DIR="${PIPE_DIR:-$RELEASE_MUTABLE_DIR/erl_pipes/$NAME/}"
 mkdir -p "$PIPE_DIR"
-
 
 env $RUN_ERL_ENV "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
     "$(_start_command)"

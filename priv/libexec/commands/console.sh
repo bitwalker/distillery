@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 ## This command starts the release interactively, i.e. it boots to a shell
 
 set -e
-
-if [ ! -z "$RELEASE_READ_ONLY" ]; then
-    fail "Cannot start a release with RELEASE_READ_ONLY set!"
-fi
 
 require_cookie
 

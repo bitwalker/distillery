@@ -7,11 +7,6 @@ unset CDPATH
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
 
-TERM="${TERM:-xterm}"
-if [ "$TERM" = "dumb" ]; then
-    TERM=xterm
-fi
-
 IS_TTY=false
 if [ -t 1 ]; then
     if command -v tput >/dev/null; then

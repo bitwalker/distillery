@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 set -e
 
 # Sets config paths for sys.config and vm.args, and ensures that env var replacements are performed

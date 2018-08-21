@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 set -e
 
 # Disable flow control for run_erl

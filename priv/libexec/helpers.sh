@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 set -e
 
 # Ensures the current node is running, otherwise fails

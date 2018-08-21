@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -o posix
 set -e
 
 unset CDPATH
@@ -37,21 +36,5 @@ export TERM="${TERM:-xterm}"
 if [ "$TERM" = "dumb" ]; then
     TERM=xterm
 fi
-
-# Include helpers, if the current release version supports it
-if [ -d "$RELEASES_DIR/$REL_VSN/libexec" ]; then
-    # shellcheck source=../libexec/readlink.sh
-    . "$RELEASES_DIR/$REL_VSN/libexec/readlink.sh"
-    # shellcheck source=../libexec/logger.sh
-    . "$RELEASES_DIR/$REL_VSN/libexec/logger.sh"
-    # shellcheck source=../libexec/erts.sh
-    . "$RELEASES_DIR/$REL_VSN/libexec/erts.sh"
-    OTP_VER="$(otp_vsn)"
-else
-    # For backwards compatibility, do not perform the OTP check
-    # If the active release version was built with an older Distillery
-    OTP_VER="0"
-fi
-export OTP_VER
 
 exec "$RELEASES_DIR/$REL_VSN/$REL_NAME.sh" "$@"

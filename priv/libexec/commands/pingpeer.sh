@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 
-set -o posix
-
-set -e
-
 ## DEPRECATED: Just use `ping --peer=<name>` or
 ## `ping --peer=<name> --cookie=<cookie>`
 ##
 ## This command is like `ping`, but pings an arbitrary peer
+
+set -e
 
 require_cookie
 

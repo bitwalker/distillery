@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 ## This command starts the release in the foreground, i.e.
 ## standard out is routed to the current terminal session.
 
 set -e
 set -m
-
-if [ ! -z "$RELEASE_READ_ONLY" ]; then
-    fail "Cannot start a release with RELEASE_READ_ONLY set!"
-fi
 
 require_cookie
 

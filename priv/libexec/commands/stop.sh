@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
-set -o posix
-
 ## Stops a daemon started via `start`
 
 set -e
 
-require_cookie
 require_live_node
 run_hooks pre_stop
 
