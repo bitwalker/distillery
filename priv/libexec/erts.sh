@@ -261,6 +261,7 @@ release_ctl() {
     command="$1"; shift
     elixir -e "Mix.Releases.Runtime.Control.main" \
            --erl "-boot $RELEASE_ROOT_DIR/bin/start_clean" \
+           --logger-sasl-reports false \
            -- \
            "$command" "$@"
 }
