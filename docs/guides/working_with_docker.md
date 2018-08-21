@@ -14,6 +14,12 @@ you can even further reduce the size and attack surface of the final image.
     have not seen how to do that, I would recommend visiting the
     [Walkthrough](../introduction/walkthrough.md) guide first.
 
+!!! tip
+    If you'd like to see an example project which makes uses of the information
+    in this guide, check out
+    [distillery-test](https://github.com/bitwalker/distillery-test). It's a
+    great way to try things out without needing to create a new project!
+
 ## The Dockerfile
 
 In the root of your project, create a new file named `Dockerfile` with the
@@ -160,13 +166,15 @@ help:
 	@perl -nle'print $& if m{^[a-zA-Z_-]+:.*?## .*$$}' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 build: ## Build the Docker image
-	docker build --build-arg APP_NAME=$(APP_NAME) \
+  docker build --build-arg APP_NAME=$(APP_NAME) \
     --build-arg APP_VSN=$(APP_VSN) \
     -t $(APP_NAME):$(APP_VSN)-$(BUILD) \
     -t $(APP_NAME):latest .
 
 run: ## Run the app in Docker
-    docker run --rm -it $(APP_NAME):latest
+  docker run --env-file config/docker.env \
+    --expose 4000 -p 4000:4000 \
+    --rm -it $(APP_NAME):latest
 ```
 
 Now that those files have been created, we can build our image! The next step is
@@ -246,24 +254,13 @@ file in the project root, called `docker-compose.yml`, with the following conten
 ```docker
 version: '3.5'
 
-networks:
-  webnet:
-    driver: overlay
-    attachable: true # Needed in order to run custom commands in the container
-
 services:
   web:
     image: "myapp:latest"
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
     ports:
       - "80:4000" # In our .env file above, we chose port 4000
     env_file:
       - config/docker.env
-    networks:
-      - webnet
 ```
 
 Notice above that we are telling Docker Compose to use the `docker.env` file we
@@ -275,20 +272,12 @@ as well. First, we just need to add the service description for the database:
 ```docker
 db:
   image: postgres:10-alpine
-  deploy:
-    replicas: 1
-    placement:
-      constraints: [node.role == manager]
-    restart_policy:
-      condition: on-failure
   volumes:
     - "./volumes/postgres:/var/lib/postgresql/data"
   ports:
     - "5432:5432"
   env_file:
     - config/docker.env
-  networks:
-    - webnet
 ```
 
 !!! warning
@@ -327,3 +316,7 @@ the running app.
     ```
     $ docker stack deploy -c docker-compose.yml myapp
     ```
+    
+    This approach requires some minimal adjustments to our `docker-compose.yml`
+    file, see the [Deploying To Digital Ocean](deploying_to_digital_ocean.md)
+    guide to learn more.

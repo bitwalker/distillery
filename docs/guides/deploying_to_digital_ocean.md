@@ -24,6 +24,67 @@ You will need to have the following prerequisites checked off:
   * Know how to publish an image to Docker Hub (covered below)
   * Have published your app's Docker image to Docker Hub (covered below)
   
+### Docker Compose
+
+We will be using Docker Compose in conjunction with Docker Swarm - and to do so
+we need to make some adjustments to the `docker-compose.yml` file we created in
+[Working With Docker](working_with_docker.md).
+
+First, define a network, by adding the following to the top-level of the file:
+
+```docker
+networks:
+  webnet:
+    driver: overlay
+    attachable: true # Needed in order to run custom commands in the container
+
+services:
+  # snip..
+```
+
+We then need to use that network with our `web` service, and add a `deploy` configuration section:
+
+```docker
+services:
+  web:
+    image: "myapp:latest"
+    depends_on:
+      - db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "80:4000"
+    env_file:
+      - config/docker.env
+    networks:
+      - webnet
+```
+
+Likewise, our `db` service needs some adjustment:
+
+```docker
+db:
+  image: postgres:10-alpine
+  deploy:
+    replicas: 1
+    placement:
+      constraints: [node.role == manager]
+    restart_policy:
+      condition: on-failure
+  volumes:
+    - "./volumes/postgres:/var/lib/postgresql/data"
+  ports:
+    - "5432:5432"
+  env_file:
+    - config/docker.env
+  networks:
+    - webnet
+```
+
+Now we're all set!
+  
 ### Publishing to Docker Hub
 
 If you aren't sure how to publish an image to Docker Hub, you're in luck! It's
