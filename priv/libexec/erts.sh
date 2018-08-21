@@ -58,10 +58,11 @@ whereis_erts_bin() {
 
 # Invokes erl with the provided arguments
 erl() {
-    __erl="$(whereis_erts_bin)/erl"
-    if [ -z "$__erl" ]; then
+    __bin="$(whereis_erts_bin)"
+    if [ -z "$__bin" ]; then
         fail "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     fi
+    __erl="$__bin/erl"
     # Set flag for whether a boot script was provided by the caller
     __boot_provided=0
     if echo "$@" | grep '\-boot ' >/dev/null; then
