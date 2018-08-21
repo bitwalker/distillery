@@ -4,10 +4,7 @@
 
 set -e
 
-require_cookie
-require_live_node
-
-if ! erl -noshell -boot "${REL_DIR}/config" -kernel logger_level warning -s erlang halt; then
+if ! erl -noshell -boot "${REL_DIR}/config" -s erlang halt >/dev/null; then
     fail "Unable to configure release!"
 fi
 release_remote_ctl reload_config --sysconfig="$SYS_CONFIG_PATH"
