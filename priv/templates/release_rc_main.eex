@@ -4,6 +4,7 @@ set -e
 
 # Set DEBUG_BOOT to output verbose debugging info during execution
 if [ ! -z "$DEBUG_BOOT" ]; then
+    export PS4='+\D{%s} '
     set -x
 fi
 
