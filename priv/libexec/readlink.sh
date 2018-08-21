@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+set -e
+
+if [ ! -z "$DEBUG_BOOT" ]; then
+    # Disable debug mode in this file
+    set +x
+fi
+
 # If readlink has no -f option, or greadlink is not available,
 # This function behaves like `readlink -f`
 __readlink_f() {
@@ -35,3 +42,8 @@ readlink_f() {
         readlink -f "$1"
     fi
 }
+
+if [ ! -z "$DEBUG_BOOT" ]; then
+    # Re-enable it after
+    set -x
+fi
