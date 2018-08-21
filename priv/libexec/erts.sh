@@ -4,8 +4,8 @@ set -e
 
 __rel_apps() {
     __releases="$RELEASE_ROOT_DIR/releases/RELEASES"
-    __vsn="$(echo "$REL_VSN" | sed -e 's/+/\\\+/')"
-    __rel="$(cat "$__releases" | sed -E -n "/\{release,[^,]*,\"$__vsn\"/,/^(permanent|old)}/p")"
+    __vsn="${REL_VSN//+/\\\+}"
+    __rel="$(sed -E -n "/\{release,[^,]*,\"$__vsn\"/,/^(permanent|old)}/p" "$__releases")"
     echo "$__rel" \
         | grep -E '[{][A-Za-z_0-9]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"' \
         | tail -n +2 \
@@ -140,7 +140,7 @@ erlexec(){
 # Run Elixir
 elixir() {
     if [ $# -eq 0 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-      echo "Usage: `basename $0` [options] [.exs file] [data]
+      echo "Usage: $(basename "$0") [options] [.exs file] [data]
 
       -e COMMAND                  Evaluates the given command (*)
       -r FILE                     Requires the given files/patterns (*)
