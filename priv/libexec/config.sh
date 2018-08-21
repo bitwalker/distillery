@@ -173,7 +173,7 @@ _configure_node() {
             # Nothing to do
             ;;
         *)
-            NAME=$NAME@$(gen_nodename)
+            NAME=$NAME@$(get_hostname)
             ;;
     esac
 }

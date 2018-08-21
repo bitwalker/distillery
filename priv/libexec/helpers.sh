@@ -25,11 +25,32 @@ get_pid() {
 
 # Generate a unique nodename
 gen_nodename() {
-    id="longname$(gen_id)-${NAME}"
-    erl -noshell \
-        "${NAME_TYPE}" "$id" \
-        -eval '[Host] = tl(string:tokens(atom_to_list(node()),"@")), io:format("~s~n", [Host])' \
-        -s erlang halt
+    id="$(gen_id)"
+    node="$(echo "${NAME}" | cut -d'@' -f1)"
+    host="$(echo "${NAME}" | cut -d'@' -f2 -s)"
+    if [ -z "$host" ] && [ "$NAME_TYPE" = "-name" ]; then
+        # No hostname specified, and we're using long names, so use HOSTNAME
+        echo "${node}-${id}@${HOSTNAME}"
+    elif [ -z "$host" ]; then
+        # No hostname specified, but we're using -sname
+        echo "${node}-${id}"
+    elif [ "$NAME_TYPE" = "-sname" ]; then
+        # Hostname specified, but we're using -sname
+        echo "${node}-${id}"
+    else
+        # Hostname specified, and we're using long names
+        echo "${node}-${id}@${host}"
+    fi
+}
+
+# Print the current hostname
+get_hostname() {
+    host="$(echo "${NAME}" | cut -d'@' -f2 -s)"
+    if [ -z "$host" ]; then
+        echo "${HOSTNAME}"
+    else
+        echo "$host"
+    fi
 }
 
 # Generate a random id
