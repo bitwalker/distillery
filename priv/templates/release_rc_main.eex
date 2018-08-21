@@ -70,6 +70,8 @@ ESCRIPT_NAME="${ESCRIPT_NAME:-$SCRIPT}"
 SCRIPT_DIR="$(dirname "${SCRIPT}")"
 # Root directory of all releases
 RELEASE_ROOT_DIR="${RELEASE_ROOT_DIR:-$(dirname "$(dirname "${SCRIPT_DIR}")")}"
+# Directory containing the current version of this release
+REL_DIR="${REL_DIR:-$RELEASE_ROOT_DIR/releases/$REL_VSN}"
 # The location of builtin command scripts
 RELEASE_LIBEXEC_DIR="$SCRIPT_DIR/libexec"
 
