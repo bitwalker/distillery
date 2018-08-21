@@ -236,17 +236,23 @@ iex() {
 
 # Echoes the current ERTS version
 erts_vsn() {
-    erl -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver])' -noshell -s erlang halt
+    erl -noshell \
+        -eval 'Ver = erlang:system_info(version), io:format("~s~n", [Ver])' \
+        -s erlang halt
 }
 
 # Echoes the current ERTS root directory
 erts_root() {
-    erl -eval 'io:format("~s~n", [code:root_dir()]).' -noshell -s erlang halt
+    erl -noshell \
+        -eval 'io:format("~s~n", [code:root_dir()]).' \
+        -s erlang halt
 }
 
 # Echoes the current OTP version
 otp_vsn() {
-    erl -eval 'Ver = erlang:system_info(otp_release), io:format("~s~n", [Ver])' -noshell -s erlang halt
+    erl -noshell \
+        -eval 'Ver = erlang:system_info(otp_release), io:format("~s~n", [Ver])' \
+        -s erlang halt
 }
 
 # Use release_ctl for local operations
