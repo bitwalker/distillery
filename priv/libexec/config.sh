@@ -100,8 +100,16 @@ configure_release() {
         # Now that we have a full base config, run the config providers pass
         # This will replace the config at SYS_CONFIG_PATH with a fully provisioned config
         # Set the logger level to warning to prevent unnecessary output to stdio
-        if ! erl -noshell -boot "${REL_DIR}/config" -kernel logger_level warning -s erlang halt; then
-            fail "Unable to configure release!"
+        if [ -z "$DEBUG_BOOT" ]; then
+            # Silence all output when not debugging
+            if ! erl -noshell -boot "${REL_DIR}/config" -s erlang halt >/dev/null; then
+                fail "Unable to configure release!"
+            fi
+        else
+            # Otherwise, show any output produced
+            if ! erl -noshell -boot "${REL_DIR}/config" -s erlang halt; then
+                fail "Unable to configure release!"
+            fi
         fi
     fi
 
