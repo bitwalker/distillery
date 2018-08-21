@@ -269,6 +269,8 @@ release_ctl() {
 # Use release_ctl for remote operations
 # Use like `release_remote_ctl ping`
 release_remote_ctl() {
+    require_cookie
+
     command="$1"; shift
     name="${PEERNAME:-$NAME}"
     elixir -e "Mix.Releases.Runtime.Control.main" \
