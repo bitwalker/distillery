@@ -53,4 +53,4 @@ we've started!
 ...snip...
 ```
 
-You have access to anything defined in the run control script environment, see [Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for details.
+You have access to anything defined in the run control script environment, see [Shell Scripts](shell_scripts.md) for details.

@@ -80,4 +80,4 @@ That's all there is to it!
     if your task needs to execute in the context of the running release.
 
 You have access to anything defined in the management scripts environment, see
-[Shell Script API](https://hexdocs.pm/distillery/shell-script-api.html) for details.
+[Shell Scripts](shell_scripts.md) for details.
