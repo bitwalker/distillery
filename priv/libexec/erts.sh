@@ -5,7 +5,7 @@ set -e
 __rel_apps() {
     __releases="$RELEASE_ROOT_DIR/releases/RELEASES"
     __vsn="${REL_VSN//+/\\\+}"
-    __rel="$(sed -E -n "/\{release,[^,]*,\"$__vsn\"/,/^(permanent|old)}/p" "$__releases")"
+    __rel="$(sed -E -n "/\{release,[^,]*,\"$__vsn\"/,/[^po]*(permanent|old)}/p" "$__releases")"
     echo "$__rel" \
         | grep -E '[{][A-Za-z_0-9]*,\"[0-9.]*[A-Za-z0-9.\_\+\-]*\"' \
         | tail -n +2 \
