@@ -529,14 +529,16 @@ defmodule Mix.Releases.Runtime.Control do
           end
         case rpc_call(peer, module, fun, args, :infinity) do
           {:badrpc, {:EXIT, {type, trace}}} ->
+            args = Enum.join(Enum.map(args, &inspect/1), ", ")
             Console.error("""
-            The following call failed: #{module}.#{fun}.(#{inspect args})
+            The following call failed: #{module}.#{fun}(#{args})
 
             #{Exception.format(:exit, type, trace)}
             """)
           {:badrpc, {kind, {type, trace}}} when kind in [:exit, :throw, :error] ->
+            args = Enum.join(Enum.map(args, &inspect/1), ", ")
             Console.error("""
-            The following call failed: #{module}.#{fun}.(#{inspect args})
+            The following call failed: #{module}.#{fun}(#{args})
 
             #{Exception.format(kind, type, trace)}
             """)
