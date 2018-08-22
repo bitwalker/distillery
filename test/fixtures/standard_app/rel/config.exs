@@ -9,7 +9,7 @@ use Mix.Releases.Config,
     default_environment: :dev
 
 # For a full list of config options for both releases
-# and environments, visit https://hexdocs.pm/distillery/configuration.html
+# and environments, visit https://hexdocs.pm/distillery/config/distillery.html
 
 
 # You may define one or more environments in this file,
