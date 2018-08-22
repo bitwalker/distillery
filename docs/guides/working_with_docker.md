@@ -235,10 +235,10 @@ the content below:
 ```shell
 HOSTNAME=localhost
 SECRET_KEY_BASE="u1QXlca4XEZKb1o3HL/aUlznI1qstCNAQ6yme/lFbFIs0Iqiq/annZ+Ty8JyUCDc"
-DB_HOSTNAME=db
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_DB=myapp_db
+DATABASE_HOST=db
+DATABASE_USER=postgres
+DATABASE_PASS=postgres
+DATABASE_NAME=myapp_db
 PORT=4000
 LANG=en_US.UTF-8
 REPLACE_OS_VARS=true
