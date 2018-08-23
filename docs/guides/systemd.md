@@ -62,7 +62,6 @@ User=appuser
 Group=appuser
 WorkingDirectory=/home/appuser/myapp
 ExecStart=/home/appuser/myapp/bin/myapp foreground
-ExecStop=/home/appuser/myapp/bin/myapp stop
 Restart=on-failure
 RestartSec=5
 Environment=PORT=8080
