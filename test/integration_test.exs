@@ -47,14 +47,6 @@ defmodule Distillery.Test.IntegrationTest do
     end
   end
 
-  {:ok, req} = Version.parse_requirement("< 1.4.0")
-
-  if Version.match?(Version.parse!(System.version()), req) do
-    @time_unit :milliseconds
-  else
-    @time_unit :millisecond
-  end
-
   # Wait for VM and application to start
   defp wait_for_app(bin_path) do
     parent = self()
@@ -68,7 +60,7 @@ defmodule Distillery.Test.IntegrationTest do
   end
 
   defp do_wait_for_app(pid, time_remaining) do
-    start = System.monotonic_time(@time_unit)
+    start = System.monotonic_time(:millisecond)
 
     if System.get_env("VERBOSE_TESTS") do
       IO.puts("Waiting #{time_remaining}ms for app..")
@@ -79,7 +71,7 @@ defmodule Distillery.Test.IntegrationTest do
         :ok
 
       _other ->
-        ts = System.monotonic_time(@time_unit)
+        ts = System.monotonic_time(:millisecond)
         do_wait_for_app(pid, time_remaining - (ts - start))
     after
       time_remaining ->
