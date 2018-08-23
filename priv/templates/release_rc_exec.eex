@@ -6,13 +6,13 @@ unset CDPATH
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-RELEASES_DIR="$RELEASE_ROOT_DIR/releases"
+RELEASES_DIR="${RELEASE_ROOT_DIR}/releases"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
-REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "$RELEASES_DIR"/start_erl.data)}"
-ERTS_VSN="${ERTS_VSN:-$(cut -d' ' -f1 "$RELEASES_DIR"/start_erl.data)}"
+REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "${RELEASES_DIR}"/start_erl.data)}"
+ERTS_VSN="${ERTS_VSN:-$(cut -d' ' -f1 "${RELEASES_DIR}"/start_erl.data)}"
 <%= if (include_erts == false or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
 # The location of consolidated protocol .beams
-CONSOLIDATED_DIR="$ROOT/lib/${REL_NAME}-${REL_VSN}/consolidated"
+CONSOLIDATED_DIR="${RELEASE_ROOT_DIR}/lib/${REL_NAME}-${REL_VSN}/consolidated"
 
 export RELEASE_ROOT_DIR
 export RELEASES_DIR
