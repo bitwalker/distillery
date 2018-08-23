@@ -33,7 +33,7 @@ defmodule Distillery.Test.IntegrationTest do
   end
 
   defp run_cmd(command, args) when is_list(args) do
-    case System.cmd(command, args) do
+    case System.cmd(command, args, [stderr_to_stdout: true]) do
       {output, 0} ->
         if System.get_env("VERBOSE_TESTS") do
           IO.puts(output)
@@ -89,7 +89,7 @@ defmodule Distillery.Test.IntegrationTest do
   end
 
   defp ping_loop(bin_path, parent) do
-    case System.cmd(bin_path, ["ping"]) do
+    case System.cmd(bin_path, ["ping"], [stderr_to_stdout: true]) do
       {"pong\n", 0} ->
         send(parent, {:ok, :pong})
 
