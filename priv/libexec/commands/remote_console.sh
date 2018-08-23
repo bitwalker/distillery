@@ -17,12 +17,14 @@ TICKTIME="$(release_remote_ctl rpc ':net_kernel.get_net_ticktime()')"
 # Setup remote shell command to control node
 if [ ! -z "$USE_ERL_SHELL" ]; then
     erl -hidden \
+        -kernel logger_level warning \
         -kernel net_ticktime "$TICKTIME" \
         "$NAME_TYPE" "$id" \
         -remsh "$NAME" \
         -setcookie "$COOKIE"
 else
     iex --erl "-hidden -kernel net_ticktime $TICKTIME" \
+        --logger-sasl-reports false \
         -"$NAME_TYPE" "$id" \
         --cookie "$COOKIE" \
         --remsh "$NAME"
