@@ -102,12 +102,12 @@ configure_release() {
         # Set the logger level to warning to prevent unnecessary output to stdio
         if [ -z "$DEBUG_BOOT" ]; then
             # Silence all output when not debugging
-            if ! erl -noshell -boot "${REL_DIR}/config" -s erlang halt >/dev/null; then
+            if ! erl -noshell -config "$SYS_CONFIG_PATH" -boot "${REL_DIR}/config" -s erlang halt >/dev/null; then
                 fail "Unable to configure release!"
             fi
         else
             # Otherwise, show any output produced
-            if ! erl -noshell -boot "${REL_DIR}/config" -s erlang halt; then
+            if ! erl -noshell -config "$SYS_CONFIG_PATH" -boot "${REL_DIR}/config" -s erlang halt; then
                 fail "Unable to configure release!"
             fi
         fi
