@@ -27,7 +27,6 @@ defmodule Distillery.Test.IntegrationTest do
       _ = File.rm(Path.join(@standard_app_path, "mix.lock"))
       {:ok, _} = mix("deps.get")
       {:ok, _} = mix("compile")
-      {:ok, _} = mix("release.clean")
       unquote(body)
       File.cd!(old_dir)
     end
