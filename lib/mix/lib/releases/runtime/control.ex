@@ -31,7 +31,7 @@ defmodule Mix.Releases.Runtime.Control do
   # Basic management tasks
   command :ping, "Pings the remote node" do
     option(:cookie, required: true)
-    option(:peer, :string, "The node name of the peer to ping")
+    option(:name)
   end
 
   # Stub for `describe`
