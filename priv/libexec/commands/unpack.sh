@@ -9,6 +9,6 @@ if [ ! -z "$RELEASE_READ_ONLY" ]; then
     fail "Cannot unpack a release with RELEASE_READ_ONLY set!"
 fi
 
-exec release_remote_ctl unpack \
+release_remote_ctl unpack \
         --release="$REL_NAME" \
         "$2"
