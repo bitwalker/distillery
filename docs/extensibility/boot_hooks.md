@@ -5,7 +5,7 @@ Boot hooks are scripts which execute pre/post to events that occur in the run co
 ## Events
 
 - `pre_configure`, occurs before `REPLACE_OS_VARS` triggers replacement, and before any generated files are generated
-- `post_configure`, currs after environment variable replacement and after generated files are generated
+- `post_configure`, ocurrs after environment variable replacement and after generated files are generated
 - `pre_start`, occurs before the release is started
 - `post_start`, occurs right after the release is started
 - `pre_stop`, occurs after a request to stop the release is issued, but before the release is stopped
