@@ -6,7 +6,7 @@ defmodule Mix.Releases.Plugin do
   ## Implementing your own plugin
 
   To create a Distillery plugin, create a new module in which you
-  `use Mix.Releases.Plugin`. Then write implentations for the following
+  `use Mix.Releases.Plugin`. Then write implementations for the following
   callbacks:
 
     - `c:before_assembly/2`
