@@ -102,7 +102,7 @@ these things:
 !!! warning
     This guide has you spin up infrastructure in AWS. This infrastructure costs
     money, though it is a small amount if only running through the guide to see
-    how it works, it is important to be aware that the resources involved to not
+    how it works, it is important to be aware that the resources involved do not
     all fall under the AWS Free Tier. If you do not want to incur costs, then
     you will not be able to follow this guide.
 
