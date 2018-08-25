@@ -54,6 +54,7 @@ nav:
         - 'Configuring Distillery': 'config/distillery.md'
         - 'Runtime Configuration': 'config/runtime.md'
         - 'VM Args': 'config/vm.args.md'
+        - 'PID Files': 'config/pidfiles.md'
     - Extensibility:
         - 'Release Plugins': 'extensibility/release_plugins.md'
         - 'Config Providers': 'extensibility/config_providers.md'
