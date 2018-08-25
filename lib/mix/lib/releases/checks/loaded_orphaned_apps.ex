@@ -3,7 +3,7 @@ defmodule Mix.Releases.Checks.LoadedOrphanedApps do
   This check determines whether or not any of the applications in the release
   satisfy all three of the following conditions:
 
-    * Have a start type of `:load`
+    * Have a start type of `:load` or `:none`
     * Are not included by any other application in the release (orphaned)
     * Are expected to be started by at least one other application in the release,
       i.e. are present in the dependent application's `:applications` list.
@@ -35,10 +35,10 @@ defmodule Mix.Releases.Checks.LoadedOrphanedApps do
   alias Mix.Releases.App
 
   def run(%Release{applications: apps}) do
-    # Applications with start type :load
+    # Applications with start type :load or :none
     loaded =
       apps
-      |> Enum.filter(fn %App{start_type: type} -> type == :load end)
+      |> Enum.filter(fn %App{start_type: type} -> type in [:none, :load] end)
       |> Enum.map(fn %App{name: name} -> name end)
       |> MapSet.new()
 
@@ -89,7 +89,7 @@ defmodule Mix.Releases.Checks.LoadedOrphanedApps do
       :ok
     else
       warning = """
-      You have specified a start type of :load for the following orphan applications:
+      You have specified a start type of :load or :none for the following orphan applications:
       #{Enum.join(Enum.map(loaded_but_required, fn a -> "        #{inspect(a)}" end), "\n")}
 
       These applications are considered orphaned because they are not included by another

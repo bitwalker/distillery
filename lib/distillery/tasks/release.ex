@@ -294,13 +294,8 @@ defmodule Mix.Tasks.Release do
     do_parse_args(rest, Map.put(acc, :selected_environment, String.to_atom(name)))
   end
 
-  defp do_parse_args([{:no_warn_missing, true} | rest], acc) do
-    Application.put_env(:distillery, :no_warn_missing, true)
-    do_parse_args(rest, acc)
-  end
-
-  defp do_parse_args([{:no_warn_missing, apps} | rest], acc) when is_list(apps) do
-    Application.put_env(:distillery, :no_warn_missing, apps)
+  defp do_parse_args([{:no_warn_missing, _} | rest], acc) do
+    Shell.warn "The --no-warn-missing flag has been deprecated, as it is no longer used"
     do_parse_args(rest, acc)
   end
 

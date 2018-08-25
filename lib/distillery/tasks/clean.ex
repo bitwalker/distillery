@@ -34,7 +34,6 @@ defmodule Mix.Tasks.Release.Clean do
     opts = parse_args(args)
     verbosity = Keyword.get(opts, :verbosity)
     Shell.configure(verbosity)
-    Application.put_env(:distillery, :no_warn_missing, true)
 
     Application.load(:distillery)
 

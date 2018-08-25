@@ -56,33 +56,53 @@ Which is the same as if you had invoked `release` like so:
 
 ### Warnings
 
-#### Missing applications
+### "Orphaned" applications or partially booted releases
 
-Distillery will produce a warning if it detects that there are runtime dependencies, either direct or
-transitive, which are not in the application tree (i.e in `applications` or `included_applications`
-of your `mix.exs`, or any of the apps in those lists).
-
-You have the following options for dealing with this warning:
-
-  * You hate this warning, you never want to see it: pass `--no-warn-missing` to
-    the `release` task.
-  * You know that a given application isn't needed, and it is a direct
-    dependency of your application: add `runtime: false` to the dependency in `mix.exs`
-  * You know that a given application isn't needed, but it is a transitive
-    dependency: set `:no_warn_missing` in `config/config.exs`:
+Distillery allows you to specify the start type of applications in the release,
+or override the start type, like so:
 
 ```elixir
-config :distillery,
-  no_warn_missing: [
-    :ignore_this_app,
+release :myapp do
+  set applications: [
+    myapp: :permanent,
+    foo: :temporary,
+    bar: :load,
+    qux: :none
   ]
+end
 ```
 
+Using the above example, let's assume that `:bar` is a dependency of `:myapp`,
+and is present in the `applications` list of `:myapp`.
+
+When the release boots, it starts all the applications in the release, in
+dependency order. It determines this order based on the `applications` list for
+each application being started. Before an application can be started, all
+applications in its `applications` list must be started first.
+
+So using our example, when the release boots, and reaches the point where it
+wants to start `:myapp`, it will wait for `:bar` to start before proceeding.
+However, we set the start type of `:bar` to `:load`, which means it isn't
+started during boot, and the release will wait indefinitely for a
+condition which will never happen - it will only be partially booted. 
+
+!!! info 
+    The result in this situation is that the release will appear to have
+    started without errors, but you will notice missing functionality. For
+    example, if `:myapp` is a Phoenix application, the HTTP endpoint will never
+    be started, and so requests will fail.
+
+Distillery will warn you when it detects this situation, allow you to fix the
+start type, or take a different approach with how you manage the load-only
+dependency. Usually, the solution is to make `:bar` an included application, and
+remove it from the `applications` list in `rel/config.exs`.
+
 !!! warning
-    While not technically an error, this warning reflects a very high
-    probability that your release will be unable to boot at runtime, either
-    entirely, or partially (where the release boots, but appears to be missing
-    functionality). Do not ignore this warning!
+    It is not strictly a problem to use `:load` or `:none` start types, but they
+    must not be used when they are dependencies of an application with a start type of
+    `:permanent` or `:temporary`, as those applications will be unable to boot.
+    Do not specify a start type if the application is included (in other words,
+    present in `included_applications`).
 
 ## Usage
 
@@ -163,6 +183,44 @@ under that directory should be considered required sources for release builds.
     always be reproduced from the sources.
 
 ## Errors
+
+### Release crashes with undefined module errors
+
+If you, or a dependency, forgot to include an application in your `applications`,
+`extra_applications`, or `included_applications` lists (when not relying on
+Mix's inference), then your release will crash at runtime, the first time code
+in that application is referenced.
+
+To fix this, you must do one of the following:
+
+  * For Erlang standard library applications, for example `xmerl`, you must add
+    the application to `extra_applications`.
+  * For dependencies pulled from Hex, or an SCM, if the missing application is a
+  direct dependency and you manually define your `applications` list in
+  `mix.exs`, you need to add the missing application to that list.
+  * If the missing application is a transitive dependency (in other words, a
+  dependency of a dependency), then you have three options:
+    * Add the application to the parent dependency's `applications` list
+    * Make the dependency a direct dependency, as an override (e.g. `{:foo, "~>
+      0.1", override: true}`), and add it to your `applications` list (if not
+      relying on inference)
+      
+!!! tip
+    If you discover a dependency with missing applications in it's
+    `applications` list, you should notify the maintainer, as this is a bug in
+    their application!
+
+Distillery used to warn about this condition, but in order to do so, it relied
+on private Mix APIs. We did this because the way Mix inferred the
+`applications` list was not always correct with regard to the `runtime: false`
+option of dependencies - namely that if a dependency appeared in `applications`
+and was decorated with `runtime: false`, Mix would ignore the `runtime: false`
+declaration. These two settings are mutually exclusive, so Distillery warned
+about this when there was conflict.
+
+These issues are now being addressed upstream in Mix, so this should no longer
+be an issue in general, but if you do encounter a problem with `applications`
+inference, it should be reported upstream in Mix.
 
 ### I have two dependencies with conflicting modules
 
