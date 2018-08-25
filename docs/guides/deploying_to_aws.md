@@ -170,12 +170,12 @@ You need to provision a GitHub OAuth token for the webhook needed by CodePipelin
 ## Provisioning our pipeline
 
 !!! tip
-   If you want to follow progress of various components, you can do so in the
-   [AWS Console](https://console.aws.amazon.com). To navigate to a particular
-   service, click the Services dropdown and type in the name of the service you
-   are looking for. For the most part, the ones you will be interested in are
-   CloudFormation and CodePipeline, they will take you to other areas if you
-   follow links. Lambda, CodeDeploy, and CodeBuild are also of interest.
+    If you want to follow progress of various components, you can do so in the
+    [AWS Console](https://console.aws.amazon.com). To navigate to a particular
+    service, click the Services dropdown and type in the name of the service you
+    are looking for. For the most part, the ones you will be interested in are
+    CloudFormation and CodePipeline, they will take you to other areas if you
+    follow links. Lambda, CodeDeploy, and CodeBuild are also of interest.
 
 First, make sure you are in the root of the `distillery-aws-example` repo (which
 you should have forked into your own account, and cloned locally):
