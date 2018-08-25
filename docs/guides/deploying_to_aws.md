@@ -177,8 +177,9 @@ You need to provision a GitHub OAuth token for the webhook needed by CodePipelin
    CloudFormation and CodePipeline, they will take you to other areas if you
    follow links. Lambda, CodeDeploy, and CodeBuild are also of interest.
 
-First, make sure you are in the root of the `distillery-aws-example` repo (which
-you should have forked into your own account, and cloned locally):
+First, make sure you are in the root of the
+[distillery-aws-example repo](https://github.com/bitwalker/distillery-aws-example)
+(which you should have forked into your own account, and cloned locally):
 
     $ git clone git@github.com:myaccount/distillery-aws-example.git
     $ cd distillery-aws-example
