@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ## Pings the running node, or an arbitrary peer node
-## by supplying `--peer` and `--cookie` flags.
+## by supplying `--name` and `--cookie` flags.
 ##
 ## If the node is running and can be connected to,
 ## 'pong' will be printed to stdout. If the node is
@@ -13,6 +13,6 @@ set -e
 
 require_cookie
 
-if ! release_ctl ping --peer="$NAME" --cookie="$COOKIE" "$@"; then
+if ! release_ctl ping --name="$NAME" --cookie="$COOKIE" "$@"; then
     exit 1
 fi

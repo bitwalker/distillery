@@ -5,7 +5,7 @@ set -e
 # Ensures the current node is running, otherwise fails
 require_live_node() {
     require_cookie
-    if ! release_ctl ping --peer="$NAME" --cookie="$COOKIE" >/dev/null; then
+    if ! release_ctl ping --name="$NAME" --cookie="$COOKIE" >/dev/null; then
         fail "Node $NAME is not running!"
     else
         return 0
