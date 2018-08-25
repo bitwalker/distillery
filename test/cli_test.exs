@@ -32,19 +32,19 @@ defmodule Distillery.Test.CliTest do
   describe "when pinging a node" do
     test "prints pong when available", %{node: peer} do
       assert is_success(fn ->
-        Control.main(["--verbose", "ping", "--cookie", "#{Node.get_cookie}", "--peer", "#{peer}"])
+        Control.main(["--verbose", "ping", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}"])
       end) == "pong\n"
     end
 
     test "prints friendly error (and pang) when unavailable" do
       assert is_failure(fn ->
-        Control.main(["--verbose", "ping", "--cookie", "#{Node.get_cookie}", "--peer", "missingno@127.0.0.1"])
+        Control.main(["--verbose", "ping", "--cookie", "#{Node.get_cookie}", "--name", "missingno@127.0.0.1"])
       end) =~ "Received 'pang' from missingno@127.0.0.1!\n"
     end
 
     test "omitting required flag produces friendly error", %{node: peer} do
       assert is_failure(fn ->
-        Control.main(["--verbose", "ping", "--peer", "#{peer}"])
+        Control.main(["--verbose", "ping", "--name", "#{peer}"])
       end) =~ "Missing required flag '--cookie'."
     end
   end
