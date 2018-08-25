@@ -27,7 +27,6 @@ defmodule Mix.Releases.Checks do
   @default_checks [
     __MODULE__.Erts,
     __MODULE__.Cookie,
-    __MODULE__.MissingApps,
     __MODULE__.LoadedOrphanedApps
   ]
 

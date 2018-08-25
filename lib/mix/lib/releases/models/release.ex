@@ -410,207 +410,183 @@ defmodule Mix.Releases.Release do
 
   An optional second parameter enables/disables debug logging of discovered apps.
   """
-  @spec apps(t()) :: [{atom, String.t()}] | {:error, term}
-  # Gets all applications which are part of the release application tree
+  @spec apps(t) :: [App.t] | {:error, term}
   def apps(%__MODULE__{name: name, applications: apps} = release) do
-    loaded_deps = loaded_deps([])
-
+    # The list of applications which have been _manually_ specified
+    # to be part of this release - it is not required to be exhaustive
     apps =
       if Enum.member?(apps, name) do
         apps
       else
-        apps ++ [name]
+        cond do
+          Mix.Project.umbrella? ->
+            # Nothing to do
+            apps
+          Mix.Project.config()[:app] == name ->
+            # This is a non-umbrella project, with a release named the same as the app
+            # Make sure the app is part of the release, or it makes no sense
+            apps ++ [name]
+          :else ->
+            # The release is named something different, nothing to do
+            apps
+        end
       end
 
-    base_apps =
-      apps
-      |> Enum.reduce([], fn
-        _, {:error, reason} ->
-          {:error, {:apps, reason}}
-
-        {a, start_type}, acc ->
-          cond do
-            App.valid_start_type?(start_type) ->
-              if Enum.any?(acc, fn %App{name: app} -> a == app end) do
-                # Override start type
-                Enum.map(acc, fn
-                  %App{name: ^a} = app -> %{app | start_type: start_type}
-                  app -> app
-                end)
-              else
-                do_apps(App.new(a, start_type, loaded_deps), loaded_deps, acc)
-              end
-
-            :else ->
-              {:error, {:apps, {:invalid_start_type, a, start_type}}}
-          end
-
-        a, acc when is_atom(a) ->
-          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
-            acc
-          else
-            do_apps(App.new(a, loaded_deps), loaded_deps, acc)
-          end
-      end)
-
-    # Correct any ERTS libs which should be pulled from the correct
-    # ERTS directory, not from the current environment.
-    apps =
-      case release.profile.include_erts do
-        true ->
-          base_apps
-
-        false ->
-          base_apps
-
-        p when is_binary(p) ->
-          lib_dir = Path.expand(Path.join(p, "lib"))
-
-          Enum.reduce(base_apps, [], fn
-            _, {:error, {:apps, _}} = err ->
-              err
-
-            _, {:error, reason} ->
-              {:error, {:apps, reason}}
-
-            %App{name: a} = app, acc ->
-              if Utils.is_erts_lib?(app.path) do
-                case Path.wildcard(Path.join(lib_dir, "#{a}-*")) do
-                  [corrected_app_path | _] ->
-                    [_, corrected_app_vsn] =
-                      String.split(Path.basename(corrected_app_path), "-", trim: true)
-
-                    [%{app | :vsn => corrected_app_vsn, :path => corrected_app_path} | acc]
-
-                  _ ->
-                    {:error, {:apps, {:missing_required_lib, a, lib_dir}}}
-                end
-              else
-                [app | acc]
-              end
-          end)
+    # Validate listed apps
+    for app <- apps do
+      app_name =
+        case app do
+          {name, start_type} ->
+            if App.valid_start_type?(start_type) do
+              throw {:invalid_start_type, name, start_type}
+            end
+          name ->
+            name
+        end
+      case Application.load(app_name) do
+        :ok ->
+          :ok
+        {:error, {:already_loaded, _}} ->
+          :ok
+        {:error, reason} ->
+          throw {:invalid_app, app_name, reason}
       end
+    end
 
-    case apps do
-      {:error, _} = err ->
-        err
+    # A graph of relationships between applications
+    dg = :digraph.new([:acyclic, :protected])
+    as = :ets.new(name, [:set, :protected])
 
-      apps when is_list(apps) ->
-        apps = Enum.reverse(apps)
+    try do
+      # Add app relationships to the graph
+      add_apps(dg, as, apps)
 
-        # Print apps
-        Shell.debug("Discovered applications:")
-
-        for app <- apps, where = Path.relative_to_cwd(app.path) do
-          Shell.debugf("  > #{Shell.colorf("#{app.name}-#{app.vsn}", :white)}")
-          Shell.debugf("\n  |\n  |  from: #{where}\n")
-
-          case app.applications do
-            [] ->
-              Shell.debugf("  |  applications: none\n")
-
-            apps ->
-              display_apps =
-                apps
-                |> Enum.map(&inspect/1)
-                |> Enum.join("\n  |      ")
-
-              Shell.debugf("  |  applications:\n  |      #{display_apps}\n")
-          end
-
-          case app.included_applications do
-            [] ->
-              Shell.debugf("  |  includes: none\n")
-
-            included_apps ->
-              display_apps =
-                included_apps
-                |> Enum.map(&inspect/1)
-                |> Enum.join("\n  |  ")
-
-              Shell.debugf("  |  includes:\n  |      #{display_apps}")
-          end
-
-          Shell.debugf("  |_____\n\n")
+      # Perform topological sort
+      result =
+        case :digraph_utils.topsort(dg) do
+          false ->
+            raise "Unable to topologically sort the dependency graph!"
+          sorted ->
+            sorted
+            |> Enum.reverse()
+            |> Enum.map(fn a -> elem(hd(:ets.lookup(as, a)), 1) end)
+            |> Enum.map(&correct_app_path_and_vsn(&1, release))
         end
 
-        apps
+      print_discovered_apps(result)
+
+      result
+    after
+      :ets.delete(as)
+      :digraph.delete(dg)
+    end
+
+  catch
+    :throw, err ->
+      {:error, {:assembler, err}}
+  end
+
+  defp add_apps(_dg, _as, []),
+    do: :ok
+  defp add_apps(dg, as, [app | apps]) do
+    add_app(dg, as, nil, app)
+    add_apps(dg, as, apps)
+  end
+
+  defp add_app(dg, as, parent, app)
+
+  defp add_app(dg, as, parent, {name, start_type}) do
+    do_add_app(dg, as, parent, App.new(name, start_type))
+  end
+  defp add_app(dg, as, parent, name) do
+    do_add_app(dg, as, parent, App.new(name))
+  end
+
+  defp do_add_app(dg, as, parent, app) do
+    case :digraph.vertex(dg, app.name) do
+      false ->
+        # Haven't seen this app yet, and it is not excluded
+        :digraph.add_vertex(dg, app.name)
+        :ets.insert(as, {app.name, app})
+      _ ->
+        # Already visited
+        :ok
+    end
+    if not is_nil(parent) do
+      case :digraph.add_edge(dg, parent, app.name) do
+        {:error, reason} ->
+          raise "edge from #{parent} to #{app.name} would result in cycle: #{inspect reason}"
+        _ ->
+          :ok
+      end
+    end
+    do_add_children(dg, as, app.name, app.applications ++ app.included_applications)
+  end
+
+  defp do_add_children(_dg, _as, _parent, []),
+    do: :ok
+  defp do_add_children(dg, as, parent, [app | apps]) do
+    add_app(dg, as, parent, app)
+    do_add_children(dg, as, parent, apps)
+  end
+
+  defp correct_app_path_and_vsn(%App{} = app, %__MODULE__{profile: %Profile{include_erts: ie}}) when ie in [true, false] do
+    app
+  end
+  defp correct_app_path_and_vsn(%App{} = app, %__MODULE__{profile: %Profile{include_erts: p}}) do
+    # Correct any ERTS libs which should be pulled from the correct
+    # ERTS directory, not from the current environment.
+    lib_dir = Path.expand(Path.join(p, "lib"))
+    if Utils.is_erts_lib?(app.path) do
+      case Path.wildcard(Path.join(lib_dir, "#{app.name}-*")) do
+        [corrected_app_path | _] ->
+          [_, corrected_app_vsn] =
+            String.split(Path.basename(corrected_app_path), "-", trim: true)
+          %App{app | vsn: corrected_app_vsn, path: corrected_app_path}
+        _ ->
+          throw {:apps, {:missing_required_lib, app.name, lib_dir}}
+      end
     end
   end
 
-  defp do_apps(nil, _loaded_deps, acc),
-    do: Enum.uniq(acc)
+  defp print_discovered_apps(apps) do
+    Shell.debug("Discovered applications:")
+    do_print_discovered_apps(apps)
+  end
 
-  defp do_apps({:error, _} = err, _loaded_deps, _acc),
-    do: err
+  defp do_print_discovered_apps([]), do: :ok
+  defp do_print_discovered_apps([app | apps]) do
+    where = Path.relative_to_cwd(app.path)
+    Shell.debugf("  > #{Shell.colorf("#{app.name}-#{app.vsn}", :white)}")
+    Shell.debugf("\n  |\n  |  from: #{where}\n")
 
-  defp do_apps(%App{} = app, loaded_deps, acc) do
-    new_acc =
-      app.applications
-      |> Enum.concat(app.included_applications)
-      |> Enum.reduce(acc, fn
-        {:error, _} = err, _acc ->
-          err
-
-        {a, load_type}, acc ->
-          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
-            acc
-          else
-            case App.new(a, load_type, loaded_deps) do
-              nil ->
-                acc
-
-              %App{} = app ->
-                case do_apps(app, loaded_deps, acc) do
-                  {:error, _} = err ->
-                    err
-
-                  children ->
-                    Enum.concat(children, acc)
-                end
-
-              {:error, _} = err ->
-                err
-            end
-          end
-
-        a, acc ->
-          if Enum.any?(acc, fn %App{name: app} -> a == app end) do
-            acc
-          else
-            case App.new(a, loaded_deps) do
-              nil ->
-                acc
-
-              %App{} = app ->
-                case do_apps(app, loaded_deps, acc) do
-                  {:error, _} = err ->
-                    err
-
-                  children ->
-                    Enum.concat(children, acc)
-                end
-
-              {:error, _} = err ->
-                err
-            end
-          end
-      end)
-
-    case new_acc do
-      {:error, _} = err ->
-        err
+    case app.applications do
+      [] ->
+        Shell.debugf("  |  applications: none\n")
 
       apps ->
-        Enum.uniq([app | apps])
+        display_apps =
+          apps
+          |> Enum.map(&inspect/1)
+          |> Enum.join("\n  |      ")
+
+        Shell.debugf("  |  applications:\n  |      #{display_apps}\n")
     end
-  end
 
-  Code.ensure_loaded(Mix.Dep)
+    case app.included_applications do
+      [] ->
+        Shell.debugf("  |  includes: none\n")
 
-  if function_exported?(Mix.Dep, :load_on_environment, 1) do
-    defp loaded_deps(opts), do: Mix.Dep.load_on_environment(opts)
-  else
-    defp loaded_deps(opts), do: Mix.Dep.loaded(opts)
+      included_apps ->
+        display_apps =
+          included_apps
+          |> Enum.map(&inspect/1)
+          |> Enum.join("\n  |  ")
+
+        Shell.debugf("  |  includes:\n  |      #{display_apps}")
+    end
+
+    Shell.debugf("  |_____\n\n")
+    do_print_discovered_apps(apps)
   end
 end
