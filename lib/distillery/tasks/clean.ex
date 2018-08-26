@@ -134,17 +134,20 @@ defmodule Mix.Tasks.Release.Clean do
     |> Enum.each(&clean_path/1)
 
     # Remove libs
-    release
-    |> Release.apps()
-    |> Enum.map(fn %App{name: name, vsn: vsn} ->
-      clean_path(Path.join([output_dir, "lib", "#{name}-#{vsn}"]))
-    end)
+    case Release.apps(release) do
+      {:error, _} = err ->
+        Shell.warn(Errors.format_error(err))
+      apps ->
+        for %App{name: name, vsn: vsn} <- apps do
+          clean_path(Path.join([Release.lib_path(release), "#{name}-#{vsn}"]))
+        end
+    end
 
     # Remove releases/start_erl.data
     clean_path(Path.join([output_dir, "releases", "start_erl.data"]))
 
     # Remove current release version
-    clean_path(Path.join([output_dir, "releases", "#{release.version}"]))
+    clean_path(Release.version_path(release))
 
     # Execute plugin callbacks for this release
     Plugin.after_cleanup(release, args)

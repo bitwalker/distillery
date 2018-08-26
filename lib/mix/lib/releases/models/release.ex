@@ -483,7 +483,7 @@ defmodule Mix.Releases.Release do
 
   catch
     :throw, err ->
-      {:error, {:assembler, err}}
+      {:error, {:apps, err}}
   end
 
   defp add_apps(_dg, _as, []),

@@ -51,7 +51,21 @@ defmodule Mix.Releases.Errors do
   end
 
   def format_error({:error, {:apps, {:invalid_start_type, app, start_type}}}) do
-    "Invalid start type for #{app}: #{start_type}"
+    "Invalid start type given for `#{inspect app}`: #{inspect start_type}!\n" <>
+    "Applications must have either no start type set, or one of the following valid types:\n" <>
+    "    - permanent: If the application crashes, the system cannot continue\n" <>
+    "    - temporary: If the application crashes, the system can continue without it\n" <>
+    "    - load: Do not start this application, only load it (use with care!)" <>
+    "    - none: Do not start or load the code for this application (use with care!)" <>
+    "It is recommended that all applications use :permanent"
+  end
+  
+  def format_error({:error, {:apps, {:invalid_app, app, {'no such file or directory', file}}}}) do
+    "Invalid application `#{inspect app}`! The file #{file} does not exist or cannot be loaded."
+  end
+
+  def format_error({:error, {:apps, {:invalid_app, app, reason}}}) do
+    "Invalid application `#{inspect app}`: #{inspect reason}"
   end
 
   def format_error({:error, {:apps, err}}) do
@@ -103,6 +117,7 @@ defmodule Mix.Releases.Errors do
       "    - Make sure at least one is set as default OR\n" <>
       "    - Pass --name=<rel_name> to `mix release`"
   end
+  
 
   def format_error({:error, {:assembler, {:missing_rel, name, version, path}}}) do
     "Release failed, missing .rel file for #{name}:#{version}:\n" <>
