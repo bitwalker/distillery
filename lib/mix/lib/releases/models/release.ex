@@ -438,6 +438,8 @@ defmodule Mix.Releases.Release do
         case app do
           {name, start_type} ->
             if App.valid_start_type?(start_type) do
+              name
+            else
               throw {:invalid_start_type, name, start_type}
             end
           name ->

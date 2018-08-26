@@ -20,7 +20,6 @@ defmodule Mix.Releases.App do
         }
 
   @valid_start_types [:permanent, :temporary, :transient, :load, :none]
-  @new_start_types [nil | @valid_start_types]
 
   @doc """
   Create a new Application struct from an application name
@@ -33,11 +32,14 @@ defmodule Mix.Releases.App do
   Same as new/1, but specify the application's start type
   """
   @spec new(atom, start_type | nil) :: nil | __MODULE__.t() | {:error, String.t()}
-  def new(name, start_type) when is_atom(name) and start_type in @new_start_types,
+  def new(name, start_type) when is_atom(name) and start_type in @valid_start_types,
     do: do_new(name, start_type)
+  def new(name, nil) when is_atom(name),
+    do: do_new(name, nil)
 
-  def new(name, start_type),
-    do: {:error, {:apps, {:invalid_start_type, name, start_type}}}
+  def new(name, start_type) do
+    {:error, {:apps, {:invalid_start_type, name, start_type}}}
+  end
 
   defp do_new(name, start_type) do
     _ = Application.load(name)
