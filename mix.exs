@@ -25,8 +25,15 @@ defmodule Distillery.Mixfile do
         "coveralls.post": :test,
       ],
       test_coverage: [tool: ExCoveralls],
-      dialyzer: [
-        flags: [:error_handling, :race_conditions, :underspecs]
+      dialyzer_warnings: [
+        :error_handling,
+        :race_conditions,
+        :underspecs,
+        :unknown
+      ],
+      dialyzer_ignored_warnings: [
+        {:warn_contract_supertype, :_, {:contract_supertype, [:_, :impl_for, 1, :_, :_]}},
+        {:warn_contract_supertype, :_, {:contract_supertype, [:_, :impl_for!, 1, :_, :_]}}
       ]
     ]
   end
@@ -42,7 +49,7 @@ defmodule Distillery.Mixfile do
       {:excoveralls, "~> 0.6", only: [:test]},
       {:eqc_ex, "~> 1.4", only: [:test]},
       {:ex_unit_clustered_case, "~> 0.3", only: [:test], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.2", only: [:dev], runtime: false}
+      {:dialyzex, "~> 1.2", only: [:dev], runtime: false}
     ]
   end
 
@@ -72,7 +79,7 @@ defmodule Distillery.Mixfile do
       "compile-check": [
         "compile", 
         "format --check-formatted --dry-run", 
-        "dialyzer --halt-exit-status"
+        "dialyzer"
       ],
     ]
   end

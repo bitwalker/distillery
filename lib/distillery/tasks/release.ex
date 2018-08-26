@@ -303,7 +303,7 @@ defmodule Mix.Tasks.Release do
     do_parse_args(rest, Map.put(acc, :no_tar, true))
   end
 
-  defp do_parse_args([{:executable, _} | _rest], %{is_upgrade: true}) do
+  defp do_parse_args([{:executable, e} | _rest], %{is_upgrade: true}) when e != false do
     Shell.fail!("You cannot combine --executable with --upgrade")
   end
 
@@ -323,7 +323,7 @@ defmodule Mix.Tasks.Release do
     end
   end
 
-  defp do_parse_args([{:upgrade, _} | _rest], %{executable: true}) do
+  defp do_parse_args([{:upgrade, _} | _rest], %{executable: e}) when e != false do
     Shell.fail!("You cannot combine --executable with --upgrade")
   end
 

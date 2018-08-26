@@ -106,8 +106,8 @@ defmodule Mix.Releases.BootScript do
   @doc """
   Persists the boot script to disk in .script and .boot forms
   """
-  @spec write(t) :: :ok | {:error, term}
-  @spec write(t, name :: atom) :: :ok | {:error, term}
+  @spec write(t) :: :ok | {:error, {:assembler, {:make_boot_script, term}}}
+  @spec write(t, name :: atom) :: :ok | {:error, {:assembler, {:make_boot_script, term}}}
   def write(%__MODULE__{output_dir: output_dir} = boot, name \\ nil) do
     # Allow overriding name
     name =

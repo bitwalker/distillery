@@ -1,6 +1,8 @@
 defmodule Mix.Releases.Appup.Utils do
   @moduledoc false
 
+  alias Mix.Releases.Appup
+
   @purge_modes [:soft_purge, :brutal_purge]
 
   @doc """

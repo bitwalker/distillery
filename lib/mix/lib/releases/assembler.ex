@@ -26,7 +26,7 @@ defmodule Mix.Releases.Assembler do
          release <- apply_environment(release, environment),
          {:ok, release} <- Plugin.before_assembly(release),
          {:ok, release} <- Release.apply_configuration(release, config, true),
-         :ok <- validate_configuration(release),
+         :ok <- Release.validate(release),
          :ok <- make_paths(release) do
       {:ok, release}
     end
@@ -54,22 +54,10 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Applies the environment profile to the release profile.
-  @spec apply_environment(Release.t(), Environment.t()) :: {:ok, Release.t()} | {:error, term}
+  @spec apply_environment(Release.t(), Environment.t()) :: Release.t()
   def apply_environment(%Release{} = r, %Environment{} = e) do
     Shell.info("Building release #{r.name}:#{r.version} using environment #{e.name}")
     Release.apply_environment(r, e)
-  end
-
-  @spec validate_configuration(Release.t()) :: :ok | {:error, term}
-  def validate_configuration(%Release{} = release) do
-    case Release.validate(release) do
-      {:ok, warning} ->
-        Shell.notice(warning)
-        :ok
-
-      other ->
-        other
-    end
   end
 
   # Copies application beams to the output directory
@@ -116,8 +104,8 @@ defmodule Mix.Releases.Assembler do
         {:ok, _} ->
           :ok
 
-        {:error, reason} ->
-          {:error, {:assembler, :file, {:copy_consolidated, src, dest, reason}}}
+        {:error, reason, file} ->
+          {:error, {:assembler, :file, {:copy_consolidated, file, reason}}}
       end
     else
       :ok
@@ -273,14 +261,11 @@ defmodule Mix.Releases.Assembler do
          :ok <- make_boot_scripts(release) do
       :ok
     else
-      {:error, {:assembler, _}} = err ->
-        err
-
-      {:error, {:assembler, _, _}} = err ->
-        err
-
       {:error, reason, file} ->
         {:error, {:assembler, :file, {reason, file}}}
+
+      {:error, r} = err when is_tuple(r) and elem(r, 0) == :assembler ->
+        err
 
       {:error, reason} ->
         {:error, {:assembler, reason}}
@@ -356,7 +341,8 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Get a list of applications from the .rel file at the given path
-  defp extract_relfile_apps(path) do
+  @spec extract_relfile_apps(String.t()) :: [{atom, charlist}] | no_return
+  defp extract_relfile_apps(path) when is_binary(path) do
     case Utils.read_terms(path) do
       {:error, _} = err ->
         throw(err)
@@ -436,7 +422,7 @@ defmodule Mix.Releases.Assembler do
                 # Versions are regular expressions
                 v1p = Regex.compile!(v1p)
                 v2p = Regex.compile!(v2p)
-                String.match?(v1p, v1) and String.match?(v2p, v2)
+                String.match?(v1, v1p) and String.match?(v2, v2p)
 
               v2p == ~c[#{v2}] and v1p == ~c[#{v1}] ->
                 true
@@ -699,10 +685,6 @@ defmodule Mix.Releases.Assembler do
   defp append_included_configs(config, configs) when is_list(configs) do
     included_configs = Enum.map(configs, &String.to_charlist/1)
     config ++ included_configs
-  end
-
-  defp append_included_configs(_config, _) do
-    raise "`included_configs` must be a list of paths"
   end
 
   defp validate_sys_config(sys_config) when is_list(sys_config) do

@@ -43,7 +43,7 @@ defmodule Mix.Tasks.Release.Init do
     # make sure we're compiled too
     Mix.Task.run("compile", [])
 
-    Shell.configure(:debug)
+    Shell.configure(:normal)
 
     opts = parse_args(args)
 

@@ -36,16 +36,17 @@ defmodule Mix.Releases.Appup do
   @doc """
   Given an application name, and two versions, look for a custom appup which applies.
   """
-  @spec locate(app, version_str, version_str) :: String.t()
+  @spec locate(app, version_str, version_str) :: nil | String.t()
   def locate(app, v1, v2) do
     # First check the application's own priv directory
     priv_path = Application.app_dir(app, Path.join(["priv", "appups"]))
 
+    v1 = String.to_charlist(v1)
+    v2 = String.to_charlist(v2)
+
     case do_locate(Path.wildcard(Path.join(priv_path, "*.appup")), v1, v2) do
       nil ->
         # Fallback to user-provided appups for this app
-        v1 = String.to_charlist(v1)
-        v2 = String.to_charlist(v2)
         appup_dir = Path.join(["rel", "appups", "#{app}"])
         do_locate(Path.wildcard(Path.join(appup_dir, "*.appup")), v1, v2)
 
@@ -54,9 +55,13 @@ defmodule Mix.Releases.Appup do
     end
   end
 
-  defp do_locate([], _v1, _v2), do: nil
+  @spec do_locate([String.t], charlist, charlist) :: nil | String.t()
+  defp do_locate(paths, v1, v2)
+  
+  defp do_locate([], _v1, _v2), 
+    do: nil
 
-  defp do_locate([path | rest], v1, v2) do
+  defp do_locate([path | rest], v1, v2) when is_binary(path) do
     case Utils.read_terms(path) do
       {:ok, [{^v2, ups, downs}]} when is_list(ups) and is_list(downs) ->
         if List.keyfind(ups, v1, 0) && List.keyfind(downs, v1, 0) do

@@ -100,10 +100,12 @@ defmodule Mix.Releases.Shell.Macros do
       @doc """
       Write an #{unquote(name)} message to standard out.
       """
-      def unquote(name)(message) do
-        if unquote(error) == false do
+      if unquote(error) == false do
+        def unquote(name)(message) do
           Mix.Releases.Shell.levelf(unquote(name), [message, ?\n])
-        else
+        end
+      else
+        def unquote(name)(message) do
           if Application.get_env(:distillery, unquote(error), false) do
             Mix.Releases.Shell.fail!([message, ?\n])
           else

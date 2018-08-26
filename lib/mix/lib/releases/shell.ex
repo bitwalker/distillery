@@ -59,6 +59,7 @@ defmodule Mix.Releases.Shell do
   @doc """
   Prints an error message, then terminates the VM with a non-zero status code
   """
+  @spec fail!(iodata) :: no_return
   def fail!(message) do
     error(message)
     System.halt(1)

@@ -119,13 +119,8 @@ defmodule Mix.Tasks.Release.Gen.Appup do
 
     sorted_versions =
       available_versions
-      |> Enum.sort_by(
-        fn {v, _} ->
-          {:ok, vsn} = Version.parse(v)
-          vsn
-        end,
-        fn a, b -> Version.compare(a, b) in [:gt, :eq] end
-      )
+      |> Map.keys()
+      |> Utils.sort_versions()
 
     if map_size(available_versions) == 0 do
       Shell.error("No available upfrom versions for #{app}")

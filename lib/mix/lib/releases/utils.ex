@@ -55,7 +55,7 @@ defmodule Mix.Releases.Utils do
   @doc """
   Writes a collection of Elixir/Erlang terms to the provided path
   """
-  def write_terms(path, terms) when is_list(terms) do
+  def write_terms(path, terms) when is_binary(path) and is_list(terms) do
     contents =
       String.duplicate("~p.\n\n", Enum.count(terms))
       |> String.to_charlist()
@@ -73,9 +73,8 @@ defmodule Mix.Releases.Utils do
   @doc """
   Reads a file as Erlang terms
   """
-  @spec read_terms(String.t()) :: {:ok, [term]} :: {:error, term}
-  def read_terms(path) do
-    case :file.consult(String.to_charlist(path)) do
+  def read_terms(path) when is_binary(path) do
+    case :file.consult(path) do
       {:ok, _} = result ->
         result
 
@@ -149,7 +148,6 @@ defmodule Mix.Releases.Utils do
   @doc """
   Determines the current ERTS version
   """
-  @spec erts_version() :: String.t()
   def erts_version, do: "#{:erlang.system_info(:version)}"
 
   @doc """
@@ -196,7 +194,6 @@ defmodule Mix.Releases.Utils do
   @doc """
   Detects the version of ERTS in the given directory
   """
-  @spec detect_erts_version(String.t()) :: {:ok, String.t()} | {:error, term}
   def detect_erts_version(path) when is_binary(path) do
     entries =
       path
@@ -299,7 +296,6 @@ defmodule Mix.Releases.Utils do
   @doc """
   Returns true if the given path is a symlink, otherwise false
   """
-  @spec symlink?(String.t()) :: boolean
   def symlink?(path) do
     case :file.read_link_info('#{path}') do
       {:ok, info} ->
@@ -330,7 +326,7 @@ defmodule Mix.Releases.Utils do
       releases_path
       |> File.ls!()
       |> Enum.filter(&Regex.match?(@valid_version_pattern, &1))
-      |> sort_versions
+      |> sort_versions()
     else
       []
     end
@@ -351,69 +347,63 @@ defmodule Mix.Releases.Utils do
       iex> #{__MODULE__}.sort_versions(["0.0.1", "0.0.2", "0.0.1-2-a1d2g3f", "0.0.1-1-deadbeef"])
       ["0.0.2", "0.0.1-2-a1d2g3f", "0.0.1-1-deadbeef", "0.0.1"]
   """
-  @spec sort_versions(list(String.t())) :: list(String.t())
+  @spec sort_versions([binary]) :: [binary]
   def sort_versions(versions) do
     versions
-    |> Enum.map(fn ver ->
-      # Special handling for git-describe versions
-      compared =
-        case Regex.named_captures(@git_describe_pattern, ver) do
-          nil ->
-            {:standard, ver, nil}
-
-          %{"ver" => version, "commits" => n, "sha" => sha} ->
-            {:describe, <<version::binary, ?+, n::binary, ?-, sha::binary>>, String.to_integer(n)}
-        end
-
-      {ver, compared}
-    end)
-    |> Enum.sort(fn {_, {v1type, v1str, v1_commits_since}},
-                    {_, {v2type, v2str, v2_commits_since}} ->
-      case {parse_version(v1str), parse_version(v2str)} do
-        {{:semantic, v1}, {:semantic, v2}} ->
-          case Version.compare(v1, v2) do
-            :gt ->
-              true
-
-            :eq ->
-              case {v1type, v2type} do
-                # probably always false
-                {:standard, :standard} ->
-                  v1 > v2
-
-                # v2 is an incremental version over v1
-                {:standard, :describe} ->
-                  false
-
-                # v1 is an incremental version over v2
-                {:describe, :standard} ->
-                  true
-
-                # need to parse out the bits
-                {:describe, :describe} ->
-                  v1_commits_since > v2_commits_since
-              end
-
-            :lt ->
-              false
-          end
-
-        {{_, v1}, {_, v2}} ->
-          v1 > v2
-      end
-    end)
-    |> Enum.map(fn {v, _} -> v end)
+    |> classify_versions()
+    |> parse_versions()
+    |> Enum.sort(&compare_versions/2)
+    |> Enum.map(&elem(&1, 0))
   end
 
-  defp parse_version(ver) do
-    case Version.parse(ver) do
-      {:ok, semver} ->
-        {:semantic, semver}
+  defp classify_versions([]),
+    do: []
+  defp classify_versions([ver | versions]) when is_binary(ver) do
+    # Special handling for git-describe versions
+    compare_ver =
+      case Regex.named_captures(@git_describe_pattern, ver) do
+        nil ->
+          {:standard, ver}
 
-      :error ->
-        {:unsemantic, ver}
+        %{"ver" => version, "commits" => n, "sha" => sha} ->
+          {:describe, <<version::binary, ?+, n::binary, ?-, sha::binary>>, String.to_integer(n)}
+      end
+
+    [{ver, compare_ver} | classify_versions(versions)]
+  end
+
+  defp parse_versions([]),
+    do: []
+  defp parse_versions([{raw, {:standard, ver}} | versions]) when is_binary(ver) do
+    [{raw, parse_version(ver), 0} | parse_versions(versions)]
+  end
+  defp parse_versions([{raw, {:describe, ver, commits_since}} | versions]) when is_binary(ver) do
+    [{raw, parse_version(ver), commits_since} | parse_versions(versions)]
+  end
+
+  defp parse_version(ver) when is_binary(ver) do
+    parsed = Version.parse!(ver)
+    {:semantic, parsed}
+  rescue
+    Version.InvalidVersionError ->
+      {:other, ver}
+  end
+
+  defp compare_versions({_, {:semantic, v1}, v1_commits_since}, {_, {:semantic, v2}, v2_commits_since}) do
+    case Version.compare(v1, v2) do
+      :gt ->
+        true
+      :lt ->
+        false
+      :eq ->
+        # Same version, so compare any incremental changes
+        # This is based on the describe syntax, but is defaulted to 0
+        # for non-describe versions
+        v1_commits_since > v2_commits_since
     end
   end
+  defp compare_versions({_, {_, v1}, _}, {_, {_, v2}, _}),
+    do: v1 > v2
 
   # Determines if the given application directory is part of the Erlang installation
   @spec is_erts_lib?(String.t()) :: boolean

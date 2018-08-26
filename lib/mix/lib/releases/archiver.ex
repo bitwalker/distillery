@@ -119,17 +119,11 @@ defmodule Mix.Releases.Archiver do
          _ <- File.rm_rf(tmpdir) do
       {:ok, archive_path}
     else
-      err ->
-        case err do
-          {:error, {:archiver, _}} ->
-            err
+      {:error, reason, file} ->
+        {:error, {:archiver, {:file, reason, file}}}
 
-          {:error, reason, file} ->
-            {:error, {:archiver, {:file, reason, file}}}
-
-          {:error, _reason} ->
-            err
-        end
+      {:error, _} = err ->
+        err
     end
   catch
     kind, err ->

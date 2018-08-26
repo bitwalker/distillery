@@ -41,7 +41,7 @@ defmodule Mix.Releases.Checks do
   @doc """
   Runs all default and configured checks against the given release.
   """
-  @spec run(Release.t()) :: :ok | {:ok, warning} | {:error, term}
+  @spec run(Release.t()) :: :ok | {:error, term}
   def run(%Release{} = release) do
     Mix.Releases.Shell.debug("Running validation checks..")
     run(list(), release)
@@ -50,7 +50,7 @@ defmodule Mix.Releases.Checks do
   @doc """
   Runs all of the given checks, in the given order.
   """
-  @spec run([module], Release.t()) :: :ok | {:ok, warning} | {:error, term}
+  @spec run([module], Release.t()) :: :ok | {:error, term}
   def run([], _release),
     do: :ok
 

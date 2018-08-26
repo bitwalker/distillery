@@ -881,6 +881,7 @@ defmodule Mix.Releases.Runtime.Control do
     :rpc.call(peer, m, f, a, timeout)
   end
 
+  @spec failed_connect!(atom) :: no_return
   defp failed_connect!(peer) do
     Console.error("""
     Received 'pang' from #{peer}!

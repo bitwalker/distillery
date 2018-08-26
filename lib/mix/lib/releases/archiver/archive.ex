@@ -76,7 +76,7 @@ defmodule Mix.Releases.Archiver.Archive do
 
   Returns the path of the written tarball wrapped in an ok tuple if successful
   """
-  @spec save(t, path) :: {:ok, path} | {:error, {:erl_tar.filename(), reason :: term}}
+  @spec save(t, path) :: {:ok, path} | {:error, {:file.filename(), reason :: term}}
   def save(%__MODULE__{name: name} = archive, output_dir) when is_binary(output_dir) do
     do_save(archive, Path.join([output_dir, name <> ".tar.gz"]))
   end

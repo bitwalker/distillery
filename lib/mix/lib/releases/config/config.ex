@@ -17,8 +17,8 @@ defmodule Mix.Releases.Config do
             upgrade_from: :latest
 
   @type t :: %__MODULE__{
-          environments: Map.t(),
-          releases: Map.t(),
+          environments: map(),
+          releases: map(),
           default_release: atom(),
           default_environment: atom(),
           selected_release: atom(),
@@ -348,7 +348,7 @@ defmodule Mix.Releases.Config do
   Reads and validates a string containing the contents of a config file.
   If an error occurs during reading, a `Mix.Releases.Config.LoadError` will be raised.
   """
-  @spec read_string!(String.t()) :: Config.t() | no_return
+  @spec read_string!(String.t()) :: t() | no_return
   def read_string!(contents) do
     {config, binding} = Code.eval_string(contents)
 
@@ -376,7 +376,7 @@ defmodule Mix.Releases.Config do
   Reads and validates a given configuration file.
   If the file does not exist, or an error occurs, a `Mix.Releases.Config.LoadError` will be raised.
   """
-  @spec read!(String.t()) :: Config.t() | no_return
+  @spec read!(String.t()) :: t() | no_return
   def read!(file) do
     read_string!(File.read!(file))
   rescue

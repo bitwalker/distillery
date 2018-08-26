@@ -203,6 +203,11 @@ defmodule Mix.Releases.Errors do
       "    target dir: #{Path.relative_to_cwd(target_dir)}"
   end
 
+  def format_error({:error, {:assembler, mod, {:copy_consolidated, file, reason}}}) do
+    "Failed to copy consolidated protocols: #{mod.format_error(reason)}\n" <>
+      "    file: #{Path.relative_to_cwd(file)}"
+  end
+
   def format_error({:error, {:assembler, mod, {:copy_consolidated, src_dir, target_dir, reason}}}) do
     "Failed to copy consolidated protocols: #{mod.format_error(reason)}\n" <>
       "    src dir: #{Path.relative_to_cwd(src_dir)}\n" <>

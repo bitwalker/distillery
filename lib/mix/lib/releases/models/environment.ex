@@ -5,7 +5,7 @@ defmodule Mix.Releases.Environment do
   alias Mix.Releases.Profile
 
   defstruct name: :default,
-            profile: %Profile{}
+            profile: nil
 
   @type t :: %__MODULE__{
           name: atom(),
@@ -16,5 +16,6 @@ defmodule Mix.Releases.Environment do
   Creates a new Environment with the given name
   """
   @spec new(atom()) :: t()
-  def new(name), do: %__MODULE__{name: name}
+  def new(name) when is_atom(name), 
+    do: %__MODULE__{name: name, profile: %Profile{}}
 end

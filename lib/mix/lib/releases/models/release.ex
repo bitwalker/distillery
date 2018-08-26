@@ -28,7 +28,6 @@ defmodule Mix.Releases.Release do
               # can also use `app_name: type`, as in `some_dep: load`,
               # to only load the application, not start it
             ],
-            output_dir: nil,
             is_upgrade: false,
             upgrade_from: :latest,
             resolved_overlays: [],
@@ -56,7 +55,6 @@ defmodule Mix.Releases.Release do
           name: atom,
           version: String.t(),
           applications: list(atom | {atom, App.start_type()} | App.t()),
-          output_dir: String.t(),
           is_upgrade: boolean,
           upgrade_from: nil | String.t() | :latest,
           resolved_overlays: [Overlays.overlay()],
@@ -81,10 +79,12 @@ defmodule Mix.Releases.Release do
     output_dir = Path.relative_to_cwd(Path.join([build_path, "rel", "#{name}"]))
     definition = %__MODULE__{name: name, version: version}
 
-    definition
-    |> Map.put(:applications, definition.applications ++ apps)
-    |> Map.put(:output_dir, output_dir)
-    |> Map.put(:profile, %{definition.profile | output_dir: output_dir})
+    %__MODULE__{definition |
+      applications: definition.applications ++ apps,
+      profile: %Profile{definition.profile |
+        output_dir: output_dir
+      }
+    }
   end
 
   @doc """

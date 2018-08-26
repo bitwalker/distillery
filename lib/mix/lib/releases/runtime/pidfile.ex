@@ -58,7 +58,9 @@ defmodule Mix.Releases.Runtime.Pidfile do
   defp loop(%{pidfile: path} = state, parent) do
     receive do
       {:EXIT, ^parent, reason} ->
-        terminate(reason, parent, state)
+        # Cleanup pidfile
+        _ = File.rm(path)
+        exit(reason)
 
       _ ->
         loop(state, parent)
@@ -70,11 +72,5 @@ defmodule Mix.Releases.Runtime.Pidfile do
           :init.stop()
         end
     end
-  end
-
-  defp terminate(reason, _parent, %{pidfile: path}) do
-    # Cleanup pidfile
-    _ = File.rm(path)
-    exit(reason)
   end
 end
