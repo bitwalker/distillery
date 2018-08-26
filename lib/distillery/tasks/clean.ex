@@ -137,6 +137,7 @@ defmodule Mix.Tasks.Release.Clean do
     case Release.apps(release) do
       {:error, _} = err ->
         Shell.warn(Errors.format_error(err))
+
       apps ->
         for %App{name: name, vsn: vsn} <- apps do
           clean_path(Path.join([Release.lib_path(release), "#{name}-#{vsn}"]))

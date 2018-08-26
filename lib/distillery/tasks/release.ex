@@ -295,7 +295,7 @@ defmodule Mix.Tasks.Release do
   end
 
   defp do_parse_args([{:no_warn_missing, _} | rest], acc) do
-    Shell.warn "The --no-warn-missing flag has been deprecated, as it is no longer used"
+    Shell.warn("The --no-warn-missing flag has been deprecated, as it is no longer used")
     do_parse_args(rest, acc)
   end
 

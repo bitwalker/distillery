@@ -79,11 +79,10 @@ defmodule Mix.Releases.Release do
     output_dir = Path.relative_to_cwd(Path.join([build_path, "rel", "#{name}"]))
     definition = %__MODULE__{name: name, version: version}
 
-    %__MODULE__{definition |
-      applications: definition.applications ++ apps,
-      profile: %Profile{definition.profile |
-        output_dir: output_dir
-      }
+    %__MODULE__{
+      definition
+      | applications: definition.applications ++ apps,
+        profile: %Profile{definition.profile | output_dir: output_dir}
     }
   end
 
@@ -410,7 +409,7 @@ defmodule Mix.Releases.Release do
 
   An optional second parameter enables/disables debug logging of discovered apps.
   """
-  @spec apps(t) :: [App.t] | {:error, term}
+  @spec apps(t) :: [App.t()] | {:error, term}
   def apps(%__MODULE__{name: name, applications: apps} = release) do
     # The list of applications which have been _manually_ specified
     # to be part of this release - it is not required to be exhaustive
@@ -419,13 +418,15 @@ defmodule Mix.Releases.Release do
         apps
       else
         cond do
-          Mix.Project.umbrella? ->
+          Mix.Project.umbrella?() ->
             # Nothing to do
             apps
+
           Mix.Project.config()[:app] == name ->
             # This is a non-umbrella project, with a release named the same as the app
             # Make sure the app is part of the release, or it makes no sense
             apps ++ [name]
+
           :else ->
             # The release is named something different, nothing to do
             apps
@@ -440,18 +441,22 @@ defmodule Mix.Releases.Release do
             if App.valid_start_type?(start_type) do
               name
             else
-              throw {:invalid_start_type, name, start_type}
+              throw({:invalid_start_type, name, start_type})
             end
+
           name ->
             name
         end
+
       case Application.load(app_name) do
         :ok ->
           :ok
+
         {:error, {:already_loaded, _}} ->
           :ok
+
         {:error, reason} ->
-          throw {:invalid_app, app_name, reason}
+          throw({:invalid_app, app_name, reason})
       end
     end
 
@@ -468,6 +473,7 @@ defmodule Mix.Releases.Release do
         case :digraph_utils.topsort(dg) do
           false ->
             raise "Unable to topologically sort the dependency graph!"
+
           sorted ->
             sorted
             |> Enum.reverse()
@@ -482,7 +488,6 @@ defmodule Mix.Releases.Release do
       :ets.delete(as)
       :digraph.delete(dg)
     end
-
   catch
     :throw, err ->
       {:error, {:apps, err}}
@@ -490,6 +495,7 @@ defmodule Mix.Releases.Release do
 
   defp add_apps(_dg, _as, []),
     do: :ok
+
   defp add_apps(dg, as, [app | apps]) do
     add_app(dg, as, nil, app)
     add_apps(dg, as, apps)
@@ -500,6 +506,7 @@ defmodule Mix.Releases.Release do
   defp add_app(dg, as, parent, {name, start_type}) do
     do_add_app(dg, as, parent, App.new(name, start_type))
   end
+
   defp add_app(dg, as, parent, name) do
     do_add_app(dg, as, parent, App.new(name))
   end
@@ -510,43 +517,53 @@ defmodule Mix.Releases.Release do
         # Haven't seen this app yet, and it is not excluded
         :digraph.add_vertex(dg, app.name)
         :ets.insert(as, {app.name, app})
+
       _ ->
         # Already visited
         :ok
     end
+
     if not is_nil(parent) do
       case :digraph.add_edge(dg, parent, app.name) do
         {:error, reason} ->
-          raise "edge from #{parent} to #{app.name} would result in cycle: #{inspect reason}"
+          raise "edge from #{parent} to #{app.name} would result in cycle: #{inspect(reason)}"
+
         _ ->
           :ok
       end
     end
+
     do_add_children(dg, as, app.name, app.applications ++ app.included_applications)
   end
 
   defp do_add_children(_dg, _as, _parent, []),
     do: :ok
+
   defp do_add_children(dg, as, parent, [app | apps]) do
     add_app(dg, as, parent, app)
     do_add_children(dg, as, parent, apps)
   end
 
-  defp correct_app_path_and_vsn(%App{} = app, %__MODULE__{profile: %Profile{include_erts: ie}}) when ie in [true, false] do
+  defp correct_app_path_and_vsn(%App{} = app, %__MODULE__{profile: %Profile{include_erts: ie}})
+       when ie in [true, false] do
     app
   end
+
   defp correct_app_path_and_vsn(%App{} = app, %__MODULE__{profile: %Profile{include_erts: p}}) do
     # Correct any ERTS libs which should be pulled from the correct
     # ERTS directory, not from the current environment.
     lib_dir = Path.expand(Path.join(p, "lib"))
+
     if Utils.is_erts_lib?(app.path) do
       case Path.wildcard(Path.join(lib_dir, "#{app.name}-*")) do
         [corrected_app_path | _] ->
           [_, corrected_app_vsn] =
             String.split(Path.basename(corrected_app_path), "-", trim: true)
+
           %App{app | vsn: corrected_app_vsn, path: corrected_app_path}
+
         _ ->
-          throw {:apps, {:missing_required_lib, app.name, lib_dir}}
+          throw({:apps, {:missing_required_lib, app.name, lib_dir}})
       end
     else
       app
@@ -559,6 +576,7 @@ defmodule Mix.Releases.Release do
   end
 
   defp do_print_discovered_apps([]), do: :ok
+
   defp do_print_discovered_apps([app | apps]) do
     where = Path.relative_to_cwd(app.path)
     Shell.debugf("  > #{Shell.colorf("#{app.name}-#{app.vsn}", :white)}")

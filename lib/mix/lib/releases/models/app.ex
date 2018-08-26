@@ -16,7 +16,7 @@ defmodule Mix.Releases.App do
           applications: [atom()],
           included_applications: [atom()],
           start_type: start_type,
-          path: nil | String.t(),
+          path: nil | String.t()
         }
 
   @valid_start_types [:permanent, :temporary, :transient, :load, :none]
@@ -34,6 +34,7 @@ defmodule Mix.Releases.App do
   @spec new(atom, start_type | nil) :: nil | __MODULE__.t() | {:error, String.t()}
   def new(name, start_type) when is_atom(name) and start_type in @valid_start_types,
     do: do_new(name, start_type)
+
   def new(name, nil) when is_atom(name),
     do: do_new(name, nil)
 
@@ -60,7 +61,7 @@ defmodule Mix.Releases.App do
           start_type: start_type,
           applications: apps,
           included_applications: included,
-          path: path,
+          path: path
         }
     end
   end

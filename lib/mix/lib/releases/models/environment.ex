@@ -16,6 +16,6 @@ defmodule Mix.Releases.Environment do
   Creates a new Environment with the given name
   """
   @spec new(atom()) :: t()
-  def new(name) when is_atom(name), 
+  def new(name) when is_atom(name),
     do: %__MODULE__{name: name, profile: %Profile{}}
 end

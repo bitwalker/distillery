@@ -20,10 +20,10 @@ defmodule Mix.Releases.Overlays do
   alias Mix.Releases.Shell
 
   @type overlay ::
-           {:mkdir, String.t()}
-           | {:copy, String.t(), String.t()}
-           | {:link, String.t(), String.t()}
-           | {:template, String.t(), String.t()}
+          {:mkdir, String.t()}
+          | {:copy, String.t(), String.t()}
+          | {:link, String.t(), String.t()}
+          | {:template, String.t(), String.t()}
 
   @typep error ::
            {:error, {:invalid_overlay, term}}

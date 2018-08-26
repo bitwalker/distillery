@@ -90,7 +90,12 @@ defmodule Mix.Releases.Runtime.Control do
     option(:cookie)
     option(:file, :string, "Evaluate a file instead of an expression")
     option(:mfa, :string, "A module/function/arity string, e.g. IO.inspect/1")
-    option(:argv, :boolean, "When used with --argv, passes all plain arguments to the MFA as a list")
+
+    option(
+      :argv,
+      :boolean,
+      "When used with --argv, passes all plain arguments to the MFA as a list"
+    )
 
     argument(:expr, :string, "The expression to evaluate", required: true)
   end
@@ -98,7 +103,12 @@ defmodule Mix.Releases.Runtime.Control do
   command(:eval, "Executes the provided expression in a clean node") do
     option(:file, :string, "Evaluate a file instead of an expression")
     option(:mfa, :string, "A module/function/arity string, e.g. IO.inspect/1")
-    option(:argv, :boolean, "When used with --argv, passes all plain arguments to the MFA as a list")
+
+    option(
+      :argv,
+      :boolean,
+      "When used with --argv, passes all plain arguments to the MFA as a list"
+    )
 
     argument(:expr, :string, "The expression to evaluate")
   end
@@ -512,13 +522,16 @@ defmodule Mix.Releases.Runtime.Control do
 
   def rpc(argv, %{mfa: mfa, peer: peer} = opts) do
     use_argv? = Map.get(opts, :argv, false)
+
     argv =
       case Map.get(opts, :expr) do
         nil ->
           argv
+
         arg ->
           [arg | argv]
       end
+
     case Mix.Utils.parse_mfa(mfa) do
       {:ok, [module, fun, arity]} when arity in [0, 1] and use_argv? ->
         args =
@@ -527,31 +540,39 @@ defmodule Mix.Releases.Runtime.Control do
           else
             [argv]
           end
+
         case rpc_call(peer, module, fun, args, :infinity) do
           {:badrpc, {:EXIT, {type, trace}}} ->
             args = Enum.join(Enum.map(args, &inspect/1), ", ")
+
             Console.error("""
             The following call failed: #{module}.#{fun}(#{args})
 
             #{Exception.format(:exit, type, trace)}
             """)
+
           {:badrpc, {kind, {type, trace}}} when kind in [:exit, :throw, :error] ->
             args = Enum.join(Enum.map(args, &inspect/1), ", ")
+
             Console.error("""
             The following call failed: #{module}.#{fun}(#{args})
 
             #{Exception.format(kind, type, trace)}
             """)
+
           {:badrpc, reason} ->
             Console.error("Remote call failed with: #{inspect(reason)}")
+
           result ->
             IO.inspect(result)
         end
+
       {:ok, [_module, _fun, _arity]} when use_argv? ->
         Console.error("""
-        You tried to invoke #{mfa} with only one argument (#{inspect argv}),
+        You tried to invoke #{mfa} with only one argument (#{inspect(argv)}),
         but the function has a different arity!
         """)
+
       {:ok, [module, fun, arity]} ->
         args =
           if arity == 0 do
@@ -559,9 +580,10 @@ defmodule Mix.Releases.Runtime.Control do
           else
             argv
           end
+
         if length(args) != arity do
           Console.error("""
-          You tried to invoke #{mfa} with #{length(args)} arguments (#{inspect args}),
+          You tried to invoke #{mfa} with #{length(args)} arguments (#{inspect(args)}),
           but the function has a different arity!
           """)
         else
@@ -571,31 +593,40 @@ defmodule Mix.Releases.Runtime.Control do
                 quote do
                   unquote(module).unquote(fun)(unquote_splicing(args))
                 end
+
               Console.error("""
               The following call failed: #{Macro.to_string(called)}
 
               #{Exception.format(:exit, type, trace)}
               """)
+
             {:badrpc, {kind, {type, trace}}} when kind in [:exit, :throw, :error] ->
               called =
                 quote do
                   unquote(module).unquote(fun)(unquote_splicing(args))
                 end
+
               Console.error("""
               The following call failed: #{Macro.to_string(called)}
 
               #{Exception.format(kind, type, trace)}
               """)
+
             {:badrpc, reason} ->
               Console.error("Remote call failed with: #{inspect(reason)}")
+
             result ->
               IO.inspect(result)
           end
         end
+
       {:ok, _parts} ->
-        Console.error("Incomplete module/function/arity specification for --mfa!: #{inspect mfa}")
+        Console.error(
+          "Incomplete module/function/arity specification for --mfa!: #{inspect(mfa)}"
+        )
+
       :error ->
-        Console.error("Invalid module/function/arity specification for --mfa!: #{inspect mfa}")
+        Console.error("Invalid module/function/arity specification for --mfa!: #{inspect(mfa)}")
     end
   end
 
@@ -669,9 +700,11 @@ defmodule Mix.Releases.Runtime.Control do
       case Map.get(opts, :expr) do
         nil ->
           argv
+
         arg ->
           [arg | argv]
       end
+
     case Mix.Utils.parse_mfa(mfa) do
       {:ok, [module, fun, arity]} when arity in [0, 1] and use_argv? ->
         args =
@@ -680,12 +713,15 @@ defmodule Mix.Releases.Runtime.Control do
           else
             [argv]
           end
+
         apply(module, fun, args)
+
       {:ok, [_module, _fun, _arity]} when use_argv? ->
         Console.error("""
-        You tried to invoke #{mfa} with only one argument (#{inspect argv}),
+        You tried to invoke #{mfa} with only one argument (#{inspect(argv)}),
         but the function has a different arity!
         """)
+
       {:ok, [module, fun, arity]} ->
         args =
           if arity == 0 do
@@ -693,18 +729,23 @@ defmodule Mix.Releases.Runtime.Control do
           else
             argv
           end
+
         if length(args) != arity do
           Console.error("""
-          You tried to invoke #{mfa} with #{length(args)} arguments (#{inspect args}),
+          You tried to invoke #{mfa} with #{length(args)} arguments (#{inspect(args)}),
           but the function has a different arity!
           """)
         else
           apply(module, fun, args)
         end
+
       {:ok, _parts} ->
-        Console.error("Incomplete module/function/arity specification for --mfa!: #{inspect mfa}")
+        Console.error(
+          "Incomplete module/function/arity specification for --mfa!: #{inspect(mfa)}"
+        )
+
       :error ->
-        Console.error("Invalid module/function/arity specification for --mfa!: #{inspect mfa}")
+        Console.error("Invalid module/function/arity specification for --mfa!: #{inspect(mfa)}")
     end
   rescue
     err ->

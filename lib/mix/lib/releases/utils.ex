@@ -358,6 +358,7 @@ defmodule Mix.Releases.Utils do
 
   defp classify_versions([]),
     do: []
+
   defp classify_versions([ver | versions]) when is_binary(ver) do
     # Special handling for git-describe versions
     compare_ver =
@@ -374,27 +375,31 @@ defmodule Mix.Releases.Utils do
 
   defp parse_versions([]),
     do: []
+
   defp parse_versions([{raw, {:standard, ver}} | versions]) when is_binary(ver) do
     [{raw, parse_version(ver), 0} | parse_versions(versions)]
   end
+
   defp parse_versions([{raw, {:describe, ver, commits_since}} | versions]) when is_binary(ver) do
     [{raw, parse_version(ver), commits_since} | parse_versions(versions)]
   end
 
   defp parse_version(ver) when is_binary(ver) do
     parsed = Version.parse!(ver)
-    {:semantic, parsed}
+    {:v, parsed}
   rescue
     Version.InvalidVersionError ->
       {:other, ver}
   end
 
-  defp compare_versions({_, {:semantic, v1}, v1_commits_since}, {_, {:semantic, v2}, v2_commits_since}) do
+  defp compare_versions({_, {:v, v1}, v1_commits_since}, {_, {:v, v2}, v2_commits_since}) do
     case Version.compare(v1, v2) do
       :gt ->
         true
+
       :lt ->
         false
+
       :eq ->
         # Same version, so compare any incremental changes
         # This is based on the describe syntax, but is defaulted to 0
@@ -402,6 +407,7 @@ defmodule Mix.Releases.Utils do
         v1_commits_since > v2_commits_since
     end
   end
+
   defp compare_versions({_, {_, v1}, _}, {_, {_, v2}, _}),
     do: v1 > v2
 
@@ -419,7 +425,7 @@ defmodule Mix.Releases.Utils do
       {:unix, _} -> "\n"
     end
   end
-  
+
   @doc false
   def format_systools_warning(mod, warnings) do
     warning =

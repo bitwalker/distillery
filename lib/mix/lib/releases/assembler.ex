@@ -79,12 +79,14 @@ defmodule Mix.Releases.Assembler do
   end
 
   defp copy_applications(_release, []), do: :ok
+
   defp copy_applications(release, [app | apps]) do
     case copy_app(app, release) do
       :ok ->
         copy_applications(release, apps)
+
       {:error, _} = err ->
-        throw err
+        throw(err)
     end
   end
 
@@ -223,10 +225,11 @@ defmodule Mix.Releases.Assembler do
 
   # Creates release metadata files
   defp write_release_metadata(%Release{name: name} = release) do
-    resource_path = 
+    resource_path =
       release
       |> Release.version_path()
       |> Path.join("#{name}.rel")
+
     with :ok <- Utils.write_term(resource_path, Release.to_resource(release)),
          :ok <- generate_relup(release) do
       :ok
@@ -761,9 +764,11 @@ defmodule Mix.Releases.Assembler do
   end
 
   # Generates .boot script
-  defp make_boot_scripts(%Release{name: name, profile: %Profile{output_dir: output_dir}} = release) do
+  defp make_boot_scripts(%Release{name: name, profile: profile} = release) do
     Shell.debug("Generating boot scripts")
-    
+
+    output_dir = profile.output_dir
+
     with {:ok, boot} <- BootScript.new(release) do
       # This boot script contains all applications, only starting the minimal set
       clean_boot =
@@ -772,12 +777,13 @@ defmodule Mix.Releases.Assembler do
 
       # The config boot is like the clean boot, but executes all config providers once started
       providers = release.profile.config_providers
-      config_boot = 
+
+      config_boot =
         clean_boot
         |> BootScript.after_started(:elixir, [
-            {:apply, {Mix.Releases.Config.Provider, :init, [providers]}},
-          ])
-        
+          {:apply, {Mix.Releases.Config.Provider, :init, [providers]}}
+        ])
+
       # Finally, this is the "real" boot script for the app itself
       app_boot =
         boot
@@ -785,19 +791,28 @@ defmodule Mix.Releases.Assembler do
 
       rel_dir = Release.version_path(release)
       bin_dir = Path.join(output_dir, "bin")
+
       with :ok <- BootScript.write(app_boot),
            :ok <- BootScript.write(clean_boot, :start_clean),
            :ok <- BootScript.write(clean_boot, :no_dot_erlang),
            :ok <- BootScript.write(config_boot, :config),
            # These two need to be copied to bin/ for ERTS
-           :ok <- File.cp(Path.join(rel_dir, "start_clean.boot"), Path.join(bin_dir, "start_clean.boot")),
-           :ok <- File.cp(Path.join(rel_dir, "no_dot_erlang.boot"), Path.join(bin_dir, "no_dot_erlang.boot")),
+           :ok <-
+             File.cp(
+               Path.join(rel_dir, "start_clean.boot"),
+               Path.join(bin_dir, "start_clean.boot")
+             ),
+           :ok <-
+             File.cp(
+               Path.join(rel_dir, "no_dot_erlang.boot"),
+               Path.join(bin_dir, "no_dot_erlang.boot")
+             ),
            :ok <- create_RELEASES(output_dir, Path.join(rel_dir, "#{name}.rel")) do
         :ok
       end
     end
   end
-  
+
   # Generates RELEASES
   defp create_RELEASES(output_dir, relfile) do
     Shell.debug("Generating RELEASES")

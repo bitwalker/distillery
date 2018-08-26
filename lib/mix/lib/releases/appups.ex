@@ -55,10 +55,10 @@ defmodule Mix.Releases.Appup do
     end
   end
 
-  @spec do_locate([String.t], charlist, charlist) :: nil | String.t()
+  @spec do_locate([String.t()], charlist, charlist) :: nil | String.t()
   defp do_locate(paths, v1, v2)
-  
-  defp do_locate([], _v1, _v2), 
+
+  defp do_locate([], _v1, _v2),
     do: nil
 
   defp do_locate([path | rest], v1, v2) when is_binary(path) do

@@ -72,30 +72,34 @@ defmodule Mix.Releases.Config.Provider do
           end
       end
     end
-    
+
     # Build up configuration
     env =
       for {app, _, _} <- :application.loaded_applications() do
         {app, :application.get_all_env(app)}
       end
+
     # Get config path
-    config_path = 
+    config_path =
       case Keyword.get(:init.get_arguments(), :config, []) do
         [] ->
           Path.join(System.get_env("RELEASE_CONFIG_DIR") || "", "sys.config")
+
         [path] ->
           List.to_string(path)
       end
+
     # Persist sys.config
     case Utils.write_term(config_path, env) do
       :ok ->
         :ok
+
       {:error, {:write_terms, mod, reason}} ->
         print_err("Unable to write sys.config to #{config_path}: #{mod.format_error(reason)}")
         :erlang.halt(1)
     end
   end
-  
+
   @doc """
   Given a file path, this function expands it to an absolute path,
   while also expanding any environment variable references in the

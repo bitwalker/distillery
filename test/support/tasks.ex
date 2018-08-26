@@ -6,6 +6,6 @@ defmodule Distillery.Test.Tasks do
   end
 
   def run(arg1, arg2) do
-    IO.inspect([arg1: arg1, arg2: arg2])
+    IO.inspect(arg1: arg1, arg2: arg2)
   end
 end
