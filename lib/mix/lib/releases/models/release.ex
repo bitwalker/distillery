@@ -546,6 +546,8 @@ defmodule Mix.Releases.Release do
         _ ->
           throw {:apps, {:missing_required_lib, app.name, lib_dir}}
       end
+    else
+      app
     end
   end
 
