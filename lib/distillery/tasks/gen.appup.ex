@@ -130,7 +130,8 @@ defmodule Mix.Tasks.Release.Gen.Appup do
     {v1, v1_path} =
       case opts[:upgrade_from] do
         :latest ->
-          List.first(sorted_versions)
+          version = List.first(sorted_versions)
+          {version, Map.fetch!(available_versions, version)}
 
         version ->
           case Map.get(available_versions, version) do
@@ -138,8 +139,8 @@ defmodule Mix.Tasks.Release.Gen.Appup do
               Shell.error("Version #{version} of #{app} is not available!")
               System.halt(1)
 
-            {_, _} = av ->
-              av
+            path ->
+              {version, path}
           end
       end
 
