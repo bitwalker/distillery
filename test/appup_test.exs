@@ -89,7 +89,7 @@ defmodule Distillery.Test.AppupTest do
 
   test "custom appup can be located given versions" do
     true = Code.append_path(@appup_path)
-    assert Appup.locate(:test, '1.0.0', '2.0.0') ==
+    assert Appup.locate(:test, "1.0.0", "2.0.0") ==
       Path.join([@appup_path, "priv", "appups", "1.0.0_to_2.0.0.appup"])
   end
 end
