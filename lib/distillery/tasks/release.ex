@@ -276,8 +276,8 @@ defmodule Mix.Tasks.Release do
       [rel, env] ->
         new_acc =
           acc
-          |> Map.put(:selected_release, rel)
-          |> Map.put(:selected_environment, env)
+          |> Map.put(:selected_release, String.to_atom(rel))
+          |> Map.put(:selected_environment, String.to_atom(env))
 
         do_parse_args(rest, new_acc)
 
