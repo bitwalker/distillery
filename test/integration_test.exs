@@ -2,504 +2,351 @@ defmodule Distillery.Test.IntegrationTest do
   use ExUnit.Case, async: false
 
   alias Mix.Releases.Utils
-  import MixTestHelper
+  import Distillery.Test.Helpers
 
   @moduletag integration: true
   @moduletag timeout: 60_000 * 5
 
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
-  @standard_output_path Path.join([
-                          __DIR__,
-                          "fixtures",
-                          "standard_app",
-                          "_build",
-                          "prod",
-                          "rel",
-                          "standard_app"
-                        ])
+  @standard_build_path Path.join([@standard_app_path, "_build", "prod"])
+  @standard_output_path Path.join([@standard_build_path, "rel", "standard_app"])
 
   defmacrop with_standard_app(body) do
     quote do
-      clean_up_standard_app!()
       old_dir = File.cwd!()
       File.cd!(@standard_app_path)
+      try do
+        unquote(body)
+      after
+        File.cd!(old_dir)
+      end
+    end
+  end
+  
+  setup_all do
+    with_standard_app do
       {:ok, _} = File.rm_rf(Path.join(@standard_app_path, "_build"))
       _ = File.rm(Path.join(@standard_app_path, "mix.lock"))
       {:ok, _} = mix("deps.get")
       {:ok, _} = mix("compile")
-      unquote(body)
-      File.cd!(old_dir)
     end
+    :ok
   end
-
-  defp run_cmd(command, args) when is_list(args) do
-    case System.cmd(command, args, [stderr_to_stdout: true]) do
-      {output, 0} ->
-        if System.get_env("VERBOSE_TESTS") do
-          IO.puts(output)
-        end
-
-        {:ok, output}
-
-      {output, non_zero_exit} ->
-        IO.puts(output)
-        {:error, non_zero_exit, output}
+  
+  setup do
+    with_standard_app do
+      reset_changes!(@standard_app_path)
     end
-  end
-
-  # Wait for VM and application to start
-  defp wait_for_app(bin_path) do
-    parent = self()
-    pid = spawn_link(fn -> ping_loop(bin_path, parent) end)
-    do_wait_for_app(pid, 30_000)
-  end
-
-  defp do_wait_for_app(pid, time_remaining) when time_remaining <= 0 do
-    send(pid, :die)
-    :timeout
-  end
-
-  defp do_wait_for_app(pid, time_remaining) do
-    start = System.monotonic_time(:millisecond)
-
-    if System.get_env("VERBOSE_TESTS") do
-      IO.puts("Waiting #{time_remaining}ms for app..")
-    end
-
-    receive do
-      {:ok, :pong} ->
-        :ok
-
-      _other ->
-        ts = System.monotonic_time(:millisecond)
-        do_wait_for_app(pid, time_remaining - (ts - start))
-    after
-      time_remaining ->
-        send(pid, :die)
-        :timeout
-    end
-  end
-
-  defp ping_loop(bin_path, parent) do
-    case System.cmd(bin_path, ["ping"], [stderr_to_stdout: true]) do
-      {"pong\n", 0} ->
-        send(parent, {:ok, :pong})
-
-      {output, _exit_code} ->
-        receive do
-          :die ->
-            if System.get_env("VERBOSE_TESTS") do
-              IO.puts(output)
-            end
-
-            :ok
-        after
-          1_000 ->
-            ping_loop(bin_path, parent)
-        end
-    end
+    :ok
   end
 
   describe "standard application" do
-    test "can build release and start it" do
+
+    test "can build a release and start it - dev" do
       with_standard_app do
-        # Build release
-        assert {:ok, output} = mix("release", ["--verbose", "--env=prod"])
-
-        for callback <- ~w(before_assembly after_assembly before_package after_package) do
-          assert output =~ "Prod Plugin - #{callback}"
+        assert {:ok, output} = build_release(env: :dev, no_tar: true)
+        
+        # Release plugin was run
+        for callback <- ~w(before_assembly after_assembly) do
+          assert output =~ "EnvLoggerPlugin in dev executing #{callback}"
         end
-
-        refute String.contains?(output, "Release Plugin")
-
-        assert ["0.0.1"] == Utils.get_release_versions(@standard_output_path)
-        # Boot it, ping it, and shut it down
-        assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
-        bin_path = Path.join([tmpdir, "bin", "standard_app"])
-
+        
+        bin = Path.join([@standard_output_path, "bin", "standard_app"])
+        
         try do
-          tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
-          assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
-          assert File.exists?(bin_path)
-
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, _} = run_cmd(bin_path, ["install"])
-
-            _ ->
-              :ok
-          end
-
-          :ok = create_additional_config_file(tmpdir)
-
-          assert {:ok, _} = run_cmd(bin_path, ["start"])
-          assert :ok = wait_for_app(bin_path)
-
+          # Can start
+          assert {:ok, _} = release_cmd(bin, "start")
+          assert :ok = wait_for_app(bin)
+          # Base config is correct
           assert {:ok, "2\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
-
+                   release_cmd(bin, "rpc", ["Application.get_env(:standard_app, :num_procs)"])
+          # Config provider was run
           assert {:ok, ":config_provider\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :source)"])
-
-          # Additional config items should exist
-          assert {:ok, ":bar\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :foo)"])
-
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, output} = run_cmd(bin_path, ["stop"])
-              assert output =~ "stopped"
-              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
-
-            _ ->
-              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
-          end
+                   release_cmd(bin, "rpc", ["Application.get_env(:standard_app, :source)"])
+          # Can stop
+          assert {:ok, _} = release_cmd(bin, "stop")
         rescue
           e ->
-            run_cmd(bin_path, ["stop"])
+            release_cmd(bin, "stop")
+            reraise e, System.stacktrace()
+        end
+      end
+    end
+    
+    test "can build release and start it - prod" do
+      with_standard_app do
+        assert {:ok, output} = build_release()
 
-            case :os.type() do
-              {:win32, _} ->
-                run_cmd(bin_path, ["uninstall"])
+        # All release plugins ran
+        for callback <- ~w(before_assembly after_assembly before_package after_package) do
+          assert output =~ "EnvLoggerPlugin in prod executing #{callback}"
+          assert output =~ "ProdPlugin in prod executing #{callback}"
+        end
+        
+        # Extract release to temporary directory
+        assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
+        bin = Path.join([tmpdir, "bin", "standard_app"])
 
-              _ ->
-                :ok
-            end
-
+        try do
+          deploy_tarball(@standard_output_path, "0.0.1", tmpdir)
+          # Can start
+          assert {:ok, _} = release_cmd(bin, "start")
+          assert :ok = wait_for_app(bin)
+          # Config provider was run
+          assert {:ok, ":config_provider\n"} =
+                   release_cmd(bin, "rpc", ["Application.get_env(:standard_app, :source)"])
+          # Additional config files were used
+          assert {:ok, ":bar\n"} =
+                   release_cmd(bin, "rpc", ["Application.get_env(:standard_app, :foo)"])
+          # Can stop
+          assert {:ok, _} = release_cmd(bin, "stop")
+        rescue
+          e ->
+            release_cmd(bin, "stop")
             reraise e, System.stacktrace()
         after
           File.rm_rf!(tmpdir)
-          :ok
         end
       end
     end
 
-    test "can build and deploy hot upgrade" do
+    test "can build and deploy a hot upgrade" do
       with_standard_app do
-        # Build v1 release
-        assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
-        update_config_and_code_to_v2()
-        # Build v2 release
-        assert {:ok, _} = mix("compile")
-        assert {:ok, _} = mix("release", ["--verbose", "--env=prod", "--upgrade"])
-        assert ["0.0.2", "0.0.1"] == Utils.get_release_versions(@standard_output_path)
-        # Deploy it
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
         bin_path = Path.join([tmpdir, "bin", "standard_app"])
 
         try do
-          unpack_old_release(tmpdir)
-          copy_new_release(tmpdir)
+          # Build v1 release
+          assert {:ok, _} = build_release()
+          # Apply v2 changes
+          v1_to_v2()
+          # Build v2 release
+          assert {:ok, _} = build_release(upgrade: true)
+          # Ensure the versions we expected were produced
+          assert ["0.0.2", "0.0.1"] == Utils.get_release_versions(@standard_output_path)
 
-          # Boot it, ping it, upgrade it, rpc to verify, then shut it down
-          assert File.exists?(bin_path)
+          # Unpack and verify
+          deploy_tarball(@standard_output_path, "0.0.1", tmpdir)
+          # Push upgrade release to the staging directory
+          deploy_upgrade_tarball(@standard_output_path, "0.0.2", tmpdir)
 
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, _} = run_cmd(bin_path, ["install"])
-
-            _ ->
-              :ok
-          end
-
-          :ok = create_additional_config_file(tmpdir)
-          assert {:ok, _} = run_cmd(bin_path, ["start"])
+          assert {:ok, _} = release_cmd(bin_path, "start")
           assert :ok = wait_for_app(bin_path)
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(1)"])
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(2)"])
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(1)"])
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(2)"])
-          assert {:ok, output} = run_cmd(bin_path, ["upgrade", "0.0.2"])
+
+          # Interact with running release by changing the state of some processes
+          assert {:ok, ":ok\n"} = release_cmd(bin_path, "rpc", ["StandardApp.A.push(8)"])
+          assert {:ok, ":ok\n"} = release_cmd(bin_path, "rpc", ["StandardApp.B.push(8)"])
+
+          # Install upgrade and verify output
+          assert {:ok, output} = release_cmd(bin_path, "upgrade", ["0.0.2"])
           assert output =~ "Made release standard_app:0.0.2 permanent"
-          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.pop()"])
-          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.pop()"])
 
+          # Verify that the state changes we made were persistent across code changes
+          assert {:ok, "{:ok, 8}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.A.pop()"])
+          assert {:ok, "{:ok, 8}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.B.pop()"])
+          assert {:ok, "{:ok, 2}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.A.version()"])
+          assert {:ok, "{:ok, 2}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.B.version()"])
+
+          # Verify that configuration changes took effect
           assert {:ok, "4\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
-          assert {:ok, ":config_provider_update\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :source)"])
+                   release_cmd(bin_path, "rpc", ["Application.get_env(:standard_app, :num_procs)"])
 
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, output} = run_cmd(bin_path, ["stop"])
-              assert output =~ "stopped"
-              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
-
-            _ ->
-              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
-              :ok
-          end
+          assert {:ok, _} = release_cmd(bin_path, "stop")
         rescue
           e ->
-            run_cmd(bin_path, ["stop"])
-
-            case :os.type() do
-              {:win32, _} ->
-                run_cmd(bin_path, ["uninstall"])
-
-              _ ->
-                :ok
-            end
-
+            release_cmd(bin_path, "stop")
             reraise e, System.stacktrace()
         after
-          _ = File.rm_rf(tmpdir)
-          clean_up_standard_app!()
-          :ok
+          File.rm_rf(tmpdir)
+          reset_changes!(@standard_app_path)
         end
       end
     end
 
-    test "can build and deploy hot upgrade with previously generated appup" do
+    test "can build and deploy hot upgrade with custom appup" do
       with_standard_app do
         # Build v1 release
-        assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
-        update_config_and_code_to_v2()
-        # Build v2 release
+        assert {:ok, _} = build_release()
+        # Apply v2 changes
+        v1_to_v2()
+        # Generate appup from old to new version
         assert {:ok, _} = mix("compile")
         assert {:ok, _} = mix("release.gen.appup", ["--app=standard_app"])
-        assert {:ok, _} = mix("release", ["--verbose", "--env=prod", "--upgrade"])
+        # Build v2 release
+        assert {:ok, _} = build_release(upgrade: true)
+        # Verify versions
         assert ["0.0.2", "0.0.1"] == Utils.get_release_versions(@standard_output_path)
+
         # Deploy it
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
         bin_path = Path.join([tmpdir, "bin", "standard_app"])
 
         try do
-          unpack_old_release(tmpdir)
-          copy_new_release(tmpdir)
+          # Unpack v1 to target directory
+          deploy_tarball(@standard_output_path, "0.0.1", tmpdir)
+          # Push v2 release to staging directory
+          deploy_upgrade_tarball(@standard_output_path, "0.0.2", tmpdir)
 
-          # Boot it, ping it, upgrade it, rpc to verify, then shut it down
-          assert File.exists?(bin_path)
-
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, _} = run_cmd(bin_path, ["install"])
-
-            _ ->
-              :ok
-          end
-
-          :ok = create_additional_config_file(tmpdir)
-          assert {:ok, _} = run_cmd(bin_path, ["start"])
+          # Boot v1
+          assert {:ok, _} = release_cmd(bin_path, "start")
           assert :ok = wait_for_app(bin_path)
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(1)"])
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.push(2)"])
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(1)"])
-          assert {:ok, ":ok\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.push(2)"])
-          assert {:ok, output} = run_cmd(bin_path, ["upgrade", "0.0.2"])
+
+          # Interact with running release by changing state of some processes
+          assert {:ok, ":ok\n"} = release_cmd(bin_path, "rpc", ["StandardApp.A.push(8)"])
+          assert {:ok, ":ok\n"} = release_cmd(bin_path, "rpc", ["StandardApp.B.push(8)"])
+
+          # Install v2
+          assert {:ok, output} = release_cmd(bin_path, "upgrade", ["0.0.2"])
           assert output =~ "Made release standard_app:0.0.2 permanent"
-          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.A.pop()"])
-          assert {:ok, "{:ok, 2}\n"} = run_cmd(bin_path, ["rpc", "StandardApp.B.pop()"])
 
+          # Verify that state changes were persistent across code changes
+          assert {:ok, "{:ok, 8}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.A.pop()"])
+          assert {:ok, "{:ok, 8}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.B.pop()"])
+          assert {:ok, "{:ok, 2}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.A.version()"])
+          assert {:ok, "{:ok, 2}\n"} = release_cmd(bin_path, "rpc", ["StandardApp.B.version()"])
+
+          # Verify configuration changes took effect
           assert {:ok, "4\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
+                   release_cmd(bin_path, "rpc", ["Application.get_env(:standard_app, :num_procs)"])
 
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, output} = run_cmd(bin_path, ["stop"])
-              assert output =~ "stopped"
-              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
-
-            _ ->
-              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
-              :ok
-          end
+          assert {:ok, _} = release_cmd(bin_path, "stop")
         rescue
           e ->
-            run_cmd(bin_path, ["stop"])
-
-            case :os.type() do
-              {:win32, _} ->
-                run_cmd(bin_path, ["uninstall"])
-
-              _ ->
-                :ok
-            end
-
+            release_cmd(bin_path, "stop")
             reraise e, System.stacktrace()
         after
-          _ = File.rm_rf(tmpdir)
-          clean_up_standard_app!()
-          :ok
+          File.rm_rf(tmpdir)
+          reset_changes!(@standard_app_path)
         end
       end
     end
 
     test "when installation directory contains a space" do
       with_standard_app do
-        # Build v1 release
-        assert {:ok, _} = mix("release", ["--verbose", "--env=prod"])
+        assert {:ok, _} = build_release()
 
-        # Untar the release into a path that contains a space character then
-        # try to run it.
+        # Deploy release to path with spaces
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
         tmpdir = Path.join(tmpdir, "dir with space")
         bin_path = Path.join([tmpdir, "bin", "standard_app"])
 
         try do
-          tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
-          assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
-          assert File.exists?(bin_path)
+          deploy_tarball(@standard_output_path, "0.0.1", tmpdir)
 
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, _} = run_cmd(bin_path, ["install"])
-
-            _ ->
-              :ok
-          end
-
-          :ok = create_additional_config_file(tmpdir)
-
-          assert {:ok, _} = run_cmd(bin_path, ["start"])
+          # Boot release
+          assert {:ok, _} = release_cmd(bin_path, "start")
           assert :ok = wait_for_app(bin_path)
 
+          # Verify configuration
           assert {:ok, "2\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
-
-          # Additional config items should exist
+                   release_cmd(bin_path, "rpc", ["Application.get_env(:standard_app, :num_procs)"])
           assert {:ok, ":bar\n"} =
-                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :foo)"])
+                   release_cmd(bin_path, "rpc", ["Application.get_env(:standard_app, :foo)"])
 
-          case :os.type() do
-            {:win32, _} ->
-              assert {:ok, output} = run_cmd(bin_path, ["stop"])
-              assert output =~ "stopped"
-              assert {:ok, _} = run_cmd(bin_path, ["uninstall"])
-
-            _ ->
-              assert {:ok, "ok\n"} = run_cmd(bin_path, ["stop"])
-          end
+          assert {:ok, _} = release_cmd(bin_path, "stop")
         rescue
           e ->
-            run_cmd(bin_path, ["stop"])
-
-            case :os.type() do
-              {:win32, _} ->
-                run_cmd(bin_path, ["uninstall"])
-
-              _ ->
-                :ok
-            end
-
+            release_cmd(bin_path, "stop")
             reraise e, System.stacktrace()
         after
           File.rm_rf!(tmpdir)
-          :ok
         end
       end
     end
   end
-
-  # Create a configuration file inside the release directory
-  defp create_additional_config_file(directory) do
-    extra_config_path = Path.join([directory, "extra.config"])
-    Mix.Releases.Utils.write_term(extra_config_path, standard_app: [foo: :bar])
-    :ok
-  end
-
-  defp clean_up_standard_app! do
-    project_path = Path.join(@standard_app_path, "mix.exs.v1")
-
-    if File.exists?(project_path) do
-      File.cp!(project_path, Path.join(@standard_app_path, "mix.exs"))
-      File.rm!(project_path)
-    end
-
-    config_path = Path.join([@standard_app_path, "config", "config.exs.v1"])
-
-    if File.exists?(config_path) do
-      File.cp!(config_path, Path.join([@standard_app_path, "config", "config.exs"]))
-      File.rm!(config_path)
-    end
-
-    config_provider_config_path = Path.join([@standard_app_path, "rel", "config", "config.exs.v1"])
-
-    if File.exists?(config_provider_config_path) do
-      File.cp!(config_provider_config_path, Path.join([@standard_app_path, "rel", "config", "config.exs"]))
-      File.rm!(config_provider_config_path)
-    end
-
-    rel_config_path = Path.join([@standard_app_path, "rel", "config.exs.v1"])
-
-    if File.exists?(rel_config_path) do
-      File.cp!(rel_config_path, Path.join([@standard_app_path, "rel", "config.exs"]))
-      File.rm!(rel_config_path)
-    end
-
-    a_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "a.ex.v1"])
-
-    if File.exists?(a_mod_path) do
-      File.cp!(a_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "a.ex"]))
-      File.rm!(a_mod_path)
-    end
-
-    b_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "b.ex.v1"])
-
-    if File.exists?(b_mod_path) do
-      File.cp!(b_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "b.ex"]))
-      File.rm!(b_mod_path)
-    end
-
-    File.rm_rf!(Path.join([@standard_app_path, "rel", "standard_app"]))
-    File.rm_rf!(Path.join([@standard_app_path, "rel", "appups", "standard_app"]))
-    :ok
-  end
-
-  defp update_config_and_code_to_v2 do
-    # Update config for v2
-    project_config_path = Path.join(@standard_app_path, "mix.exs")
-    project = File.read!(project_config_path)
+  
+  defp v1_to_v2 do
     config_path = Path.join([@standard_app_path, "config", "config.exs"])
-    config = File.read!(config_path)
-    config_provider_config_path = Path.join([@standard_app_path, "rel", "config", "config.exs"])
-    config_provider_config = File.read!(config_provider_config_path)
-    rel_config_path = Path.join([@standard_app_path, "rel", "config.exs"])
-    rel_config = File.read!(rel_config_path)
-    # Write updates to modules
-    a_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "a.ex"])
-    a_mod = File.read!(a_mod_path)
-    b_mod_path = Path.join([@standard_app_path, "lib", "standard_app", "b.ex"])
-    b_mod = File.read!(b_mod_path)
-    # Save orig
-    File.cp!(project_config_path, Path.join(@standard_app_path, "mix.exs.v1"))
-    File.cp!(config_path, Path.join([@standard_app_path, "config", "config.exs.v1"]))
-    File.cp!(config_provider_config_path, Path.join([@standard_app_path, "rel", "config", "config.exs.v1"]))
-    File.cp!(rel_config_path, Path.join([@standard_app_path, "rel", "config.exs.v1"]))
-    File.cp!(a_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "a.ex.v1"]))
-    File.cp!(b_mod_path, Path.join([@standard_app_path, "lib", "standard_app", "b.ex.v1"]))
-    # Write new config
-    new_project_config = String.replace(project, "version: \"0.0.1\"", "version: \"0.0.2\"")
-    new_config = String.replace(config, "num_procs: 2", "num_procs: 4")
-    new_config_provider_config = 
-      String.replace(config_provider_config, "source: :config_provider", "source: :config_provider_update")
-    new_rel_config =
-      String.replace(rel_config, "set version: \"0.0.1\"", "set version: \"0.0.2\"")
+    a_path = Path.join([@standard_app_path, "lib", "standard_app", "a.ex"])
+    b_path = Path.join([@standard_app_path, "lib", "standard_app", "b.ex"])
 
-    File.write!(project_config_path, new_project_config)
-    File.write!(config_path, new_config)
-    File.write!(config_provider_config_path, new_config_provider_config)
-    File.write!(rel_config_path, new_rel_config)
-    # Write updated modules
-    new_a_mod = String.replace(a_mod, "{:ok, {1, []}}", "{:ok, {2, []}}")
-
-    new_b_mod =
-    String.replace(b_mod, "loop({1, []}, parent, debug)", "loop({2, []}, parent, debug)")
-
-    File.write!(a_mod_path, new_a_mod)
-    File.write!(b_mod_path, new_b_mod)
+    upgrade(@standard_app_path, "0.0.2", [
+      {config_path, "num_procs: 2", "num_procs: 4"},
+      {a_path, "{:ok, {1, []}}", "{:ok, {2, []}}"},
+      {b_path, "loop({1, []}, parent, debug)", "loop({2, []}, parent, debug)"}
+    ])
   end
-
-  defp unpack_old_release(tmpdir) do
-    tarfile = Path.join([@standard_output_path, "releases", "0.0.1", "standard_app.tar.gz"])
-    assert :ok = :erl_tar.extract('#{tarfile}', [{:cwd, '#{tmpdir}'}, :compressed])
+  
+  defp reset!(path) do
+    backup = path <> ".backup"
+    if File.exists?(backup) do
+      File.cp!(backup, path)
+      File.rm!(backup)
+    end
   end
-
-  defp copy_new_release(tmpdir) do
-    File.mkdir_p!(Path.join([tmpdir, "releases", "0.0.2"]))
-    File.cp!(
-      Path.join([@standard_output_path, "releases", "0.0.2", "standard_app.tar.gz"]),
-      Path.join([tmpdir, "releases", "0.0.2", "standard_app.tar.gz"])
-    )
+  
+  defp reset_changes!(app_path) do
+    app = Path.basename(app_path)
+    changes =
+      Path.join([app_path, "**", "*.backup"])
+      |> Path.wildcard()
+      |> Enum.map(&(Path.join(Path.dirname(&1), Path.basename(&1, ".backup"))))
+    Enum.each(changes, &reset!/1)
+    File.rm_rf!(Path.join([app_path, "rel", app]))
+    File.rm_rf!(Path.join([app_path, "rel", "appups", app]))
+    :ok
+  end
+  
+  defp apply_change(path, match, replacement) do
+    apply_changes(path, [{match, replacement}])
+  end
+  
+  defp apply_changes(path, changes) when is_list(changes) do
+    unless File.exists?(path <> ".backup") do
+      File.cp!(path, path <> ".backup")
+    end
+    old = File.read!(path)
+    new = 
+      changes
+      |> Enum.reduce(old, fn {match, replacement}, acc -> 
+        String.replace(acc, match, replacement)
+      end)
+    File.write!(path, new)
+  end
+  
+  defp upgrade(app_path, version, changes) do
+    # Set new version in mix.exs
+    mix_exs = Path.join([app_path, "mix.exs"])
+    apply_change(mix_exs, ~r/(version: )"\d+.\d+.\d+"/, "\\1\"#{version}\"")
+    # Set new version in release config
+    rel_config_path = Path.join([app_path, "rel", "config.exs"])
+    apply_change(rel_config_path, ~r/(version: )"\d+.\d+.\d+"/, "\\1\"#{version}\"")
+    # Apply other changes for this upgrade
+    for change <- changes do
+      case change do
+        {path, changeset} when is_list(changeset) ->
+          apply_changes(path, changeset)
+        {path, match, replacement} ->
+          apply_change(path, match, replacement)
+      end
+    end
+    :ok
+  end
+  
+  defp deploy_tarball(release_root_dir, version, directory) do
+    dir = String.to_charlist(directory)
+    tar = 
+      case Path.wildcard(Path.join([release_root_dir, "releases", version, "*.tar.gz"])) do
+        [tar] ->
+          String.to_charlist(tar)
+      end
+    case :erl_tar.extract(tar, [{:cwd, dir}, :compressed]) do
+      :ok ->
+        :ok = Utils.write_term(Path.join(directory, "extra.config"), standard_app: [foo: :bar])
+      other ->
+        other
+    end
+  end
+  
+  defp deploy_upgrade_tarball(release_root_dir, version, directory) do
+    target = Path.join([directory, "releases", version])
+    File.mkdir_p!(Path.join([directory, "releases", version]))
+    source = 
+      case Path.wildcard(Path.join([release_root_dir, "releases", version, "*.tar.gz"])) do
+        [source] ->
+          source
+      end
+    name = Path.basename(source)
+    File.cp!(source, Path.join(target, name))
   end
 end
