@@ -1,6 +1,7 @@
-Code.require_file("rel/sample_app_plugin.ex")
-Code.require_file("rel/release_plugin.ex")
-Code.require_file("rel/another_release_plugin.ex")
+~w(rel plugins *.exs)
+|> Path.join()
+|> Path.wildcard()
+|> Enum.map(&Code.eval_file(&1))
 
 use Mix.Releases.Config,
     # This sets the default release built by `mix release`
@@ -31,7 +32,8 @@ environment :prod do
   set included_configs: ["extra.config"]
   set cookie: :"*GU1?EY8/~,K!9*Ohazv{O9<Ao@)pMFFKjs/q=$HlMo~q=s!~,O8!DIs0PT(v&;="
   set run_erl_env: "RUN_ERL_LOG_MAXSIZE=100000 RUN_ERL_LOG_GENERATIONS=5"
-  plugin SampleApp.ProdPlugin, some: :config
+
+  plugin SampleApp.EnvLoggerPlugin, name: ProdPlugin
 end
 
 # You may define one or more releases in this file.
@@ -50,7 +52,6 @@ release :standard_app do
     {:copy, "rel/config/config.exs", "releases/<%= release_version %>/config.exs"}
   ]
 
-  plugin SampleApp.ReleasePlugin
-  plugin SampleApp.AnotherReleasePlugin
+  plugin SampleApp.EnvLoggerPlugin
 end
 
