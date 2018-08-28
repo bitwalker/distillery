@@ -131,7 +131,7 @@ defmodule Mix.Releases.BootScript do
 
     with {before_app_ctrl, after_app_ctrl} <-
            Enum.split_while(ixns, fn
-             {:kernelProcess, :application_controller, {:application_controller, :start, _}} ->
+             {:progress, :init_kernel_started} ->
                false
 
              _ ->
