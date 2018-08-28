@@ -76,7 +76,7 @@ defmodule Distillery.Test.CliTest do
 
     test "eval --file" do
       assert is_success(fn ->
-        Control.main(["eval", "--file", Path.join([__DIR__, "support", "eval_file_example.exs"]) |> Path.expand])
+        Control.main(["eval", "--file", Path.join([__DIR__, "fixtures", "files", "eval_file_example.exs"]) |> Path.expand])
       end) =~ "ok from primary@127.0.0.1\n"
     end
 
@@ -94,7 +94,7 @@ defmodule Distillery.Test.CliTest do
 
     test "rpc --file", %{node: peer} do
       assert is_success(fn ->
-        path = Path.join([__DIR__, "support", "eval_file_example.exs"]) |> Path.expand
+        path = Path.join([__DIR__, "fixtures", "files", "eval_file_example.exs"]) |> Path.expand
         Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "--file", path])
       end) =~ ~r/ok from #{peer}\n/
     end
@@ -275,7 +275,7 @@ defmodule Distillery.Test.CliTest do
     test "with a simple config is applied successfully", %{node: peer} do
       is_success(fn ->
         assert :undefined = :rpc.call(peer, :application, :get_env, [:distillery, :simple])
-        path = Path.join([__DIR__, "support", "simple.sys.config"])
+        path = Path.join([__DIR__, "fixtures", "files", "simple.sys.config"])
         Control.main(["reload_config", "--name", "#{peer}", "--cookie", "#{Node.get_cookie}", "--sysconfig", path])
         assert {:ok, :success} = :rpc.call(peer, :application, :get_env, [:distillery, :simple])
       end)
