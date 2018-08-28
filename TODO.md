@@ -1,7 +1,6 @@
 # TODO
 
 - [x] Add `--mfa` and `--as-argv` flags to `rpc` and `eval`
-- [ ] Ensure user-provided overlays are extracted during upgrades
 - [ ] Add tests for umbrellas/Nerves projects
 - [ ] Try and parse init errors so they can be pretty printed
 - [ ] Explore doing config in same VM and use `:init.restart/0` to apply updated

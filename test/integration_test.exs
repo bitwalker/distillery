@@ -216,9 +216,8 @@ defmodule Distillery.Test.IntegrationTest do
 
           assert {:ok, "4\n"} =
                    run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :num_procs)"])
-          # TODO: Re-enable when hot upgrades extract overlays
-          #assert {:ok, ":config_provider_update\n"} =
-                   #run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :source)"])
+          assert {:ok, ":config_provider_update\n"} =
+                   run_cmd(bin_path, ["rpc", "Application.get_env(:standard_app, :source)"])
 
           case :os.type() do
             {:win32, _} ->

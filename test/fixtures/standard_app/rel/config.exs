@@ -43,11 +43,11 @@ release :standard_app do
   set version: "0.0.1"
   
   set config_providers: [
-    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+    {Mix.Releases.Config.Providers.Elixir, ["${REL_DIR}/config.exs"]}
   ]
   
   set overlays: [
-    {:copy, "rel/config/config.exs", "etc/config.exs"}
+    {:copy, "rel/config/config.exs", "releases/<%= release_version %>/config.exs"}
   ]
 
   plugin SampleApp.ReleasePlugin
