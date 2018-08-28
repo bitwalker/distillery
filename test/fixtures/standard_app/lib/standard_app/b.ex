@@ -3,6 +3,12 @@ defmodule StandardApp.B do
   def pop, do: do_call(:pop)
   def length, do: do_call(:length)
   def inspect, do: do_call(:state)
+  def version do
+    case do_call(:state) do
+      {v, _} ->
+        {:ok, v}
+    end
+  end
 
   defp do_call(message) do
     send(__MODULE__, {self(), message})

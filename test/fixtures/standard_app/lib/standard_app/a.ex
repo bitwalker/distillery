@@ -5,6 +5,12 @@ defmodule StandardApp.A do
   def pop, do: GenServer.call(__MODULE__, :pop)
   def length, do: GenServer.call(__MODULE__, :length)
   def inspect, do: GenServer.call(__MODULE__, :state)
+  def version do
+    case GenServer.call(__MODULE__, :state) do
+      {v, _} ->
+        {:ok, v}
+    end
+  end
 
   def start_link(), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
 
@@ -27,7 +33,7 @@ defmodule StandardApp.A do
   def handle_call(:length, _from, {v, state}) do
     {:reply, length(state), {v, state}}
   end
-
+  
   def handle_call(:state, _from, state) do
     {:reply, state, state}
   end
