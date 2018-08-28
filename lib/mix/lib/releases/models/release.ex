@@ -255,11 +255,18 @@ defmodule Mix.Releases.Release do
     env_profile = Map.from_struct(env.profile)
 
     profile =
-      Enum.reduce(env_profile, rel_profile, fn {k, v}, acc ->
-        case v do
-          ignore when ignore in [nil, []] -> acc
-          _ -> Map.put(acc, k, v)
-        end
+      Enum.reduce(env_profile, rel_profile, fn 
+        {:plugins, ps}, acc when ps not in [nil, []] ->
+          # Merge plugins
+          rel_plugins = Map.get(acc, :plugins, [])
+          Map.put(acc, :plugins, rel_plugins ++ ps)
+        {k, v}, acc ->
+          case v do
+            ignore when ignore in [nil, []] -> 
+              acc
+            _ -> 
+              Map.put(acc, k, v)
+          end
       end)
 
     %{r | :env => env_name, :profile => profile}
