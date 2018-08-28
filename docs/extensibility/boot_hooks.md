@@ -20,8 +20,8 @@ Given a config like the following:
 use Mix.Releases.Config
 
 environment :default do
-  set pre_start_hook: "rel/hooks/pre_start"
-  set post_start_hook: "rel/hooks/post_start"
+  set pre_start_hooks: "rel/hooks/pre_start"
+  set post_start_hooks: "rel/hooks/post_start"
 end
 
 release :myapp do
