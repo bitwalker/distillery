@@ -15,6 +15,7 @@ CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
 # Path to start_erl.data
 START_ERL_DATA="${START_ERL_DATA:-$RELEASE_ROOT_DIR/releases/start_erl.data}"
 # Directory containing the current version of this release
+export REL_DIR
 REL_DIR="${REL_DIR:-$RELEASE_ROOT_DIR/releases/$REL_VSN}"
 # The lib directory for this release
 REL_LIB_DIR="${REL_LIB_DIR:-$RELEASE_ROOT_DIR/lib}"
