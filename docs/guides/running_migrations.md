@@ -26,8 +26,7 @@ defmodule MyApp.ReleaseTasks do
     :ecto
   ]
 
-  @app :my_app
-  @repos Application.get_env(@app, :ecto_repos, [])
+  @repos Application.get_env(:my_app, :ecto_repos, [])
 
   def migrate(_argv) do
     start_services()
@@ -48,11 +47,6 @@ defmodule MyApp.ReleaseTasks do
   end
 
   defp start_services do
-    IO.puts("Loading #{@app}..")
-
-    # Load the code for myapp, but don't start it
-    Application.load(@app)
-
     IO.puts("Starting dependencies..")
     # Start apps necessary for executing migrations
     Enum.each(@start_apps, &Application.ensure_all_started/1)

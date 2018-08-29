@@ -89,8 +89,8 @@ information as they are big quality of life improvements!
     Distillery when building upgrade releases. This directory can be source
     controlled, and the generated files can be modified as needed. This is a
     much needed improvement for those performing hot upgrades!
-  * PID file creation when `-kernel pidfile "path"` is given in `vm.args`, or
-    `PIDFILE=path` is exported in the system environment.
+  * PID file creation when `-kernel pidfile "'path'"` is given in `vm.args`, or
+    `PIDFILE="path"` is exported in the system environment.
 
 ### Deprecations
 
