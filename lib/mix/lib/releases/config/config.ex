@@ -142,7 +142,7 @@ defmodule Mix.Releases.Config do
         raise "release name must be an atom! got #{inspect(name)}"
       end
 
-      rel = Release.new(name, unquote(@default_release_version), [])
+      rel = Release.new(name, unquote(@default_release_version), [unquote(name)])
 
       conf = var!(config, Mix.Releases.Config)
       var!(config, Mix.Releases.Config) = put_in(conf, [:releases, name], rel)
