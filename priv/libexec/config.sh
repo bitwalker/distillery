@@ -101,8 +101,13 @@ configure_release() {
         # This will replace the config at SYS_CONFIG_PATH with a fully provisioned config
         # Set the logger level to warning to prevent unnecessary output to stdio
         if [ -z "$DEBUG_BOOT" ]; then
-            # Silence all output when not debugging
-            if ! erl -noshell -config "$SYS_CONFIG_PATH" -boot "${REL_DIR}/config" -s erlang halt >/dev/null; then
+            # Silence all output when not debugging, but print errors
+            set +e
+            err="$(erl -noshell -config "$SYS_CONFIG_PATH" -boot "${REL_DIR}/config" -s erlang halt)"
+            status=$?
+            set -e
+            if [ $status -ne 0 ]; then
+                echo "$err"
                 fail "Unable to configure release!"
             fi
         else
