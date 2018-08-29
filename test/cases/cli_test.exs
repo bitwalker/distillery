@@ -6,7 +6,7 @@ defmodule Distillery.Test.CliTest do
   alias Mix.Releases.Runtime.Control
   alias ExUnit.ClusteredCase.Node, as: NodeManager
   
-  @fixture_path Path.join([__DIR__, "..", "fixtures"])
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
 
   setup_all do
     :rand.seed(:exs64)
