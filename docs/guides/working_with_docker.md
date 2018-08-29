@@ -1,4 +1,4 @@
-# Working with Docker
+# Deploying with Docker
 
 It is becoming more and more common to deploy containerized applications -
 releases are well suited for these environments as well!
