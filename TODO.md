@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] Add tests for umbrellas/Nerves projects
 - [ ] Explore doing config in same VM and use `:init.restart/0` to apply updated
       arguments and config when booting "for real"
 - [ ] Add documentation for running on Windows
