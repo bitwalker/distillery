@@ -3,16 +3,11 @@ defmodule Distillery.Test.InitTest do
 
   import Distillery.Test.Helpers
 
-  @init_test_app_path Path.join([__DIR__, "fixtures", "init_test_app"])
-  @init_test_rel_path Path.join([__DIR__, "fixtures", "init_test_app", "rel"])
-  @init_test_rel_config_path Path.join([__DIR__, "fixtures", "init_test_app", "rel", "config.exs"])
-
-  @init_test_invalid_config_template_path Path.join([
-                                            __DIR__,
-                                            "fixtures",
-                                            "init_test_app",
-                                            "init_test_config.eex"
-                                          ])
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
+  @init_test_app_path Path.join([@fixtures_path, "init_test_app"])
+  @init_test_rel_path Path.join([@fixtures_path, "init_test_app", "rel"])
+  @init_test_rel_config_path Path.join([@fixtures_path, "init_test_app", "rel", "config.exs"])
+  @init_test_invalid_config_template_path Path.join([@fixtures_path, "init_test_app", "init_test_config.eex"])
   
   setup_all do
     old_dir = File.cwd!()

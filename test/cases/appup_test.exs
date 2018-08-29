@@ -2,11 +2,13 @@ defmodule Distillery.Test.AppupTest do
   use ExUnit.Case
   alias Mix.Releases.Appup
   alias Mix.Releases.Appup.Transform
+  
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
 
-  @v1_path Path.join([__DIR__, "fixtures", "appup_beams", "test-0.1.0"])
-  @v2_path Path.join([__DIR__, "fixtures", "appup_beams", "test-0.2.0"])
-  @v3_path Path.join([__DIR__, "fixtures", "appup_beams", "test-0.3.0"])
-  @appup_path Path.join([__DIR__, "fixtures", "appup_beams", "test-appup"])
+  @v1_path Path.join([@fixtures_path, "appup_beams", "test-0.1.0"])
+  @v2_path Path.join([@fixtures_path, "appup_beams", "test-0.2.0"])
+  @v3_path Path.join([@fixtures_path, "appup_beams", "test-0.3.0"])
+  @appup_path Path.join([@fixtures_path, "appup_beams", "test-appup"])
 
   test "v1 -> v2" do
     # Add ServerB and ServerC gen_servers, update Server to reference ServerB,
@@ -90,6 +92,6 @@ defmodule Distillery.Test.AppupTest do
   test "custom appup can be located given versions" do
     true = Code.append_path(@appup_path)
     assert Appup.locate(:test, "1.0.0", "2.0.0") ==
-      Path.join([@appup_path, "priv", "appups", "1.0.0_to_2.0.0.appup"])
+      Path.expand(Path.join([@appup_path, "priv", "appups", "1.0.0_to_2.0.0.appup"]))
   end
 end

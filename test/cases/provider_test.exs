@@ -3,8 +3,9 @@ defmodule Distillery.Test.ProviderTest do
   
   alias Mix.Releases.Config.Providers
   
-  @umbrella_config_path Path.join([__DIR__, "fixtures", "umbrella_app", "config", "config.exs"])
-  @web_config_path Path.join([__DIR__, "fixtures", "umbrella_app", "apps", "web", "config", "config.exs"])
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
+  @umbrella_config_path Path.join([@fixtures_path, "umbrella_app", "config", "config.exs"])
+  @web_config_path Path.join([@fixtures_path, "umbrella_app", "apps", "web", "config", "config.exs"])
   
   describe "with umbrella app" do
     test "can read config with expected results" do

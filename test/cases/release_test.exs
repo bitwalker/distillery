@@ -3,7 +3,8 @@ defmodule Distillery.Test.ReleaseTest do
 
   import Distillery.Test.Helpers
 
-  @app_path Path.join([__DIR__, "fixtures", "ordered_app"])
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
+  @app_path Path.join([@fixtures_path, "ordered_app"])
   @build_path Path.join([@app_path, "_build"])
   @boot_script Path.join([
                   @build_path,
@@ -17,7 +18,7 @@ defmodule Distillery.Test.ReleaseTest do
 
   setup do
     on_exit fn ->
-      File.rm_rf(@build_path
+      File.rm_rf(@build_path)
     end
   end
 

@@ -25,6 +25,7 @@ defmodule Distillery.Mixfile do
         "coveralls.post": :test,
       ],
       test_coverage: [tool: ExCoveralls],
+      test_paths: ["test/cases"],
       dialyzer_warnings: [
         :error_handling,
         :race_conditions,

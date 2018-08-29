@@ -2,7 +2,8 @@ defmodule Distillery.Test.OverlayTest do
   use ExUnit.Case
   alias Mix.Releases.{Utils, Overlays}
 
-  @output_dir Path.join([__DIR__, "fixtures", "mock_app", "_build", "test", "rel", "mock_app"])
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
+  @output_dir Path.join([@fixtures_path, "mock_app", "_build", "test", "rel", "mock_app"])
 
   setup_all do
     File.mkdir_p!(@output_dir)
@@ -23,7 +24,7 @@ defmodule Distillery.Test.OverlayTest do
     end
 
     test "invalid template file produces error" do
-      file = Path.join([__DIR__, "fixtures", "mock_app", "invalid_tmpl.eex"])
+      file = Path.join([@fixtures_path, "mock_app", "invalid_tmpl.eex"])
       expected = %CompileError{description: "undefined function foo/0", file: file, line: 1}
 
       assert {:error, {:template, ^expected}} =
@@ -31,7 +32,7 @@ defmodule Distillery.Test.OverlayTest do
     end
 
     test "file system errors are handled" do
-      from = Path.join([__DIR__, "fixtures", "mock_app", "nodir"])
+      from = Path.join([@fixtures_path, "mock_app", "nodir"])
       to = "nodir"
       overlay = {:copy, from, to}
 

@@ -3,7 +3,8 @@ defmodule Distillery.Test.ConfigTest do
 
   alias Mix.Releases.{Config, Environment, Release, Profile}
 
-  @standard_app Path.join([__DIR__, "fixtures", "standard_app"])
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
+  @standard_app Path.join([@fixtures_path, "standard_app"])
 
   describe "standard app" do
     test "read!" do
@@ -70,16 +71,22 @@ defmodule Distillery.Test.ConfigTest do
           Mix.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
         end)
 
-      prod_plugin = [{SampleApp.ProdPlugin, [some: :config]}]
-      rel_plugin = [{SampleApp.ReleasePlugin, []}, {SampleApp.AnotherReleasePlugin, []}]
+      rel_plugins = [
+        {SampleApp.EnvLoggerPlugin, []},
+      ]
+      prod_plugins = [
+        {SampleApp.EnvLoggerPlugin, [name: ProdPlugin]}
+      ]
 
       assert %Config{
-               environments: %{
-                 dev: %Environment{profile: %Profile{plugins: []}},
-                 prod: %Environment{profile: %Profile{plugins: ^prod_plugin}}
-               },
-               releases: %{standard_app: %Release{profile: %Profile{plugins: ^rel_plugin}}}
-             } = config
+        environments: %{
+          dev: %Environment{profile: %Profile{plugins: []}},
+          prod: %Environment{profile: %Profile{plugins: ^prod_plugins}}
+        },
+        releases: %{
+          standard_app: %Release{profile: %Profile{plugins: ^rel_plugins}}
+        }
+      } = config
     end
   end
 end

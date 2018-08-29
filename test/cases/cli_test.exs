@@ -4,8 +4,9 @@ defmodule Distillery.Test.CliTest do
   import ExUnit.CaptureIO
 
   alias Mix.Releases.Runtime.Control
-  
   alias ExUnit.ClusteredCase.Node, as: NodeManager
+  
+  @fixture_path Path.join([__DIR__, "..", "fixtures"])
 
   setup_all do
     :rand.seed(:exs64)
@@ -76,7 +77,7 @@ defmodule Distillery.Test.CliTest do
 
     test "eval --file" do
       assert is_success(fn ->
-        Control.main(["eval", "--file", Path.join([__DIR__, "fixtures", "files", "eval_file_example.exs"]) |> Path.expand])
+        Control.main(["eval", "--file", Path.join([@fixtures_path, "files", "eval_file_example.exs"]) |> Path.expand])
       end) =~ "ok from primary@127.0.0.1\n"
     end
 
@@ -94,7 +95,7 @@ defmodule Distillery.Test.CliTest do
 
     test "rpc --file", %{node: peer} do
       assert is_success(fn ->
-        path = Path.join([__DIR__, "fixtures", "files", "eval_file_example.exs"]) |> Path.expand
+        path = Path.join([@fixtures_path, "files", "eval_file_example.exs"]) |> Path.expand
         Control.main(["rpc", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}", "--file", path])
       end) =~ ~r/ok from #{peer}\n/
     end
@@ -275,7 +276,7 @@ defmodule Distillery.Test.CliTest do
     test "with a simple config is applied successfully", %{node: peer} do
       is_success(fn ->
         assert :undefined = :rpc.call(peer, :application, :get_env, [:distillery, :simple])
-        path = Path.join([__DIR__, "fixtures", "files", "simple.sys.config"])
+        path = Path.join([@fixtures_path, "files", "simple.sys.config"])
         Control.main(["reload_config", "--name", "#{peer}", "--cookie", "#{Node.get_cookie}", "--sysconfig", path])
         assert {:ok, :success} = :rpc.call(peer, :application, :get_env, [:distillery, :simple])
       end)
@@ -319,7 +320,7 @@ defmodule Distillery.Test.CliTest do
 
     use_heart? = Keyword.get(opts, :heart, false)
     # Get path for app's beam files
-    project_path = Path.join([__DIR__, "fixtures", "#{app}"])
+    project_path = Path.join([@fixtures_path, "#{app}"])
     ebin_path = Path.join([project_path, "_build", "dev", "lib", "#{app}", "ebin"])
     # Compile app
     {_, 0} = System.cmd "mix", ["compile"], env: [{"MIX_ENV", "dev"}], cd: project_path

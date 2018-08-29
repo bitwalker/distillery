@@ -13,6 +13,7 @@ defmodule Web.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix, :gettext] ++ Mix.compilers,
       start_permanent: Mix.env == :prod,
+      test_paths: [],
       deps: deps()
     ]
   end

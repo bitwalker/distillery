@@ -7,11 +7,13 @@ defmodule Distillery.Test.IntegrationTest do
   @moduletag integration: true
   @moduletag timeout: 60_000 * 5
 
-  @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
+  @fixtures_path Path.join([__DIR__, "..", "fixtures"])
+
+  @standard_app_path Path.join([@fixtures_path, "standard_app"])
   @standard_build_path Path.join([@standard_app_path, "_build", "prod"])
   @standard_output_path Path.join([@standard_build_path, "rel", "standard_app"])
   
-  @umbrella_app_path Path.join([__DIR__, "fixtures", "umbrella_app"])
+  @umbrella_app_path Path.join([@fixtures_path, "umbrella_app"])
   @umbrella_build_path Path.join([@umbrella_app_path, "_build", "prod"])
   @umbrella_output_path Path.join([@umbrella_build_path, "rel", "umbrella"])
   

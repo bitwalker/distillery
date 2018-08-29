@@ -5,6 +5,7 @@ defmodule DistilleryUmbrellaTest.MixProject do
     [
       apps_path: "apps",
       start_permanent: Mix.env() == :prod,
+      test_paths: [],
       deps: deps()
     ]
   end
