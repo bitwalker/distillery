@@ -92,5 +92,18 @@ information as they are big quality of life improvements!
   * PID file creation when `-kernel pidfile "path"` is given in `vm.args`, or
     `PIDFILE=path` is exported in the system environment.
 
+### Deprecations
+
+Other than the deprecations already mentioned, there are the following:
+
+  * The `--verbosity` flag no longer exists, use `--silent`, `--quiet` or `--verbose`,
+    if you want to adjust the default output. Errors will always be output in all of
+    those modes, but `--quiet` will also print warnings.
+  * The `:executable` option has changed in `rel/config.exs`, rather than either `true` or
+    `false`, it's either `[enabled: boolean, transient: boolean]` or `false`. In other words,
+    `:executable` reflects the executable options, rather than on/off. As a result, the `:exec_opts`
+    option is deprecated, and is merged into `:executable`'s options list. You can omit `:transient`
+    from `:executable`, and it will be assumed to be false, as was the default behavior previously.
+
 If you encounter an issue that is not covered here or in the documentation,
 please open an bug on the issue tracker!
