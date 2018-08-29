@@ -175,9 +175,21 @@ _configure_node() {
     # So here we check for @ and add @hostname if missing
     case $NAME in
         *@*)
-            # Nothing to do
+            if [ "$NAME_TYPE" = "-name" ]; then
+                if [[ ! "$NAME" =~ ^[^@]+@[^\.]+\..*$ ]]; then
+                    # -name was given, but the hostname is not fully qualified
+                    fail "Failed setting -name! The hostname in '$NAME' is not fully qualified"
+                fi
+            fi
             ;;
         *)
+            HOSTNAME="$(get_hostname)"
+            if [ "$NAME_TYPE" = "-name" ]; then
+                if [[ ! "$HOSTNAME" =~ ^[^\.]+\..*$ ]]; then
+                    # If the hostname is not fully qualified, change the name type
+                    NAME_TYPE="-sname"
+                fi
+            fi
             NAME=$NAME@$(get_hostname)
             ;;
     esac

@@ -886,16 +886,13 @@ defmodule Mix.Releases.Runtime.Control do
   @doc false
   def start_distribution!(name, cookie) do
     {peer, name, type} =
-      case Regex.split(~r/@/, name) do
-        [sname] ->
-          {String.to_atom(sname), String.to_atom("#{sname}_maint_"), :shortnames}
-
-        [sname, host] ->
-          {String.to_atom("#{sname}@#{host}"), String.to_atom("#{sname}_maint_@#{host}"),
-           :longnames}
-
-        _parts ->
-          Console.error("Invalid --name value: #{name}")
+      case name_components(name) do
+        %{name: name, full: full_name, host: host, type: type} ->
+          {full_name, suffix_name(name, host), type}
+        %{name: name, full: full_name, type: type} ->
+          {full_name, suffix_name(name), type}
+        {:error, reason} ->
+          Console.error("Invalid value for '--name': #{reason}")
       end
 
     start_epmd()
@@ -915,6 +912,30 @@ defmodule Mix.Releases.Runtime.Control do
 
     {:ok, peer, name, type}
   end
+  
+  defp name_components(name) when is_binary(name) do
+    full_name = String.to_atom(name)
+    case String.split(name, "@") do
+      [sname] ->
+        %{name: sname, full: full_name, type: :shortnames}
+      [sname, host] ->
+        %{name: sname, full: full_name, host: host, type: hostname_type(host)}
+      _parts ->
+        {:error, "invalid name `#{name}`: must of the form 'name', 'name@host', or 'name@fqdn'"}
+    end
+  end
+  
+  defp hostname_type(host) do
+    case String.split(host, ".", parts: 2) do
+      [^host] ->
+        :shortnames
+      _ ->
+        :longnames
+    end
+  end
+
+  defp suffix_name(name), do: String.to_atom("#{name}_maint_")
+  defp suffix_name(name, host), do: String.to_atom("#{name}_maint_@#{host}")
 
   ## Helpers
 
