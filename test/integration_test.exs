@@ -10,11 +10,31 @@ defmodule Distillery.Test.IntegrationTest do
   @standard_app_path Path.join([__DIR__, "fixtures", "standard_app"])
   @standard_build_path Path.join([@standard_app_path, "_build", "prod"])
   @standard_output_path Path.join([@standard_build_path, "rel", "standard_app"])
+  
+  @umbrella_app_path Path.join([__DIR__, "fixtures", "umbrella_app"])
+  @umbrella_build_path Path.join([@umbrella_app_path, "_build", "prod"])
+  @umbrella_output_path Path.join([@umbrella_build_path, "rel", "umbrella"])
+  
+  defmacrop with_standard_app(do: body) do
+    quote do
+      with_app @standard_app_path do
+        unquote(body)
+      end
+    end
+  end
+  
+  defmacrop with_umbrella_app(do: body) do
+    quote do
+      with_app @umbrella_app_path do
+        unquote(body)
+      end
+    end
+  end
 
-  defmacrop with_standard_app(body) do
+  defmacrop with_app(app_path, do: body) do
     quote do
       old_dir = File.cwd!()
-      File.cd!(@standard_app_path)
+      File.cd!(unquote(app_path))
       try do
         unquote(body)
       after
@@ -24,18 +44,22 @@ defmodule Distillery.Test.IntegrationTest do
   end
   
   setup_all do
-    with_standard_app do
-      {:ok, _} = File.rm_rf(Path.join(@standard_app_path, "_build"))
-      _ = File.rm(Path.join(@standard_app_path, "mix.lock"))
-      {:ok, _} = mix("deps.get")
-      {:ok, _} = mix("compile")
+    for app_path <- [@standard_app_path, @umbrella_app_path] do
+      with_app app_path do
+        {:ok, _} = File.rm_rf(Path.join(app_path, "_build"))
+        _ = File.rm(Path.join(app_path, "mix.lock"))
+        {:ok, _} = mix("deps.get")
+        {:ok, _} = mix("compile")
+      end
     end
     :ok
   end
   
   setup do
-    with_standard_app do
-      reset_changes!(@standard_app_path)
+    for app_path <- [@standard_app_path, @umbrella_app_path] do
+      with_app app_path do
+        reset_changes!(app_path)
+      end
     end
     :ok
   end
@@ -250,6 +274,33 @@ defmodule Distillery.Test.IntegrationTest do
             reraise e, System.stacktrace()
         after
           File.rm_rf!(tmpdir)
+        end
+      end
+    end
+  end
+  
+  describe "umbrella application" do
+    test "can build umbrella and deploy it - dev" do
+      with_umbrella_app do
+        assert {:ok, output} = build_release(env: :dev, no_tar: true)
+        
+        bin = Path.join([@umbrella_output_path, "bin", "umbrella"])
+        
+        try do
+          # Can start
+          assert {:ok, _} = release_cmd(bin, "start")
+          assert :ok = wait_for_app(bin)
+          # We should be able to execute an HTTP request against the API
+          url = 'http://localhost:4000/healthz'
+          headers = [{'accepts', 'application/json'}, {'content-type', 'application/json'}]
+          opts = [body_format: :binary, full_result: false]
+          assert {:ok, {200, _}} = :httpc.request(:get, {url, headers}, [], opts)
+          # Can stop
+          assert {:ok, _} = release_cmd(bin, "stop")
+        rescue
+          e ->
+            release_cmd(bin, "stop")
+            reraise e, System.stacktrace()
         end
       end
     end
