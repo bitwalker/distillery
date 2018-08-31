@@ -193,7 +193,7 @@ defmodule Mix.Releases.Release do
     if Keyword.get(e, :enabled, false) do
       Path.join([bin_path(r), "#{r.name}.run"])
     else
-      archive_path(%__MODULE__{profile: %{p | executable: false}})
+      archive_path(%__MODULE__{r | profile: %{p | executable: false}})
     end
   end
 
