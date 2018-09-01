@@ -149,7 +149,7 @@ defmodule Mix.Releases.Archiver do
       |> Archive.add(Path.join([output_dir, "releases", version, "config.boot"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "config.script"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.sh"]))
-      |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.bat"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.ps1"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.boot"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.script"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "#{name}.rel"]))
