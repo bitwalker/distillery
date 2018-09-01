@@ -252,7 +252,7 @@ defmodule Mix.Releases.Assembler do
       {Path.join(rel_dir, "#{name}.sh"), {:template, :release_rc_main, template_params}, 0o777},
       {Path.join(bin_dir, "#{name}.bat"), {:template, :release_rc_win_exec, template_params},
        0o777},
-      {Path.join(rel_dir, "#{name}.bat"), {:template, :release_rc_win_main, template_params},
+      {Path.join(rel_dir, "#{name}.ps1"), {:template, "release_rc_win_main.ps1", template_params},
        0o777}
     ]
 

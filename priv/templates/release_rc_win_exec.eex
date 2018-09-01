@@ -7,5 +7,5 @@ for %%A in ("%script_dir%\..") do (
 )
 set rel_name=<%= release_name %>
 set rel_vsn=<%= release_version %>
-set boot_script=%release_root_dir%\releases\%rel_vsn%\%rel_name%.bat
-%boot_script% %*
+set boot_script=%release_root_dir%\releases\%rel_vsn%\%rel_name%.ps1
+powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command "& "%boot_script%" @args" %*
