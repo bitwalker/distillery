@@ -47,12 +47,12 @@ $service_args = $service_argv -join " "
 $name_type = ("-{0}" -f $Env:NAME_TYPE)
 
 $argv = @("add", $service_name)
-$argv += @("-comment", $desc)
+$argv += @("-comment", (ensure-quoted $desc))
 $argv += @($name_type, $Env:NAME)
 $argv += @("-workdir", $Env:RELEASE_ROOT_DIR)
 $argv += @("-machine", $start_erl)
 $argv += @("-debugtype", "new")
-$argv += @("-stopaction", "init:stop().")
-$argv += @("-args", $service_args)
+$argv += @("-stopaction", (ensure-quoted "init:stop()."))
+$argv += @("-args", (ensure-quoted $service_args))
 
 & $erlsrv @argv
