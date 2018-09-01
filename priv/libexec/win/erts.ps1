@@ -3,7 +3,7 @@ function Get-Release-Apps {
     # This pattern extracts the current release resource definition
     # RELEASES can contain one or more such definitions
     $pattern = "{{release,[^,]*,`"{0}`",[^,]*,[^\]]*,[^po]*(permanent|old)}}" -f $vsn
-    $content = get-content -Raw -Path (join-path $Env:RELEASE_ROOT_DIR releases RELEASES)
+    $content = get-content -Raw -Path (join-path $Env:RELEASE_ROOT_DIR (join-path releases RELEASES))
     $release = select-string -Pattern $pattern -InputObject $content -AllMatches | foreach { $_.Matches } | foreach { $_.Value }
     # This extracts the list of applications from the release resource
     $applications = select-string -Pattern "\[([^\]]*)\]" -InputObject $release -AllMatches | foreach { $_.Matches } | foreach { $_.Groups[1] } | foreach { $_.Value }
@@ -14,6 +14,7 @@ function Get-Release-Apps {
 
 function Format-Code-Path {
     param ($App = $(throw "You must provide App to Format-Code-Path!"))
+
     $erts_dir = (join-path $Env:ERTS_LIB_DIR $App["name"])
     $lib_dir = (join-path $Env:RELEASE_ROOT_DIR lib ("{0}-{1}" -f $App["name"],$App["vsn"]))
     if (test-path $erts_dir -PathType Container) {
@@ -26,11 +27,7 @@ function Format-Code-Path {
 }
 
 function Get-Code-Paths {
-    if ($Env:ERTS_LIB_DIR -eq $null) {
-        @()
-        return
-    }
-    get-release-apps | foreach { format-code-path $_ }
+    get-release-apps | foreach { format-code-path -App $_ }
 }
 
 # Echoes the path to the current ERTS binaries, e.g. erl
@@ -65,48 +62,52 @@ function Erl-Args {
     if ($Env:SYS_CONFIG_PATH -ne $null) {
         $config = @("-config", $Env:SYS_CONFIG_PATH)
     }
-    $codepaths = get-code-paths
+    if ($erts_included -eq $true) {
+        $Env:ERTS_LIB_DIR = $libs
+        $codepaths = @("-pa")
+    	$codepaths += get-code-paths
+    } else {
+        $codepaths = @()
+    }
     $extra_codepaths = @()
+    if ($Env:CONSOLIDATED_DIR -ne $null) {
+        $extra_codepaths += @("-pa", $Env:CONSOLIDATED_DIR)
+    }
     if ($Env:EXTRA_CODE_PATHS -ne $null) {
-        $extra_codepaths = @("-pa", $Env:EXTRA_CODE_PATHS)
+        $extra_codepaths += @("-pa", $Env:EXTRA_CODE_PATHS)
     }
     $base_args = @()
     if ($erts_included -and $boot_provided) {
         # Bundled ERTS with -boot set
         $base_args += @("-boot_var", "ERTS_LIB_DIR", $libs)
         $base_args += $config
-        $base_args += @("-pa", $Env:CONSOLIDATED_DIR)
+        $base_args += $codepaths
         $base_args += $extra_codepaths
     } elseif ($erts_included) {
         # Bundled ERTS, using default boot script 'start_clean'
         # TODO: You forgot CONSOLIDATED_PATH here in the shell script
-        $boot = (join-path $Env:RELEASE_ROOT_DIR bin start_clean)
+        $boot = (join-path $Env:RELEASE_ROOT_DIR (join-path bin start_clean))
         $base_args += @("-boot_var", "ERTS_LIB_DIR", $libs)
         $base_args += @("-boot", $boot)
-        if ($Env:CONSOLIDATED_DIR -ne $null) {
-            $base_args += @("-pa", $Env:CONSOLIDATED_DIR)
-        }
         $base_args += $config
+        $base_args += $codepaths
         $base_args += $extra_codepaths
     } elseif ($boot_provided -eq $false) {
         # Host ERTS with -boot not set
         $base_args += @("-boot", "start_clean")
         $base_args += $config
         $base_args += $codepaths
-        $base_args += @("-pa", $Env:CONSOLIDATED_DIR)
         $base_args += $extra_codepaths
     } elseif ($Env:ERTS_LIB_DIR -eq $null) {
         # Host ERTS, -boot set, no ERTS_LIB_DIR available
         $base_args += $config
         $base_args += $codepaths
-        $base_args += @("-pa", $Env:CONSOLIDATED_DIR)
         $base_args += $extra_codepaths
     } else {
         # Host ERTS, -boot set, ERTS_LIB_DIR available
         $base_args += @("-boot_var", "ERTS_LIB_DIR", $libs)
         $base_args += $config
         $base_args += $codepaths
-        $base_args += @("-pa", $Env:CONSOLIDATED_DIR)
         $base_args += $extra_codepaths
     }
     $base_args
@@ -118,7 +119,11 @@ function erl {
     if (($bin -eq $null) -or ($bin -eq "")) {
         log-error "Erlang runtime not found. If Erlang is installed, ensure it is in your PATH"
     }
-    $erl = (join-path $bin erl)
+    if (($IsWindows -eq $true) -or (($IsWindows -eq $null) -and ($env:OS -like "Windows*"))) {
+        $erl = (join-path $bin "erl.exe")
+    } else {
+        $erl = (join-path $bin erl)
+    }
     $base_args = erl-args @args
 
     & "$erl" @base_args @args
@@ -313,7 +318,7 @@ function Escript {
 
 # Test erl to make sure it works, extract key info about runtime while doing so
 $output = erl -noshell -eval "io:format(\`"~s~n~s~n\`", [code:root_dir(), erlang:system_info(version)])." -s erlang halt
-if ($LastExitCode -ne 0) {
+if (($LastExitCode -ne 0) -or (!$?)) {
     log-error "Unusable Erlang runtime system! This is likely due to being compiled for another system than the host is running"
 }
 $rootdir, $erts_vsn = $output
@@ -329,7 +334,7 @@ if ($Env:ERTS_VSN -eq $null) {
 }
 $Env:ERTS_DIR = (join-path $rootdir ("erts-{0}" -f $Env:ERTS_VSN))
 $Env:BINDIR = (join-path $Env:ERTS_DIR bin)
-$Env:ERTS_LIB_DIR = (resolve-path (join-path $Env:ERTS_DIR ".." lib))
+$Env:ERTS_LIB_DIR = (resolve-path (join-path $Env:ERTS_DIR (join-path ".." lib)))
 $Env:LD_LIBRARY_PATH = ("{0}:{1}" -f $Env:ERTS_LIB_DIR,$Env:LD_LIBRARY_PATH)
 $Env:EMU = "beam"
 $Env:PROGNAME = "erl"

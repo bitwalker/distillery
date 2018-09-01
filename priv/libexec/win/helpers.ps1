@@ -1,6 +1,6 @@
 # Ensures the current node is running, otherwise fails
 function Require-Live-Node {
-    if (-not ping) {
+    if (-not (ping)) {
         log-error ("Node {0} is not running!" -f $Env:NAME)
     }
 }
@@ -10,7 +10,7 @@ function Ping {
     $argv = @()
     $argv += "--name=$Env:NAME"
     $argv += "--cookie=$Env:COOKIE"
-    $argv += @args
+    $argv += $args
     release-ctl ping @argv | out-null
     if ($LastExitCode -ne 0) {
         return $false

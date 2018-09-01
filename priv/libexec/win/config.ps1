@@ -103,13 +103,13 @@ function Configure-Release {
         # This will replace the config at SYS_CONFIG_PATH with a fully provisioned config
         # Set the logger level to warning to prevent unnecessary output to stdio
         if ($Env:DEBUG_BOOT -eq $null) {
-            erl -noshell -config $Env:SYS_CONFIG_PATH -boot (join-path $Env:REL_DIR "config") -s erlang halt | out-null
-            if (!$?) {
+            erl -noshell -boot (join-path $Env:REL_DIR "config") -s erlang halt | out-null
+            if (($LastExitCode -ne 0 ) -or (!$?)) {
                 log-error "Unable to configure release!"
             }
         } else {
-            erl -noshell -config $Env:SYS_CONFIG_PATH -boot (join-path $Env:REL_DIR "config") -s erlang halt
-            if (!$?) {
+            erl -noshell -boot (join-path $Env:REL_DIR "config") -s erlang halt
+            if (($LastExitCode -ne 0 ) -or (!$?)) {
                 log-error "Unable to configure release!"
             }
         }
