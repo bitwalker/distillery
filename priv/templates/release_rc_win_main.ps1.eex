@@ -87,7 +87,7 @@ if ($Env:RELEASE_MUTABLE_DIR -eq $null) {
 # be stored in. defaults to /log in the release root directory
 $Env:RUNNER_LOG_DIR = (join-path $Env:RELEASE_MUTABLE_DIR "log")
 # Path to start_erl.data
-$Env:START_ERL_DATA = (join-path $release_root_dir "releases" "start_erl.data")
+$Env:START_ERL_DATA = (join-path $release_root_dir (join-path "releases" "start_erl.data"))
 # Directory containing lifecycle hook scripts
 $Env:HOOKS_DIR = (join-path $Env:REL_DIR "hooks")
 # Allow override of where to read configuration from
@@ -100,14 +100,14 @@ if ($Env:RELEASE_CONFIG_DIR -eq $null) {
 if (($Env:RELEASE_READ_ONLY -eq $null) -and (-not (test-path $Env:RELEASE_MUTABLE_DIR -PathType Container))) {
     new-item $Env:RELEASE_MUTABLE_DIR -ItemType Directory -ErrorAction SilentlyContinue
     $warning_msg = "Files in this directory are regenerated frequently, edits will be lost"
-    out-file -FilePath (join-path $Env:RELEASE_MUTABLE_DIR "WARNING_README") -InputObject $warning_msg
+    set-content -Path (join-path $Env:RELEASE_MUTABLE_DIR "WARNING_README") -InputObject $warning_msg
 }
 if (($Env:RELEASE_READ_ONLY -eq $null) -and (-not (test-path $Env:RUNNER_LOG_DIR -PathType Container))) {
     new-item $Env:RUNNER_LOG_DIR -ItemType Directory -ErrorAction SilentlyContinue
 }
 
 # The location of builtin command scripts
-$libexec_dir = (join-path $script_dir libexec win)
+$libexec_dir = (join-path $script_dir (join-path libexec win))
 
 . (join-path $libexec_dir "logger.ps1")
 . (join-path $libexec_dir "erts.ps1")
@@ -131,8 +131,8 @@ if ($args.Length -gt 0) {
 $Env:DISTILLERY_TASK = $command_name
 
 # All commands are loaded from the currently active release
-$command_dir = join-path $script_dir libexec commands win
-$user_command_dir = join-path $script_dir commands win
+$command_dir = (join-path $script_dir (join-path libexec (join-path commands win)))
+$user_command_dir = (join-path $script_dir (join-path commands win))
 if ($command_name -eq $null) {
     $command_name = "help"
 }

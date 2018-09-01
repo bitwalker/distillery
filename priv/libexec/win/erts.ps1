@@ -16,7 +16,7 @@ function Format-Code-Path {
     param ($App = $(throw "You must provide App to Format-Code-Path!"))
 
     $erts_dir = (join-path $Env:ERTS_LIB_DIR $App["name"])
-    $lib_dir = (join-path $Env:RELEASE_ROOT_DIR lib ("{0}-{1}" -f $App["name"],$App["vsn"]))
+    $lib_dir = (join-path $Env:RELEASE_ROOT_DIR (join-path lib ("{0}-{1}" -f $App["name"],$App["vsn"])))
     if (test-path $erts_dir -PathType Container) {
         join-path $erts_dir ebin
     } elseif (test-path $lib_dir -PathType Container) {
@@ -328,7 +328,7 @@ $Env:ROOTDIR = $rootdir
 if ($Env:ERTS_VSN -eq $null) {
     # Update start_erl.data
     $Env:ERTS_VSN = $erts_vsn
-    out-file -FilePath $Env:START_ERL_DATA -InputObject ("{0} {1}" -f $erts_vsn,$Env:REL_VSN)
+    set-content -Path $Env:START_ERL_DATA -InputObject ("{0} {1}" -f $erts_vsn,$Env:REL_VSN)
 } else {
     $Env:ERTS_VSN = $erts_vsn
 }

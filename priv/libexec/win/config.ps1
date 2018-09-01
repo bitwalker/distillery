@@ -50,8 +50,8 @@ function Configure-Release {
         if ($Env:RELEASE_READ_ONLY -eq $null) {
             $Env:DEST_VMARGS_PATH = (join-path $Env:RELEASE_MUTABLE_DIR "vm.args")
             $header = "#### Generated - edit/create $Env:RELEASE_CONFIG_DIR/vm.args instead."
-            $header | out-file -FilePath $Env:DEST_VMARGS_PATH
-            get-content -Path $Env:SRC_VMARGS_PATH -Raw | out-file -FilePath $Env:DEST_VMARGS_PATH -Append
+            $header | set-content -Path $Env:DEST_VMARGS_PATH
+            get-content -Path $Env:SRC_VMARGS_PATH -Raw | add-content -Path $Env:DEST_VMARGS_PATH
         } else {
             $Env:DEST_VMARGS_PATH = $Env:SRC_VMARGS_PATH
         }
@@ -82,8 +82,8 @@ function Configure-Release {
         if ($Env:RELEASE_READ_ONLY -eq $null) {
             $Env:DEST_SYS_CONFIG_PATH = (join-path $Env:RELEASE_MUTABLE_DIR "sys.config")
             $header = "%% Generated - edit/create $Env:RELEASE_CONFIG_DIR/sys.config instead."
-            $header | out-file -FilePath $Env:DEST_SYS_CONFIG_PATH
-            get-content -Path $Env:SRC_SYS_CONFIG_PATH -Raw | out-file -FilePath $Env:DEST_SYS_CONFIG_PATH -Append
+            $header | set-content -Path $Env:DEST_SYS_CONFIG_PATH
+            get-content -Path $Env:SRC_SYS_CONFIG_PATH -Raw | add-content -Path $Env:DEST_SYS_CONFIG_PATH
         } else {
             $Env:DEST_SYS_CONFIG_PATH = $Env:SRC_SYS_CONFIG_PATH
         }
@@ -128,6 +128,7 @@ function Configure-Release {
 # Do a textual replacement of ${VAR} occurrences in $1 and pipe to $2
 function Replace-Os-Vars() {
     param($Path = $(throw "You must provide -Path to Replace-Os-Vars"))
+
     $backup = ("{0}.bak" -f $Path)
     # Copy the source file to preserve permissions
     copy-item -Path $Path -Destination $backup -Force
@@ -144,7 +145,7 @@ function Replace-Os-Vars() {
         # Output the updated line
         $line
     }
-    $replaced | out-file -FilePath $backup
+    $replaced | set-content -Path $backup
     # Replace the original file
     move-item -Path $backup -Destination $Path -Force
 }

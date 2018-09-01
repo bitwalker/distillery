@@ -9,7 +9,7 @@ $werl = (join-path $bin werl)
 
 $start_clean = "start_clean"
 if ($bin.StartsWith($Env:RELEASE_ROOT_DIR)) {
-    $start_clean = (join-path $Env:RELEASE_ROOT_DIR "bin" "start_clean")
+    $start_clean = (join-path $Env:RELEASE_ROOT_DIR (join-path "bin" "start_clean"))
 }
 
 $argv = @("-hidden", "-noshell")
