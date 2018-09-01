@@ -1,5 +1,7 @@
 ## Install the release as a Windows service via erlsrv
 
+#Requires -RunAsAdministrator
+
 require-cookie
 
 # With releases, service name must be '<nodename>_<release vsn>' per the docs
@@ -16,17 +18,31 @@ $erl_opts = string-to-argv -String $Env:ERL_OPTS
 
 $service_argv = @()
 $service_argv += $erl_opts
+$service_argv += @("-boot", (join-path $Env:REL_DIR $Env:REL_NAME))
+$service_argv += @("-boot_var", "ERTS_LIB_DIR", $Env:ERTS_LIB_DIR)
 $service_argv += @("-config", $Env:SYS_CONFIG_PATH)
 $service_argv += @("-setcookie", $Env:COOKIE)
-$service_argv += @("-pa", $Env:CONSOLIDATED_DIR)
-$service_argv += "-pa"
+# Add code paths
 $codepaths = get-code-paths
+$service_argv += "-pa"
 $service_argv += $codepaths
+$service_argv += @("-pa", $Env:CONSOLIDATED_DIR)
+# Add start_erl opts, delimited by ++
 $service_argv += "++"
 $service_argv += @("-rootdir", $Env:RELEASE_ROOT_DIR)
 $service_argv += @("-reldir", (join-path $Env:RELEASE_ROOT_DIR "releases"))
 
-$service_args = ($service_argv | foreach { ("`"{0}`"" -f $_) }) -join " "
+$service_argv = $service_argv | foreach { 
+    if ($_.StartsWith("-") -or $_.StartsWith("+")) {
+        # Don't quote flags
+        $_
+    } else {
+        ensure-quoted $_
+    }
+}
+
+# Convert argv into a string for -args
+$service_args = $service_argv -join " "
 
 $name_type = ("-{0}" -f $Env:NAME_TYPE)
 

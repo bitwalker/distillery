@@ -1,5 +1,8 @@
 ## Starts the Windows service created by 'install'
-$service_name = ("{0}_{1}" -f $Env:REL_NAME,$Env:REL_VSN)
+
+# With releases, service name must be '<nodename>_<release vsn>' per the docs
+$nodename = $Env:NAME -replace "@.+$",""
+$service_name = ("{0}_{1}" -f $nodename,$Env:REL_VSN)
 
 $bin = whereis-erts-bin
 $erlsrv = (join-path $bin "erlsrv.exe")
