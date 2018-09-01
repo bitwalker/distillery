@@ -6,13 +6,13 @@ if ($Env:DEBUG_BOOT -ne $null) {
 # Given a string, ensures the string is quoted
 function Ensure-Quoted {
     param($String = $(throw "You must provide -String to EnsureQuoted"))
-
+    
     if ($String -match "^`".*`"$") {
         # Already quoted
         $String
     } else {
         # Escape quotes, except when already escaped
-        $escaped = $String -replace '(?<![\\])"','\"'
+        $escaped = $String -replace '(?<![\\])"','\"' 
         # Then quote the entire argument
         "`"{0}`"" -f $escaped
     }
@@ -77,6 +77,8 @@ $Env:RELEASE_ROOT_DIR = $release_root_dir
 $Env:REL_DIR = $rel_dir
 # The lib directory for this release
 $Env:REL_LIB_DIR = (join-path $release_root_dir "lib")
+# The location of consolidated protocols
+$Env:CONSOLIDATED_DIR = (join-path $release_root_dir (join-path ("{0}-{1}" -f $rel_name,$rel_vsn) "consolidated"))
 # The location of generated files and other mutable state
 if ($Env:RELEASE_MUTABLE_DIR -eq $null) {
     $Env:RELEASE_MUTABLE_DIR = (join-path $release_root_dir "var")
