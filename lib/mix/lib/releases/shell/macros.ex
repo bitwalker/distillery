@@ -64,7 +64,7 @@ defmodule Mix.Releases.Shell.Macros do
 
       # Map log levels to a default color
       defp level_to_color(level) do
-        Map.get(@colors, level, IO.ANSI.normal())
+        Map.get(@colors, level, :normal)
       end
 
       # Compare log levels

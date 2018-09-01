@@ -8,9 +8,9 @@ defmodule Mix.Releases.Shell do
   # The order of these levels is from least important to most important
   # When comparing log levels with `gte`, this ordering is what determines their total ordering
   deflevel(:debug, prefix: "==> ", color: :cyan)
-  deflevel(:info, prefix: "==> ", color: [IO.ANSI.bright(), IO.ANSI.cyan()])
+  deflevel(:info, prefix: "==> ", color: [:bright, :cyan])
   deflevel(:notice, color: :yellow)
-  deflevel(:success, prefix: "==> ", color: [IO.ANSI.bright(), IO.ANSI.green()])
+  deflevel(:success, prefix: "==> ", color: [:bright, :green])
   deflevel(:warn, prefix: "==> ", color: :yellow, error: :warnings_as_errors)
   deflevel(:error, prefix: "==> ", color: :red)
 
@@ -50,9 +50,9 @@ defmodule Mix.Releases.Shell do
   """
   @spec confirm?(String.t(), String.t(), Regex.t()) :: boolean
   def confirm?(message, prompt, answer_pattern) do
-    IO.puts(IO.ANSI.yellow())
+    IO.puts(IO.ANSI.format([:yellow]))
     answer = IO.gets("#{message} #{prompt}") |> String.trim_trailing("\n")
-    IO.puts(IO.ANSI.reset())
+    IO.puts(IO.ANSI.format([:reset]))
     answer =~ answer_pattern
   end
 
@@ -86,17 +86,5 @@ defmodule Mix.Releases.Shell do
   @doc """
   Wraps a message in the given color
   """
-  def colorf(message, color), do: IO.ANSI.format([to_ansi(color), message, IO.ANSI.reset()])
-
-  # Map shorthand atoms to ANSI escapes
-  defp to_ansi(:cyan), do: IO.ANSI.cyan()
-  defp to_ansi(:green), do: IO.ANSI.green()
-  defp to_ansi(:yellow), do: IO.ANSI.yellow()
-  defp to_ansi(:red), do: IO.ANSI.red()
-  defp to_ansi(:magenta), do: IO.ANSI.magenta()
-  defp to_ansi(:blue), do: IO.ANSI.blue()
-  defp to_ansi(:normal), do: IO.ANSI.normal()
-  defp to_ansi(:white), do: IO.ANSI.white()
-  # For when we've already mapped the color
-  defp to_ansi(c) when not is_atom(c), do: c
+  def colorf(message, color), do: IO.ANSI.format([color, message, :reset])
 end
