@@ -142,6 +142,7 @@ defmodule Mix.Releases.Archiver do
       |> Archive.add(Path.join([output_dir, "releases", "RELEASES"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "vm.args"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "sys.config"]))
+      |> Archive.add(Path.join([output_dir, "releases", version, "start.boot"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "start_clean.boot"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "start_clean.script"]))
       |> Archive.add(Path.join([output_dir, "releases", version, "no_dot_erlang.boot"]))

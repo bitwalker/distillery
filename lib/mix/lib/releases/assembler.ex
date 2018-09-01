@@ -793,6 +793,7 @@ defmodule Mix.Releases.Assembler do
       bin_dir = Path.join(output_dir, "bin")
 
       with :ok <- BootScript.write(app_boot),
+      with :ok <- BootScript.write(app_boot, :start),
            :ok <- BootScript.write(clean_boot, :start_clean),
            :ok <- BootScript.write(clean_boot, :no_dot_erlang),
            :ok <- BootScript.write(config_boot, :config),

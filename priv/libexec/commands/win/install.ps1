@@ -18,7 +18,6 @@ $erl_opts = string-to-argv -String $Env:ERL_OPTS
 
 $service_argv = @()
 $service_argv += $erl_opts
-$service_argv += @("-boot", (join-path $Env:REL_DIR $Env:REL_NAME))
 $service_argv += @("-boot_var", "ERTS_LIB_DIR", $Env:ERTS_LIB_DIR)
 $service_argv += @("-config", $Env:SYS_CONFIG_PATH)
 $service_argv += @("-setcookie", $Env:COOKIE)
@@ -29,6 +28,7 @@ $service_argv += $codepaths
 $service_argv += @("-pa", $Env:CONSOLIDATED_DIR)
 # Add start_erl opts, delimited by ++
 $service_argv += "++"
+$service_argv += "-noconfig"
 $service_argv += @("-rootdir", $Env:RELEASE_ROOT_DIR)
 $service_argv += @("-reldir", (join-path $Env:RELEASE_ROOT_DIR "releases"))
 
