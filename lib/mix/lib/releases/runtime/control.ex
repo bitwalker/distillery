@@ -236,7 +236,7 @@ defmodule Mix.Releases.Runtime.Control do
         {hook_width, doc_width} = column_widths(hooks)
 
         for {hook, doc} <- hooks do
-          IO.write([hook, String.duplicate(" ", max(hook_width - byte_size(hook) + 2, 2))])
+          IO.write(["    ", IO.ANSI.green(), hook, IO.ANSI.reset(), String.duplicate(" ", max(hook_width - byte_size(hook) + 2, 2))])
           print_help_lines(doc, doc_width + 1)
         end
       else
@@ -244,7 +244,7 @@ defmodule Mix.Releases.Runtime.Control do
       end
     end
 
-    Console.info("Custom Commands =======================")
+    Console.info("\nCustom Commands =======================")
     custom_commands = fetch_custom_commands(opts)
 
     if length(custom_commands) > 0 do
@@ -289,7 +289,7 @@ defmodule Mix.Releases.Runtime.Control do
           {hook_file, read_doc(Path.join(hook_type, hook_file))}
         end)
 
-      {hook_type, hooks}
+      {Path.basename(hook_type), hooks}
     end
   end
 
