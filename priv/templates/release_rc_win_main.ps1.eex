@@ -3,6 +3,21 @@ if ($Env:DEBUG_BOOT -ne $null) {
     set-psdebug -Trace 1
 }
 
+# Given a string, ensures the string is quoted
+function Ensure-Quoted {
+    param($String = $(throw "You must provide -String to EnsureQuoted"))
+
+    if ($String -match "^`".*`"$") {
+        # Already quoted
+        $String
+    } else {
+        # Escape quotes, except when already escaped
+        $escaped = $String -replace '(?<![\\])"','\"'
+        # Then quote the entire argument
+        "`"{0}`"" -f $escaped
+    }
+}
+
 # Given a string representing arguments for an executable
 # Convert that string into an argument vector similar to how bash would
 function String-To-Argv {
