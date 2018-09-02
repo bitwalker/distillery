@@ -508,39 +508,36 @@ defmodule Mix.Releases.Release do
     add_apps(dg, as, apps)
   end
 
-  defp add_app(dg, as, parent, app)
-
   defp add_app(dg, as, parent, {name, start_type}) do
-    do_add_app(dg, as, parent, App.new(name, start_type))
-  end
-
-  defp add_app(dg, as, parent, name) do
-    do_add_app(dg, as, parent, App.new(name))
-  end
-
-  defp do_add_app(dg, as, parent, app) do
-    case :digraph.vertex(dg, app.name) do
+    case :digraph.vertex(dg, name) do
       false ->
         # Haven't seen this app yet, and it is not excluded
-        :digraph.add_vertex(dg, app.name)
-        :ets.insert(as, {app.name, app})
+        do_add_app(dg, as, parent, App.new(name, start_type))
 
       _ ->
         # Already visited
         :ok
     end
+  end
+  defp add_app(dg, as, parent, name) do
+    add_app(dg, as, parent, {name, nil})
+  end
 
-    if not is_nil(parent) do
-      case :digraph.add_edge(dg, parent, app.name) do
-        {:error, reason} ->
-          raise "edge from #{parent} to #{app.name} would result in cycle: #{inspect(reason)}"
-
-        _ ->
-          :ok
-      end
-    end
-
+  defp do_add_app(dg, as, nil, app) do
+    :digraph.add_vertex(dg, app.name)
+    :ets.insert(as, {app.name, app})
     do_add_children(dg, as, app.name, app.applications ++ app.included_applications)
+  end
+  defp do_add_app(dg, as, parent, app) do
+    :digraph.add_vertex(dg, app.name)
+    :ets.insert(as, {app.name, app})
+    case :digraph.add_edge(dg, parent, app.name) do
+      {:error, reason} ->
+        raise "edge from #{parent} to #{app.name} would result in cycle: #{inspect(reason)}"
+
+      _ ->
+        do_add_children(dg, as, app.name, app.applications ++ app.included_applications)
+    end
   end
 
   defp do_add_children(_dg, _as, _parent, []),
