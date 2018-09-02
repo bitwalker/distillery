@@ -33,7 +33,7 @@ In many cases, your Mix environments and Distillery environments may line up -
 which is why Distillery creates `:dev` and `:prod` environments by default in
 its configuration file, and why it sets the default environment to be chosen based on
 the value of `Mix.env`. This allows you to run `mix release` or `MIX_ENV=prod
-mix release` out of the box, and have it do "the right thing".
+ mix release` out of the box, and have it do "the right thing".
 
 You can either keep your Mix environments and Distillery environments in sync,
 or select them independently:
