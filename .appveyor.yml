@@ -19,11 +19,7 @@ cache:
   - _build
   - deps
 init:
-  - choco install erlang
-  - choco install elixir
-  - SET PATH=C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;%PATH%
-  - refreshenv
-  - epmd -daemon
+  - pwsh: . '.\bin\appveyor\init.ps1'
 install:
   - mix local.hex --force
   - mix local.rebar --force
