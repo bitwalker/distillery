@@ -23,10 +23,12 @@ init:
   - choco install elixir
   - SET PATH=C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;%PATH%
   - refreshenv
+  - epmd -daemon
 install:
   - mix local.hex --force
   - mix local.rebar --force
   - mix deps.get
+  - mix eqc.install --mini
 build_script:
   - mix compile
 test_script:
