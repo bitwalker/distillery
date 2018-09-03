@@ -31,7 +31,7 @@ install:
   - mix local.rebar --force
   - mix do deps.get, deps.compile
   - mix eqc.install --mini
-  - . .\bin\appveyor\start-epmd.ps1
+  - pwsh: . .\bin\appveyor\start-epmd.ps1
 build_script:
   - mix compile
 test_script:
