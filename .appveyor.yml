@@ -25,9 +25,10 @@ init:
   - SET PATH=C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;%PATH%
   - refreshenv
 install:
+  - echo MIX_ENV=%MIX_ENV%
   - mix local.hex --force
   - mix local.rebar --force
-  - mix deps.get
+  - mix do deps.get, deps.compile
   - mix eqc.install --mini
   - . .\bin\appveyor\start-epmd.ps1
 build_script:
