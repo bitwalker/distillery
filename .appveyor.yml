@@ -19,19 +19,19 @@ cache:
   - _build
   - deps
 init:
-  - pwsh: choco install erlang
-  - pwsh: choco install elixir
-  - pwsh: [Environment]::SetEnvironmentVariable("PATH", "C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;$Env:PATH", "User")
-  - pwsh: refreshenv
+  - choco install erlang
+  - choco install elixir
+  - SET PATH=C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;%PATH%
+  - refreshenv
 install:
-  - pwsh: mix local.hex --force
-  - pwsh: mix local.rebar --force
-  - pwsh: mix deps.get
+  - mix local.hex --force
+  - mix local.rebar --force
+  - mix deps.get
 build_script:
-  - pwsh: mix compile
+  - mix compile
 test_script:
-  - pwsh: mix test --exclude=integration
-  - pwsh: mix test --only=win32:true
+  - mix test --exclude=integration
+  - mix test --only=win32:true
 notifications:
   - provider: Email
     to:
