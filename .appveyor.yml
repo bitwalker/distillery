@@ -1,0 +1,38 @@
+version: 2.0.{build}
+clone_depth: 3
+branches:
+  only:
+    - master
+skip_tags: true
+skip_commits:
+  files:
+    - docs/*
+    - .travis.yml
+    - README.md
+    - TODO.md
+    - coveralls.json
+    - mkdocs.yml
+    - requirements.txt
+environment:
+  MIX_ENV: test
+cache:
+  - _build
+  - deps
+init:
+  - pwsh: choco install erlang
+  - pwsh: choco install elixir
+  - pwsh: $Env:PATH = "C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;$Env:PATH"
+install:
+  - pwsh: mix local.hex --force
+  - pwsh: mix local.rebar --force
+  - pwsh: mix deps.get
+build_script:
+  - pwsh: mix compile
+test_script:
+  - pwsh: mix test --exclude=integration
+  - pwsh: mix test --only=win32
+notifications:
+  - provider: Email
+    to:
+      - paulschoenfelder@gmail.com
+    on_build_status_changed: true
