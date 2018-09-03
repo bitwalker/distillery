@@ -1,5 +1,6 @@
 version: 2.0.{build}
 clone_depth: 3
+image: Visual Studio 2017
 branches:
   only:
     - master
