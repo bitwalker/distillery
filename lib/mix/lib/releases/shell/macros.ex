@@ -90,7 +90,7 @@ defmodule Mix.Releases.Shell.Macros do
       end
 
     prefix = Keyword.get(opts, :prefix, "")
-    color = Keyword.get(opts, :color, IO.ANSI.normal())
+    color = Keyword.get(opts, :color, :normal)
 
     quote location: :keep do
       @levelid @levelid + 1

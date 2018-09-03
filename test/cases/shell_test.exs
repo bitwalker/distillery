@@ -118,20 +118,20 @@ defmodule Distillery.Test.ShellTest do
 
       assert capture_io(fn ->
                Shell.success("success message")
-             end) ==
+             end) =~
                "#{IO.ANSI.bright()}#{IO.ANSI.green()}==> success message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.warn("warn message")
-             end) == "#{IO.ANSI.yellow()}==> warn message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.yellow()}==> warn message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.notice("notice message")
-             end) == "#{IO.ANSI.yellow()}notice message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.yellow()}notice message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.error("error message")
-             end) == "#{IO.ANSI.red()}==> error message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.red()}==> error message\n#{IO.ANSI.reset()}"
     end
   end
 
@@ -153,24 +153,24 @@ defmodule Distillery.Test.ShellTest do
 
       assert capture_io(fn ->
                Shell.info("info message")
-             end) == "#{IO.ANSI.bright()}#{IO.ANSI.cyan()}==> info message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.bright()}#{IO.ANSI.cyan()}==> info message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.success("success message")
-             end) ==
+             end) =~
                "#{IO.ANSI.bright()}#{IO.ANSI.green()}==> success message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.warn("warn message")
-             end) == "#{IO.ANSI.yellow()}==> warn message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.yellow()}==> warn message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.notice("notice message")
-             end) == "#{IO.ANSI.yellow()}notice message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.yellow()}notice message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.error("error message")
-             end) == "#{IO.ANSI.red()}==> error message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.red()}==> error message\n#{IO.ANSI.reset()}"
     end
   end
 
@@ -180,32 +180,32 @@ defmodule Distillery.Test.ShellTest do
 
       assert capture_io(fn ->
                Shell.debug("debug message")
-             end) == "#{IO.ANSI.cyan()}==> debug message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.cyan()}==> debug message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.debugf("debug message")
-             end) == "#{IO.ANSI.cyan()}debug message#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.cyan()}debug message#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.info("info message")
-             end) == "#{IO.ANSI.bright()}#{IO.ANSI.cyan()}==> info message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.bright()}#{IO.ANSI.cyan()}==> info message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.success("success message")
-             end) ==
+             end) =~
                "#{IO.ANSI.bright()}#{IO.ANSI.green()}==> success message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.warn("warn message")
-             end) == "#{IO.ANSI.yellow()}==> warn message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.yellow()}==> warn message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.notice("notice message")
-             end) == "#{IO.ANSI.yellow()}notice message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.yellow()}notice message\n#{IO.ANSI.reset()}"
 
       assert capture_io(fn ->
                Shell.error("error message")
-             end) == "#{IO.ANSI.red()}==> error message\n#{IO.ANSI.reset()}"
+             end) =~ "#{IO.ANSI.red()}==> error message\n#{IO.ANSI.reset()}"
     end
   end
 end
