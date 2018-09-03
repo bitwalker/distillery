@@ -22,6 +22,7 @@ init:
   - pwsh: choco install erlang
   - pwsh: choco install elixir
   - pwsh: $Env:PATH = "C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;$Env:PATH"
+  - pwsh: refreshenv
 install:
   - pwsh: mix local.hex --force
   - pwsh: mix local.rebar --force
