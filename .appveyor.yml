@@ -22,6 +22,7 @@ cache:
 init:
   - choco install erlang
   - choco install elixir
+  - SET MIX_ENV=test
   - SET PATH=C:\ProgramData\chocolatey\lib\Elixir\bin;C:\ProgramData\chocolatey\bin;%PATH%
   - refreshenv
 install:
