@@ -30,7 +30,8 @@ done
 
 if [ $SKIP_CI -eq 0 ]; then
     if mix test --exclude=integration; then
-        mix test --only=integration
+        # Run only non-Windows integration tests
+        mix test --only=win32:false
     else
         exit 1
     fi

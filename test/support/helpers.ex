@@ -1,6 +1,6 @@
 defmodule Distillery.Test.Helpers do
   @moduledoc false
-  
+
   @doc """
   When run in the context of a Mix project, runs `mix release` to build a release.
   

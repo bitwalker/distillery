@@ -30,7 +30,7 @@ build_script:
   - pwsh: mix compile
 test_script:
   - pwsh: mix test --exclude=integration
-  - pwsh: mix test --only=win32
+  - pwsh: mix test --only=win32:true
 notifications:
   - provider: Email
     to:
