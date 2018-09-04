@@ -14,7 +14,8 @@
       option: 2,
       option: 3,
       option: 4,
-      require_global: 1
+      require_global: 1,
+      set: 1
     ]
   ]
 ]
