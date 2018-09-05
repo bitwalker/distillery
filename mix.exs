@@ -40,7 +40,7 @@ defmodule Distillery.Mixfile do
   end
 
   def application do
-    [extra_applications: [:runtime_tools, :logger]]
+    [extra_applications: [:runtime_tools]]
   end
 
   defp deps do
