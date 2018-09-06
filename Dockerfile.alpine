@@ -9,8 +9,6 @@ RUN \
   mkdir -p /opt/distillery-test && \
   mix local.rebar --force && \
   mix local.hex --force && \
-  pushd /opt && \
-  git clone https://github.com/bitwalker/distillery-test && \
-  popd
+  git clone https://github.com/bitwalker/distillery-test
 
-CMD ["bin/bash"]
+CMD ["/bin/bash"]
