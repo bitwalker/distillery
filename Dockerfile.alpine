@@ -11,4 +11,4 @@ RUN \
   mix local.hex --force && \
   git clone https://github.com/bitwalker/distillery-test
 
-CMD ["/bin/sh"]
+CMD ["/bin/bash"]
