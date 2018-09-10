@@ -178,7 +178,7 @@ defmodule Mix.Tasks.Release do
     bin = Path.join([relative_output_dir, "bin", app])
 
     unless Shell.verbosity() in [:silent, :quiet] do
-      Shell.writef("Release succesfully built!\n", :green)
+      Shell.writef("Release successfully built!\n", :green)
 
       Shell.writef(
         "To start the release you have built, you can use one of the following tasks:\n\n",
