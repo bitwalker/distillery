@@ -59,10 +59,10 @@ First, our build script, in `bin/build`, would look something like this:
 
 set -e
 
+cd /opt/build
+
 APP_NAME="$(grep 'app:' mix.exs | sed -e 's/\[//g' -e 's/ //g' -e 's/app://' -e 's/[:,]//g')"
 APP_VSN="$(grep 'version:' mix.exs | cut -d '"' -f2)"
-
-cd /opt/build
 
 mkdir -p /opt/build/rel/artifacts
 
