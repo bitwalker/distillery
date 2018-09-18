@@ -14,7 +14,7 @@ require_live_node() {
 
 # Get node pid
 get_pid() {
-    if output="$(release_remote_ctl rpc ':os.getpid()')"
+    if output="$(release_remote_ctl rpc 'List.to_string(:os.getpid())')"
     then
         echo "$output" | sed -e 's/"//g'
         return 0
