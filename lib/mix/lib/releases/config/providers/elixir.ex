@@ -8,7 +8,7 @@ defmodule Mix.Releases.Config.Providers.Elixir do
         {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/config.exs"]}
       ]
 
-  The above configuration goes in a `release` or `environment` definition in `rel/congfig.exs`,
+  The above configuration goes in a `release` or `environment` definition in `rel/config.exs`,
   and will result in the given path being expanded during boot, and evaluated using `Mix.Config`.
 
   ## Caveats
