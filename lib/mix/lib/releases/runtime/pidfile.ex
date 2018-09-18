@@ -32,7 +32,8 @@ defmodule Mix.Releases.Runtime.Pidfile do
         send(starter, {:ignore, me})
 
       path when is_binary(path) ->
-        case File.write(path, :os.getpid()) do
+        pid = :os.getpid()
+        case :prim_file.write_file(path, List.to_string(pid)) do
           :ok ->
             # We've written the pid, so proceed
             Process.flag(:trap_exit, true)
@@ -42,11 +43,11 @@ defmodule Mix.Releases.Runtime.Pidfile do
 
             # We're started!
             send(starter, {:ok, me})
-
+            
             # Enter receive loop
-            loop(%{pidfile: path}, parent)
+            loop(%{pidfile: path}, starter, parent)
 
-          {:error, reason} ->
+          {:error, reason} = err ->
             send(starter, {:error, me, {:invalid_pidfile, path, reason}})
         end
 
@@ -55,22 +56,31 @@ defmodule Mix.Releases.Runtime.Pidfile do
     end
   end
 
-  defp loop(%{pidfile: path} = state, parent) do
+  defp loop(%{pidfile: path} = state, starter, parent) do
     receive do
-      {:EXIT, ^parent, reason} ->
+      {:EXIT, pid, reason} when pid in [starter, parent] ->
         # Cleanup pidfile
-        _ = File.rm(path)
+        _ = :prim_file.delete(path)
         exit(reason)
 
       _ ->
-        loop(state, parent)
+        loop(state, starter, parent)
     after
       5_000 ->
-        if File.exists?(path) do
-          loop(state, parent)
+        if exists?(path) do
+          loop(state, starter, parent)
         else
           :init.stop()
         end
+    end
+  end
+  
+  defp exists?(path) do
+    case :prim_file.read_file_info(path) do
+      {:error, _} ->
+        false
+      {:ok, _info} ->
+        true
     end
   end
 end
