@@ -29,15 +29,15 @@ release :myapp do
 end
 ```
 
-And the two hook scripts under `rel/hooks`:
+And the two hook scripts:
 
 ```shell
-# pre_start
+# rel/hooks/pre_start/echo.sh
 echo "we're starting!"
 ```
 
 ```shell
-# post_start
+# rel/hooks/post_start/echo.sh
 echo "we've started!"
 ```
 
