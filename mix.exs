@@ -62,7 +62,7 @@ defmodule Distillery.Mixfile do
 
   defp package do
     [
-      files: ["lib", "priv", "mix.exs", "README.md", "LICENSE.md"],
+      files: ["lib", "priv", "mix.exs", "README.md", "LICENSE.md", ".formatter.exs"],
       maintainers: ["Paul Schoenfelder"],
       licenses: ["MIT"],
       links: %{
