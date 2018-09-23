@@ -145,6 +145,19 @@ end
 Now, once you've deployed your application, you can run migrations/seeds with
 `bin/myapp migrate` and `bin/myapp seed`.
 
+## Phoenix
+You must manually copy the repo dir into the release for e.g. seed data to be available for your scripts.
+```elixir
+environment :prod do
+  ...
+  set overlays: [
+    {:copy, "rel/config/config.exs", "etc/config.exs"},
+    {:copy, "priv/repo", "priv/repo"}
+  ]
+  ...
+end
+```
+
 ## Thoughts
 
 There are other approaches that may make more sense for your use case, for example, automatically running migrations
