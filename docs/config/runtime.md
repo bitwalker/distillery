@@ -100,7 +100,7 @@ release is extracted, but will be handy when configuring the release for the
 first time.
 
 Any provider module must implement the `Mix.Releases.Config.Provider` behavior.
-See it's documentation for details.
+See its documentation for details.
 
 This configuration framework supports a variety of interesting configuration
 scenarios, such as reading from files like `.toml`, `.yaml`, or `.json`; using
