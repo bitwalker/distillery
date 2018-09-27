@@ -47,7 +47,7 @@ defmodule Mix.Releases.Runtime.Pidfile do
             # Enter receive loop
             loop(%{pidfile: path}, starter, parent)
 
-          {:error, reason} = err ->
+          {:error, reason} ->
             send(starter, {:error, me, {:invalid_pidfile, path, reason}})
         end
 
