@@ -75,7 +75,7 @@ many providers (running in order and applying configuration on top of the last).
 Config providers are executed prior to boot, and the resulting application env
 is then persisted to a final `sys.config`, which is then used by the release itself.
 
-Config providers can be used by adding the provider module and it's
+Config providers can be used by adding the provider module and its
 configuration to `rel/config.exs` like so:
 
 ```elixir
@@ -84,7 +84,7 @@ environment :prod do
     {Toml.Provider, [path: "${RELEASE_ROOT_DIR}/config.toml"]}
   ]
   set overlays: [
-    {:copy, "config/defaults.toml", "config.toml.example"}
+    {:copy, "config/defaults.toml", "config.toml"}
   ]
 end
 ```
