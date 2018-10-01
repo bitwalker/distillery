@@ -42,7 +42,7 @@ RemainAfterExit=no
 WantedBy=multi-user.target
 ```
 
-#### Run app in `foreground` using a `simple` systemd configuration
+## Run app in `foreground` using a `simple` systemd configuration
 
 Properties of this approach:
 
