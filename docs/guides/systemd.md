@@ -8,7 +8,7 @@
     execute it with the same environment as the systemd unit, or export those
     environment variables in the calling environment.
 
-Here are three general approaches to running a Distillery release with systemd:
+Here are two general approaches to running a Distillery release with systemd:
 
 ## Run app as daemon using `start` and a `forking` Systemd service *with* pidfile
 
