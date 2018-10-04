@@ -111,7 +111,7 @@ Create the following shell scripts at `rel/commands/`:
 ```bash
 #!/bin/sh
 
-release_ctl eval --mfa "MyApp.ReleaseTasks.migrate/1" -- "$@"
+release_ctl eval --mfa "MyApp.ReleaseTasks.migrate/1" --argv -- "$@"
 ```
 
 * `rel/commands/seed.sh`
@@ -119,7 +119,7 @@ release_ctl eval --mfa "MyApp.ReleaseTasks.migrate/1" -- "$@"
 ```bash
 #!/bin/sh
 
-release_ctl eval --mfa "MyApp.ReleaseTasks.seed/1" -- "$@"
+release_ctl eval --mfa "MyApp.ReleaseTasks.seed/1" --argv -- "$@"
 ```
 
 For more info on the shell API look at the [Shell Scripts](../extensibility/shell_scripts.md) document.
