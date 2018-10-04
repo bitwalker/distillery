@@ -15,7 +15,7 @@ Here are two general approaches to running a Distillery release with systemd:
 Properties of this approach:
 
   * Your app will be automatically restarted if it crashes
-  * Logs will be written to the `/logs` directory in your release
+  * Logs will be written to the `var/log` directory in your release
 
 ```systemd
 [Unit]
