@@ -78,8 +78,8 @@ defmodule Distillery.Mixfile do
       docs: [&mkdocs/1, "docs"],
       c: ["compile", "format --check-equivalent"],
       "compile-check": [
-        "compile", 
-        "format --check-formatted --dry-run", 
+        "compile",
+        "format --check-formatted --dry-run",
         "dialyzer"
       ],
     ]

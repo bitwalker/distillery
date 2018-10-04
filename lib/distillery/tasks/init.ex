@@ -3,6 +3,8 @@ defmodule Mix.Tasks.Release.Init do
   Prepares a new project for use with releases.
   This simply creates a `rel` directory in the project root,
   and creates a basic initial configuration file in `rel/config.exs`.
+  It will also creates a vm.args file in `rel/vm.args` to tweak the
+  configuration of the BEAM.
 
   After running this, you can build a release right away with `mix release`,
   but it is recommended you review the config file to understand its contents.
@@ -75,6 +77,10 @@ defmodule Mix.Tasks.Release.Init do
 
     # Save config.exs to /rel
     File.write!(Path.join("rel", "config.exs"), config)
+
+    # Generate vm.args
+    {:ok, vm} = Utils.template("vm.args.default", bindings)
+    File.write!(Path.join("rel", "vm.args"), vm)
 
     IO.puts(
       IO.ANSI.cyan() <>

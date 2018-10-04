@@ -38,6 +38,7 @@ environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: <%= inspect(get_cookie.()) %>
+  set vm_args: "rel/vm.args"
 end
 <%= unless no_docs do %>
 # You may define one or more releases in this file.
