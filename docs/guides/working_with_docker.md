@@ -157,8 +157,8 @@ when you run just `make` in the project directory:
 ```makefile
 .PHONY: help
 
-APP_NAME ?= `grep 'app:' mix.exs | sed -e 's/\[//g' -e 's/ //g' -e 's/app://' -e 's/[:,]//g'`
-APP_VSN ?= `grep 'version:' mix.exs | cut -d '"' -f2`
+APP_NAME ?= `mix run -e 'IO.puts Mix.Project.config()[:app]'`
+APP_VSN ?= `mix run -e 'IO.puts Mix.Project.config()[:version]'`
 BUILD ?= `git rev-parse --short HEAD`
 
 help:
