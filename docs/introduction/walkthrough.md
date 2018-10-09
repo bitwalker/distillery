@@ -22,7 +22,7 @@ Just add the following to your deps list in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:distillery, "~> 2.0"}]
+  [{:distillery, "~> 2.0", runtime: false}]
 end
 ```
 

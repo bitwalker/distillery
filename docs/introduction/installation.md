@@ -6,7 +6,7 @@ To use Distillery, you will first need to add it to your project dependencies, t
 ```elixir
 defp deps do
   [
-    {:distillery, "~> 2.0"}
+    {:distillery, "~> 2.0", runtime: false}
   ]
 end
 ```
