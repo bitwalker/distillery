@@ -101,6 +101,8 @@ defmodule MyApp.ReleaseTasks do
   end
 end
 ```
+!!! warning
+    Remember to put this file under `lib`, as it must be compiled with the rest of your application, otherwise the code will not be available in the release, and the migrate command will fail.
 
 ## Custom command
 
