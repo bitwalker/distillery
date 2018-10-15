@@ -77,8 +77,8 @@ defmodule Mix.Releases.Overlays do
     with {:ok, path} <- template_str(path, vars),
          _ <-
            Shell.debug(
-             "Applying #{IO.ANSI.reset()}mkdir#{IO.ANSI.cyan()} overlay\n" <>
-               "    dst: #{Path.relative_to_cwd(path)}"
+             "#{IO.ANSI.cyan()}Applying #{IO.ANSI.reset()}mkdir#{IO.ANSI.cyan()} overlay\n" <>
+               "    dst: #{Path.relative_to_cwd(path)}#{IO.ANSI.reset()}"
            ),
          expanded <- Path.join(output_dir, path),
          :ok <- File.mkdir_p(expanded),
@@ -90,9 +90,9 @@ defmodule Mix.Releases.Overlays do
          {:ok, to} <- template_str(to, vars),
          _ <-
            Shell.debug(
-             "Applying #{IO.ANSI.reset()}copy#{IO.ANSI.cyan()} overlay\n" <>
+             "#{IO.ANSI.cyan()}Applying #{IO.ANSI.reset()}copy#{IO.ANSI.cyan()} overlay\n" <>
                "    src: #{Path.relative_to_cwd(from)}\n" <>
-               "    dst: #{Path.relative_to_cwd(to)}"
+               "    dst: #{Path.relative_to_cwd(to)}#{IO.ANSI.reset()}"
            ),
          expanded_to <- Path.join(output_dir, to),
          :ok <- File.mkdir_p(Path.dirname(expanded_to)),
@@ -105,9 +105,9 @@ defmodule Mix.Releases.Overlays do
          {:ok, to} <- template_str(to, vars),
          _ <-
            Shell.debug(
-             "Applying #{IO.ANSI.reset()}link#{IO.ANSI.cyan()} overlay\n" <>
+             "#{IO.ANSI.cyan()}Applying #{IO.ANSI.reset()}link#{IO.ANSI.cyan()} overlay\n" <>
                "    src: #{Path.relative_to_cwd(from)}\n" <>
-               "    dst: #{Path.relative_to_cwd(to)}"
+               "    dst: #{Path.relative_to_cwd(to)}#{IO.ANSI.reset()}"
            ),
          expanded_to <- Path.join(output_dir, to),
          _ <- File.rm(expanded_to),
@@ -124,8 +124,8 @@ defmodule Mix.Releases.Overlays do
          expanded_to <- Path.join(output_dir, to),
          _ <-
            Shell.debug(
-             "Applying #{IO.ANSI.reset()}template#{IO.ANSI.cyan()} overlay\n" <>
-               "    src: #{Path.relative_to_cwd(tmpl_path)}\n" <> "    dst: #{to}"
+             "#{IO.ANSI.cyan()}Applying #{IO.ANSI.reset()}template#{IO.ANSI.cyan()} overlay\n" <>
+               "    src: #{Path.relative_to_cwd(tmpl_path)}\n" <> "    dst: #{to}#{IO.ANSI.reset()}"
            ),
          :ok <- File.mkdir_p(Path.dirname(expanded_to)),
          :ok <- File.write(expanded_to, templated),
