@@ -46,7 +46,7 @@ defmodule Mix.Releases.Profile do
     * `:pre_configure_hooks`  - Executed _before_ the system has generated config files
     * `:post_configure_hooks` - Executed _after_ config files have been generated
     * `:pre_start_hooks`      - Executed _before_ the release is started
-    * `::post_start_hooks`    - Executed _after_ the release is started
+    * `:post_start_hooks`     - Executed _after_ the release is started
     * `:pre_stop_hooks`       - Executed _before_ the release is stopped
     * `:post_stop_hooks`      - Executed _after_ the release is stopped
     * `:pre_upgrade_hooks`    - Executed _before_ a release upgrade is installed
