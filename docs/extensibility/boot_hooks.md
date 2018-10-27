@@ -10,6 +10,8 @@ Boot hooks are scripts which execute pre/post to events that occur in the run co
 - `post_start`, occurs right after the release is started
 - `pre_stop`, occurs after a request to stop the release is issued, but before the release is stopped
 - `post_stop`, occurs after the release is stopped
+- `pre_upgrade`, occurs before the release is upgraded
+- `post_upgrade`, occurs right after the release is upgraded
 
 ## Example Usage
 
