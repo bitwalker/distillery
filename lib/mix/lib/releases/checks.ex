@@ -67,28 +67,29 @@ defmodule Mix.Releases.Checks do
 
   defp do_run([check | checks], %Release{} = release, warnings) do
     Mix.Releases.Shell.debugf("    > #{Enum.join(Module.split(check), ".")}")
-    check.run(release)
-  else
-    :ok ->
-      Mix.Releases.Shell.debugf(" * PASS\n", :green)
-      do_run(checks, release, warnings)
 
-    {:ok, warning} when is_binary(warning) ->
-      Mix.Releases.Shell.debugf(" * WARN\n\n", :yellow)
-      do_run(checks, release, [warning | warnings])
+    case check.run(release) do
+      :ok ->
+        Mix.Releases.Shell.debugf(" * PASS\n", :green)
+        do_run(checks, release, warnings)
 
-    {:error, _} = err ->
-      Mix.Releases.Shell.debugf(" * FAILED\n", :red)
+      {:ok, warning} when is_binary(warning) ->
+        Mix.Releases.Shell.debugf(" * WARN\n\n", :yellow)
+        do_run(checks, release, [warning | warnings])
 
-      for warning <- Enum.reverse(warnings) do
-        Mix.Releases.Shell.notice(warning)
-      end
+      {:error, _} = err ->
+        Mix.Releases.Shell.debugf(" * FAILED\n", :red)
 
-      err
+        for warning <- Enum.reverse(warnings) do
+          Mix.Releases.Shell.notice(warning)
+        end
 
-    other ->
-      {:error,
-       "The check #{__MODULE__} returned #{inspect(other)} " <>
-         "when :ok, {:ok, String.t}, or {:error term} were expected"}
+        err
+
+      other ->
+        {:error,
+         "The check #{__MODULE__} returned #{inspect(other)} " <>
+           "when :ok, {:ok, String.t}, or {:error term} were expected"}
+    end
   end
 end
