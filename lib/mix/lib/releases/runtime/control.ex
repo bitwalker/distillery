@@ -675,7 +675,9 @@ defmodule Mix.Releases.Runtime.Control do
   Executes an expression or a file locally (i.e. not on the running node)
   """
   def eval(_argv, %{file: file}) do
-    Code.eval_file(file)
+    file
+    |> Code.eval_file()
+    |> IO.inspect()
   rescue
     err in [Code.LoadError] ->
       Console.error("""
@@ -714,7 +716,9 @@ defmodule Mix.Releases.Runtime.Control do
             [argv]
           end
 
-        apply(module, fun, args)
+        module
+        |> apply(fun, args)
+        |> IO.inspect()
 
       {:ok, [_module, _fun, _arity]} when use_argv? ->
         Console.error("""
@@ -736,7 +740,9 @@ defmodule Mix.Releases.Runtime.Control do
           but the function has a different arity!
           """)
         else
-          apply(module, fun, args)
+          module
+          |> apply(fun, args)
+          |> IO.inspect()
         end
 
       {:ok, _parts} ->
