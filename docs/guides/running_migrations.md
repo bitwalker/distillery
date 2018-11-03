@@ -23,7 +23,8 @@ defmodule MyApp.ReleaseTasks do
     :crypto,
     :ssl,
     :postgrex,
-    :ecto
+    :ecto,
+    :ecto_sql # If using Ecto 3.0 or higher
   ]
 
   @repos Application.get_env(:my_app, :ecto_repos, [])
