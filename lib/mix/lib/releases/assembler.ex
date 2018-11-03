@@ -781,7 +781,7 @@ defmodule Mix.Releases.Assembler do
       config_boot =
         clean_boot
         |> BootScript.after_started(:elixir, [
-          {:apply, {Mix.Releases.Config.Provider, :init, [providers]}}
+          {:apply, {Mix.Releases.Config.Provider, :on_boot, [providers]}}
         ])
 
       # Finally, this is the "real" boot script for the app itself

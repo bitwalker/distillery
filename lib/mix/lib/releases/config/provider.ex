@@ -4,6 +4,9 @@ defmodule Mix.Releases.Config.Provider do
   """
   alias Mix.Releases.Utils
 
+  @type provider :: module | {module, [term]}
+  @type providers :: [provider]
+
   defmacro __using__(_) do
     quote do
       @behaviour unquote(__MODULE__)
@@ -34,6 +37,40 @@ defmodule Mix.Releases.Config.Provider do
   end
 
   @doc false
+  @spec on_boot(providers) :: :ok | no_return
+  def on_boot(providers) when is_list(providers) do
+    case init(providers) do
+      {:error, {:write_terms, path, mod, reason}} ->
+        print_err("Unable to write sys.config to #{path}: #{mod.format_error(reason)}")
+        :erlang.halt(1)
+      {:error, {:exception, ex, trace}} ->
+        msg = Exception.message(ex) <> "\n" <> Exception.format_stacktrace(trace)
+        print_err(msg)
+        :erlang.halt(1)
+      {:error, {type, err, trace}} ->
+        print_err(Exception.format(type, err, trace))
+        :erlang.halt(1)
+      {:ok, config_path} ->
+        config_path = String.to_charlist(config_path)
+        # Determine if we need to restart into a new boot script
+        case :init.get_argument(:restart_into) do
+          :error ->
+            # Nope
+            :ok
+          {:ok, [[boot_path | _]]} ->
+            # Ok, does path exist?
+            if File.exists?(List.to_string(boot_path) <> ".boot") do
+              :init.restart([boot: boot_path, config: config_path])
+            else
+              print_err("Unable to restart into boot script #{boot_path}.boot, path does not exist or is inaccessible. Halting.")
+              :erlang.halt(1)
+            end
+        end
+    end
+  end
+
+  @doc false
+  @spec init(providers) :: {:ok, String.t} | {:error, term}
   def init(providers) when is_list(providers) do
     for provider <- providers do
       try do
@@ -52,24 +89,10 @@ defmodule Mix.Releases.Config.Provider do
         end
       rescue
         err ->
-          trace = System.stacktrace()
-          msg = Exception.message(err) <> "\n" <> Exception.format_stacktrace(trace)
-          print_err(msg)
-          reraise err, trace
+          throw({:error, {:exception, err, System.stacktrace()}})
       catch
-        kind, err ->
-          print_err(Exception.format(kind, err, System.stacktrace()))
-
-          case kind do
-            :throw ->
-              throw(err)
-
-            :exit ->
-              exit(err)
-
-            :error ->
-              :erlang.error(err)
-          end
+        type, err ->
+          throw({:error, {type, err, System.stacktrace()}})
       end
     end
 
@@ -92,12 +115,14 @@ defmodule Mix.Releases.Config.Provider do
     # Persist sys.config
     case Utils.write_term(config_path, env) do
       :ok ->
-        :ok
+        {:ok, config_path}
 
       {:error, {:write_terms, mod, reason}} ->
-        print_err("Unable to write sys.config to #{config_path}: #{mod.format_error(reason)}")
-        :erlang.halt(1)
+        {:error, {:write_terms, config_path, mod, reason}}
     end
+  catch
+    :throw, {:error, _} = err ->
+      err
   end
 
   @doc """

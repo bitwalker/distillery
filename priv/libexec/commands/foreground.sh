@@ -24,7 +24,8 @@ run_hooks pre_start
 # Build an array of arguments to pass to exec later on
 # Build it here because this command will be used for logging.
 set -- $FOREGROUNDOPTIONS \
-    -boot "$REL_DIR/$BOOTFILE" \
+    -boot "$REL_DIR/config" \
+    -restart_into "$REL_DIR/$BOOTFILE" \
     -args_file "$VMARGS_PATH" \
     -mode "$CODE_LOADING_MODE" \
     ${ERL_OPTS} \
