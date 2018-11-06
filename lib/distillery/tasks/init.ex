@@ -79,8 +79,11 @@ defmodule Mix.Tasks.Release.Init do
     File.write!(Path.join("rel", "config.exs"), config)
 
     # Generate vm.args
-    {:ok, vm} = Utils.template("vm.args.default", bindings)
-    File.write!(Path.join("rel", "vm.args"), vm)
+    vm_args = Path.join("rel", "vm.args")
+    unless File.exists?(vm_args) do
+      {:ok, vm} = Utils.template("vm.args.default", bindings)
+      File.write!(vm_args, vm)
+    end
 
     IO.puts(
       IO.ANSI.cyan() <>
