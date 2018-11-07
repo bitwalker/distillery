@@ -1,7 +1,7 @@
 # Terminology
 
 Distillery uses terminology from both Erlang/OTP documentation, as well as some
-terminology of it's own for concepts it has introduced. These terms are broken
+terminology of its own for concepts it has introduced. These terms are broken
 up into two sections below for easier navigation. You should familiarize
 yourself with these terms, at least briefly, to better understand the documentation.
 
