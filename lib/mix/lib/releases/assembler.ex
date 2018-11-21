@@ -49,6 +49,7 @@ defmodule Mix.Releases.Assembler do
          :ok <- write_release_metadata(release),
          :ok <- write_release_scripts(release),
          {:ok, release} <- apply_overlays(release),
+         :ok <- strip_release(release),
          {:ok, release} <- Plugin.after_assembly(release),
          do: {:ok, release}
   end
@@ -942,6 +943,61 @@ defmodule Mix.Releases.Assembler do
     else
       {path, {:error, reason}} ->
         {:error, {:assembler, :file, {reason, path}}}
+    end
+  end
+
+  # Strips debug info from the release, if so configured
+  # We do not want to strip beams in dev_mode because it will strip Erlang/Elixir installation beams
+  # due to being symlinked.
+  # Additionally, we cannot strip debug info if this is going to be an upgrade, because the release handler
+  # requires some of the chunks which are stripped, in both the upfrom and downfrom versions.
+  defp strip_release(release) do
+    path = release.profile.output_dir
+    upgrade? = release.is_upgrade
+    strip_debug_info? = release.profile.strip_debug_info
+    dev_mode? = release.profile.dev_mode
+
+    cond do
+      not upgrade? and strip_debug_info? and not dev_mode? ->
+        Shell.warn(
+          "You have strip_debug_info set to true.\n" <>
+            "    Please be aware that if you plan on performing hot upgrades later,\n" <>
+            "    this setting will prevent you from doing so without a rolling restart.\n" <>
+            "    You may ignore this warning if you have no plans to use hot upgrades."
+        )
+        Shell.debug("Stripping release (#{path})")
+
+        case :beam_lib.strip_release(String.to_charlist(path)) do
+          {:ok, _} ->
+            :ok
+
+          {:error, :beam_lib, reason} ->
+            {:error, {:archiver, {:beam_lib, reason}}}
+        end
+
+      upgrade? and strip_debug_info? and not dev_mode? ->
+        Shell.warn(
+          "You have strip_debug_info set in your release configuration,\n" <>
+            "    and you are performing an upgrade. This release will not be stripped,\n" <>
+            "    however if you built your previous release with stripped debug information\n" <>
+            "    this upgrade will fail, because the release handler will be unable to examine\n" <>
+            "    the previous version's BEAM files. If you are using upgrades, it is recommended\n" <>
+            "    that you do not set `strip_debug_info`"
+        )
+
+        :ok
+
+      strip_debug_info? and dev_mode? ->
+        Shell.warn(
+          "You have strip_debug_info set while dev_mode is true,\n" <>
+            "    this release will not be stripped, because it would result in\n" <>
+            "    the symlinked BEAM files from Erlang/Elixir to be stripped as well"
+        )
+
+        :ok
+
+      :else ->
+        :ok
     end
   end
 end
