@@ -25,7 +25,7 @@ support provides better integration than previous releases.
 To turn on PID file generation, you have two choices:
 
   * Export an environment variable, `PIDFILE="path/to/pidfile"`
-  * Set a flag in `vm.args`, `-kernel pidfile "'path/to/pidfile'"`
+  * Set a flag in `vm.args`, `-kernel pidfile '"path/to/pidfile"'`
 
 !!! warning
     We need to use two level of quoting, due to how erl parses the command line arguments
