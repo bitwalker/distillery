@@ -51,7 +51,6 @@ $argv += @("-comment", (ensure-quoted $desc))
 $argv += @($name_type, $Env:NAME)
 $argv += @("-workdir", $Env:RELEASE_ROOT_DIR)
 $argv += @("-machine", $start_erl)
-$argv += @("-debugtype", "new")
 $argv += @("-stopaction", (ensure-quoted "init:stop()."))
 $argv += @("-args", (ensure-quoted $service_args))
 
