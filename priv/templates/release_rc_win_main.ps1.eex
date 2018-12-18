@@ -100,7 +100,7 @@ if ($Env:RELEASE_CONFIG_DIR -eq $null) {
 if (($Env:RELEASE_READ_ONLY -eq $null) -and (-not (test-path $Env:RELEASE_MUTABLE_DIR -PathType Container))) {
     new-item $Env:RELEASE_MUTABLE_DIR -ItemType Directory -ErrorAction SilentlyContinue
     $warning_msg = "Files in this directory are regenerated frequently, edits will be lost"
-    set-content -Path (join-path $Env:RELEASE_MUTABLE_DIR "WARNING_README") -InputObject $warning_msg
+    set-content -Path (join-path $Env:RELEASE_MUTABLE_DIR "WARNING_README") -Value $warning_msg
 }
 if (($Env:RELEASE_READ_ONLY -eq $null) -and (-not (test-path $Env:RUNNER_LOG_DIR -PathType Container))) {
     new-item $Env:RUNNER_LOG_DIR -ItemType Directory -ErrorAction SilentlyContinue
