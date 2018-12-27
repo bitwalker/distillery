@@ -11,6 +11,7 @@ defmodule Mix.Releases.Assembler do
   alias Mix.Releases.BootScript
   alias Mix.Releases.Utils
   alias Mix.Releases.Shell
+  alias Mix.Releases.Stripper
   alias Mix.Releases.Appup
   alias Mix.Releases.Plugin
   alias Mix.Releases.Overlays
@@ -967,7 +968,7 @@ defmodule Mix.Releases.Assembler do
         )
         Shell.debug("Stripping release (#{path})")
 
-        case :beam_lib.strip_release(String.to_charlist(path)) do
+        case Stripper.strip_release(String.to_charlist(path)) do
           {:ok, _} ->
             :ok
 
