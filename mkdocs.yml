@@ -4,11 +4,13 @@ site_dir: 'doc'
 theme: 'material'
 use_directory_urls: false
 markdown_extensions:
-    - markdown.extensions.toc(permalink=true)
+    - markdown.extensions.toc:
+        permalink: true
     - markdown.extensions.admonition
     - markdown.extensions.smarty
     - markdown.extensions.wikilinks
-    - markdown.extensions.codehilite(linenums=true)
+    - markdown.extensions.codehilite:
+        linenums: true
     - pymdownx.caret
     - pymdownx.details
     - pymdownx.inlinehilite
@@ -16,7 +18,8 @@ markdown_extensions:
     - pymdownx.mark
     - pymdownx.smartsymbols
     - pymdownx.superfences
-    - pymdownx.tasklist(custom_checkbox=true)
+    - pymdownx.tasklist:
+        custom_checkbox: true
     - pymdownx.tilde
 extra:
     palette:
