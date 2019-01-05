@@ -455,11 +455,8 @@ defmodule Mix.Releases.Release do
             name
         end
 
-      case Application.load(app_name) do
+      case validate_app(app_name) do
         :ok ->
-          :ok
-
-        {:error, {:already_loaded, _}} ->
           :ok
 
         {:error, reason} ->
@@ -511,9 +508,13 @@ defmodule Mix.Releases.Release do
   defp add_app(dg, as, parent, {name, start_type}) do
     case :digraph.vertex(dg, name) do
       false ->
-        # Haven't seen this app yet, and it is not excluded
-        do_add_app(dg, as, parent, App.new(name, start_type))
-
+        case validate_app(name) do
+          :ok ->
+            # Haven't seen this app yet, and it is not excluded
+            do_add_app(dg, as, parent, App.new(name, start_type))
+          error -> 
+            error
+        end
       _ ->
         # Already visited
         :ok
@@ -614,5 +615,18 @@ defmodule Mix.Releases.Release do
 
     Shell.debugf("  |_____\n\n")
     do_print_discovered_apps(apps)
+  end
+
+  defp validate_app(app_name) do
+    case Application.load(app_name) do
+      :ok ->
+        :ok
+
+      {:error, {:already_loaded, _}} ->
+        :ok
+
+      error -> 
+        error
+    end
   end
 end
