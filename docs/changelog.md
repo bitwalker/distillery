@@ -46,7 +46,7 @@ provide a good overview of what has been addressed.
 - A new `config_providers` setting for defining which config providers to
   execute in a release (can be set in either `environment` or `release` blocks).
 - Support for writing a PID file to disk (useful for running under systemd in
-  particular). It is enabled with `-kernel pidfile "path/to/pidfile"` or by
+  particular). It is enabled with `-kernel pidfile '"path/to/pidfile"'` or by
   exporting `PIDFILE` in the environment. When enabled, the file is written to
   disk and then checked every 5s - if the file is deleted, the node is
   terminated as soon as the next check is performed. This process is executed as
