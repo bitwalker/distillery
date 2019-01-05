@@ -58,6 +58,7 @@ config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
 ```
 
 Let's discuss these options.
+
 - `server` configures the endpoint to boot the
   [Cowboy](https://github.com/ninenines/cowboy) application http
   endpoint on start.
