@@ -745,10 +745,12 @@ defmodule Mix.Releases.Assembler do
 
     erts_output_dir = Path.join(output_dir, "erts-#{erts_vsn}")
     erl_path = Path.join([erts_output_dir, "bin", "erl"])
+    erl_ini_file = Path.join([erts_output_dir, "bin", "erl.ini"])
 
     with :ok <- Utils.remove_if_exists(erts_output_dir),
          :ok <- File.mkdir_p(erts_output_dir),
          {:ok, _} <- File.cp_r(erts_dir, erts_output_dir),
+         {:ok, _} <- File.rm_rf(erl_ini_file),
          {:ok, _} <- File.rm_rf(erl_path),
          {:ok, erl_script} <- Utils.template(:erl_script, release.profile.overlay_vars),
          :ok <- File.write(erl_path, erl_script),
