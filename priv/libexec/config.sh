@@ -156,7 +156,7 @@ _configure_node() {
     # Extract the target node name from node.args
     # Should be `-sname somename` or `-name somename@somehost`
     export NAME_ARG
-    NAME_ARG="$(grep '^\-\(sn\|n\)ame' "$VMARGS_PATH" || true)"
+    NAME_ARG="$(grep '^-s\{0,1\}name' "$VMARGS_PATH" || true)"
     if [ -z "$NAME_ARG" ]; then
         echo "vm.args needs to have either -name or -sname parameter."
         exit 1
