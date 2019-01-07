@@ -77,7 +77,7 @@ RUN if [ ! "$SKIP_PHOENIX" = "true" ]; then \
   cd ${PHOENIX_SUBDIR}/assets && \
   yarn install && \
   yarn deploy && \
-  cd .. && \
+  cd - && \
   mix phx.digest; \
 fi
 
