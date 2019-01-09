@@ -48,6 +48,7 @@ nav:
         - 'Phoenix': 'guides/phoenix_walkthrough.md'
         - 'Building Releases In Docker': 'guides/building_in_docker.md'
         - 'Deploying To Digital Ocean': 'guides/deploying_to_digital_ocean.md'
+        - 'Deploying To GCP': 'guides/deploying_to_google_cloud_platform.md'
         - 'Deploying To AWS': 'guides/deploying_to_aws.md'
         - 'Deploying With Docker': 'guides/working_with_docker.md'
         - 'Upgrades and Downgrades': 'guides/upgrades_and_downgrades.md'
