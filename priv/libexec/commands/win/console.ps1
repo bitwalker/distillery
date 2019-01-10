@@ -4,9 +4,9 @@ $erl = (join-path $bin "erl.exe") #get erl.exe as werl.exe will open a new windo
 
 $boot = (join-path $Env:REL_DIR $Env:REL_NAME)
 
-$argv = @("-boot", $boot)
-$argv += @("-config", $Env:SYS_CONFIG_PATH)
-$argv += @("-args_file", $Env:VMARGS_PATH)
+$argv = @("-boot", "`"$boot`"")
+$argv += @("-config", "`"$Env:SYS_CONFIG_PATH`"")
+$argv += @("-args_file", "`"$Env:VMARGS_PATH`"")
 $argv += @("-user", "Elixir.IEx.CLI")
 $argv += @("-extra", "--no-halt", "+iex")
 
