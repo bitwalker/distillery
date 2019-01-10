@@ -1,6 +1,6 @@
 ## Run the app in console mode
 $bin = whereis-erts-bin
-$werl = (join-path $bin werl)
+$erl = (join-path $bin "erl.exe") #get erl.exe as werl.exe will open a new window
 
 $boot = (join-path $Env:REL_DIR $Env:REL_NAME)
 
@@ -18,6 +18,6 @@ $post_start = {
 }
 
 # Run post-start hooks asynchronously
-start-job -Name "post_start hooks" -ScriptBlock $post_start
+start-job -Name "post_start hooks" -ScriptBlock $post_start | out-null # hide the output from start-job
 
-& $werl @argv
+start-process "$erl" -ArgumentList "$argv" -Wait -NoNewWindow #execute the application in the current shell window
