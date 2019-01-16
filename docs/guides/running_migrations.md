@@ -69,7 +69,7 @@ defmodule MyApp.ReleaseTasks do
   end
 
   defp run_migrations_for(repo) do
-    app = Keyword.get(repo.config, :otp_app)
+    app = Keyword.get(repo.config(), :otp_app)
     IO.puts("Running migrations for #{app}")
     migrations_path = priv_path_for(repo, "migrations")
     Ecto.Migrator.run(repo, migrations_path, :up, all: true)
@@ -90,7 +90,7 @@ defmodule MyApp.ReleaseTasks do
   end
 
   defp priv_path_for(repo, filename) do
-    app = Keyword.get(repo.config, :otp_app)
+    app = Keyword.get(repo.config(), :otp_app)
 
     repo_underscore =
       repo
@@ -104,6 +104,7 @@ defmodule MyApp.ReleaseTasks do
   end
 end
 ```
+
 !!! warning
     Remember to put this file under `lib`, as it must be compiled with the rest of your application, otherwise the code will not be available in the release, and the migrate command will fail.
 

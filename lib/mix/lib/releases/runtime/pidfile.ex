@@ -31,7 +31,7 @@ defmodule Mix.Releases.Runtime.Pidfile do
         # No config, so no need for this process
         send(starter, {:ignore, me})
 
-      path when is_binary(path) ->
+      path when is_binary(path) or is_list(path) ->
         pid = :os.getpid()
         case :prim_file.write_file(path, List.to_string(pid)) do
           :ok ->
@@ -43,7 +43,7 @@ defmodule Mix.Releases.Runtime.Pidfile do
 
             # We're started!
             send(starter, {:ok, me})
-            
+
             # Enter receive loop
             loop(%{pidfile: path}, starter, parent)
 
@@ -74,7 +74,7 @@ defmodule Mix.Releases.Runtime.Pidfile do
         end
     end
   end
-  
+
   defp exists?(path) do
     case :prim_file.read_file_info(path) do
       {:error, _} ->

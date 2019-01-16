@@ -21,3 +21,4 @@ erl_crash.dump
 
 /_venv
 /bin/parse_releases
+/.elixir_ls

@@ -58,6 +58,7 @@ config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
 ```
 
 Let's discuss these options.
+
 - `server` configures the endpoint to boot the
   [Cowboy](https://github.com/ninenines/cowboy) application http
   endpoint on start.
@@ -213,10 +214,10 @@ Next we build an upgrade release with the following command:
 
 This is the same command as in version 0.0.1 with the exception of
 `--upgrade`. The upgrade flag tells Distillery to build an
-[appup](https://hexdocs.pm/distillery/upgrades-and-downgrades.html)
+[appup](https://hexdocs.pm/distillery/guides/upgrades_and_downgrades.html)
 for every application included in the release. These files are then
 used to generate a
-[relup](https://hexdocs.pm/distillery/upgrades-and-downgrades.html)
+[relup](https://hexdocs.pm/distillery/guides/upgrades_and_downgrades.html)
 which details how an upgrade (or downgrade) is applied to a running
 application instance.
 

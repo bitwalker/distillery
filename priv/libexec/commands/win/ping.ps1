@@ -12,9 +12,9 @@ require-cookie
 $argv = @()
 $argv += "--name=$Env:NAME"
 $argv += "--cookie=$Env:COOKIE"
-$argv += @args
+$argv += $args
 
-release-ctl ping @argv
+release-ctl ping $argv
 if ($LastExitCode -ne 0) {
     exit 1
 }
