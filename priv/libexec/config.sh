@@ -7,18 +7,15 @@ get_vmargs_path() {
     if [ -z "$VMARGS_PATH" ]; then
         if [ -f "$RELEASE_MUTABLE_DIR/vm.args" ]; then
             echo "$RELEASE_MUTABLE_DIR/vm.args"
-            return 0
         fi
         if [ -f "$RELEASE_CONFIG_DIR/vm.args" ]; then
             echo "$RELEASE_CONFIG_DIR/vm.args"
-            return 0
         fi
     else
         echo "$VMARGS_PATH"
-        return 0
     fi
 
-    return 1
+    echo ""
 }
 
 # We're expecting that the real configs have been generated at
@@ -42,6 +39,9 @@ partial_configure_release() {
             export SYS_CONFIG_PATH="$RELEASE_CONFIG_DIR/sys.config"
         fi
     fi
+
+    # Set up the node based on the new configuration
+    _configure_node
 }
 
 # Sets config paths for sys.config and vm.args, and ensures that env var replacements are performed
@@ -236,7 +236,7 @@ _configure_node() {
 
     # We need to detect configuration from vm.args
     vmargs="$(get_vmargs_path)"
-    if !$?; then
+    if [ -z "$vmargs" ]; then
         fail "Unable to load vm.args and NAME is not exported, unable to configure node!"
     fi
 
@@ -256,6 +256,9 @@ _configure_node() {
     # NAME will be either `somename` or `somename@somehost`
     export NAME
     NAME="$(echo "$NAME_ARG" | awk '{print $2}' | tail -n 1)"
+    if [ -z "$NAME" ]; then
+        fail "Invalid $NAME_TYPE value in vm.args, value is empty!"
+    fi
 
     # User can specify an sname without @hostname
     # This will fail when creating remote shell
@@ -298,8 +301,8 @@ _load_cookie() {
     if [ ! -z "$COOKIE" ]; then
         return 0
     fi
-    vmargs=""
-    if ! vmargs="$(get_vmargs_path)"; then
+    vmargs="$(get_vmargs_path)"
+    if [ -z "$vmargs" ]; then
         return 1
     fi
     COOKIE_ARG="$(_replace_os_vars_str "${vmargs}" | grep '^-setcookie' || true)"

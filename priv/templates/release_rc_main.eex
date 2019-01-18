@@ -74,11 +74,15 @@ SCRIPT_DIR="$(dirname "${SCRIPT}")"
 RELEASE_ROOT_DIR="${RELEASE_ROOT_DIR:-$(dirname "$(dirname "${SCRIPT_DIR}")")}"
 # Directory containing the current version of this release
 REL_DIR="${REL_DIR:-$RELEASE_ROOT_DIR/releases/$REL_VSN}"
+export REL_DIR
 # The location of builtin command scripts
 RELEASE_LIBEXEC_DIR="$SCRIPT_DIR/libexec"
 # The location of consolidated protocol .beams
 CONSOLIDATED_DIR="${RELEASE_ROOT_DIR}/lib/${REL_NAME}-${REL_VSN}/consolidated"
 export CONSOLIDATED_DIR
+# Path to start_erl.data
+START_ERL_DATA="${START_ERL_DATA:-$RELEASE_ROOT_DIR/releases/start_erl.data}"
+export START_ERL_DATA
 
 # shellcheck source=../libexec/readlink.sh
 . "$RELEASE_LIBEXEC_DIR/readlink.sh"
@@ -133,6 +137,7 @@ case $COMMAND_NAME in
         # If the command exists in libexec, execute
         # Otherwise check to see if it's the name of a custom command
         if [ -f "$COMMAND_PATH" ]; then
+            partial_configure_release
             . "$COMMAND_PATH" "$@"
         else
             COMMAND_PATH="$REL_DIR/commands/$COMMAND_NAME.sh"
