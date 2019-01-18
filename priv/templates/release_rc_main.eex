@@ -120,16 +120,19 @@ case $COMMAND_NAME in
         configure_release
         . "$COMMAND_DIR/console.sh" "$COMMAND_NAME" "$@"
         ;;
+    foreground|reload_config|describe)
+        configure_release
+        . "$COMMAND_PATH" "$@"
+        ;;
     *)
         # If the command exists in libexec, execute
         # Otherwise check to see if it's the name of a custom command
         if [ -f "$COMMAND_PATH" ]; then
-            configure_release
             . "$COMMAND_PATH" "$@"
         else
             COMMAND_PATH="$REL_DIR/commands/$COMMAND_NAME.sh"
             if [ -f "$COMMAND_PATH" ]; then
-                configure_release
+                partial_configure_release
                 require_cookie
                 . "$COMMAND_PATH" "$@"
             else
