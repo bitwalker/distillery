@@ -26,12 +26,19 @@ defmodule Mix.Releases.Runtime.Control do
     transform: &String.to_atom/1
   )
 
+  defoption(
+    :id,
+    :string,
+    "The unique id to use when connecting to the remote node"
+  )
+
   option(:verbose, :boolean, "Turns on verbose output", alias: :v)
 
   # Basic management tasks
   command :ping, "Pings the remote node" do
     option(:cookie, required: true)
     option(:name)
+    option(:id)
   end
 
   # Stub for `describe`
@@ -40,16 +47,19 @@ defmodule Mix.Releases.Runtime.Control do
   command :stop, "Stops the remote node" do
     option(:name)
     option(:cookie)
+    option(:id)
   end
 
   command :restart, "Restarts the remote node. This will not restart the emulator" do
     option(:name)
     option(:cookie)
+    option(:id)
   end
 
   command :reboot, "Reboots the remote node. This will restart the emulator" do
     option(:name)
     option(:cookie)
+    option(:id)
   end
 
   # Stub for `describe`
@@ -65,6 +75,7 @@ defmodule Mix.Releases.Runtime.Control do
   command :unpack, "Unpacks a release upgrade for installation" do
     option(:name)
     option(:cookie)
+    option(:id)
     option(:release, :string, "The release name", required: true, hidden: true)
 
     argument(:version, :string, "The release version to unpack", required: true)
@@ -73,6 +84,7 @@ defmodule Mix.Releases.Runtime.Control do
   command :install, "Installs a release upgrade" do
     option(:name)
     option(:cookie)
+    option(:id)
     option(:release, :string, "The release name", required: true, hidden: true)
 
     argument(:version, :string, "The release version to install", required: true)
@@ -82,12 +94,14 @@ defmodule Mix.Releases.Runtime.Control do
   command :reload_config, "Reloads the config of the remote node" do
     option(:name)
     option(:cookie)
+    option(:id)
     option(:sysconfig, :string, "The path to a sys.config file")
   end
 
   command :rpc, "Executes the provided expression on the remote node" do
     option(:name)
     option(:cookie)
+    option(:id)
     option(:file, :string, "Evaluate a file instead of an expression")
     option(:mfa, :string, "A module/function/arity string, e.g. IO.inspect/1")
 
@@ -120,6 +134,7 @@ defmodule Mix.Releases.Runtime.Control do
   command :info, "Prints information about the remote node to stdout" do
     option(:name)
     option(:cookie)
+    option(:id)
 
     command :processes, [callback: :processes_info], "Show a table of running processes" do
       option(
@@ -135,6 +150,7 @@ defmodule Mix.Releases.Runtime.Control do
   command :describe, "Describes the currently installed release" do
     option(:name)
     option(:cookie)
+    option(:id)
     option(:release, :string, "The name of the release")
     option(:release_root_dir, :string, "The root directory for all releases")
     option(:sysconfig, :string, "The path to the sys.config file used by the release")
@@ -147,9 +163,17 @@ defmodule Mix.Releases.Runtime.Control do
   This function executes before any commands are dispatched
   """
   @impl Artificery
-  def pre_dispatch(_cmd, _argv, %{name: name, cookie: cookie} = opts) do
-    # If required, it means we need to connect to the remote node
-    {:ok, peer, name, type} = start_distribution!(name, cookie)
+  def pre_dispatch(_cmd, _argv, %{name: remote_name, cookie: cookie} = opts) do
+    # Allow callers to provide a unique id for the node
+    # We don't want to generate random ids because it can fill the atom table
+    id =
+      case Map.get(opts, :id) do
+        nil -> nil
+        suffix -> suffix
+      end
+
+    # Connect to the given remote node
+    {:ok, peer, name, type} = start_distribution!(remote_name, cookie, id)
 
     new_opts =
       opts
@@ -888,11 +912,15 @@ defmodule Mix.Releases.Runtime.Control do
   end
 
   @doc false
-  def start_distribution!(name, cookie) do
+  def start_distribution!(name, cookie, suffix \\ nil) do
     {peer, name, type} =
       case name_components(name) do
+        %{name: name, full: full_name, host: host, type: type} when not is_nil(suffix) ->
+          {full_name, suffix_name_long(name, host, suffix), type}
         %{name: name, full: full_name, host: host, type: type} ->
-          {full_name, suffix_name(name, host), type}
+          {full_name, suffix_name_long(name, host), type}
+        %{name: name, full: full_name, type: type} when not is_nil(suffix) ->
+          {full_name, suffix_name(name, suffix), type}
         %{name: name, full: full_name, type: type} ->
           {full_name, suffix_name(name), type}
         {:error, reason} ->
@@ -938,8 +966,13 @@ defmodule Mix.Releases.Runtime.Control do
     end
   end
 
-  defp suffix_name(name), do: String.to_atom("#{name}_maint_")
-  defp suffix_name(name, host), do: String.to_atom("#{name}_maint_@#{host}")
+  defp suffix_name(name, suffix \\ nil)
+  defp suffix_name(name, nil), do: String.to_atom("#{name}_maint_")
+  defp suffix_name(name, suffix), do: String.to_atom("#{name}_#{suffix}")
+
+  defp suffix_name_long(name, host, suffix \\ nil)
+  defp suffix_name_long(name, host, nil), do: String.to_atom("#{name}_maint_@#{host}")
+  defp suffix_name_long(name, host, suffix), do: String.to_atom("#{name}_#{suffix}@#{host}")
 
   ## Helpers
 
