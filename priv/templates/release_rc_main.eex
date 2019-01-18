@@ -19,6 +19,7 @@ ERL_OPTS="${ERL_OPTS:-<%= release.profile.erl_opts %>}"
 # Environment variables for run_erl
 RUN_ERL_ENV="${RUN_ERL_ENV:-<%= release.profile.run_erl_env %>}"
 # Current version of ERTS being used
+<%= if (include_erts == false or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
 # If this is not present/unset, it will be detected
 <%= if ((is_binary(include_erts) or include_erts) and not is_nil(erts_vsn)) do %>ERTS_VSN="${ERTS_VSN:-<%= erts_vsn %>}"<% end %>
 DISTILLERY_VSN="<%= Application.spec(:distillery, :vsn) %>"
@@ -26,6 +27,7 @@ export REL_NAME
 export REL_VSN
 export ERL_OPTS
 export RUN_ERL_ENV
+export USE_HOST_ERTS
 export ERTS_VSN
 export DISTILLERY_VSN
 
@@ -74,6 +76,9 @@ RELEASE_ROOT_DIR="${RELEASE_ROOT_DIR:-$(dirname "$(dirname "${SCRIPT_DIR}")")}"
 REL_DIR="${REL_DIR:-$RELEASE_ROOT_DIR/releases/$REL_VSN}"
 # The location of builtin command scripts
 RELEASE_LIBEXEC_DIR="$SCRIPT_DIR/libexec"
+# The location of consolidated protocol .beams
+CONSOLIDATED_DIR="${RELEASE_ROOT_DIR}/lib/${REL_NAME}-${REL_VSN}/consolidated"
+export CONSOLIDATED_DIR
 
 # shellcheck source=../libexec/readlink.sh
 . "$RELEASE_LIBEXEC_DIR/readlink.sh"
