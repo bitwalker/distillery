@@ -19,6 +19,7 @@ ERL_OPTS="${ERL_OPTS:-<%= release.profile.erl_opts %>}"
 # Environment variables for run_erl
 RUN_ERL_ENV="${RUN_ERL_ENV:-<%= release.profile.run_erl_env %>}"
 # Current version of ERTS being used
+ERTS_VSN="${ERTS_VSN:-$(cut -d' ' -f1 "${RELEASES_DIR}"/start_erl.data)}"
 <%= if (include_erts == false or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
 # If this is not present/unset, it will be detected
 <%= if ((is_binary(include_erts) or include_erts) and not is_nil(erts_vsn)) do %>ERTS_VSN="${ERTS_VSN:-<%= erts_vsn %>}"<% end %>
