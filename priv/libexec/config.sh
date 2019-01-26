@@ -265,22 +265,21 @@ _configure_node() {
     # So here we check for @ and add @hostname if missing
     case $NAME in
         *@*)
-            if [ "$NAME_TYPE" = "-name" ]; then
-                if [[ ! "$NAME" =~ ^[^@]+@[^\.]+\..*$ ]]; then
-                    # -name was given, but the hostname is not fully qualified
-                    fail "Failed setting -name! The hostname in '$NAME' is not fully qualified"
+            if [[ "$NAME" =~ ^[^@]+@[^\.]+\..*$ ]]; then
+                if [ "$NAME_TYPE" = "-sname" ]; then
+                    fail "cannot use fully-qualified name '$NAME' with -sname argument!"
                 fi
             fi
             ;;
         *)
-            HOSTNAME="$(get_hostname)"
-            if [ "$NAME_TYPE" = "-name" ]; then
-                if [[ ! "$HOSTNAME" =~ ^[^\.]+\..*$ ]]; then
-                    # If the hostname is not fully qualified, change the name type
-                    NAME_TYPE="-sname"
-                fi
+            if [ "$NAME_TYPE" != "-sname" ]; then
+                HOSTNAME="$(get_hostname)"
+                OLD_NAME="$NAME"
+                NAME="$NAME@$HOSTNAME"
+                NAME_TYPE="-name"
+                notice "Automatically converted short name ($OLD_NAME) to long name ($NAME)!"
+                notice "It is recommended that you set a fully-qualified name in vm.args instead"
             fi
-            NAME="$NAME@$HOSTNAME"
             ;;
     esac
 }
