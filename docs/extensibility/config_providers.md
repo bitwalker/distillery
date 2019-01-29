@@ -76,12 +76,12 @@ defmodule JsonConfigProvider do
     # Helper which expands paths to absolute form
     # and expands env vars in the path of the form `${VAR}`
     # to their value in the system environment
-    config_path = Provider.expand_path(config_path)
+    {:ok, config_path} = Provider.expand_path(config_path)
     # All applications are already loaded at this point
     if File.exists?(config_path) do
       config_path
+      |> File.read!
       |> Jason.decode!
-      |> to_keyword()
       |> persist()
     else
       :ok
@@ -91,7 +91,7 @@ defmodule JsonConfigProvider do
   defp to_keyword(config) when is_map(config) do
     for {k, v} <- config do
       k = String.to_atom(k)
-      {k, to_keyword(config)}
+      {k, to_keyword(v)}
     end
   end
   defp to_keyword(config), do: config
