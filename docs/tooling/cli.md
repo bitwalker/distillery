@@ -30,7 +30,6 @@ entry point, i.e. the `bin/myapp` script.
 
 There are numerous tasks available, you have already seen a few of them:
 
-  * `foreground` - run the release in the foreground, like `mix run --no-halt`
   * `console` - run the release with a shell attached, like `iex -S mix`
   * `start` - run the release in the background
 
@@ -40,4 +39,4 @@ There are a few other important tasks:
   * `remote_console` - attach a shell to a running release
   * `describe` - print metadata about the release
 
-To see a full listing of tasks available, run `bin/myapp` with no arguments.
+To see a full listing of tasks available, run `bin/myapp` with no arguments, or refer to the [Release Tasks](/extensibility/release_tasks.md) reference page.

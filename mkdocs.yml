@@ -64,6 +64,7 @@ nav:
         - 'Release Plugins': 'extensibility/release_plugins.md'
         - 'Config Providers': 'extensibility/config_providers.md'
         - 'Custom Commands': 'extensibility/custom_commands.md'
+        - 'Release Tasks': 'extensibility/release_tasks.md'
         - 'Overlays': 'extensibility/overlays.md'
         - 'Boot Hooks': 'extensibility/boot_hooks.md'
         - 'Shell Scripts': 'extensibility/shell_scripts.md'

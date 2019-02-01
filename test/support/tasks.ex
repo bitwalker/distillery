@@ -8,4 +8,8 @@ defmodule Distillery.Test.Tasks do
   def run(arg1, arg2) do
     IO.inspect(arg1: arg1, arg2: arg2)
   end
+
+  def eval(arg1, arg2) do
+    {arg1, arg2}
+  end
 end

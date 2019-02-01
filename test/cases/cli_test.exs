@@ -63,6 +63,12 @@ defmodule Distillery.Test.CliTest do
       end) =~ "[\"foo\", \"bar\"]"
     end
 
+    test "eval --mfa --argv outputs result" do
+      assert is_success(fn ->
+        Control.main(["eval", "--mfa", "Enum.join/1", "--argv", "--", "foo", "bar"])
+      end) =~ "foobar"
+    end
+
     test "eval --mfa correct args" do
       assert is_success(fn ->
         Control.main(["eval", "--mfa", "Distillery.Test.Tasks.run/2", "--", "foo", "bar"])
@@ -75,10 +81,22 @@ defmodule Distillery.Test.CliTest do
       end) =~ "function has a different arity!"
     end
 
+    test "eval --mfa outputs result" do
+      assert is_success(fn ->
+        Control.main(["eval", "--mfa", "Distillery.Test.Tasks.eval/2", "--", "foo", "bar"])
+      end) =~ "{\"foo\", \"bar\"}"
+    end
+
     test "eval --file" do
       assert is_success(fn ->
         Control.main(["eval", "--file", Path.join([@fixtures_path, "files", "eval_file_example.exs"]) |> Path.expand])
       end) =~ "ok from primary@127.0.0.1\n"
+    end
+
+    test "eval --file outputs result" do
+      assert is_success(fn ->
+        Control.main(["eval", "--file", Path.join([@fixtures_path, "files", "eval_file_example_noout.exs"]) |> Path.expand])
+      end) =~ "{{:ok, \"done\"}, []}\n"
     end
 
     test "eval syntax error produces friendly error" do
