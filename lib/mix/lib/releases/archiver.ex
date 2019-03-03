@@ -235,14 +235,9 @@ defmodule Mix.Releases.Archiver do
     end)
   end
 
-  defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: true}}, tmpdir) do
+  defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: _}}, tmpdir) do
     Shell.debug("Including system libs from current Erlang installation")
     Archive.add(archive, Path.join(tmpdir, "lib"), "lib")
-  end
-
-  defp maybe_include_system_libs(archive, %Release{profile: %{include_erts: path}}, _tmpdir) do
-    Shell.debug("Including system libs from #{Path.relative_to_cwd(path)}")
-    Archive.add(archive, Path.join(Path.expand(path), "lib"), "lib")
   end
 
   defp save_archive(%Release{version: version, profile: %{output_dir: output_dir}}, archive) do
