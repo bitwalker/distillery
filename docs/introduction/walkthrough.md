@@ -292,7 +292,7 @@ You will now have a new tarball in `_build/prod/rel/<name>/releases/<upgrade_ver
 To deploy a built upgrade release (using our previous example as a base):
 
     $ mkdir -p /opt/app/releases/0.2.0
-    $ cp _build/prod/rel/myapp/releases/0.2.0/myapp.tar.gz /opt/app/releases/0.2.0.tar.gz
+    $ cp _build/prod/rel/myapp/releases/0.2.0/myapp.tar.gz /opt/app/releases/0.2.0/myapp.tar.gz
     $ pushd /opt/app
     $ bin/myapp upgrade 0.2.0
 
