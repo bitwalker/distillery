@@ -79,9 +79,7 @@ for building a release. Execute the following commands:
 ```
 $ mix deps.get --only prod
 $ MIX_ENV=prod mix compile
-$ cd assets
-$ node node_modules/brunch/bin/brunch build --production
-$ cd ..
+$ npm run deploy --prefix assets
 $ mix phx.digest
 ```
 
@@ -116,7 +114,7 @@ Phoenix application.
 
 *NOTE* The above commands can be combined into one quick command as
 ```
-$ cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod
+$ npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod
 ```
 
 *NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure
@@ -131,7 +129,7 @@ which is not intended to be packaged in releases. As you won't be doing code rel
 If you followed the above you will have generated a working release. A few notes on some of the
 above commands we used:
 
-1. `./node_modules/brunch/bin/brunch b -p` builds your assets in
+1. `npm run deploy --prefix assets` builds your assets in
    production mode. More detail can be found in the
    [Phoenix Static Asset Guide](http://phoenixframework.org/blog/static-assets)
 1. `MIX_ENV=prod mix phx.digest` To compress and tag your assets
@@ -141,7 +139,7 @@ above commands we used:
     production environment
 
 You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is
-supposed to be interactive with features such as live code reload and automatic `brunch` asset
+supposed to be interactive with features such as live code reload and automatic `webpack` asset
 recompilation and extra logging. While great for development, it comes at a performance cost
 and you would not want to run a production Phoenix application in dev mode.
 
@@ -210,7 +208,7 @@ Remove the following line from our application layout.
 
 Next we build an upgrade release with the following command:
 
-`cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+`npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
 
 This is the same command as in version 0.0.1 with the exception of
 `--upgrade`. The upgrade flag tells Distillery to build an
@@ -320,7 +318,7 @@ just as we did with 0.0.2. So we will generate a release, copy the
 0.0.3 tarball into a new release directory under `local_deploy`, and
 upgrade the application.
 
-1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+1. `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
 1. `mkdir local_deploy/releases/0.0.3`
 1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3/`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
@@ -370,7 +368,7 @@ just as we did with 0.0.3. Generate a release, copy the 0.0.4 tarball
 into a new release directory under `local_deploy`, and upgrade the
 application.
 
-1. `cd assets && ./node_modules/brunch/bin/brunch b -p && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+1. `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
 1. `mkdir local_deploy/releases/0.0.4`
 1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4/`
 1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
