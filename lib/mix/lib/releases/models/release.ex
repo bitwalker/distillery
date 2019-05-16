@@ -400,7 +400,7 @@ defmodule Mix.Releases.Release do
   end
 
   @doc """
-  Returns a list of all code_paths of all appliactions included in the release
+  Returns a list of all code_paths of all applications included in the release
   """
   @spec get_code_paths(t) :: [charlist]
   def get_code_paths(%__MODULE__{profile: %Profile{output_dir: output_dir}} = release) do
