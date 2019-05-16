@@ -3,7 +3,7 @@ defmodule Distillery.Test.CliTest do
 
   import ExUnit.CaptureIO
 
-  alias Mix.Releases.Runtime.Control
+  alias Distillery.Releases.Runtime.Control
   alias ExUnit.ClusteredCase.Node, as: NodeManager
   
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])

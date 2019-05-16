@@ -1,5 +1,5 @@
 defmodule Distillery.Test.SoftPurgeTransform do
-  use Mix.Releases.Appup.Transform
+  use Distillery.Releases.Appup.Transform
 
   def up(app, _v1, _v2, instructions, opts) do
     apply_transform(instructions, app, opts)

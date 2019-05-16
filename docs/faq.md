@@ -32,13 +32,13 @@ provisioned in those environments.
 In many cases, your Mix environments and Distillery environments may line up -
 which is why Distillery creates `:dev` and `:prod` environments by default in
 its configuration file, and why it sets the default environment to be chosen based on
-the value of `Mix.env`. This allows you to run `mix release` or `MIX_ENV=prod
- mix release` out of the box, and have it do "the right thing".
+the value of `Mix.env`. This allows you to run `mix distillery.release` or `MIX_ENV=prod
+ mix distillery.release` out of the box, and have it do "the right thing".
 
 You can either keep your Mix environments and Distillery environments in sync,
 or select them independently:
 
-    $ MIX_ENV=prod mix release --env=staging
+    $ MIX_ENV=prod mix distillery.release --env=staging
 
 ### What is a profile?
 
@@ -48,11 +48,11 @@ environment-specific settings on top of settings in the release definition.
 
 You can select a specific release/environment pair to build with the `--profile` flag:
 
-    $ MIX_ENV=prod mix release --profile=myapp:staging
+    $ MIX_ENV=prod mix distillery.release --profile=myapp:staging
 
 Which is the same as if you had invoked `release` like so:
 
-    $ MIX_ENV=prod mix release --name=myapp --env=staging
+    $ MIX_ENV=prod mix distillery.release --name=myapp --env=staging
 
 ### Warnings
 

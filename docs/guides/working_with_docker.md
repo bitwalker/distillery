@@ -83,7 +83,7 @@ fi
 
 RUN \
   mkdir -p /opt/built && \
-  mix release --verbose && \
+  mix distillery.release --verbose && \
   cp _build/${MIX_ENV}/rel/${APP_NAME}/releases/${APP_VSN}/${APP_NAME}.tar.gz /opt/built && \
   cd /opt/built && \
   tar -xzf ${APP_NAME}.tar.gz && \
@@ -200,7 +200,7 @@ following in your `rel/config.exs`:
 release :myapp do
   # snip..
   set config_providers: [
-    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+    {Distillery.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
   ]
   set overlays: [
     {:copy, "rel/config/config.exs", "etc/config.exs"}

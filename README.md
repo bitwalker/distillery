@@ -29,7 +29,7 @@ defp deps do
 end
 ```
 
-Just add as a mix dependency and use `mix release`.
+Just add as a mix dependency and use `mix distillery.release`.
 
 If you are new to releases or Distillery, please review the [documentation](https://hexdocs.pm/distillery),
 it is extensive and covers just about any question you may have!

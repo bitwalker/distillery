@@ -99,7 +99,7 @@ release, to a location which will not overwrite a previous config when the
 release is extracted, but will be handy when configuring the release for the
 first time.
 
-Any provider module must implement the `Mix.Releases.Config.Provider` behavior.
+Any provider module must implement the `Distillery.Releases.Config.Provider` behavior.
 See its documentation for details.
 
 This configuration framework supports a variety of interesting configuration
@@ -119,7 +119,7 @@ output). You can use it like so:
 ```elixir
 environment :prod do
   set config_providers: [
-    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+    {Distillery.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
   ]
   set overlays: [
     {:copy, "rel/config/config.exs", "etc/config.exs"}
@@ -362,7 +362,7 @@ apply to `run_erl`, you can add a line like
 in your release configuration.
 
 This configuration can also be specified in the `RUN_ERL_ENV`
-environment variable at the time of running `mix release`.
+environment variable at the time of running `mix distillery.release`.
 
 For a complete list of environment variables respected by `run_erl`, see
 [here](http://erlang.org/doc/man/run_erl.html).

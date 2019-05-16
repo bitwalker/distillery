@@ -1,7 +1,7 @@
 defmodule Distillery.Test.ProviderTest do
   use ExUnit.Case
   
-  alias Mix.Releases.Config.Providers
+  alias Distillery.Releases.Config.Providers
   
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])
   @umbrella_config_path Path.join([@fixtures_path, "umbrella_app", "config", "config.exs"])

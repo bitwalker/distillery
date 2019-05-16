@@ -1,32 +1,32 @@
-defmodule Mix.Tasks.Release.Clean do
+defmodule Mix.Tasks.Distillery.Release.Clean do
   @moduledoc """
   Cleans release artifacts from the current project.
 
   ## Examples
 
       # Cleans files associated with the latest release
-      mix release.clean
+      mix distillery.release.clean
 
       # Remove all release files
-      mix release.clean --implode
+      mix distillery.release.clean --implode
 
       # Remove all release files, and do it without confirmation
-      mix release.clean --implode --no-confirm
+      mix distillery.release.clean --implode --no-confirm
 
       # Log verbosely
-      mix release.clean --verbose
+      mix distillery.release.clean --verbose
 
   """
   @shortdoc "Clean up any release-related files"
   use Mix.Task
 
-  alias Mix.Releases.Shell
-  alias Mix.Releases.App
-  alias Mix.Releases.Plugin
-  alias Mix.Releases.Release
-  alias Mix.Releases.Config
-  alias Mix.Releases.Profile
-  alias Mix.Releases.Errors
+  alias Distillery.Releases.Shell
+  alias Distillery.Releases.App
+  alias Distillery.Releases.Plugin
+  alias Distillery.Releases.Release
+  alias Distillery.Releases.Config
+  alias Distillery.Releases.Profile
+  alias Distillery.Releases.Errors
 
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do
@@ -112,7 +112,7 @@ defmodule Mix.Tasks.Release.Clean do
       System.halt(1)
   end
 
-  @spec clean!(Mix.Releases.Config.t(), [String.t()]) :: :ok | no_return
+  @spec clean!(Config.t(), [String.t()]) :: :ok | no_return
   defp clean!(%Config{releases: releases}, args) do
     # load release configuration
     Shell.info("Cleaning last release..")
@@ -203,7 +203,7 @@ defmodule Mix.Tasks.Release.Clean do
   end
 
   defp confirm_implode? do
-    Mix.Releases.Shell.confirm?("""
+    Shell.confirm?("""
     THIS WILL REMOVE ALL RELEASES AND RELATED CONFIGURATION!
     Are you absolutely sure you want to proceed?
     """)

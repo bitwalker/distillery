@@ -41,7 +41,7 @@ or modify it as desired. We will look at this file and discuss its contents brie
 [Configuration](../config/distillery.md) for more information on this file
 and available settings.
 
-To initialize Distillery, just run `mix release.init`.
+To initialize Distillery, just run `mix distillery.init`.
 
 !!! note
     In this walkthrough, we're making the assumption that this is not an umbrella application,
@@ -53,7 +53,7 @@ To initialize Distillery, just run `mix release.init`.
 The default configuration file will look something like the following (comments stripped):
 
 ```elixir
-use Mix.Releases.Config,
+use Distillery.Releases.Config,
     default_release: :default,
     default_environment: Mix.env()
 
@@ -78,7 +78,7 @@ Let's talk about what these settings do from top to bottom.
     See [Configuring Distillery](../config/distillery.md) if you want to explore settings not covered in this guide.
 
 ```elixir
-use Mix.Releases.Config,
+use Distillery.Releases.Config,
     default_release: :default,
     default_environment: Mix.env()
 ```
@@ -86,7 +86,7 @@ use Mix.Releases.Config,
 This loads the configuration macros required by Distillery, and sets a few
 optional global settings: `default_release` and `default_environment`. These
 setting specify which release and which environment to build by default if they
-are not specified as options to `mix release`.
+are not specified as options to `mix distillery.release`.
 
 If `default_release` is set to `:default`, then the first release definition in
 the file will be used. If `default_environment` is set to `:default`, then an
@@ -130,7 +130,7 @@ end
 
 This creates a new release definition, named `myapp`, and sets the only required
 setting for a release definition, `version` to whatever the current version of
-the `myapp` application is when `mix release` is run, by using the
+the `myapp` application is when `mix distillery.release` is run, by using the
 `current_version/1` macro.
 
 You must have at least one release definition in the config. You do not have to
@@ -149,8 +149,8 @@ a release named `myapp`, and an environment called `dev`, the profile would be
 
 ## Building your release
 
-Now that we've configured our application we can build it! Just run `mix release`. There are a few flags
-to `mix release` that you may be interested in using right now:
+Now that we've configured our application we can build it! Just run `mix distillery.release`. There are a few flags
+to `mix distillery.release` that you may be interested in using right now:
 
   * `--verbose` – log detailed information about what Distillery is doing and
   metadata it discovers. If you encounter issues, you should always turn this on
@@ -162,7 +162,7 @@ to `mix release` that you may be interested in using right now:
 !!! tip
     See `mix help release` for more usage information and additional flags.
 
-When you run `mix release`, you should see something like the following:
+When you run `mix distillery.release`, you should see something like the following:
 
 ```
 ==> Assembling release..
@@ -198,7 +198,7 @@ At this point, you can run your release as described in the output.
 ## Deploying your release
 
 !!! warning
-    When running `mix release` for deployment to production, you should set `MIX_ENV=prod`,
+    When running `mix distillery.release` for deployment to production, you should set `MIX_ENV=prod`,
     to avoid pulling in dev dependencies, and to make sure the compiled BEAMs are optimized.
 
 !!! note
@@ -212,7 +212,7 @@ At this point, you can run your release as described in the output.
 
 Let's assume you've built your release like so, and are ready to deploy to production:
 
-    $ MIX_ENV=prod mix release
+    $ MIX_ENV=prod mix distillery.release
 
 The artifact you will want to deploy is the release tarball, which is located at
 `_build/prod/rel/<name>/releases/<version>/<name>.tar.gz`.
@@ -270,7 +270,7 @@ Once started, you can connect a shell to the running release with `bin/<name> re
 So you've made some changes and bumped the version of your app, and you want to perform a hot upgrade
 of the target system. This is pretty simple!
 
-    $ MIX_ENV=prod mix release --upgrade
+    $ MIX_ENV=prod mix distillery.release --upgrade
 
 You will now have a new tarball in `_build/prod/rel/<name>/releases/<upgrade_version>/` which you can use for the next step.
 

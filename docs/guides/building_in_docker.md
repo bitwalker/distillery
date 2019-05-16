@@ -77,7 +77,7 @@ mix deps.get
 # Run an explicit clean to remove any build artifacts from the host
 mix do clean, compile --force
 # Build the release
-mix release
+mix distillery.release
 # Copy tarball to output
 cp "_build/prod/rel/$APP_NAME/releases/$APP_VSN/$APP_NAME.tar.gz" rel/artifacts/"$APP_NAME-$APP_VSN.tar.gz"
 

@@ -22,7 +22,7 @@ an application, and even though there are some general guidelines, which is what
 still want to review these to make sure the application will be upgraded the way you expect.
 
 !!! tip
-    You can see the appup Distillery will use via `release.gen.appup`. This
+    You can see the appup Distillery will use via `distillery.gen.appup`. This
     generates the appup under `rel`, and allows you to modify it and source
     control it.
 
@@ -116,7 +116,7 @@ behaviour.
 ## Generating appups
 
 To generate appups for modification and source control, you can use the
-`release.gen.appup` task. See the `help` output from the task for more
+`distillery.gen.appup` task. See the `help` output from the task for more
 information about its usage.
 
 In short, it will produce appup files under `rel`, which can then be edited and

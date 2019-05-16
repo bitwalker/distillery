@@ -2,7 +2,7 @@ defmodule Distillery.Test.Helpers do
   @moduledoc false
 
   @doc """
-  When run in the context of a Mix project, runs `mix release` to build a release.
+  When run in the context of a Mix project, runs `mix distillery.release` to build a release.
   
   Takes the following options:
 
@@ -37,7 +37,7 @@ defmodule Distillery.Test.Helpers do
       else
         flags
       end
-    mix("release", flags)
+    mix("distillery.release", flags)
   end
   
   @doc """

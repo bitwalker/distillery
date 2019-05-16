@@ -284,7 +284,7 @@ function Otp-Vsn {
 # Use release_ctl for local operations
 # Use like `release_ctl eval "IO.puts(\"Hi!\")"`
 function Release-Ctl {
-    elixir -e "Mix.Releases.Runtime.Control.main" --logger-sasl-reports false "--" @args
+    elixir -e "Distillery.Releases.Runtime.Control.main" --logger-sasl-reports false "--" @args
 }
 
 # Use release_ctl for remote operations
@@ -298,7 +298,7 @@ function Release-Remote-Ctl {
     }
     $cookie = $Env:COOKIE
     $command, $args = $args
-    elixir -e "Mix.Releases.Runtime.Control.main" `
+    elixir -e "Distillery.Releases.Runtime.Control.main" `
            --logger-sasl-reports false `
            -- `
            $command `

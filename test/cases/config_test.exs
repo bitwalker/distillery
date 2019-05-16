@@ -1,7 +1,7 @@
 defmodule Distillery.Test.ConfigTest do
   use ExUnit.Case
 
-  alias Mix.Releases.{Config, Environment, Release, Profile}
+  alias Distillery.Releases.{Config, Environment, Release, Profile}
 
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])
   @standard_app Path.join([@fixtures_path, "standard_app"])
@@ -10,7 +10,7 @@ defmodule Distillery.Test.ConfigTest do
     test "read!" do
       config =
         Mix.Project.in_project(:standard_app, @standard_app, fn _mixfile ->
-          Mix.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
+          Distillery.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
         end)
 
       assert %Config{
@@ -41,13 +41,13 @@ defmodule Distillery.Test.ConfigTest do
     test "read_string!" do
       config =
         """
-        use Mix.Releases.Config
+        use Distillery.Releases.Config
 
         release :distillery do
           set version: current_version(:distillery)
         end
         """
-        |> Mix.Releases.Config.read_string!()
+        |> Distillery.Releases.Config.read_string!()
 
       distillery_ver = Keyword.fetch!(Mix.Project.config(), :version)
 
@@ -68,7 +68,7 @@ defmodule Distillery.Test.ConfigTest do
     test "read!" do
       config =
         Mix.Project.in_project(:standard_app, @standard_app, fn _mixfile ->
-          Mix.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
+          Distillery.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
         end)
 
       rel_plugins = [

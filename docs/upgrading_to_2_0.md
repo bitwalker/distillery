@@ -76,7 +76,7 @@ information as they are big quality of life improvements!
   * Config Providers! This is a framework for format-agnostic, source-agnostic
     runtime configuration providers, which allow you to fetch configuration and
     push it into the application env before applications in the system have
-    booted. See the docs and the `Mix.Releases.Config.Provider` moduledoc for
+    booted. See the docs and the `Distillery.Releases.Config.Provider` moduledoc for
     more information. If you are curious about what a custom provider looks
     like, check out [this library](https://github.com/bitwalker/toml-elixir),
     which has a provider for TOML. Distillery also contains a provider for
@@ -84,7 +84,7 @@ information as they are big quality of life improvements!
   * Appup Transforms! This is a plugin system for programmatically modifying
     appups during a release build. Use this to tweak the way appups are
     generated for your applications.
-  * A new mix task! `mix release.gen.appup` allows you to generate appups for an
+  * A new mix task! `mix distillery.gen.appup` allows you to generate appups for an
     application and place it under `rel` in a new directory which is checked by
     Distillery when building upgrade releases. This directory can be source
     controlled, and the generated files can be modified as needed. This is a

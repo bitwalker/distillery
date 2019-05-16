@@ -1,14 +1,14 @@
-defmodule Mix.Tasks.Release.Gen.Appup do
+defmodule Mix.Tasks.Distillery.Gen.Appup do
   @moduledoc """
   Generate appup files for hot upgrades and downgrades
 
   ## Examples
 
       # Generate an appup for :test from the last known version to the current version
-      mix release.gen.appup --app=test
+      mix distillery.gen.appup --app=test
 
       # Generate an appup for :test from a specific version to the current version
-      mix release.gen.appup --app=test --upfrom=0.1.0
+      mix distillery.gen.appup --app=test --upfrom=0.1.0
 
   The generated appup will be written to `rel/appups/<app>/<from>_to_<to>.appup`. You may name
   appups anything you wish in this directory, as long as they have a `.appup` extension. When you
@@ -17,25 +17,25 @@ defmodule Mix.Tasks.Release.Gen.Appup do
   release, then the first one encountered will take precedence, which more than likely will depend on the
   sort order of the names.
 
-  This task will take all of the same flags as `mix release`, but only uses them to determine the release
+  This task will take all of the same flags as `mix distillery.release`, but only uses them to determine the release
   configuration to use when determining application locations and versions.
   """
   @shortdoc "Generate appup files for hot upgrades and downgrades"
 
   use Mix.Task
 
-  alias Mix.Releases.Shell
-  alias Mix.Releases.Config
-  alias Mix.Releases.Release
-  alias Mix.Releases.Errors
-  alias Mix.Releases.Assembler
-  alias Mix.Releases.Appup
-  alias Mix.Releases.Utils
+  alias Distillery.Releases.Shell
+  alias Distillery.Releases.Config
+  alias Distillery.Releases.Release
+  alias Distillery.Releases.Errors
+  alias Distillery.Releases.Assembler
+  alias Distillery.Releases.Appup
+  alias Distillery.Releases.Utils
 
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do
     # Parse options
-    primary_opts = Mix.Tasks.Release.parse_args(args, strict: false)
+    primary_opts = Distillery.Tasks.Release.parse_args(args, strict: false)
     secondary_opts = parse_args(args)
     opts = Keyword.merge(primary_opts, secondary_opts)
     verbosity = Keyword.get(opts, :verbosity)

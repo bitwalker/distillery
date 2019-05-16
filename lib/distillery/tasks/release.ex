@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Release do
+defmodule Mix.Tasks.Distillery.Release do
   @moduledoc """
   Build a release for the current mix application.
 
@@ -50,31 +50,31 @@ defmodule Mix.Tasks.Release do
   ## Usage
 
   You are generally recommended to use `rel/config.exs` to configure Distillery, and
-  simply run `mix release` with `MIX_ENV` set to the Mix environment you are targeting.
+  simply run `mix distillery.release` with `MIX_ENV` set to the Mix environment you are targeting.
   The following are some usage examples:
 
       # Builds a release with MIX_ENV=dev (the default)
-      mix release
+      mix distillery.release
 
       # Builds a release with MIX_ENV=prod
-      MIX_ENV=prod mix release
+      MIX_ENV=prod mix distillery.release
 
       # Builds a release for a specific release environment
-      MIX_ENV=prod mix release --env=dev
+      MIX_ENV=prod mix distillery.release --env=dev
 
-  The default configuration produced by `release.init` will result in `mix release`
+  The default configuration produced by `release.init` will result in `mix distillery.release`
   selecting the first release in the config file (`rel/config.exs`), and the
   environment which matches the current Mix environment (i.e. the value of `MIX_ENV`).
   """
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
 
-  alias Mix.Releases.Config
-  alias Mix.Releases.Release
-  alias Mix.Releases.Shell
-  alias Mix.Releases.Assembler
-  alias Mix.Releases.Archiver
-  alias Mix.Releases.Errors
+  alias Distillery.Releases.Config
+  alias Distillery.Releases.Release
+  alias Distillery.Releases.Shell
+  alias Distillery.Releases.Assembler
+  alias Distillery.Releases.Archiver
+  alias Distillery.Releases.Errors
 
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do

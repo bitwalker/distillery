@@ -2,7 +2,7 @@ defmodule Distillery.Test.ShellTest do
   use ExUnit.Case
   import ExUnit.CaptureIO
 
-  alias Mix.Releases.Shell
+  alias Distillery.Releases.Shell
   
   describe "confirm/1" do
     test "can confirm with lowercase y" do

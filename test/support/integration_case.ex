@@ -1,7 +1,7 @@
 defmodule Distillery.Test.IntegrationCase do
   use ExUnit.CaseTemplate
 
-  alias Mix.Releases.Utils
+  alias Distillery.Releases.Utils
   import Distillery.Test.Helpers
 
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])

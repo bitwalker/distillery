@@ -8,7 +8,7 @@ desired.
 ## Implementing a Provider
 
 To implement a new configuration provider, a module must implement the
-`Mix.Releases.Config.Provider` behavior, which has a single callback, `init/1`.
+`Distillery.Releases.Config.Provider` behavior, which has a single callback, `init/1`.
 
 Config providers are executed in a pre-boot phase, in their own instance of the
 VM, where all applications are loaded, and only kernel, stdlib, compiler, and
@@ -70,7 +70,7 @@ The actual implementation looks like this:
 
 ```elixir
 defmodule JsonConfigProvider do
-  use Mix.Releases.Config.Provider
+  use Distillery.Releases.Config.Provider
 
   def init([config_path]) do
     # Helper which expands paths to absolute form
@@ -123,4 +123,4 @@ defmodule JsonConfigProvider do
 end
 ```
 
-See the module docs for `Mix.Releases.Config.Provider` if you want to know more about the behaviour of these callbacks.
+See the module docs for `Distillery.Releases.Config.Provider` if you want to know more about the behaviour of these callbacks.

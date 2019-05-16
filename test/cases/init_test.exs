@@ -30,7 +30,7 @@ defmodule Distillery.Test.InitTest do
     end)
   end
 
-  describe "release.init" do
+  describe "distillery.init" do
     test "creates an example rel/config.exs" do
       old_dir = File.cwd!()
       File.cd!(@init_test_app_path)
@@ -38,10 +38,10 @@ defmodule Distillery.Test.InitTest do
       try do
         refute File.exists?(@init_test_rel_path)
         refute File.exists?(@init_test_rel_config_path)
-        assert {:ok, _} = mix("release.init")
+        assert {:ok, _} = mix("distillery.init")
         assert File.exists?(@init_test_rel_path)
         assert File.exists?(@init_test_rel_config_path)
-        # It would be nice to test that Mix.Releases.Config.read! succeeds here
+        # It would be nice to test that Distillery.Releases.Config.read! succeeds here
         # to verify that the example config is valid, but the call to current_version
         # in the example config fails because the init_test_app has not been loaded
         # in this test context.
@@ -59,7 +59,7 @@ defmodule Distillery.Test.InitTest do
         refute File.exists?(@init_test_rel_config_path)
 
         assert {:ok, _} =
-                 mix("release.init", ["--template=#{@init_test_invalid_config_template_path}"])
+                 mix("distillery.init", ["--template=#{@init_test_invalid_config_template_path}"])
 
         assert File.exists?(@init_test_rel_path)
         assert File.exists?(@init_test_rel_config_path)
@@ -75,10 +75,10 @@ defmodule Distillery.Test.InitTest do
       try do
         refute File.exists?(@init_test_rel_path)
         refute File.exists?(@init_test_rel_vm_args_path)
-        assert {:ok, _} = mix("release.init")
+        assert {:ok, _} = mix("distillery.init")
         assert File.exists?(@init_test_rel_path)
         assert File.exists?(@init_test_rel_vm_args_path)
-        # It would be nice to test that Mix.Releases.Config.read! succeeds here
+        # It would be nice to test that Distillery.Releases.Config.read! succeeds here
         # to verify that the example config is valid, but the call to current_version
         # in the example config fails because the init_test_app has not been loaded
         # in this test context.
@@ -96,7 +96,7 @@ defmodule Distillery.Test.InitTest do
         refute File.exists?(@init_test_rel_vm_args_path)
 
         assert {:ok, _} =
-                 mix("release.init", ["--template=#{@init_test_invalid_config_template_path}"])
+                 mix("distillery.init", ["--template=#{@init_test_invalid_config_template_path}"])
 
         assert File.exists?(@init_test_rel_path)
         assert File.exists?(@init_test_rel_vm_args_path)

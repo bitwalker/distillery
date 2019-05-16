@@ -75,7 +75,7 @@ The above commands are not unique to Distillery, they are required by Phoenix to
 
 The following initializes Distillery for the project:
 ```
-$ mix release.init
+$ mix distillery.init
 ```
 
 The above command will create the file `rel/config.exs` in addition to an empty directory `rel/plugins/`. Please refer to the Distillery [walkthrough](https://github.com/bitwalker/distillery/blob/master/docs/Walkthrough.md) for a detailed look at the configuration options available.
@@ -83,7 +83,7 @@ The above command will create the file `rel/config.exs` in addition to an empty 
 To build the release the following command is executed:
 
 ```
-$ MIX_ENV=prod mix release
+$ MIX_ENV=prod mix distillery.release
 ```
 
 To run your release, execute the following command:
@@ -98,7 +98,7 @@ You should be able to go to [localhost:4001](localhost:4001) and load the defaul
 $ npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod
 ```
 
-*NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix, which is not intended to be packaged in releases. As you won't be doing code reloading in a release (at least not with the same mechanism), you must disable this.
+*NOTE*: If you run `mix distillery.release` with `MIX_ENV=dev` (the default), then you must also ensure that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix, which is not intended to be packaged in releases. As you won't be doing code reloading in a release (at least not with the same mechanism), you must disable this.
 
 
 ### Version 0.0.1
@@ -111,7 +111,7 @@ If you followed the above you will have generated a working release. A few notes
 - `MIX_ENV=prod mix phx.digest` To compress and tag your assets
     for proper caching. More detail can be found in the
     [Phoenix Mix Task Guide](https://hexdocs.pm/phoenix/Mix.Tasks.Phoenix.Digest.html)
-- `MIX_ENV=prod mix release --env=prod` To actually generate a release for a
+- `MIX_ENV=prod mix distillery.release --env=prod` To actually generate a release for a
     production environment
 
 You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is

@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Release.Init do
+defmodule Mix.Tasks.Distillery.Init do
   @moduledoc """
   Prepares a new project for use with releases.
   This simply creates a `rel` directory in the project root,
@@ -6,37 +6,37 @@ defmodule Mix.Tasks.Release.Init do
   It will also creates a vm.args file in `rel/vm.args` to tweak the
   configuration of the BEAM.
 
-  After running this, you can build a release right away with `mix release`,
+  After running this, you can build a release right away with `mix distillery.release`,
   but it is recommended you review the config file to understand its contents.
 
   ## Examples
 
       # Initialize releases, with a fully commented config file
-      mix release.init
+      mix distillery.init
 
       # Initialize releases, but with no comments in the config file
-      mix release.init --no-doc
+      mix distillery.init --no-doc
 
       # For umbrella projects, generate a config where each app
       # in the umbrella is its own release, rather than all
       # apps under a single release
-      mix release.init --release-per-app
+      mix distillery.init --release-per-app
 
       # Name the release, by default the current application name
       # will be used, or in the case of umbrella projects, the name
       # of the directory in which the umbrella project resides, with
       # invalid characters replaced or stripped out.
-      mix release.init --name foobar
+      mix distillery.init --name foobar
 
       # Use a custom template for generating the release config.
-      mix release.init --template path/to/template
+      mix distillery.init --template path/to/template
 
   """
   @shortdoc "initialize a new release configuration"
   use Mix.Task
 
-  alias Mix.Releases.Utils
-  alias Mix.Releases.Shell
+  alias Distillery.Releases.Utils
+  alias Distillery.Releases.Shell
 
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do
@@ -88,7 +88,7 @@ defmodule Mix.Tasks.Release.Init do
     IO.puts(
       IO.ANSI.cyan() <>
         "\nAn example config file has been placed in rel/config.exs, review it,\n" <>
-        "make edits as needed/desired, and then run `mix release` to build the release" <>
+        "make edits as needed/desired, and then run `mix distillery.release` to build the release" <>
         IO.ANSI.reset()
     )
   rescue

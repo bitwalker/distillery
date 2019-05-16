@@ -259,7 +259,7 @@ otp_vsn() {
 # Use like `release_ctl eval "IO.puts(\"Hi!\")"`
 release_ctl() {
     command="$1"; shift
-    elixir -e "Mix.Releases.Runtime.Control.main" \
+    elixir -e "Distillery.Releases.Runtime.Control.main" \
            --logger-sasl-reports false \
            -- \
            "$command" "$@"
@@ -272,7 +272,7 @@ release_remote_ctl() {
 
     command="$1"; shift
     name="${PEERNAME:-$NAME}"
-    elixir -e "Mix.Releases.Runtime.Control.main" \
+    elixir -e "Distillery.Releases.Runtime.Control.main" \
            --logger-sasl-reports false \
            -- \
            "$command" \

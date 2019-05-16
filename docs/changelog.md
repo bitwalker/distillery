@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [2.1.0] - Unreleased
 
-TODO
+### Breaking Changes
+
+- In order to be compatible with Elixir 1.9, Mix tasks have been renamed:
+    - `mix distillery.release`
+    - `mix distillery.release.clean`
+    - `mix distillery.init`
+    - `mix distillery.gen.appup`
+- Additionally, all public APIs that used the `Mix.Releases` namespace are now
+  under the `Distillery.Releases` namespace, notably this affects plugin modules,
+  config providers, and `rel/config.exs` config files.
 
 ## [2.0.3]
 

@@ -8,7 +8,7 @@ defmodule Distillery.Test.Win32IntegrationTest do
   
   @moduletag win32: true
 
-  alias Mix.Releases.Utils
+  alias Distillery.Releases.Utils
   import Distillery.Test.Helpers
 
   describe "standard application" do

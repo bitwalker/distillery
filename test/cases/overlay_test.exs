@@ -1,6 +1,6 @@
 defmodule Distillery.Test.OverlayTest do
   use ExUnit.Case
-  alias Mix.Releases.{Utils, Overlays}
+  alias Distillery.Releases.{Utils, Overlays}
 
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])
   @output_dir Path.join([@fixtures_path, "mock_app", "_build", "test", "rel", "mock_app"])

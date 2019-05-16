@@ -1,8 +1,8 @@
 defmodule Distillery.Test.ArchiveTest do
   use ExUnit.Case
 
-  alias Mix.Releases.Utils
-  alias Mix.Releases.Archiver.Archive
+  alias Distillery.Releases.Utils
+  alias Distillery.Releases.Archiver.Archive
 
   setup do
     context = [

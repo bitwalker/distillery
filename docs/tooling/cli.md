@@ -9,10 +9,10 @@ means by which you interact with that release.
 
 Distillery provides the following Mix tasks:
 
-  * `release.init` - for initializing Distillery within a new project
-  * `release` - for building releases
-  * `release.clean` - for cleaning up generated release artifacts
-  * `release.gen.appup` - for generating appups to use in upgrade releases
+  * `distillery.init` - for initializing Distillery within a new project
+  * `distillery.release` - for building releases
+  * `distillery.release.clean` - for cleaning up generated release artifacts
+  * `distillery.gen.appup` - for generating appups to use in upgrade releases
 
 For more information about these commands and their usage:
 

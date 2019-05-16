@@ -11,7 +11,7 @@ Given a config like the following:
 
 
 ```elixir
-use Mix.Releases.Config
+use Distillery.Releases.Config
 
 environment :default do
   set commands: [

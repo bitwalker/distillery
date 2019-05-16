@@ -1,7 +1,7 @@
 # Release Plugins
 
 Plugins are how you extend `distillery` itself during release generation. It is worth your time
-to review the module documentation for `Mix.Releases.Plugin` for more detailed information,
+to review the module documentation for `Distillery.Releases.Plugin` for more detailed information,
 including an example plugin.
 
 Plugins can be defined as either a part of your application code, or in Elixir modules contained
@@ -27,7 +27,7 @@ Plugins can be configured by passing options to the `plugin` macro:
 plugin MyApp.AwesomePlugin, foo: 1, bar: 2
 ```
 
-These plugins are expected to adhere to the `Mix.Releases.Plugin` behaviour.
+These plugins are expected to adhere to the `Distillery.Releases.Plugin` behaviour.
 
 ### before_assembly
 

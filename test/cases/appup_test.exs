@@ -1,7 +1,7 @@
 defmodule Distillery.Test.AppupTest do
   use ExUnit.Case
-  alias Mix.Releases.Appup
-  alias Mix.Releases.Appup.Transform
+  alias Distillery.Releases.Appup
+  alias Distillery.Releases.Appup.Transform
   
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])
 
