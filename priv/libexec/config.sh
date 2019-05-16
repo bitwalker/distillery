@@ -209,7 +209,7 @@ _replace_os_vars_str() {
                 var=substr($0,RSTART+2,RLENGTH-3);
                 gsub("[$]{"var"}", escape(ENVIRON[var]))
             }
-    }1' < $1
+    }1' < "$1"
 }
 
 # Sets up the node name configuration for clustering/remote commands
