@@ -65,10 +65,7 @@ Now we have the Phoenix app created with Distillery and our configuration all re
 ```
 $ mix deps.get --only prod
 $ MIX_ENV=prod mix compile
-$ cd assets
-$ npm install
-$ node node_modules/webpack/bin/webpack.js --mode production
-$ cd ..
+$ npm run deploy --prefix assets
 $ mix phx.digest
 ```
 
@@ -98,7 +95,7 @@ You should be able to go to [localhost:4001](localhost:4001) and load the defaul
 
 *NOTE* The above commands can be combined into one quick command as
 ```
-$ cd assets && node ./node_modules/webpack/bin/webpack.js --mode production && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod
+$ npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod
 ```
 
 *NOTE*: If you run `mix release` with `MIX_ENV=dev` (the default), then you must also ensure that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix, which is not intended to be packaged in releases. As you won't be doing code reloading in a release (at least not with the same mechanism), you must disable this.
@@ -108,11 +105,19 @@ $ cd assets && node ./node_modules/webpack/bin/webpack.js --mode production && c
 
 If you followed the above you will have generated a working release. A few notes on some of the above commands we used:
 
-1. `node ./node_modules/webpack/bin/webpack.js --mode production` builds your assets in production mode. More detail can be found in the [Phoenix Static Asset Guide](http://phoenixframework.org/blog/static-assets)
-1. `MIX_ENV=prod mix phx.digest` To compress and tag your assets for proper caching. More detail can be found in the [Phoenix Mix Task Guide](https://hexdocs.pm/phoenix/Mix.Tasks.Phoenix.Digest.html)
-1. `MIX_ENV=prod mix release --env=prod` To actually generate a release for a production environment
+- `npm run deploy --prefix assets` builds your assets in
+   production mode. More detail can be found in the
+   [Phoenix Static Asset Guide](http://phoenixframework.org/blog/static-assets)
+- `MIX_ENV=prod mix phx.digest` To compress and tag your assets
+    for proper caching. More detail can be found in the
+    [Phoenix Mix Task Guide](https://hexdocs.pm/phoenix/Mix.Tasks.Phoenix.Digest.html)
+- `MIX_ENV=prod mix release --env=prod` To actually generate a release for a
+    production environment
 
-You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is supposed to be interactive with features such as live code reload and automatic `webpack` asset recompilation and extra logging. While great for development, it comes at a performance cost and you would not want to run a production Phoenix application in dev mode.
+You might wonder "why all the hassle to build a release?" A Phoenix project in `dev` mode is
+supposed to be interactive with features such as live code reload and automatic `webpack` asset
+recompilation and extra logging. While great for development, it comes at a performance cost
+and you would not want to run a production Phoenix application in dev mode.
 
 
 #### Take that Release Anywhere
@@ -174,7 +179,7 @@ Remove the following line from our application layout.
 
 Next we build an upgrade release with the following command:
 
-`cd assets && node ./node_modules/webpack/bin/webpack.js --mode production && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+`npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
 
 This is the same command as in version 0.0.1 with the exception of `--upgrade`. The upgrade flag tells Distillery to build an [appup](https://hexdocs.pm/distillery/guides/upgrades_and_downgrades.html) for every application included in the release. These files are then used to generate a [relup](https://hexdocs.pm/distillery/guides/upgrades_and_downgrades.html) which details how an upgrade (or downgrade) is applied to a running application instance.
 
@@ -262,10 +267,10 @@ end
 
 With all that complete, we are now ready to generate the 0.0.3 release just as we did with 0.0.2. So we will generate a release, copy the 0.0.3 tarball into a new release directory under `local_deploy`, and upgrade the application.
 
-1. `cd assets && node ./node_modules/webpack/bin/webpack.js --mode production && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
-1. `mkdir local_deploy/releases/0.0.3`
-1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3/`
-1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
+- `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+- `mkdir local_deploy/releases/0.0.3`
+- `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3/`
+- `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
 
 If you go reload your browser and open your console you will be greeted by a series of increasing numbers from 0!
 
@@ -306,10 +311,10 @@ end
 
 With this complete, we are now ready to generate the 0.0.4 release just as we did with 0.0.3. Generate a release, copy the 0.0.4 tarball into a new release directory under `local_deploy`, and upgrade the application.
 
-1. `cd assets && node ./node_modules/webpack/bin/webpack.js --mode production && cd .. && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
-1. `mkdir local_deploy/releases/0.0.4`
-1. `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4/`
-1. `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
+- `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+- `mkdir local_deploy/releases/0.0.4`
+- `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4/`
+- `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
 
 *DO NOT RELOAD YOUR BROWSER* Simply stare at your console and wait. In no time at all you will see numbers start incrementing by 1 rather than 2. You will conclude that hot upgrades are the coolest thing since sliced bread.
 
