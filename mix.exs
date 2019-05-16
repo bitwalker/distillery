@@ -17,7 +17,7 @@ defmodule Distillery.Mixfile do
       preferred_cli_env: [
         docs: :docs,
         "hex.publish": :docs,
-        "eqc.mini": :test,
+        "eqc.install": :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.html": :test,

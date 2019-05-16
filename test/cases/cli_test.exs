@@ -293,7 +293,7 @@ defmodule Distillery.Test.CliTest do
   end
 
   defp is_failure(fun) do
-    capture_io(:stderr, fn ->
+    capture_io(fn ->
       try do
         fun.()
       catch
