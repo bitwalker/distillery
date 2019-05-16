@@ -23,7 +23,7 @@ defmodule Distillery.Test.CookiesTest do
     str = Atom.to_string(x)
     chars = String.to_charlist(str)
 
-    with false <- String.contains?(str, ["-", "+", "'", "\"", "\\", "#"]),
+    with false <- String.contains?(str, ["-", "+", "'", "\"", "\\", "#", ","]),
          false <- Enum.any?(chars, fn b -> not (b >= ?! && b <= ?~) end),
          64 <- byte_size(str) do
       true
