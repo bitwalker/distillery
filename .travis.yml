@@ -6,8 +6,14 @@ git:
 elixir:
   - 1.6
   - 1.7
+  - 1.8
 otp_release:
   - 21.0
+  - 22.0
+matrix:
+  exclude:
+    - elixir: 1.6
+      otp_release: 22.0
 env:
   - MIX_ENV=test VERBOSE_TESTS=true
 cache:

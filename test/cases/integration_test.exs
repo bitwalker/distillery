@@ -236,10 +236,7 @@ defmodule Distillery.Test.IntegrationTest do
           assert {:ok, _} = release_cmd(bin, "start")
           assert :ok = wait_for_app(bin)
           # We should be able to execute an HTTP request against the API
-          url = 'http://localhost:4000/healthz'
-          headers = [{'accepts', 'application/json'}, {'content-type', 'application/json'}]
-          opts = [body_format: :binary, full_result: false]
-          assert {:ok, {200, _}} = :httpc.request(:get, {url, headers}, [], opts)
+          assert :ok = try_healthz()
           # Can stop
           assert {:ok, _} = release_cmd(bin, "stop")
         rescue
@@ -248,6 +245,23 @@ defmodule Distillery.Test.IntegrationTest do
             reraise e, System.stacktrace()
         end
       end
+    end
+  end
+
+  defp try_healthz(tries \\ 0) do
+    url = 'http://localhost:4000/healthz'
+    headers = [{'accepts', 'application/json'}, {'content-type', 'application/json'}]
+    opts = [body_format: :binary, full_result: false]
+    case :httpc.request(:get, {url, headers}, [], opts) do
+      {:ok, {200, _}} -> 
+        :ok
+      err when tries < 5 ->
+        IO.inspect "Request (attempt #{tries} of 5) to /healthz endpoint failed with: #{err}"
+        :timer.sleep(1_000)
+        try_healthz(tries + 1)
+      _ ->
+        IO.inspect "Request (attempt #{tries} of 5) to /healthz endpoint failed with: #{err}"
+        :error
     end
   end
 end

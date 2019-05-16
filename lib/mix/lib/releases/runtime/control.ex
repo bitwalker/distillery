@@ -1,7 +1,7 @@
 defmodule Mix.Releases.Runtime.Control do
   @moduledoc """
   This module defines the tooling for interacting with nodes, as well
-  as other utiltiy functions of use.
+  as other utility functions of use.
   """
   use Artificery
 
@@ -149,6 +149,7 @@ defmodule Mix.Releases.Runtime.Control do
 
   command :describe, "Describes the currently installed release" do
     option(:name)
+    option(:version, :string, "The version of the release")
     option(:cookie)
     option(:id)
     option(:release, :string, "The name of the release")
@@ -244,6 +245,7 @@ defmodule Mix.Releases.Runtime.Control do
 
     Console.info("Release Info ==========================")
     Console.info("Name:              #{opts.name}")
+    Console.info("Version:           #{opts.version}")
     Console.info("Cookie:            #{opts.cookie}")
     Console.info("Working Directory: #{opts.release_root_dir}")
     Console.info("System Config:     #{opts.sysconfig}")

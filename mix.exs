@@ -4,7 +4,7 @@ defmodule Distillery.Mixfile do
   def project do
     [
       app: :distillery,
-      version: "2.0.12",
+      version: "2.0.13",
       elixir: "~> 1.6",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -17,7 +17,7 @@ defmodule Distillery.Mixfile do
       preferred_cli_env: [
         docs: :docs,
         "hex.publish": :docs,
-        "eqc.mini": :test,
+        "eqc.install": :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.html": :test,

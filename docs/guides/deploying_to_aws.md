@@ -188,13 +188,19 @@ Now we need to spin up the CloudFormation stack for the pipeline:
 
     $ export GITHUB_TOKEN="<oauth_token>"
     $ export SSH_KEY_NAME=distillery-aws-example
+    $ export APP_NAME=my-unique-name
     $ bin/cfn create
 
 !!! info
     The values above are placeholders, use the names of the resources you
     created (i.e. if you used a different key name for the SSH key pair you
     created, set it appropriately here)
-
+    
+!!! info
+    The name of the S3 bucket that will be created is derived from `APP_NAME`.
+    Because S3 bucket names must be globally unique, it's important to set a
+    unique `APP_NAME` so that the bucket will have a unique name.
+    
 !!! tip
     This step can take awhile, you can follow along in the AWS Console by
     navigating to the CloudFormation service.
