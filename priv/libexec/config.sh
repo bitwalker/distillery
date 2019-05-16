@@ -40,8 +40,13 @@ partial_configure_release() {
         fi
     fi
 
-    # Set up the node based on the new configuration
-    _configure_node
+    if [ -z "$VMARGS_PATH" ] || [ -z "$SYS_CONFIG_PATH" ]; then
+        # We need to generate the config files for the first time
+        configure_release
+    else
+        # Set up the node based on the new configuration
+        _configure_node
+    fi
 }
 
 # Sets config paths for sys.config and vm.args, and ensures that env var replacements are performed
