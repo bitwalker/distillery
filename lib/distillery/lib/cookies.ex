@@ -31,7 +31,7 @@ defmodule Distillery.Cookies do
     Stream.unfold(nil, fn _ -> {:crypto.strong_rand_bytes(1), nil} end)
     |> Stream.filter(fn <<b>> -> b >= ?! && b <= ?~ end)
     # special when erlexec parses vm.args
-    |> Stream.reject(fn <<b>> -> b in [?-, ?+, ?', ?\", ?\\, ?\#] end)
+    |> Stream.reject(fn <<b>> -> b in [?-, ?+, ?', ?\", ?\\, ?\#, ?,] end)
     |> Enum.take(64)
     |> Enum.join()
     |> String.to_atom()
