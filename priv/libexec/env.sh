@@ -22,14 +22,17 @@ RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$RELEASE_MUTABLE_DIR/log}"
 # A string of extra options to pass to erl, here for plugins
 EXTRA_OPTS="${EXTRA_OPTS:-}"
 # The hook paths for each of the available hookable events
-PRE_CONFIGURE_HOOKS="$REL_DIR/hooks/pre_configure.d"
-POST_CONFIGURE_HOOKS="$REL_DIR/hooks/post_configure.d"
-PRE_START_HOOKS="$REL_DIR/hooks/pre_start.d"
-POST_START_HOOKS="$REL_DIR/hooks/post_start.d"
-PRE_STOP_HOOKS="$REL_DIR/hooks/pre_stop.d"
-POST_STOP_HOOKS="$REL_DIR/hooks/post_stop.d"
-PRE_UPGRADE_HOOKS="$REL_DIR/hooks/pre_upgrade.d"
-POST_UPGRADE_HOOKS="$REL_DIR/hooks/post_upgrade.d"
+reset_hooks() {
+    export PRE_CONFIGURE_HOOKS="$REL_DIR/hooks/pre_configure.d"
+    export POST_CONFIGURE_HOOKS="$REL_DIR/hooks/post_configure.d"
+    export PRE_START_HOOKS="$REL_DIR/hooks/pre_start.d"
+    export POST_START_HOOKS="$REL_DIR/hooks/post_start.d"
+    export PRE_STOP_HOOKS="$REL_DIR/hooks/pre_stop.d"
+    export POST_STOP_HOOKS="$REL_DIR/hooks/post_stop.d"
+    export PRE_UPGRADE_HOOKS="$REL_DIR/hooks/pre_upgrade.d"
+    export POST_UPGRADE_HOOKS="$REL_DIR/hooks/post_upgrade.d"
+}
+reset_hooks
 
 # Exported environment variables
 export BINDIR="$ERTS_DIR/bin"

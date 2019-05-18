@@ -24,8 +24,8 @@ release_remote_ctl unpack \
          "$TARGET_VERSION"
 
 # Update environment to reflect target version environment
-REL_VSN="$TARGET_VERSION"
-REL_DIR="$RELEASE_ROOT_DIR/releases/$TARGET_VERSION"
+export REL_VSN="$TARGET_VERSION"
+export REL_DIR="$RELEASE_ROOT_DIR/releases/$TARGET_VERSION"
 
 # Prepare new configs
 if [ "$SRC_VMARGS_PATH" = "$RELEASE_MUTABLE_DIR/vm.args" ]; then
@@ -72,6 +72,10 @@ release_remote_ctl install \
 # We were successful, clean up the configs
 mv "$REL_DIR/sys.config.bak" "$REL_DIR/sys.config"
 mv "$REL_DIR/vm.args.bak" "$REL_DIR/vm.args"
+
+# Update environment
+reset_code_paths
+reset_hooks
 
 # Run any post-upgrade hooks
 run_hooks post_upgrade
