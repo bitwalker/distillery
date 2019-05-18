@@ -251,7 +251,8 @@ defmodule Mix.Tasks.Distillery.Release do
       executable: [enabled: false, transient: false],
       is_upgrade: false,
       no_tar: false,
-      upgrade_from: :latest
+      upgrade_from: :latest,
+      erl_opts: nil,
     }
 
     do_parse_args(flags, defaults)
@@ -355,5 +356,9 @@ defmodule Mix.Tasks.Distillery.Release do
 
   defp do_parse_args([{:upfrom, version} | rest], acc) do
     do_parse_args(rest, Map.put(acc, :upgrade_from, version))
+  end
+
+  defp do_parse_args([{:erl, erl_opts} | rest], acc) do
+    do_parse_args(rest, Map.put(acc, :erl_opts, erl_opts))
   end
 end
