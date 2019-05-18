@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Distillery.Gen.Appup do
   @spec run(OptionParser.argv()) :: no_return
   def run(args) do
     # Parse options
-    primary_opts = Distillery.Tasks.Release.parse_args(args, strict: false)
+    primary_opts = Mix.Tasks.Distillery.Release.parse_args(args, strict: false)
     secondary_opts = parse_args(args)
     opts = Keyword.merge(primary_opts, secondary_opts)
     verbosity = Keyword.get(opts, :verbosity)
