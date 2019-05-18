@@ -166,7 +166,7 @@ defmodule Mix.Tasks.Distillery.Init do
 
     releases = [
       [
-        release_name: app,
+        release_name: Keyword.get(opts, :name, app),
         is_umbrella: false,
         release_applications: [{app, :permanent}]
       ]
