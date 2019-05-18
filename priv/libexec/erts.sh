@@ -35,6 +35,12 @@ __set_code_paths() {
     fi
 }
 
+# Used post-upgrade to update the code paths used for commands
+reset_code_paths() {
+    code_paths=()
+    __set_code_paths
+}
+
 # Echoes the path to the current ERTS binaries, e.g. erl
 whereis_erts_bin() {
     if [ -z "$ERTS_VSN" ]; then
