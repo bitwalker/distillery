@@ -166,7 +166,8 @@ defmodule Mix.Tasks.Distillery.Init do
 
     releases = [
       [
-        release_name: Keyword.get(opts, :name, app),
+        # If opts contains the key :name, but its value is nil, we still want to default to app
+        release_name: Keyword.get(opts, :name, app) || app,
         is_umbrella: false,
         release_applications: [{app, :permanent}]
       ]
