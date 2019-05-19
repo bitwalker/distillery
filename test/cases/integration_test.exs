@@ -260,7 +260,7 @@ defmodule Distillery.Test.IntegrationTest do
         :timer.sleep(1_000)
         try_healthz(tries + 1)
       _ ->
-        IO.inspect "Request (attempt #{tries} of 5) to /healthz endpoint failed with: #{err}"
+        IO.inspect "Requests to /healthz endpoint exhausted retries"
         :error
     end
   end
