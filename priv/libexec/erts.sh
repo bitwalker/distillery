@@ -307,6 +307,9 @@ if __info="$(erl -noshell -eval 'io:format("~s~n~s~n", [code:root_dir(), erlang:
     ROOTDIR="$(echo "$__info" | head -n1)"
     export ERTS_VSN
     if [ -z "$ERTS_VSN" ]; then
+        if [ ! -f "${START_ERL_DATA}" ]; then
+            fail "Unable to boot release, missing start_erl.data at '"${START_ERL_DATA}"'"
+        fi
         # Update start_erl.data
         ERTS_VSN="$(echo "$__info" | tail -n1)"
         echo "$ERTS_VSN $REL_VSN" > "$START_ERL_DATA"
