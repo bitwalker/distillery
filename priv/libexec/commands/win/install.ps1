@@ -26,6 +26,7 @@ $codepaths = get-code-paths
 $service_argv += "-pa"
 $service_argv += $codepaths
 $service_argv += @("-pa", $Env:CONSOLIDATED_DIR)
+$base_argv = erl-args @service_argv
 # Add start_erl opts, delimited by ++
 $service_argv += "++"
 $service_argv += "-noconfig"
@@ -43,7 +44,9 @@ $service_argv = $service_argv | foreach {
 }
 
 # Convert argv into a string for -args
+$base_args = $base_argv -join " "
 $service_args = $service_argv -join " "
+$service_args = $base_args, $service_args -join " "
 
 $name_type = ("-{0}" -f $Env:NAME_TYPE)
 
