@@ -7,13 +7,23 @@ unset CDPATH
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 RELEASE_ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 RELEASES_DIR="${RELEASE_ROOT_DIR}/releases"
+RELEASE_MUTABLE_DIR="${RELEASE_MUTABLE_DIR:-"${RELEASE_ROOT_DIR}/var"}"
+START_ERL_DATA="${RELEASE_MUTABLE_DIR}/start_erl.data"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
-REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "${RELEASES_DIR}"/start_erl.data)}"
+if [ ! -f "${START_ERL_DATA}" ]; then
+    cp "${RELEASES_DIR}/start_erl.data" "${START_ERL_DATA}"
+fi
+REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "${START_ERL_DATA}")}"
+ERTS_VSN="${ERTS_VSN:-$(cut -d' ' -f1 "${START_ERL_DATA}")}"
+<%= if (include_erts == false or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
 
 export RELEASE_ROOT_DIR
 export RELEASES_DIR
+export RELEASE_MUTABLE_DIR
+export START_ERL_DATA
 export REL_NAME
 export REL_VSN
+export ERTS_VSN
 export DEBUG_BOOT
 
 # Set DEBUG_BOOT to output verbose debugging info during execution
