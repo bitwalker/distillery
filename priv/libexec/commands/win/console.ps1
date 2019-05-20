@@ -20,4 +20,6 @@ $post_start = {
 # Run post-start hooks asynchronously
 start-job -Name "post_start hooks" -ScriptBlock $post_start
 
-& $werl @argv
+$base_args = erl-args @argv
+
+& $werl @base_args @argv
