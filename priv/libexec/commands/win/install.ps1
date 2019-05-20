@@ -31,6 +31,7 @@ $service_argv += "++"
 $service_argv += "-noconfig"
 $service_argv += @("-rootdir", $Env:RELEASE_ROOT_DIR)
 $service_argv += @("-reldir", (join-path $Env:RELEASE_ROOT_DIR "releases"))
+$service_argv += @("-data", "$Env:START_ERL_DATA)
 
 $service_argv = $service_argv | foreach { 
     if ($_.StartsWith("-") -or $_.StartsWith("+")) {
