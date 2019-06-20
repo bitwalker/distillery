@@ -21,7 +21,7 @@ It is currently a standalone package, but may be integrated into Mix at some poi
 
 ## Installation
 
-Distillery requires Elixir 1.6 or greater. It works with Erlang 20+.
+Distillery 2.x requires Elixir 1.9 or greater (use Distillery 1.5 if you are on Elixir 1.6, 1.7 or 1.8). It works with Erlang 20+.
 
 ```elixir
 defp deps do
@@ -29,7 +29,7 @@ defp deps do
 end
 ```
 
-Just add as a mix dependency and use `mix distillery.release`.
+Just add as a mix dependency and use `mix distillery.release` (use `mix release` if you are using Distillery 1.5).
 
 If you are new to releases or Distillery, please review the [documentation](https://hexdocs.pm/distillery),
 it is extensive and covers just about any question you may have!
