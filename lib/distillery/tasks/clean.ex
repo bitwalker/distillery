@@ -61,7 +61,7 @@ defmodule Mix.Tasks.Distillery.Release.Clean do
           end
 
         false ->
-          Shell.error("You are missing a release config file. Run the release.init task first")
+          Shell.error("You are missing a release config file. Run the distillery.init task first")
           System.halt(1)
       end
 

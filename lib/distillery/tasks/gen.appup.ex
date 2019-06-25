@@ -51,7 +51,7 @@ defmodule Mix.Tasks.Distillery.Gen.Appup do
 
     case Config.get(opts) do
       {:error, {:config, :not_found}} ->
-        Shell.error("You are missing a release config file. Run the release.init task first")
+        Shell.error("You are missing a release config file. Run the distillery.init task first")
         System.halt(1)
 
       {:error, {:config, reason}} ->
