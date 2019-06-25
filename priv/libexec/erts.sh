@@ -91,6 +91,7 @@ erl() {
         "$__erl" -boot_var ERTS_LIB_DIR "$RELEASE_ROOT_DIR/lib" \
                  -boot "${RELEASE_ROOT_DIR}/bin/start_clean" \
                  ${SYS_CONFIG_PATH:+-config "${SYS_CONFIG_PATH}"} \
+                 -pa "${CONSOLIDATED_DIR}" \
                  ${EXTRA_CODE_PATHS:+-pa "${EXTRA_CODE_PATHS}"} \
                  "$@"
     elif [ $__boot_provided -eq 0 ]; then
