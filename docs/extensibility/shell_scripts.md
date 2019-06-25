@@ -78,7 +78,7 @@ will be marked as mutable.
 
   * `CODE_LOADING_MODE (mutable)` - The mode to use when loading the release, can be "interactive" or "embedded"
 
-  * `REL_DIR` - The path to the current release version, i.e. releases/<vsn>/
+  * `REL_DIR` - The path to the current release version, i.e. `releases/<vsn>`
 
   * `REL_LIB_DIR` - The path to the lib directory containing beams for this release
 
