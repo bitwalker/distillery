@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Distillery.Release do
     * `--profile` - selects both a release and environment, syntax for profiles is `name:env`
 
   Releases and environments are defined in `rel/config.exs`, created via
-  `release.init`. When determining the name and environment to use, refer to the
+  `distillery.init`. When determining the name and environment to use, refer to the
   definitions in that file if you are not sure what options are available.
 
     * `--erl`     - provide extra flags to `erl` when running the release, expects a string
@@ -62,7 +62,7 @@ defmodule Mix.Tasks.Distillery.Release do
       # Builds a release for a specific release environment
       MIX_ENV=prod mix distillery.release --env=dev
 
-  The default configuration produced by `release.init` will result in `mix distillery.release`
+  The default configuration produced by `distillery.init` will result in `mix distillery.release`
   selecting the first release in the config file (`rel/config.exs`), and the
   environment which matches the current Mix environment (i.e. the value of `MIX_ENV`).
   """
@@ -93,7 +93,7 @@ defmodule Mix.Tasks.Distillery.Release do
 
     case Config.get(opts) do
       {:error, {:config, :not_found}} ->
-        Shell.error("You are missing a release config file. Run the release.init task first")
+        Shell.error("You are missing a release config file. Run the distillery.init task first")
         System.halt(1)
 
       {:error, {:config, reason}} ->

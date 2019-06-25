@@ -14,13 +14,13 @@ end
 ## Initial configuration
 
 Once installed, you need to run a one-time setup task which creates the configuration file Distillery
-uses to define releases and environments. To do so, you just need to run the `release.init` task:
+uses to define releases and environments. To do so, you just need to run the `distillery.init` task:
 
     $ mix distillery.init
 
 
 !!! tip
-    To get more details about the `release.init` task, or any others, use the `help` task:
+    To get more details about the `distillery.init` task, or any others, use the `help` task:
 
         mix help distillery.init
 
@@ -31,7 +31,7 @@ here, depending on whether you want a default configuration that puts all applic
 in a single release (the default), or build a release for each application individually. You can always
 modify the generated config to define releases using whatever combination of applications you like.
 
-The output of `release.init` is a config file, `rel/config.exs`, which is an Elixir script much like
+The output of `distillery.init` is a config file, `rel/config.exs`, which is an Elixir script much like
 `config/config.exs`, and is used to define releases and environment-specific release configuration.
 An example of what those look like is below:
 
