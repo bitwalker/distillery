@@ -15,4 +15,4 @@ where pwsh >nul 2>nul
 if %ERRORLEVEL% equ 0 (
   set prog=pwsh
 )
-%prog% -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command "& "%boot_script%" @args" %*
+%prog% -NonInteractive -NoProfile -ExecutionPolicy Bypass -Command "& '%boot_script%' @args" %*
