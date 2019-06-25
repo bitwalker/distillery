@@ -41,5 +41,5 @@ post_start_fg() {
     run_hooks post_start
 }
 
-post_start_fg &
+(post_start_fg &)
 erlexec "$@" -- "${1+$ARGS}"
