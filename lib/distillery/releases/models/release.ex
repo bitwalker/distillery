@@ -480,7 +480,6 @@ defmodule Distillery.Releases.Release do
 
           sorted ->
             sorted
-            |> Enum.reverse()
             |> Enum.map(fn a -> elem(hd(:ets.lookup(as, a)), 1) end)
             |> Enum.map(&correct_app_path_and_vsn(&1, release))
         end
