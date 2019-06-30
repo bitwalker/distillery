@@ -42,8 +42,8 @@ to the following:
 
 ```elixir
 config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
-  http: [:inet6, port: System.get_env("PORT") || 4000],
-  url: [host: "localhost", port: System.get_env("PORT")], # This is critical for ensuring web-sockets properly authorize.
+  http: [:inet6, port: {:system, "PORT"} || 4000],
+  url: [host: "localhost", port: {:system, "PORT"}], # This is critical for ensuring web-sockets properly authorize.
   cache_static_manifest: "priv/static/cache_manifest.json",
   server: true,
   root: ".",
@@ -95,7 +95,7 @@ You should be able to go to [localhost:4001](localhost:4001) and load the defaul
 
 *NOTE* The above commands can be combined into one quick command as
 ```
-$ npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod
+$ npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, distillery.release --env=prod
 ```
 
 *NOTE*: If you run `mix distillery.release` with `MIX_ENV=dev` (the default), then you must also ensure that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix, which is not intended to be packaged in releases. As you won't be doing code reloading in a release (at least not with the same mechanism), you must disable this.
