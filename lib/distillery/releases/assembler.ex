@@ -136,7 +136,7 @@ defmodule Distillery.Releases.Assembler do
 
     case include_erts? do
       true ->
-        copy_app(app_dir, target_dir, dev_mode?, include_src?)
+        copy_app(app_name, app_dir, target_dir, dev_mode?, include_src?)
 
       p when is_binary(p) ->
         app_dir =
@@ -146,7 +146,7 @@ defmodule Distillery.Releases.Assembler do
             app_dir
           end
 
-        copy_app(app_dir, target_dir, dev_mode?, include_src?)
+        copy_app(app_name, app_dir, target_dir, dev_mode?, include_src?)
 
       _ ->
         case Utils.is_erts_lib?(app_dir) do
@@ -154,12 +154,12 @@ defmodule Distillery.Releases.Assembler do
             :ok
 
           false ->
-            copy_app(app_dir, target_dir, dev_mode?, include_src?)
+            copy_app(app_name, app_dir, target_dir, dev_mode?, include_src?)
         end
     end
   end
 
-  defp copy_app(app_dir, target_dir, true, _include_src?) do
+  defp copy_app(_app_name, app_dir, target_dir, true, _include_src?) do
     case File.ln_s(app_dir, target_dir) do
       :ok ->
         :ok
@@ -169,7 +169,7 @@ defmodule Distillery.Releases.Assembler do
     end
   end
 
-  defp copy_app(app_dir, target_dir, false, include_src?) do
+  defp copy_app(app_name, app_dir, target_dir, false, include_src?) do
     case File.mkdir_p(target_dir) do
       {:error, reason} ->
         {:error, {:assembler, :file, {:copy_app, target_dir, reason}}}
@@ -184,7 +184,9 @@ defmodule Distillery.Releases.Assembler do
               ["ebin", "include", "priv"]
           end
 
-        Path.wildcard(Path.join(app_dir, "*"))
+        extra_source_dirs = project_app_src_dirs(app_name)
+
+        (Path.wildcard(Path.join(app_dir, "*")) ++ extra_source_dirs)
         |> Enum.filter(fn p -> Path.basename(p) in valid_dirs end)
         |> Enum.each(fn p ->
           t = Path.join(target_dir, Path.basename(p))
@@ -222,6 +224,29 @@ defmodule Distillery.Releases.Assembler do
   catch
     :error, {:assembler, _mod, _reason} = err ->
       {:error, err}
+  end
+
+  # Finds sources for `app_name`. This is used for applications built from
+  # this project, where the source code lies in a different location than the
+  # compiled files.
+  defp project_app_src_dirs(app_name) do
+    case project_app_src_root(app_name) do
+      nil -> []
+      path -> Path.wildcard(Path.join(path, "{lib,src}"))
+    end
+  end
+
+  # Returns a path of the source code directory for an application built from
+  # this project.
+  defp project_app_src_root(app_name) do
+    if not Mix.Project.umbrella?() && Mix.Project.get().project[:app] == app_name do
+      # This is a top-level application.
+      File.cwd!()
+    else
+      # This returns a directory if the app is either a dependency or an
+      # application in umbrella. It returns `nil` otherwise.
+      Map.get(Mix.Project.deps_paths(), app_name)
+    end
   end
 
   # Creates release metadata files
