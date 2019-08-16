@@ -11,10 +11,9 @@ RELEASE_MUTABLE_DIR="${RELEASE_MUTABLE_DIR:-"${RELEASE_ROOT_DIR}/var"}"
 START_ERL_DATA="${RELEASE_MUTABLE_DIR}/start_erl.data"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
 
-if [ ! -f "${START_ERL_DATA}" ]; then
-    mkdir -p $RELEASE_MUTABLE_DIR
-    cp "${RELEASES_DIR}/start_erl.data" "${START_ERL_DATA}"
-fi
+mkdir -p $RELEASE_MUTABLE_DIR
+cp "${RELEASES_DIR}/start_erl.data" "${START_ERL_DATA}"
+
 REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "${START_ERL_DATA}")}"
 ERTS_VSN="${ERTS_VSN:-$(cut -d' ' -f1 "${START_ERL_DATA}")}"
 <%= if (include_erts == false or is_nil(erts_vsn)) do %>USE_HOST_ERTS=true<% end %>
