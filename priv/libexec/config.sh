@@ -265,6 +265,12 @@ _configure_node() {
         fail "Invalid $NAME_TYPE value in vm.args, value is empty!"
     fi
 
+    # Save some of the old configuration values, so that they can be reused (e.g. in remote_console)
+    export OLD_NAME
+    OLD_NAME="$NAME"
+    export OLD_NAME_TYPE
+    OLD_NAME_TYPE="$NAME_TYPE"
+
     # User can specify an sname without @hostname
     # This will fail when creating remote shell
     # So here we check for @ and add @hostname if missing
@@ -277,9 +283,8 @@ _configure_node() {
             fi
             ;;
         *)
-            if [ "$NAME_TYPE" != "-sname" ]; then
+            if [ "$NAME_TYPE" = "-sname" ]; then
                 HOSTNAME="$(get_hostname)"
-                OLD_NAME="$NAME"
                 NAME="$NAME@$HOSTNAME"
                 NAME_TYPE="-name"
                 notice "Automatically converted short name ($OLD_NAME) to long name ($NAME)!"
