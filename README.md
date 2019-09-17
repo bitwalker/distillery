@@ -5,7 +5,7 @@
 
   * [Documentation](https://hexdocs.pm/distillery)
   * [CHANGELOG](https://hexdocs.pm/distillery/changelog.html)
-  * [Upgrading to 2.x](https://hexdocs.pm/distillery/upgrading_to_2_0.html)
+  * [Upgrading to 2.x](https://hexdocs.pm/distillery/upgrading.html)
 
 ## About
 
