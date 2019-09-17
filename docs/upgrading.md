@@ -1,4 +1,19 @@
-## Upgrading From 1.5.x
+## Upgrading From 2.0.x to 2.1.x
+
+2.1 was released to bring compatibility with Elixir 1.9 but required renaming all of the mix tasks
+and several code components.
+
+In order to be compatible with Elixir 1.9, Mix tasks have been renamed:
+    - `mix distillery.release`
+    - `mix distillery.release.clean`
+    - `mix distillery.init`
+    - `mix distillery.gen.appup`
+
+Additionally, all public APIs that used the `Mix.Releases` namespace are now under the
+`Distillery.Releases` namespace, notably this affects plugin modules, config providers, and
+`rel/config.exs` config files.
+
+## Upgrading To 2.0.x From 1.5.x
 
 Many things have changed since the last 1.5 release, with a number of
 deprecations, improvements, and new features. The following is a guide to the
