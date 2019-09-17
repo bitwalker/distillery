@@ -41,12 +41,11 @@ Here are some examples:
     'Application.get_env(:myapp, :foo)'`
   * `rpcterms calendar valid_date '{2018,1,1}'` becomes `rpc ':calendar.valid_date({2017,1,1})'`
 
-!!! tip
-    You can build Mix task-like custom commands using `--mfa` and `--argv`, like so:
+**Tip**. You can build Mix task-like custom commands using `--mfa` and `--argv`, like so:
 
-    ```shell
-    release_ctl eval --mfa "Mix.Tasks.MyTask.run/1" --argv -- "$@"
-    ```
+```shell
+release_ctl eval --mfa "Mix.Tasks.MyTask.run/1" --argv -- "$@"
+```
 
 The end result is that are now just two commands, `rpc` and `eval`, both of which work the exact
 same way, with the only distinction being the execution environment of the
