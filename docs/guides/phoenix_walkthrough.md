@@ -49,6 +49,27 @@ config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
   version: Application.spec(:phoenix_distillery, :vsn)
 ```
 
+We also need to change the secret key base in `config/prod.secret.exs` . Change this section of text:
+
+```elixir
+secret_key_base =
+  System.get_env("SECRET_KEY_BASE") ||
+    raise """
+    environment variable SECRET_KEY_BASE is missing.
+    You can generate one by calling: mix phx.gen.secret
+    """
+```
+
+to the following:
+
+```elixir
+secret_key_base =
+  "5U8dBbveeM1DMJtFZq6Ybaum394cVHDHHj/YnKo8r8461WS9eFDWT2YpLzuODsan"
+```
+
+**NOTE** The secret key base should be generated using `mix phx.gen.secret`. It
+should also not be committed to your VCS in plain text.
+
 Let's discuss these options.
 
 - `server` configures the endpoint to boot the [Cowboy](https://github.com/ninenines/cowboy) application http endpoint on start.
