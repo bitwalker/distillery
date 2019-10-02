@@ -33,7 +33,6 @@ First let's modify the Phoenix `config/prod.exs` file. Change this section of te
 
 ```elixir
 config :phoenix_distillery, PhoenixDistilleryWeb.Endpoint,
-  http: [:inet6, port: System.get_env("PORT") || 4000],
   url: [host: "example.com", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json"
 ```
