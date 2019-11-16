@@ -12,7 +12,7 @@ START_ERL_DATA="${RELEASE_MUTABLE_DIR}/start_erl.data"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
 
 if [ ! -f "${START_ERL_DATA}" ]; then
-    mkdir -p $RELEASE_MUTABLE_DIR
+    mkdir -p "${RELEASE_MUTABLE_DIR}"
     cp "${RELEASES_DIR}/start_erl.data" "${START_ERL_DATA}"
 fi
 REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "${START_ERL_DATA}")}"
