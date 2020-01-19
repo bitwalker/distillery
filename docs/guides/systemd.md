@@ -16,6 +16,7 @@ Properties of this approach:
 
   * Your app will be automatically restarted if it crashes
   * Logs will be written to the `var/log` directory in your release
+  * If your app is killed suddenly (on Linux this would mean receiving a `SIGKILL`,as used by "OOM Killer") then your app may not get a chance to remove the pidfile and so it may not be restarted. If this is a concern kill your app with `pkill -9 beam.smp` and ensure that the pifile is removed and that the systemd detects strats it again.
 
 ```systemd
 [Unit]
