@@ -11,8 +11,10 @@ RELEASE_MUTABLE_DIR="${RELEASE_MUTABLE_DIR:-"${RELEASE_ROOT_DIR}/var"}"
 START_ERL_DATA="${RELEASE_MUTABLE_DIR}/start_erl.data"
 REL_NAME="${REL_NAME:-<%= release_name %>}"
 
-if [ ! -f "${START_ERL_DATA}" ]; then
+if [ ! -d "${RELEASE_MUTABLE_DIR}" ]; then
     mkdir -p $RELEASE_MUTABLE_DIR
+fi
+if [[ "${RELEASES_DIR}/start_erl.data" -nt "${START_ERL_DATA}" ]]; then
     cp "${RELEASES_DIR}/start_erl.data" "${START_ERL_DATA}"
 fi
 REL_VSN="${REL_VSN:-$(cut -d' ' -f2 "${START_ERL_DATA}")}"
