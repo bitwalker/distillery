@@ -78,6 +78,8 @@ WantedBy=multi-user.target
     service, you may need to set `RemainAfterExit=yes`. This will disable
     automatic restart in the case of failure though, so you should avoid doing
     this unless it is your only option (or desired behavior)
+    
+If you'd like your app to start automatically when the server starts (useful in case the server is rebooted). You'll need to run `systemctl enable myapp.service`.
 
 For more information about Distillery and systemd, the following links may be useful (though possibly outdated):
 
