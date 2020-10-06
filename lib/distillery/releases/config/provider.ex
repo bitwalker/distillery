@@ -52,13 +52,13 @@ defmodule Distillery.Releases.Config.Provider do
         end
       rescue
         err ->
-          trace = System.stacktrace()
+          trace = __STACKTRACE__
           msg = Exception.message(err) <> "\n" <> Exception.format_stacktrace(trace)
           print_err(msg)
           reraise err, trace
       catch
         kind, err ->
-          print_err(Exception.format(kind, err, System.stacktrace()))
+          print_err(Exception.format(kind, err, __STACKTRACE__))
 
           case kind do
             :throw ->

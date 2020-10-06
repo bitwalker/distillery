@@ -366,10 +366,10 @@ defmodule Distillery.Releases.Config do
     config
   rescue
     e in [LoadError] ->
-      reraise(e, System.stacktrace())
+      reraise(e, __STACKTRACE__)
 
     e ->
-      reraise(LoadError, [file: "nofile", error: e], System.stacktrace())
+      reraise(LoadError, [file: "nofile", error: e], __STACKTRACE__)
   end
 
   @doc """
@@ -381,10 +381,10 @@ defmodule Distillery.Releases.Config do
     read_string!(File.read!(file))
   rescue
     e in [LoadError] ->
-      reraise(LoadError, [file: file, error: e.error], System.stacktrace())
+      reraise(LoadError, [file: file, error: e.error], __STACKTRACE__)
 
     e ->
-      reraise(LoadError, [file: file, error: e], System.stacktrace())
+      reraise(LoadError, [file: file, error: e], __STACKTRACE__)
   end
 
   @doc """
