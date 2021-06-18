@@ -28,9 +28,9 @@ following content:
 ```docker
 # The version of Alpine to use for the final image
 # This should match the version of Alpine that the `elixir:1.7.2-alpine` image uses
-ARG ALPINE_VERSION=3.8
+ARG ALPINE_VERSION=3.13
 
-FROM elixir:1.7.2-alpine AS builder
+FROM elixir:1.12.1-alpine AS builder
 
 # The following are build arguments used to change variable parts of the image.
 # The name of your application/release (required)
@@ -98,7 +98,8 @@ ARG APP_NAME
 RUN apk update && \
     apk add --no-cache \
       bash \
-      openssl-dev
+      openssl-dev \
+      libstdc++
 
 ENV REPLACE_OS_VARS=true \
     APP_NAME=${APP_NAME}
