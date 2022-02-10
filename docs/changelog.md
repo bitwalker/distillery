@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file (at least to
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html)
 
+## [2.1.1]
+
+### Added
+
+- Added `:crypto`, `:eex` and `:sasl` extra applications for remove warning in Elixir => 1.12.3
+- `Mix.Config` module in Elixir => 1.12.3 is deprecated, so change to `Config`
+
 ## [2.1.0] - Unreleased
 
 ### Breaking Changes
