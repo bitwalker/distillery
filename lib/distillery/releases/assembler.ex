@@ -655,7 +655,7 @@ defmodule Distillery.Releases.Assembler do
                {:ok, tokens, _} <- :erl_scan.string(String.to_charlist(templated)),
                {:ok, sys_config} <- :erl_parse.parse_term(tokens),
                :ok <- validate_sys_config(sys_config),
-               merged <- Mix.Config.merge(base_config, sys_config) do
+               merged <- Config.Reader.merge(base_config, sys_config) do
             merged
           else
             err ->
