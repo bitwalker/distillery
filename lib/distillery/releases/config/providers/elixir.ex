@@ -77,7 +77,7 @@ defmodule Distillery.Releases.Config.Providers.Elixir do
 
   if function_exported?(Mix.Config, :eval!, 2) do
     def eval!(path, imported_paths) do
-      {config, _} = Mix.Config.eval!(path, imported_paths)
+      {config, _} = Config.Reader.read_imports!(path, imported_paths)
       config
     end
   else
