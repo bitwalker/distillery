@@ -707,14 +707,14 @@ defmodule Distillery.Releases.Runtime.Control do
       Console.error("""
       Could not load #{Path.expand(file)}: #{Exception.message(err)}
 
-      #{Exception.format_stacktrace(System.stacktrace())}
+      #{Exception.format_stacktrace(__STACKTRACE__)}
       """)
 
     err ->
       Console.error("""
       Evaluation failed with: #{Exception.message(err)}
 
-      #{Exception.format_stacktrace(System.stacktrace())}
+      #{Exception.format_stacktrace(__STACKTRACE__)}
       """)
   end
 
@@ -778,7 +778,7 @@ defmodule Distillery.Releases.Runtime.Control do
       Console.error("""
       Evaluation failed with: #{Exception.message(err)}
 
-      #{Exception.format_stacktrace(System.stacktrace())}
+      #{Exception.format_stacktrace(__STACKTRACE__)}
       """)
   end
 
@@ -792,7 +792,7 @@ defmodule Distillery.Releases.Runtime.Control do
             Console.error("""
             Evaluation failed with: #{Exception.message(err)}
 
-            #{Exception.format_stacktrace(System.stacktrace())}
+            #{Exception.format_stacktrace(__STACKTRACE__)}
             """)
         end
 
