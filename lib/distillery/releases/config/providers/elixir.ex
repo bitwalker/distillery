@@ -66,7 +66,7 @@ defmodule Distillery.Releases.Config.Providers.Elixir do
   def merge_config(runtime_config) do
     Enum.flat_map(runtime_config, fn {app, app_config} ->
       all_env = Application.get_all_env(app)
-      Config.Reader.merge([{app, all_env}], [{app, app_config}])
+      Mix.Config.merge([{app, all_env}], [{app, app_config}])
     end)
   end
 
