@@ -15,7 +15,7 @@ defmodule StandardApp.A do
   def start_link(), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
 
   def init(_) do
-    {:ok, {2, []}}
+    {:ok, {1, []}}
   end
 
   def handle_call({:push, item}, _from, {v, state}) do

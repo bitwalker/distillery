@@ -42,7 +42,7 @@ end
 # will be used by default
 
 release :standard_app do
-  set version: "0.0.2"
+  set version: "0.0.1"
   
   set config_providers: [
     {Distillery.Releases.Config.Providers.Elixir, ["${REL_DIR}/config.exs"]}

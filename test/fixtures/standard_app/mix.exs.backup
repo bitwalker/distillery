@@ -3,7 +3,7 @@ defmodule StandardApp.Mixfile do
 
   def project do
     [app: :standard_app,
-     version: "0.0.2",
+     version: "0.0.1",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
