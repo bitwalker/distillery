@@ -30,7 +30,7 @@ defmodule StandardApp.B do
     Process.flag(:trap_exit, true)
     :proc_lib.init_ack(parent, {:ok, self()})
     debug = :sys.debug_options([])
-    loop({2, []}, parent, debug)
+    loop({1, []}, parent, debug)
   end
 
   defp loop({v, acc}, parent, debug) do

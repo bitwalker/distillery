@@ -17,7 +17,7 @@ defmodule Distillery.Test.OverlayTest do
 
     test "invalid template string produces error" do
       str = "<%= foo() %>"
-      expected = "undefined function foo/0  (there is no such import)"
+      expected = "undefined function foo/0 (there is no such import)"
 
       assert {:error, {:template_str, {^str, ^expected}}} =
                Overlays.apply(@output_dir, [{:mkdir, str}], [])
