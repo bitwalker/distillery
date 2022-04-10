@@ -52,3 +52,10 @@ best to get to it in a timely fashion!
 ## License
 
 MIT. See the [`LICENSE.md`](https://github.com/bitwalker/distillery/blob/master/LICENSE.md) in this repository for more details.
+
+## Building
+
+```
+$ mix deps.get
+$ mix eqc.install --mini
+```

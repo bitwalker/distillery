@@ -170,7 +170,7 @@ defmodule LanguageExtensions.While do
         end
       else
         quote location: :keep, generated: true do
-          now = System.monotonic_time(:milliseconds)
+          now = System.monotonic_time(:millisecond)
           elapsed = now - start_time
           after_time = after_time - elapsed
         end
@@ -252,7 +252,7 @@ defmodule LanguageExtensions.While do
           end
       end
 
-      now = System.monotonic_time(:milliseconds)
+      now = System.monotonic_time(:millisecond)
       fun.(unquote(timeout), now, unquote(init_expr), fun)
     end
   end

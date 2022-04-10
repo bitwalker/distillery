@@ -19,7 +19,7 @@ cache:
     - deps
 before_script:
   - epmd -daemon
-  - mix do deps.get, eqc.install --mini
+  - mix do deps.get
 script:
   - bin/travis
 notifications:

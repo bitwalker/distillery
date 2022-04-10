@@ -227,7 +227,7 @@ defmodule Distillery.Test.IntegrationTest do
   describe "umbrella application" do
     test "can build umbrella and deploy it - dev" do
       with_umbrella_app do
-        assert {:ok, output} = build_release(env: :dev, no_tar: true)
+        assert {:ok, _output} = build_release(env: :dev, no_tar: true)
 
         bin = Path.join([output_path(), "bin", "umbrella"])
 

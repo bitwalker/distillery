@@ -5,7 +5,7 @@ defmodule Distillery.Test.CliTest do
 
   alias Distillery.Releases.Runtime.Control
   alias ExUnit.ClusteredCase.Node, as: NodeManager
-  
+
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])
 
   setup_all do
@@ -14,14 +14,14 @@ defmodule Distillery.Test.CliTest do
     Application.ensure_all_started(:ex_unit_clustered_case)
     Application.put_env(:artificery, :no_halt, true)
   end
-  
+
   setup do
     {:ok, pid} = NodeManager.start_nolink([
-      boot_timeout: 30_000, 
+      boot_timeout: 30_000,
       post_start_functions: [{Application, :ensure_all_started, [:distillery]}],
       stdout: :standard_error
     ])
-    on_exit fn -> 
+    on_exit fn ->
       if Process.alive?(pid) do
         NodeManager.kill(pid)
       end
@@ -144,7 +144,7 @@ defmodule Distillery.Test.CliTest do
 
     test "can restart node" do
       use LanguageExtensions.While
-      
+
 
       assert is_success(:ctrl_app, [], fn peer ->
         :ok = :net_kernel.monitor_nodes(true, [:nodedown_reason, {:node_type, :all}])
@@ -284,7 +284,7 @@ defmodule Distillery.Test.CliTest do
   end
 
   test "can get process info", %{node: peer} do
-    output = is_success(fn -> 
+    output = is_success(fn ->
       Control.main(["info", "--name", "#{peer}", "--cookie", "#{Node.get_cookie}", "processes"])
     end)
     # The application_master is always running, so check for it in the list of processes
@@ -316,7 +316,7 @@ defmodule Distillery.Test.CliTest do
 
   defp is_success(app, opts, fun) when is_list(opts) do
     use LanguageExtensions.While
-    
+
 
     use_heart? = Keyword.get(opts, :heart, false)
     # Get path for app's beam files
@@ -332,13 +332,13 @@ defmodule Distillery.Test.CliTest do
     ]
     # Start the node
     {:ok, pid} = NodeManager.start_nolink([
-      boot_timeout: 30_000, 
-      erl_flags: args, 
-      post_start_functions: post_start_funs, 
+      boot_timeout: 30_000,
+      erl_flags: args,
+      post_start_functions: post_start_funs,
       heart: use_heart?,
       stdout: :standard_error
     ])
-    on_exit fn -> 
+    on_exit fn ->
       if Process.alive?(pid) do
         NodeManager.kill(pid)
       end
