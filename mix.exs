@@ -1,6 +1,6 @@
 defmodule Distillery.Mixfile do
   use Mix.Project
-  import Config
+#  import Config
 
   def project do
     [
@@ -54,7 +54,7 @@ defmodule Distillery.Mixfile do
     [
       {:artificery, "~> 0.2"},
       {:ex_doc, "~> 0.13", only: [:docs]},
-      {:excoveralls, "~> 0.6", only: [:test]},
+      {:excoveralls, "~> 0.14", only: [:test]},
       {:eqc_ex, "~> 1.4", only: [:test]},
       {:ex_unit_clustered_case, "~> 0.3", only: [:test], runtime: false},
       {:dialyzex, "~> 1.2", only: [:dev], runtime: false}
