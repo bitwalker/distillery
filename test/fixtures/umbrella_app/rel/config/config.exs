@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # Set configuration for Phoenix endpoint
 config :web, WebWeb.Endpoint,

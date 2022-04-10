@@ -212,7 +212,7 @@ The config file referenced here (`rel/config/config.exs`) should look something
 like the following:
 
 ```elixir
-use Mix.Config
+import Config
 
 config :myapp, MyApp.Repo,
   username: System.get_env("DATABASE_USER"),

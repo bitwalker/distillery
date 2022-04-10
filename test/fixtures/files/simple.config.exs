@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 IO.puts "Hi from simple.config.exs!"
 

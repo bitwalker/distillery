@@ -44,7 +44,7 @@ The following is a relatively simple example, which allows one to represent the
 typical `config.exs` structure in JSON, so given the following Mix config file:
 
 ```elixir
-use Mix.Config
+import Config
 
 config :myapp,
   port: 8080
