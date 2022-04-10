@@ -13,7 +13,7 @@ defmodule Distillery.Test.ConfigTest do
           Distillery.Releases.Conf.read!(Path.join([@standard_app, "rel", "config.exs"]))
         end)
 
-      assert %Config{
+      assert %Conf{
                environments: %{
                  dev: %Environment{profile: %Profile{dev_mode: true, include_erts: false}},
                  prod: %Environment{
@@ -51,7 +51,7 @@ defmodule Distillery.Test.ConfigTest do
 
       distillery_ver = Keyword.fetch!(Mix.Project.config(), :version)
 
-      assert %Config{
+      assert %Conf{
                environments: %{
                  default: %Environment{}
                },
@@ -78,7 +78,7 @@ defmodule Distillery.Test.ConfigTest do
         {SampleApp.EnvLoggerPlugin, [name: ProdPlugin]}
       ]
 
-      assert %Config{
+      assert %Conf{
         environments: %{
           dev: %Environment{profile: %Profile{plugins: []}},
           prod: %Environment{profile: %Profile{plugins: ^prod_plugins}}

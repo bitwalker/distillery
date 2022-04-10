@@ -205,7 +205,7 @@ defmodule Distillery.Releases.Release do
   @doc false
   @spec select_environment(Conf.t()) :: {:ok, Environment.t()} | {:error, :missing_environment}
   def select_environment(
-        %Config{selected_environment: :default, default_environment: :default} = c
+        %Conf{selected_environment: :default, default_environment: :default} = c
       ) do
     case Map.get(c.environments, :default) do
       nil ->
@@ -216,8 +216,8 @@ defmodule Distillery.Releases.Release do
     end
   end
 
-  def select_environment(%Config{selected_environment: :default, default_environment: name} = c),
-    do: select_environment(%Config{c | selected_environment: name})
+  def select_environment(%Conf{selected_environment: :default, default_environment: name} = c),
+    do: select_environment(%Conf{c | selected_environment: name})
 
   def select_environment(%{selected_environment: name} = c) do
     case Map.get(c.environments, name) do
@@ -232,13 +232,13 @@ defmodule Distillery.Releases.Release do
   # Returns the release that the provided Config has selected
   @doc false
   @spec select_release(Conf.t()) :: {:ok, t} | {:error, :missing_release}
-  def select_release(%Config{selected_release: :default, default_release: :default} = c),
+  def select_release(%Conf{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
 
-  def select_release(%Config{selected_release: :default, default_release: name} = c),
-    do: select_release(%Config{c | selected_release: name})
+  def select_release(%Conf{selected_release: :default, default_release: name} = c),
+    do: select_release(%Conf{c | selected_release: name})
 
-  def select_release(%Config{selected_release: name} = c) do
+  def select_release(%Conf{selected_release: name} = c) do
     case Map.get(c.releases, name) do
       nil ->
         {:error, :missing_release}
@@ -279,7 +279,7 @@ defmodule Distillery.Releases.Release do
   @doc false
   @spec apply_configuration(t, Conf.t()) :: {:ok, t} | {:error, term}
   @spec apply_configuration(t, Conf.t(), log? :: boolean) :: {:ok, t} | {:error, term}
-  def apply_configuration(%__MODULE__{} = release, %Config{} = config, log? \\ false) do
+  def apply_configuration(%__MODULE__{} = release, %Conf{} = config, log? \\ false) do
     profile = release.profile
 
     profile =
@@ -345,7 +345,7 @@ defmodule Distillery.Releases.Release do
       err
   end
 
-  defp apply_upgrade_configuration(%__MODULE__{} = release, %Config{upgrade_from: :latest}, log?) do
+  defp apply_upgrade_configuration(%__MODULE__{} = release, %Conf{upgrade_from: :latest}, log?) do
     current_version = release.version
 
     upfrom =
@@ -376,13 +376,13 @@ defmodule Distillery.Releases.Release do
     end
   end
 
-  defp apply_upgrade_configuration(%__MODULE__{version: v}, %Config{upgrade_from: v}, _log?) do
+  defp apply_upgrade_configuration(%__MODULE__{version: v}, %Conf{upgrade_from: v}, _log?) do
     {:error, {:assembler, {:bad_upgrade_spec, :upfrom_is_current, v}}}
   end
 
   defp apply_upgrade_configuration(
          %__MODULE__{name: name} = release,
-         %Config{upgrade_from: v},
+         %Conf{upgrade_from: v},
          log?
        ) do
     current_version = release.version

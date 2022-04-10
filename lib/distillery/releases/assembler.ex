@@ -4,7 +4,7 @@ defmodule Distillery.Releases.Assembler do
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by `:systools` and `:release_handler`.
   """
-  alias Conf.Reader
+  alias Config.Reader
   alias Distillery.Releases.Conf
   alias Distillery.Releases.Release
   alias Distillery.Releases.Environment
@@ -21,7 +21,7 @@ defmodule Distillery.Releases.Assembler do
 
   @doc false
   @spec pre_assemble(Conf.t()) :: {:ok, Release.t()} | {:error, term}
-  def pre_assemble(%Config{} = config) do
+  def pre_assemble(%Conf{} = config) do
     with {:ok, environment} <- Release.select_environment(config),
          {:ok, release} <- Release.select_release(config),
          release <- apply_environment(release, environment),
@@ -43,7 +43,7 @@ defmodule Distillery.Releases.Assembler do
   impact the filesystem outside of this directory.
   """
   @spec assemble(Conf.t()) :: {:ok, Release.t()} | {:error, term}
-  def assemble(%Config{} = config) do
+  def assemble(%Conf{} = config) do
     with {:ok, release} <- pre_assemble(config),
          {:ok, release} <- generate_overlay_vars(release),
          {:ok, release} <- copy_applications(release),

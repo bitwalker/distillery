@@ -388,7 +388,7 @@ defmodule Distillery.Releases.Conf do
   end
 
   @doc """
-  Validates a `%Config{}` struct.
+  Validates a `%Conf{}` struct.
   If the struct is not valid, an `ArgumentError` is raised. If valid, returns `true`.
   """
   @spec validate!(__MODULE__.t()) :: true | no_return

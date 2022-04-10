@@ -113,7 +113,7 @@ defmodule Mix.Tasks.Distillery.Release.Clean do
   end
 
   @spec clean!(Conf.t(), [String.t()]) :: :ok | no_return
-  defp clean!(%Config{releases: releases}, args) do
+  defp clean!(%Conf{releases: releases}, args) do
     # load release configuration
     Shell.info("Cleaning last release..")
     # clean release
