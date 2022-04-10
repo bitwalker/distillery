@@ -28,7 +28,7 @@ defmodule Distillery.Releases.Profile do
       * `"path/to/erlang"`   - As indicated, a path to the ERTS you wish to bundle. Useful for cross-compiling.
                                This path can be found with `:code.root_dir()`
     * `:include_src`         - Boolean indicating whether to bundle source files in the release. (default: false)
-    * `:config_providers`    - A list of custom configuration providers to use. See `Distillery.Releases.Config.Provider` for details.
+    * `:config_providers`    - A list of custom configuration providers to use. See `Distillery.Releases.Conf.Provider` for details.
     * `:included_configs`    - Used to set paths for additional `sys.config` files to include at runtime, e.g. `["/etc/sys.config"]`
     * `:appup_transforms`    - A list of custom appup transforms to apply when building upgrades: e.g. `[MyTransform, {MyTransform, [:foo]}]`
     * `:strip_debug_info`    - Boolean indicating whether to strip debug information from BEAM files (default: false)

@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Distillery.Release.Clean do
   alias Distillery.Releases.App
   alias Distillery.Releases.Plugin
   alias Distillery.Releases.Release
-  alias Distillery.Releases.Config
+  alias Distillery.Releases.Conf
   alias Distillery.Releases.Profile
   alias Distillery.Releases.Errors
 
@@ -50,9 +50,9 @@ defmodule Mix.Tasks.Distillery.Release.Clean do
       case File.exists?(config_path) do
         true ->
           try do
-            Config.read!(config_path)
+            Conf.read!(config_path)
           rescue
-            e in [Config.LoadError] ->
+            e in [Conf.LoadError] ->
               file = Path.relative_to_cwd(e.file)
               message = Exception.message(e)
               message = String.replace(message, "nofile", file)
@@ -112,7 +112,7 @@ defmodule Mix.Tasks.Distillery.Release.Clean do
       System.halt(1)
   end
 
-  @spec clean!(Config.t(), [String.t()]) :: :ok | no_return
+  @spec clean!(Conf.t(), [String.t()]) :: :ok | no_return
   defp clean!(%Config{releases: releases}, args) do
     # load release configuration
     Shell.info("Cleaning last release..")

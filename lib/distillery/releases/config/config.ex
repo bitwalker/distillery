@@ -1,10 +1,10 @@
-defmodule Distillery.Releases.Config do
+defmodule Distillery.Releases.Conf do
   @moduledoc """
   Responsible for parsing the release configuration file.
   """
 
   alias Distillery.Releases.{Release, Environment}
-  alias Distillery.Releases.Config.LoadError
+  alias Distillery.Releases.Conf.LoadError
 
   defstruct environments: %{},
             releases: %{},
@@ -29,19 +29,19 @@ defmodule Distillery.Releases.Config do
 
   defmacro __using__(opts) do
     quote do
-      import Distillery.Releases.Config
+      import Distillery.Releases.Conf
 
       opts = unquote(opts)
 
-      var!(config, Distillery.Releases.Config) = %{
+      var!(config, Distillery.Releases.Conf) = %{
         environments: [],
         releases: [],
         default_release: Keyword.get(opts, :default_release, :default),
         default_environment: Keyword.get(opts, :default_environment, :default)
       }
 
-      var!(current_env, Distillery.Releases.Config) = nil
-      var!(current_rel, Distillery.Releases.Config) = nil
+      var!(current_env, Distillery.Releases.Conf) = nil
+      var!(current_rel, Distillery.Releases.Conf) = nil
     end
   end
 
@@ -57,7 +57,7 @@ defmodule Distillery.Releases.Config do
           try do
             read!(config_path)
           rescue
-            e in [Config.LoadError] ->
+            e in [Conf.LoadError] ->
               file = Path.relative_to_cwd(e.file)
               message = Exception.message(e)
               message = String.replace(message, "nofile", file)
@@ -137,11 +137,11 @@ defmodule Distillery.Releases.Config do
       end
 
       env = Environment.new(name)
-      conf = var!(config, Distillery.Releases.Config)
-      var!(config, Distillery.Releases.Config) = put_in(conf, [:environments, name], env)
-      var!(current_env, Distillery.Releases.Config) = name
+      conf = var!(config, Distillery.Releases.Conf)
+      var!(config, Distillery.Releases.Conf) = put_in(conf, [:environments, name], env)
+      var!(current_env, Distillery.Releases.Conf) = name
       unquote(block)
-      var!(current_env, Distillery.Releases.Config) = nil
+      var!(current_env, Distillery.Releases.Conf) = nil
     end
   end
 
@@ -169,11 +169,11 @@ defmodule Distillery.Releases.Config do
 
       rel = Release.new(name, unquote(@default_release_version), [])
 
-      conf = var!(config, Distillery.Releases.Config)
-      var!(config, Distillery.Releases.Config) = put_in(conf, [:releases, name], rel)
-      var!(current_rel, Distillery.Releases.Config) = name
+      conf = var!(config, Distillery.Releases.Conf)
+      var!(config, Distillery.Releases.Conf) = put_in(conf, [:releases, name], rel)
+      var!(current_rel, Distillery.Releases.Conf) = name
       unquote(block)
-      var!(current_rel, Distillery.Releases.Config) = nil
+      var!(current_rel, Distillery.Releases.Conf) = nil
     end
   end
 
@@ -200,8 +200,8 @@ defmodule Distillery.Releases.Config do
     quote do
       name = unquote(name)
       plugin_opts = unquote(opts)
-      current_env = var!(current_env, Distillery.Releases.Config)
-      current_rel = var!(current_rel, Distillery.Releases.Config)
+      current_env = var!(current_env, Distillery.Releases.Conf)
+      current_rel = var!(current_rel, Distillery.Releases.Conf)
 
       if current_env == nil && current_rel == nil do
         raise "cannot use plugin/1 outside of an environment or a release!"
@@ -215,7 +215,7 @@ defmodule Distillery.Releases.Config do
           :code.ensure_modules_loaded([name])
       end
 
-      conf = var!(config, Distillery.Releases.Config)
+      conf = var!(config, Distillery.Releases.Conf)
 
       new_conf =
         cond do
@@ -236,7 +236,7 @@ defmodule Distillery.Releases.Config do
             put_in(conf, [:releases, current_rel], rel)
         end
 
-      var!(config, Distillery.Releases.Config) = new_conf
+      var!(config, Distillery.Releases.Conf) = new_conf
     end
   end
 
@@ -255,8 +255,8 @@ defmodule Distillery.Releases.Config do
   """
   defmacro set(opts) when is_list(opts) do
     quote do
-      current_env = var!(current_env, Distillery.Releases.Config)
-      current_rel = var!(current_rel, Distillery.Releases.Config)
+      current_env = var!(current_env, Distillery.Releases.Conf)
+      current_rel = var!(current_rel, Distillery.Releases.Conf)
 
       if current_env == nil && current_rel == nil do
         raise "cannot use set/1 outside of an environment or a release!"
@@ -264,7 +264,7 @@ defmodule Distillery.Releases.Config do
 
       set_opts = unquote(opts)
 
-      conf = var!(config, Distillery.Releases.Config)
+      conf = var!(config, Distillery.Releases.Conf)
 
       new_conf =
         cond do
@@ -308,7 +308,7 @@ defmodule Distillery.Releases.Config do
             put_in(conf, [:releases, current_rel], rel)
         end
 
-      var!(config, Distillery.Releases.Config) = new_conf
+      var!(config, Distillery.Releases.Conf) = new_conf
     end
   end
 
@@ -346,14 +346,14 @@ defmodule Distillery.Releases.Config do
 
   @doc """
   Reads and validates a string containing the contents of a config file.
-  If an error occurs during reading, a `Distillery.Releases.Config.LoadError` will be raised.
+  If an error occurs during reading, a `Distillery.Releases.Conf.LoadError` will be raised.
   """
   @spec read_string!(String.t()) :: t() | no_return
   def read_string!(contents) do
     {config, binding} = Code.eval_string(contents)
 
     config =
-      case List.keyfind(binding, {:config, Distillery.Releases.Config}, 0) do
+      case List.keyfind(binding, {:config, Distillery.Releases.Conf}, 0) do
         {_, conf} ->
           conf
 
@@ -374,7 +374,7 @@ defmodule Distillery.Releases.Config do
 
   @doc """
   Reads and validates a given configuration file.
-  If the file does not exist, or an error occurs, a `Distillery.Releases.Config.LoadError` will be raised.
+  If the file does not exist, or an error occurs, a `Distillery.Releases.Conf.LoadError` will be raised.
   """
   @spec read!(String.t()) :: t() | no_return
   def read!(file) do

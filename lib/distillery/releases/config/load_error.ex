@@ -1,4 +1,4 @@
-defmodule Distillery.Releases.Config.LoadError do
+defmodule Distillery.Releases.Conf.LoadError do
   @moduledoc false
   defexception [:file, :error]
 

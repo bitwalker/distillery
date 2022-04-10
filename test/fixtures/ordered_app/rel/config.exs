@@ -1,4 +1,4 @@
-use Distillery.Releases.Config,
+use Distillery.Releases.Conf,
     default_release: :default,
     default_environment: Mix.env()
 

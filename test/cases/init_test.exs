@@ -41,7 +41,7 @@ defmodule Distillery.Test.InitTest do
         assert {:ok, _} = mix("distillery.init")
         assert File.exists?(@init_test_rel_path)
         assert File.exists?(@init_test_rel_config_path)
-        # It would be nice to test that Distillery.Releases.Config.read! succeeds here
+        # It would be nice to test that Distillery.Releases.Conf.read! succeeds here
         # to verify that the example config is valid, but the call to current_version
         # in the example config fails because the init_test_app has not been loaded
         # in this test context.
@@ -78,7 +78,7 @@ defmodule Distillery.Test.InitTest do
         assert {:ok, _} = mix("distillery.init")
         assert File.exists?(@init_test_rel_path)
         assert File.exists?(@init_test_rel_vm_args_path)
-        # It would be nice to test that Distillery.Releases.Config.read! succeeds here
+        # It would be nice to test that Distillery.Releases.Conf.read! succeeds here
         # to verify that the example config is valid, but the call to current_version
         # in the example config fails because the init_test_app has not been loaded
         # in this test context.

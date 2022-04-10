@@ -39,7 +39,7 @@ provide a good overview of what has been addressed.
 
 ### Added
 
-- The `Mix.Releases.Config.Provider` behavior and API. Referred to as
+- The `Mix.Releases.Conf.Provider` behavior and API. Referred to as
   "Config Providers" in more general terms, this provides a format and source
   agnostic way to configure your application at runtime. Providers are executed
   prior to boot/init, in an environment with all application code loaded, with
@@ -50,7 +50,7 @@ provide a good overview of what has been addressed.
   running multiple providers, the last one to run "wins" in the case of
   conflicting configuration keys, so they should be ordered by their priority.
 - A `Mix.Config` config provider, supporting `config.exs` scripts in releases.
-  You can find more information in the `Mix.Releases.Config.Providers.Elixir`
+  You can find more information in the `Mix.Releases.Conf.Providers.Elixir`
   module docs, or in the Distillery documentation about config providers.
 - A new `config_providers` setting for defining which config providers to
   execute in a release (can be set in either `environment` or `release` blocks).

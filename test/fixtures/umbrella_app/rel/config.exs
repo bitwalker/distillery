@@ -7,7 +7,7 @@
 |> Path.wildcard()
 |> Enum.map(&Code.eval_file(&1))
 
-use Distillery.Releases.Config,
+use Distillery.Releases.Conf,
     # This sets the default release built by `mix distillery.release`
     default_release: :default,
     # This sets the default environment used by `mix distillery.release`
@@ -42,7 +42,7 @@ release :umbrella do
   ]
 
   set config_providers: [
-    {Distillery.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
+    {Distillery.Releases.Conf.Providers.Elixir, ["${RELEASE_ROOT_DIR}/etc/config.exs"]}
   ]
   set overlays: [
     {:copy, "rel/config/config.exs", "etc/config.exs"}

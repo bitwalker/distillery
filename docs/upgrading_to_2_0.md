@@ -75,7 +75,7 @@ information as they are big quality of life improvements!
   * Config Providers! This is a framework for format-agnostic, source-agnostic
     runtime configuration providers, which allow you to fetch configuration and
     push it into the application env before applications in the system have
-    booted. See the docs and the `Distillery.Releases.Config.Provider` moduledoc for
+    booted. See the docs and the `Distillery.Releases.Conf.Provider` moduledoc for
     more information. If you are curious about what a custom provider looks
     like, check out [this library](https://github.com/bitwalker/toml-elixir),
     which has a provider for TOML. Distillery also contains a provider for

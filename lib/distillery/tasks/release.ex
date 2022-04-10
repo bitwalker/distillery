@@ -69,7 +69,7 @@ defmodule Mix.Tasks.Distillery.Release do
   @shortdoc "Build a release for the current mix application"
   use Mix.Task
 
-  alias Distillery.Releases.Config
+  alias Distillery.Releases.Conf
   alias Distillery.Releases.Release
   alias Distillery.Releases.Shell
   alias Distillery.Releases.Assembler
@@ -91,7 +91,7 @@ defmodule Mix.Tasks.Distillery.Release do
     # load release configuration
     Shell.debug("Loading configuration..")
 
-    case Config.get(opts) do
+    case Conf.get(opts) do
       {:error, {:config, :not_found}} ->
         Shell.error("You are missing a release config file. Run the distillery.init task first")
         System.halt(1)

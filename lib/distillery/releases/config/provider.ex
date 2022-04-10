@@ -1,4 +1,4 @@
-defmodule Distillery.Releases.Config.Provider do
+defmodule Distillery.Releases.Conf.Provider do
   @moduledoc """
   This defines the behaviour for custom configuration providers.
   """

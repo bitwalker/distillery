@@ -6,7 +6,7 @@ Check out [Runtime Configuration](runtime.md).
 Below is a brief overview of the release configuration file format:
 
 ```elixir
-use Distillery.Releases.Config,
+use Distillery.Releases.Conf,
     # This sets the default release built by `mix distillery.release`
     default_release: :default,
     # This sets the default environment used by `mix distillery.release`
@@ -48,7 +48,7 @@ release :myumbrella do
 end
 ```
 
-Please see the module docs for `Distillery.Releases.Config` for specifics on the
+Please see the module docs for `Distillery.Releases.Conf` for specifics on the
 `environment/2`, `release/2`, `set/1`, and other macros.
 
 ## Release settings

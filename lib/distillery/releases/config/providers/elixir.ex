@@ -1,11 +1,11 @@
-defmodule Distillery.Releases.Config.Providers.Elixir do
+defmodule Distillery.Releases.Conf.Providers.Elixir do
   @moduledoc """
   Provides support for `Mix.Config` config scripts, e.g. `config.exs`
 
   This provider expects a path to a config file to load during boot as an argument:
 
       set config_providers: [
-        {Distillery.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/config.exs"]}
+        {Distillery.Releases.Conf.Providers.Elixir, ["${RELEASE_ROOT_DIR}/config.exs"]}
       ]
 
   The above configuration goes in a `release` or `environment` definition in `rel/config.exs`,
@@ -26,7 +26,7 @@ defmodule Distillery.Releases.Config.Providers.Elixir do
       pared down to only reference the target environment (in general configs should be small anyway).
   """
 
-  use Distillery.Releases.Config.Provider
+  use Distillery.Releases.Conf.Provider
 
   @impl Provider
   def init([path]) do
@@ -46,7 +46,7 @@ defmodule Distillery.Releases.Config.Providers.Elixir do
         path
         |> eval!()
         |> merge_config()
-        |> Mix.Config.persist()
+        |> Mix.Conf.persist()
       else
         {:error, reason} ->
           exit(reason)
@@ -66,7 +66,7 @@ defmodule Distillery.Releases.Config.Providers.Elixir do
   def merge_config(runtime_config) do
     Enum.flat_map(runtime_config, fn {app, app_config} ->
       all_env = Application.get_all_env(app)
-      Mix.Config.merge([{app, all_env}], [{app, app_config}])
+      Mix.Conf.merge([{app, all_env}], [{app, app_config}])
     end)
   end
 
@@ -77,10 +77,10 @@ defmodule Distillery.Releases.Config.Providers.Elixir do
 
   if function_exported?(Mix.Config, :eval!, 2) do
     def eval!(path, imported_paths) do
-      {config, _} = Config.Reader.read_imports!(path, imported_paths)
+      {config, _} = Conf.Reader.read_imports!(path, imported_paths)
       config
     end
   else
-    def eval!(path, imported_paths), do: Mix.Config.read!(path, imported_paths)
+    def eval!(path, imported_paths), do: Mix.Conf.read!(path, imported_paths)
   end
 end

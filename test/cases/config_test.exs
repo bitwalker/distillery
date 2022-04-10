@@ -10,7 +10,7 @@ defmodule Distillery.Test.ConfigTest do
     test "read!" do
       config =
         Mix.Project.in_project(:standard_app, @standard_app, fn _mixfile ->
-          Distillery.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
+          Distillery.Releases.Conf.read!(Path.join([@standard_app, "rel", "config.exs"]))
         end)
 
       assert %Config{
@@ -41,13 +41,13 @@ defmodule Distillery.Test.ConfigTest do
     test "read_string!" do
       config =
         """
-        use Distillery.Releases.Config
+        use Distillery.Releases.Conf
 
         release :distillery do
           set version: current_version(:distillery)
         end
         """
-        |> Distillery.Releases.Config.read_string!()
+        |> Distillery.Releases.Conf.read_string!()
 
       distillery_ver = Keyword.fetch!(Mix.Project.config(), :version)
 
@@ -68,7 +68,7 @@ defmodule Distillery.Test.ConfigTest do
     test "read!" do
       config =
         Mix.Project.in_project(:standard_app, @standard_app, fn _mixfile ->
-          Distillery.Releases.Config.read!(Path.join([@standard_app, "rel", "config.exs"]))
+          Distillery.Releases.Conf.read!(Path.join([@standard_app, "rel", "config.exs"]))
         end)
 
       rel_plugins = [

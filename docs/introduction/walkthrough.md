@@ -53,7 +53,7 @@ To initialize Distillery, just run `mix distillery.init`.
 The default configuration file will look something like the following (comments stripped):
 
 ```elixir
-use Distillery.Releases.Config,
+use Distillery.Releases.Conf,
     default_release: :default,
     default_environment: Mix.env()
 
@@ -78,7 +78,7 @@ Let's talk about what these settings do from top to bottom.
     See [Configuring Distillery](../config/distillery.md) if you want to explore settings not covered in this guide.
 
 ```elixir
-use Distillery.Releases.Config,
+use Distillery.Releases.Conf,
     default_release: :default,
     default_environment: Mix.env()
 ```

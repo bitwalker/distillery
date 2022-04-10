@@ -1,10 +1,11 @@
 defmodule Distillery.Releases.Assembler do
   @moduledoc """
-  This module is responsible for assembling a release based on a `Distillery.Releases.Config`
+  This module is responsible for assembling a release based on a `Distillery.Releases.Conf`
   struct. It creates the release directory, copies applications, and generates release-specific
   files required by `:systools` and `:release_handler`.
   """
-  alias Distillery.Releases.Config
+  alias Conf.Reader
+  alias Distillery.Releases.Conf
   alias Distillery.Releases.Release
   alias Distillery.Releases.Environment
   alias Distillery.Releases.Profile
@@ -19,7 +20,7 @@ defmodule Distillery.Releases.Assembler do
   Record.defrecordp(:file_info, Record.extract(:file_info, from_lib: "kernel/include/file.hrl"))
 
   @doc false
-  @spec pre_assemble(Config.t()) :: {:ok, Release.t()} | {:error, term}
+  @spec pre_assemble(Conf.t()) :: {:ok, Release.t()} | {:error, term}
   def pre_assemble(%Config{} = config) do
     with {:ok, environment} <- Release.select_environment(config),
          {:ok, release} <- Release.select_release(config),
@@ -41,7 +42,7 @@ defmodule Distillery.Releases.Assembler do
   this function are scoped to the current project's `rel` directory, and cannot
   impact the filesystem outside of this directory.
   """
-  @spec assemble(Config.t()) :: {:ok, Release.t()} | {:error, term}
+  @spec assemble(Conf.t()) :: {:ok, Release.t()} | {:error, term}
   def assemble(%Config{} = config) do
     with {:ok, release} <- pre_assemble(config),
          {:ok, release} <- generate_overlay_vars(release),
@@ -655,7 +656,7 @@ defmodule Distillery.Releases.Assembler do
                {:ok, tokens, _} <- :erl_scan.string(String.to_charlist(templated)),
                {:ok, sys_config} <- :erl_parse.parse_term(tokens),
                :ok <- validate_sys_config(sys_config),
-               merged <- Mix.Config.merge(base_config, sys_config) do
+               merged <- Release.merge(base_config, sys_config) do
             merged
           else
             err ->
@@ -686,7 +687,7 @@ defmodule Distillery.Releases.Assembler do
   end
 
   defp generate_base_config(base_config_path, config_providers) do
-    config = Distillery.Releases.Config.Providers.Elixir.eval!(base_config_path)
+    config = Distillery.Releases.Conf.Providers.Elixir.eval!(base_config_path)
 
     config =
       case Keyword.get(config, :sasl) do
@@ -809,7 +810,7 @@ defmodule Distillery.Releases.Assembler do
       config_boot =
         clean_boot
         |> BootScript.after_started(:elixir, [
-          {:apply, {Distillery.Releases.Config.Provider, :init, [providers]}}
+          {:apply, {Distillery.Releases.Conf.Provider, :init, [providers]}}
         ])
 
       # Finally, this is the "real" boot script for the app itself

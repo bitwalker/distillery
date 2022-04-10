@@ -5,7 +5,7 @@ defmodule Distillery.Releases.Release do
   alias Distillery.Releases.App
   alias Distillery.Releases.Profile
   alias Distillery.Releases.Overlays
-  alias Distillery.Releases.Config
+  alias Distillery.Releases.Conf
   alias Distillery.Releases.Utils
   alias Distillery.Releases.Environment
   alias Distillery.Releases.Shell
@@ -103,7 +103,7 @@ defmodule Distillery.Releases.Release do
       upgrade_from: Keyword.get(opts, :upgrade_from, false)
     ]
 
-    case Config.get(Keyword.merge(default_opts, opts)) do
+    case Conf.get(Keyword.merge(default_opts, opts)) do
       {:error, _} = err ->
         err
 
@@ -203,7 +203,7 @@ defmodule Distillery.Releases.Release do
 
   # Returns the environment that the provided Config has selected
   @doc false
-  @spec select_environment(Config.t()) :: {:ok, Environment.t()} | {:error, :missing_environment}
+  @spec select_environment(Conf.t()) :: {:ok, Environment.t()} | {:error, :missing_environment}
   def select_environment(
         %Config{selected_environment: :default, default_environment: :default} = c
       ) do
@@ -231,7 +231,7 @@ defmodule Distillery.Releases.Release do
 
   # Returns the release that the provided Config has selected
   @doc false
-  @spec select_release(Config.t()) :: {:ok, t} | {:error, :missing_release}
+  @spec select_release(Conf.t()) :: {:ok, t} | {:error, :missing_release}
   def select_release(%Config{selected_release: :default, default_release: :default} = c),
     do: {:ok, List.first(Map.values(c.releases))}
 
@@ -277,8 +277,8 @@ defmodule Distillery.Releases.Release do
 
   # Applies global configuration options to the release profile
   @doc false
-  @spec apply_configuration(t, Config.t()) :: {:ok, t} | {:error, term}
-  @spec apply_configuration(t, Config.t(), log? :: boolean) :: {:ok, t} | {:error, term}
+  @spec apply_configuration(t, Conf.t()) :: {:ok, t} | {:error, term}
+  @spec apply_configuration(t, Conf.t(), log? :: boolean) :: {:ok, t} | {:error, term}
   def apply_configuration(%__MODULE__{} = release, %Config{} = config, log? \\ false) do
     profile = release.profile
 
