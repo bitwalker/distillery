@@ -5,7 +5,7 @@ defmodule Distillery.Mixfile do
   def project do
     [
       app: :distillery,
-      version: "2.1.1",
+      version: "2.2.0",
       elixir: "~> 1.13",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -52,12 +52,12 @@ defmodule Distillery.Mixfile do
 
   defp deps do
     [
-      {:artificery, "~> 0.2"},
-      {:ex_doc, "~> 0.13", only: [:docs]},
+      {:artificery, "~> 0.4.3"},
+      {:dialyzex, "~> 1.3", only: [:dev], runtime: false},
+      {:ex_doc, "~> 0.28.3", only: [:docs]},
+      {:ex_unit_clustered_case, "~> 0.4", only: [:test], runtime: false},
       {:excoveralls, "~> 0.14", only: [:test]},
-      {:stream_data, "~> 0.5", only: [:test]},
-      {:ex_unit_clustered_case, "~> 0.3", only: [:test], runtime: false},
-      {:dialyzex, "~> 1.2", only: [:dev], runtime: false}
+      {:stream_data, "~> 0.5", only: [:test]}
     ]
   end
 

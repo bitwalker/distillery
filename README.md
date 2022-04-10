@@ -56,6 +56,8 @@ MIT. See the [`LICENSE.md`](https://github.com/bitwalker/distillery/blob/master/
 ## Building
 
 ```
+$ mix hex.outdated
 $ mix deps.get
-$ mix eqc.install --mini
+$ mix deps.compile
+$ mix test
 ```
