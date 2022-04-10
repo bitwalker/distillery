@@ -108,9 +108,9 @@ scenarios, such as reading from files like `.toml`, `.yaml`, or `.json`; using
 
 ## Mix Config Provider
 
-Out of the box, Distillery also includes a provider for `Mix.Config`, which
+Out of the box, Distillery also includes a provider for `Mix.Configig`, which
 allows you to use `config.exs` files with a release. You have to opt in to
-this provider, because `Mix.Config` blends compile-time and runtime
+this provider, because `Mix.Configig` blends compile-time and runtime
 configuration options into one file, and many legacy configs make assumptions
 about the environment the config is evaluated in (namely that a Mix project is
 available, or that commands like `git` can be invoked and have meaningful
@@ -129,7 +129,7 @@ end
 
 You may notice above that I'm pulling in a Mix config from
 `rel/config/config.exs`, this is the recommended way to deal with runtime
-configuration using `Mix.Config`; create a dedicated config which handles
+configuration using `Mix.Configig`; create a dedicated config which handles
 fetching runtime configuration _only_, and place it in `rel/config`. Use the
 standard `config/*.exs` files for compile-time configuration (of course, feel
 free to use `dev.exs` or it's equivalent for development runtime config).

@@ -128,7 +128,7 @@ CMD trap 'exit' INT; /opt/app/bin/${APP_NAME} foreground
 
 !!! tip
     While this Dockerfile enables `REPLACE_OS_VARS`, you will probably want to
-    take advantage of the config provider for `Mix.Config` instead, see the [Handling
+    take advantage of the config provider for `Mix.Configig` instead, see the [Handling
     Configuration](../config/runtime.md) document for more information.
 
 To prevent reperforming steps when not necessary, add a `.dockerignore` to your project with the following:
@@ -193,7 +193,7 @@ If `make` ran successfully, you now have a production-ready image!
 ## Running the image
 
 Our next step is to test out our image! We're going to assume that your app was
-built using the config provider for `Mix.Config`, which would look like the
+built using the config provider for `Mix.Configig`, which would look like the
 following in your `rel/config.exs`:
 
 ```elixir

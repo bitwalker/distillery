@@ -1,7 +1,7 @@
 defmodule Distillery.Test.ConfigTest do
   use ExUnit.Case
 
-  alias Distillery.Releases.{Config, Environment, Release, Profile}
+  alias Distillery.Releases.{Conf, Environment, Release, Profile}
 
   @fixtures_path Path.join([__DIR__, "..", "fixtures"])
   @standard_app Path.join([@fixtures_path, "standard_app"])

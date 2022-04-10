@@ -32,7 +32,7 @@ take a look at the [Phoenix Walkthrough](../guides/phoenix_walkthrough.md).
 
 ## Startup and lifecycle
 
-Mix itself loads/starts things a little differently than OTP releases, in order to provide `Mix.Config`,
+Mix itself loads/starts things a little differently than OTP releases, in order to provide `Mix.Configig`,
 as well as its task infrastructure. For example, when using `mix run` to start your project, Mix compiles, 
 then loads and starts the `:kernel`, `:stdlib`, `:compiler`, `:elixir`, and `:mix` applications, at which point 
 Mix will use the project definition to load and start applications as needed. Before it does this though, it
@@ -41,7 +41,7 @@ starts.
 
 OTP releases are very similar, except the runtime itself knows what to load and start, and the order in which to
 do so, based on something called a boot script. This script instructs the runtime exactly how to boot everything.
-So in a release, we use a custom instruction to ensure that configuration providers, like `Mix.Config` have a chance
+So in a release, we use a custom instruction to ensure that configuration providers, like `Mix.Configig` have a chance
 to run before your application is started, but Mix itself is not part of this process. As a result, there are some
 small differences in how your application will run under Mix and under a release, but for the most part, there should
 be no noticeable differences.

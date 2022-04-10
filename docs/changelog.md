@@ -49,7 +49,7 @@ provide a good overview of what has been addressed.
   environment (e.g. via `Application.put_env/3`). It is expected that when
   running multiple providers, the last one to run "wins" in the case of
   conflicting configuration keys, so they should be ordered by their priority.
-- A `Mix.Config` config provider, supporting `config.exs` scripts in releases.
+- A `Mix.Configig` config provider, supporting `config.exs` scripts in releases.
   You can find more information in the `Mix.Releases.Conf.Providers.Elixir`
   module docs, or in the Distillery documentation about config providers.
 - A new `config_providers` setting for defining which config providers to

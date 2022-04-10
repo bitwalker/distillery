@@ -35,7 +35,7 @@ A static file containing Erlang terms, it is one way configuration can be provid
 
 A file which provides configuration to the Erlang VM when it starts a release.
 
-### config.exs aka Mix.Config
+### config.exs aka Mix.Configig
 
 The typical way you provide runtime configuration to an Elixir project which is not already handled by application
 code. I strongly recommend you read [Runtime Configuration](../config/runtime.md) to understand how to best

@@ -1,5 +1,5 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
+# and its dependencies with the aid of the Mix.Configig module.
 import Config
 
 # By default, the umbrella project as well as each child

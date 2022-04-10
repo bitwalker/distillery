@@ -79,7 +79,7 @@ information as they are big quality of life improvements!
     more information. If you are curious about what a custom provider looks
     like, check out [this library](https://github.com/bitwalker/toml-elixir),
     which has a provider for TOML. Distillery also contains a provider for
-    `Mix.Config` out of the box.
+    `Mix.Configig` out of the box.
   * Appup Transforms! This is a plugin system for programmatically modifying
     appups during a release build. Use this to tweak the way appups are
     generated for your applications.
