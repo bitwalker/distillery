@@ -46,7 +46,8 @@ defmodule Distillery.Mixfile do
       :crypto,
       :dialyzer,
       :eex,
-      :sasl
+      :sasl,
+      :tools
     ]]
   end
 

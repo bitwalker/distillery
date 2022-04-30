@@ -1,6 +1,6 @@
 defmodule Distillery.Test.CliTest do
-  use ExUnit.Case, async: false
-
+  #use ExUnit.Case, async: false
+  use ExUnit.ClusteredCase
   import ExUnit.CaptureIO
 
   alias Distillery.Releases.Runtime.Control
@@ -31,6 +31,7 @@ defmodule Distillery.Test.CliTest do
   end
 
   describe "when pinging a node" do
+    @tag :cluster_canary
     test "prints pong when available", %{node: peer} do
       assert is_success(fn ->
         Control.main(["--verbose", "ping", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}"])
