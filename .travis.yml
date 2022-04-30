@@ -4,7 +4,7 @@ git:
   quiet: true
   depth: 3
 elixir:
-  - 1.13
+  - 1.12
 otp_release:
   - 22.0
 matrix:

@@ -46,7 +46,7 @@ defmodule Distillery.Releases.Conf.Providers.Elixir do
         path
         |> eval!()
         |> merge_config()
-        |> Mix.Config.persist()
+        |> Application.put_all_env(:my_app)
       else
         {:error, reason} ->
           exit(reason)
@@ -66,7 +66,7 @@ defmodule Distillery.Releases.Conf.Providers.Elixir do
   def merge_config(runtime_config) do
     Enum.flat_map(runtime_config, fn {app, app_config} ->
       all_env = Application.get_all_env(app)
-      Mix.Config.merge([{app, all_env}], [{app, app_config}])
+       Config.Reader.merge([{app, all_env}], [{app, app_config}])
     end)
   end
 
@@ -81,6 +81,6 @@ defmodule Distillery.Releases.Conf.Providers.Elixir do
       config
     end
   else
-    def eval!(path, imported_paths), do: Mix.Config.read!(path, imported_paths)
+    def eval!(path, imported_paths), do: Config.Reader.read!(path, imported_paths)
   end
 end
