@@ -175,7 +175,7 @@ defmodule Distillery.Test.ShellTest do
   end
 
   describe "verbose mode" do
-    @tag :fail_action
+    
     test "all messages should be logged" do
       Shell.configure(:verbose)
 

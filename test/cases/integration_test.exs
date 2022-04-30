@@ -40,7 +40,7 @@ defmodule Distillery.Test.IntegrationTest do
       end
     end
 
-    @tag :fail_action
+
     test "can build release and start it - prod" do
       with_standard_app do
         assert {:ok, output} = build_release()
@@ -78,7 +78,7 @@ defmodule Distillery.Test.IntegrationTest do
       end
     end
 
-    @tag :fail_action
+
     test "can build and deploy a hot upgrade" do
       with_standard_app do
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
@@ -133,7 +133,7 @@ defmodule Distillery.Test.IntegrationTest do
       end
     end
 
-    @tag :fail_action
+
     test "can build and deploy hot upgrade with custom appup" do
       with_standard_app do
         out_path = output_path()

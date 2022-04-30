@@ -46,7 +46,7 @@ defmodule Distillery.Releases.Conf.Providers.Elixir do
         path
         |> eval!()
         |> merge_config()
-        |> Application.put_all_env(:my_app)
+        |> Mix.Config.persist()
       else
         {:error, reason} ->
           exit(reason)
