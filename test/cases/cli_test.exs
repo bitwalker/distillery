@@ -31,7 +31,6 @@ defmodule Distillery.Test.CliTest do
   end
 
   describe "when pinging a node" do
-    @tag :cluster_canary
     test "prints pong when available", %{node: peer} do
       assert is_success(fn ->
         Control.main(["--verbose", "ping", "--cookie", "#{Node.get_cookie}", "--name", "#{peer}"])
