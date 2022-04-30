@@ -15,6 +15,7 @@ defmodule Distillery.Test.OverlayTest do
       assert {:error, {:invalid_overlay, ^overlay}} = Overlays.apply(@output_dir, [overlay], [])
     end
 
+    @tag :fail_action
     test "invalid template string produces error" do
       str = "<%= foo() %>"
       expected = "undefined function foo/0 (there is no such import)"
@@ -23,6 +24,7 @@ defmodule Distillery.Test.OverlayTest do
                Overlays.apply(@output_dir, [{:mkdir, str}], [])
     end
 
+    @tag :fail_action
     test "invalid template file produces error" do
       file = Path.join([@fixtures_path, "mock_app", "invalid_tmpl.eex"])
       expected = %CompileError{description: "undefined function foo/0 (there is no such import)", file: file, line: 1}
