@@ -8,6 +8,7 @@ defmodule Distillery.Test.IntegrationTest do
 
   describe "standard application" do
 
+    @tag :fail_2_2
     test "can build a release and start it - dev" do
       with_standard_app do
         assert {:ok, output} = build_release(env: :dev, no_tar: true)
@@ -190,6 +191,7 @@ defmodule Distillery.Test.IntegrationTest do
       end
     end
 
+    @tag :skip_2_2
     test "when installation directory contains a space" do
       with_standard_app do
         assert {:ok, _} = build_release()
@@ -225,6 +227,7 @@ defmodule Distillery.Test.IntegrationTest do
   end
 
   describe "umbrella application" do
+    @tag :fail_2_2
     test "can build umbrella and deploy it - dev" do
       with_umbrella_app do
         assert {:ok, _output} = build_release(env: :dev, no_tar: true)
