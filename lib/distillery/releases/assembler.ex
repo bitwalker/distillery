@@ -860,7 +860,7 @@ defmodule Distillery.Releases.Assembler do
     # no work around for this
     old_cwd = File.cwd!()
     File.cd!(output_dir)
-    :ok = :release_handler.create_RELEASES('./', 'releases', '#{relfile}', [])
+    :ok = :release_handler.create_RELEASES('./', Path.join([File.cwd!(), 'releases']), '#{relfile}', [])
     File.cd!(old_cwd)
     :ok
   end
