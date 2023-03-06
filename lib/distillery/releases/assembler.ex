@@ -860,7 +860,15 @@ defmodule Distillery.Releases.Assembler do
     # no work around for this
     old_cwd = File.cwd!()
     File.cd!(output_dir)
-    :ok = :release_handler.create_RELEASES('./', Path.join([File.cwd!(), 'releases']), '#{relfile}', [])
+
+    :ok =
+      :release_handler.create_RELEASES(
+        File.cwd!(),
+        Path.join([File.cwd!(), 'releases']),
+        '#{relfile}',
+        []
+      )
+
     File.cd!(old_cwd)
     :ok
   end
@@ -992,6 +1000,7 @@ defmodule Distillery.Releases.Assembler do
             "    this setting will prevent you from doing so without a rolling restart.\n" <>
             "    You may ignore this warning if you have no plans to use hot upgrades."
         )
+
         Shell.debug("Stripping release (#{path})")
 
         case :beam_lib.strip_release(String.to_charlist(path)) do

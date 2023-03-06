@@ -78,7 +78,7 @@ defmodule Distillery.Releases.Archiver do
 
     opts = [
       :silent,
-      {:path, ['#{Path.join([release.profile.output_dir, "lib", "*", "ebin"])}']},
+      {:path, ['#{Path.join([release.profile.output_dir, "lib", "*"])}']},
       {:dirs, included_dirs},
       {:outdir, '#{Path.dirname(archive_path)}'} | erts_opt
     ]
