@@ -863,7 +863,7 @@ defmodule Distillery.Releases.Assembler do
 
     :ok =
       :release_handler.create_RELEASES(
-        File.cwd!(),
+        "./",
         Path.join([File.cwd!(), 'releases']),
         '#{relfile}',
         []
