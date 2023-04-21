@@ -1,6 +1,12 @@
 # Distillery
 
-[![Master](https://travis-ci.org/bitwalker/distillery.svg?branch=master)](https://travis-ci.org/bitwalker/distillery)
+**NOTE:** This project is DEPRECATED. It's functionality was largely integrated into Mix itself
+as part of the Elixir 1.9 release. While there are some small differences between Distillery and
+Mix Releases, the vast majority of users should find it quite easy (and very much worthwhile) to
+migrate. For all others, this repo exists for you to fork and use as you see fit, but it is no
+longer actively maintained. If there are folks interested in taking over maintenance of the project,
+please open an issue and we can coordinate on adding you as a maintainer.
+
 [![Hex.pm Version](http://img.shields.io/hexpm/v/distillery.svg?style=flat)](https://hex.pm/packages/distillery)
 
   * [Documentation](https://hexdocs.pm/distillery)
