@@ -163,7 +163,7 @@ defmodule Distillery.Releases.Plugin do
   Run the `c:after_cleanup/2` callback of all plugins of `release`.
   """
   @spec after_cleanup(Release.t(), [String.t()]) :: :ok | {:error, term}
-  def after_cleanup(release, args), do: run(release.profile.plugins, :after_package, args)
+  def after_cleanup(release, args), do: run(release.profile.plugins, :after_cleanup, args)
 
   @spec call(atom(), Release.t()) :: {:ok, term} | {:error, {:plugin, term}}
   defp call(callback, release) do
