@@ -120,7 +120,7 @@ defmodule Mix.Tasks.Distillery.Release do
     e ->
       Shell.error(
         "Release failed: #{Exception.message(e)}\n" <>
-          Exception.format_stacktrace(System.stacktrace())
+          Exception.format_stacktrace(__STACKTRACE__)
       )
 
       System.halt(1)
@@ -153,7 +153,7 @@ defmodule Mix.Tasks.Distillery.Release do
     e ->
       Shell.error(
         "Release failed: #{Exception.message(e)}\n" <>
-          Exception.format_stacktrace(System.stacktrace())
+          Exception.format_stacktrace(__STACKTRACE__)
       )
 
       System.halt(1)

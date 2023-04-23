@@ -184,7 +184,7 @@ defmodule Distillery.Releases.Plugin do
     call(plugins, callback, release)
   catch
     :throw, {:error, {:plugin, {kind, err}}} ->
-      {:error, {:plugin, {kind, err, System.stacktrace()}}}
+      {:error, {:plugin, {kind, err, __STACKTRACE__}}}
   end
 
   defp call([], _, release), do: {:ok, release}
@@ -193,10 +193,10 @@ defmodule Distillery.Releases.Plugin do
     apply_plugin(plugin, callback, release, opts)
   rescue
     e ->
-      {:error, {:plugin, {e, System.stacktrace()}}}
+      {:error, {:plugin, {e, __STACKTRACE__}}}
   catch
     kind, err ->
-      {:error, {:plugin, {kind, err, System.stacktrace()}}}
+      {:error, {:plugin, {kind, err, __STACKTRACE__}}}
   else
     nil ->
       call(plugins, callback, release)
@@ -224,10 +224,10 @@ defmodule Distillery.Releases.Plugin do
     apply_plugin(plugin, callback, args, opts)
   rescue
     e ->
-      {:error, {:plugin, {e, System.stacktrace()}}}
+      {:error, {:plugin, {e, __STACKTRACE__}}}
   catch
     kind, err ->
-      {:error, {:plugin, {kind, err, System.stacktrace()}}}
+      {:error, {:plugin, {kind, err, __STACKTRACE__}}}
   else
     _ ->
       run(plugins, callback, args)

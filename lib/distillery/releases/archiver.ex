@@ -126,7 +126,7 @@ defmodule Distillery.Releases.Archiver do
     end
   catch
     kind, err ->
-      {:error, {:archiver, Exception.normalize(kind, err, System.stacktrace())}}
+      {:error, {:archiver, Exception.normalize(kind, err, __STACKTRACE__)}}
   end
 
   defp make_archive(%Release{version: version} = release, tmpdir) do

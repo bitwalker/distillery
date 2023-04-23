@@ -220,7 +220,7 @@ defmodule Distillery.Releases.Assembler do
     end
   rescue
     e in [File.Error] ->
-      {:error, {:assembler, {e, System.stacktrace()}}}
+      {:error, {:assembler, {e, __STACKTRACE__}}}
   catch
     :error, {:assembler, _mod, _reason} = err ->
       {:error, err}

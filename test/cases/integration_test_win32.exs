@@ -5,7 +5,7 @@ defmodule Distillery.Test.Win32IntegrationTest do
   Currently this mostly mirrors the other integration tests, except no hot upgrades
   """
   use Distillery.Test.IntegrationCase, async: false
-  
+
   @moduletag win32: true
 
   alias Distillery.Releases.Utils
@@ -16,14 +16,14 @@ defmodule Distillery.Test.Win32IntegrationTest do
     test "can build a release and start it - dev" do
       with_standard_app do
         assert {:ok, output} = build_release(env: :dev, no_tar: true)
-        
+
         # Release plugin was run
         for callback <- ~w(before_assembly after_assembly) do
           assert output =~ "EnvLoggerPlugin in dev executing #{callback}"
         end
-        
+
         bin = Path.join([output_path(), "bin", "standard_app"])
-        
+
         try do
           # Can start
           assert {:ok, _} = release_cmd(bin, "start")
@@ -39,11 +39,11 @@ defmodule Distillery.Test.Win32IntegrationTest do
         rescue
           e ->
             release_cmd(bin, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         end
       end
     end
-    
+
     test "can build release and start it - prod" do
       with_standard_app do
         assert {:ok, output} = build_release()
@@ -53,7 +53,7 @@ defmodule Distillery.Test.Win32IntegrationTest do
           assert output =~ "EnvLoggerPlugin in prod executing #{callback}"
           assert output =~ "ProdPlugin in prod executing #{callback}"
         end
-        
+
         # Extract release to temporary directory
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
         bin = Path.join([tmpdir, "bin", "standard_app"])
@@ -74,7 +74,7 @@ defmodule Distillery.Test.Win32IntegrationTest do
         rescue
           e ->
             release_cmd(bin, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         after
           File.rm_rf!(tmpdir)
         end
@@ -107,21 +107,21 @@ defmodule Distillery.Test.Win32IntegrationTest do
         rescue
           e ->
             release_cmd(bin_path, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         after
           File.rm_rf!(tmpdir)
         end
       end
     end
   end
-  
+
   describe "umbrella application" do
     test "can build umbrella and deploy it - dev" do
       with_umbrella_app do
         assert {:ok, output} = build_release(env: :dev, no_tar: true)
-        
+
         bin = Path.join([output_path(), "bin", "umbrella"])
-        
+
         try do
           # Can start
           assert {:ok, _} = release_cmd(bin, "start")
@@ -133,7 +133,7 @@ defmodule Distillery.Test.Win32IntegrationTest do
         rescue
           e ->
             release_cmd(bin, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         end
       end
     end

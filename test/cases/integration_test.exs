@@ -1,6 +1,6 @@
 defmodule Distillery.Test.IntegrationTest do
   use Distillery.Test.IntegrationCase, async: false
-  
+
   @moduletag win32: false
 
   alias Distillery.Releases.Utils
@@ -11,14 +11,14 @@ defmodule Distillery.Test.IntegrationTest do
     test "can build a release and start it - dev" do
       with_standard_app do
         assert {:ok, output} = build_release(env: :dev, no_tar: true)
-        
+
         # Release plugin was run
         for callback <- ~w(before_assembly after_assembly) do
           assert output =~ "EnvLoggerPlugin in dev executing #{callback}"
         end
-        
+
         bin = Path.join([output_path(), "bin", "standard_app"])
-        
+
         try do
           # Can start
           assert {:ok, _} = release_cmd(bin, "start")
@@ -34,11 +34,11 @@ defmodule Distillery.Test.IntegrationTest do
         rescue
           e ->
             release_cmd(bin, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         end
       end
     end
-    
+
     test "can build release and start it - prod" do
       with_standard_app do
         assert {:ok, output} = build_release()
@@ -48,7 +48,7 @@ defmodule Distillery.Test.IntegrationTest do
           assert output =~ "EnvLoggerPlugin in prod executing #{callback}"
           assert output =~ "ProdPlugin in prod executing #{callback}"
         end
-        
+
         # Extract release to temporary directory
         assert {:ok, tmpdir} = Utils.insecure_mkdir_temp()
         bin = Path.join([tmpdir, "bin", "standard_app"])
@@ -69,7 +69,7 @@ defmodule Distillery.Test.IntegrationTest do
         rescue
           e ->
             release_cmd(bin, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         after
           File.rm_rf!(tmpdir)
         end
@@ -122,7 +122,7 @@ defmodule Distillery.Test.IntegrationTest do
         rescue
           e ->
             release_cmd(bin_path, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         after
           File.rm_rf(tmpdir)
           reset_changes!(app_path())
@@ -133,7 +133,7 @@ defmodule Distillery.Test.IntegrationTest do
     test "can build and deploy hot upgrade with custom appup" do
       with_standard_app do
         out_path = output_path()
-        
+
         # Build v1 release
         assert {:ok, _} = build_release()
         # Apply v2 changes
@@ -182,7 +182,7 @@ defmodule Distillery.Test.IntegrationTest do
         rescue
           e ->
             release_cmd(bin_path, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         after
           File.rm_rf(tmpdir)
           reset_changes!(app_path())
@@ -216,21 +216,21 @@ defmodule Distillery.Test.IntegrationTest do
         rescue
           e ->
             release_cmd(bin_path, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         after
           File.rm_rf!(tmpdir)
         end
       end
     end
   end
-  
+
   describe "umbrella application" do
     test "can build umbrella and deploy it - dev" do
       with_umbrella_app do
         assert {:ok, output} = build_release(env: :dev, no_tar: true)
-        
+
         bin = Path.join([output_path(), "bin", "umbrella"])
-        
+
         try do
           # Can start
           assert {:ok, _} = release_cmd(bin, "start")
@@ -242,7 +242,7 @@ defmodule Distillery.Test.IntegrationTest do
         rescue
           e ->
             release_cmd(bin, "stop")
-            reraise e, System.stacktrace()
+            reraise e, __STACKTRACE__
         end
       end
     end
@@ -253,7 +253,7 @@ defmodule Distillery.Test.IntegrationTest do
     headers = [{'accepts', 'application/json'}, {'content-type', 'application/json'}]
     opts = [body_format: :binary, full_result: false]
     case :httpc.request(:get, {url, headers}, [], opts) do
-      {:ok, {200, _}} -> 
+      {:ok, {200, _}} ->
         :ok
       err when tries < 5 ->
         IO.inspect "Request (attempt #{tries} of 5) to /healthz endpoint failed with: #{err}"
