@@ -81,7 +81,7 @@ Generated test app
 ==> Assembling release..
 ==> Building release test:0.1.0 using environment dev
 ==> You have set dev_mode to true, skipping archival phase
-Release succesfully built!
+Release successfully built!
 To start the release you have built, you can use one of the following tasks:
 
     # start a shell, like 'iex -S mix'

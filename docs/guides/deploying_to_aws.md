@@ -75,7 +75,7 @@ following is a list of the benefits:
     same node
   * _Secure Configuration_ - secrets are stored via SSM in the parameter store
     as secure strings, encrypted with a key dedicated to the stack. Only the
-    application and adminstrators can access the secrets
+    application and administrators can access the secrets
   * _Secure Networking_ - use of security groups and network rules ensure that
     only the traffic which we want to allow is permitted to reach each area of
     the infrastructure

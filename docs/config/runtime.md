@@ -19,7 +19,7 @@ This meant that some constructs for runtime configuration, namely dynamic
 things, like `System.get_env/1` would be evaluated at build time, not runtime,
 which was a source of confusion. Older tools introduced `REPLACE_OS_VARS`, an
 environment variable you export at runtime which instructed the tool to replace
-occurances of `${VAR}` with the value from the system environment in the
+occurrences of `${VAR}` with the value from the system environment in the
 `sys.config` file.
 
 The problem with `REPLACE_OS_VARS` is that it's essentially a hack, and as such

@@ -168,7 +168,7 @@ When you run `mix distillery.release`, you should see something like the followi
 ==> Assembling release..
 ==> Building release myapp:0.1.0 using environment dev
 ==> You have set dev_mode to true, skipping archival phase
-Release succesfully built!
+Release successfully built!
 To start the release you have built, you can use one of the following tasks:
 
     # start a shell, like 'iex -S mix'

@@ -63,7 +63,7 @@ defmodule Distillery.Test.ShellTest do
   end
 
   describe "silent mode" do
-    test "all output should be supressed" do
+    test "all output should be suppressed" do
       Shell.configure(:silent)
 
       assert capture_io(fn ->
@@ -97,7 +97,7 @@ defmodule Distillery.Test.ShellTest do
   end
 
   describe "quiet mode" do
-    test "debug and info messages should be supressed" do
+    test "debug and info messages should be suppressed" do
       Shell.configure(:quiet)
 
       assert capture_io(fn ->
@@ -136,7 +136,7 @@ defmodule Distillery.Test.ShellTest do
   end
 
   describe "normal mode" do
-    test "debug messages should be supressed" do
+    test "debug messages should be suppressed" do
       Shell.configure(:normal)
 
       assert capture_io(fn ->

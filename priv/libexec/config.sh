@@ -197,7 +197,7 @@ _replace_os_vars() {
     mv -- "$1.bak" "$1"
 }
 
-# Do a textual replacement of ${VAR} occurrances in $1 and pipe to stdout
+# Do a textual replacement of ${VAR} occurrences in $1 and pipe to stdout
 _replace_os_vars_str() {
     awk '
         function escape(s) {
