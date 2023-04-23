@@ -21,7 +21,7 @@ Next we will add Distillery to the deps function of our `mix.exs` file.
 ```elixir
   defp deps do
     [ ...,
-     {:distillery, "~> 2.0"},
+     {:distillery, "~> 2.1"},
       ...,
     ]
   end
@@ -115,7 +115,7 @@ You should be able to go to [localhost:4001](localhost:4001) and load the defaul
 
 *NOTE* The above commands can be combined into one quick command as
 ```
-$ npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod
+$ npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, distillery.release --env=prod
 ```
 
 *NOTE*: If you run `mix distillery.release` with `MIX_ENV=dev` (the default), then you must also ensure that you set `code_reloader: false` in your configuration. If you do not, you'll get a failure at runtime about being unable to start `Phoenix.CodeReloader.Server` because it depends on Mix, which is not intended to be packaged in releases. As you won't be doing code reloading in a release (at least not with the same mechanism), you must disable this.
@@ -199,7 +199,7 @@ Remove the following line from our application layout.
 
 Next we build an upgrade release with the following command:
 
-`npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+`npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, distillery.release --env=prod --upgrade`
 
 This is the same command as in version 0.0.1 with the exception of `--upgrade`. The upgrade flag tells Distillery to build an [appup](https://hexdocs.pm/distillery/guides/upgrades_and_downgrades.html) for every application included in the release. These files are then used to generate a [relup](https://hexdocs.pm/distillery/guides/upgrades_and_downgrades.html) which details how an upgrade (or downgrade) is applied to a running application instance.
 
@@ -287,7 +287,7 @@ end
 
 With all that complete, we are now ready to generate the 0.0.3 release just as we did with 0.0.2. So we will generate a release, copy the 0.0.3 tarball into a new release directory under `local_deploy`, and upgrade the application.
 
-- `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+- `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, distillery.release --env=prod --upgrade`
 - `mkdir local_deploy/releases/0.0.3`
 - `cp _build/prod/rel/phoenix_distillery/releases/0.0.3/phoenix_distillery.tar.gz local_deploy/releases/0.0.3/`
 - `./local_deploy/bin/phoenix_distillery upgrade 0.0.3`
@@ -331,7 +331,7 @@ end
 
 With this complete, we are now ready to generate the 0.0.4 release just as we did with 0.0.3. Generate a release, copy the 0.0.4 tarball into a new release directory under `local_deploy`, and upgrade the application.
 
-- `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, release --env=prod --upgrade`
+- `npm run deploy --prefix assets && MIX_ENV=prod mix do phx.digest, distillery.release --env=prod --upgrade`
 - `mkdir local_deploy/releases/0.0.4`
 - `cp _build/prod/rel/phoenix_distillery/releases/0.0.4/phoenix_distillery.tar.gz local_deploy/releases/0.0.4/`
 - `./local_deploy/bin/phoenix_distillery upgrade 0.0.4`
